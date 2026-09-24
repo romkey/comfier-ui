@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+  <head>
+    <%= render 'layouts/head' %>
+  </head>
+
+  <body>
+    <%= turbo_stream_from :queue if signed_in? %>
+    <nav class="navbar navbar-expand-md border-bottom app-navbar">
+      <div class="container-fluid">
+        <%= link_to root_path, class: 'navbar-brand fw-medium' do %>
+          <i class="bi bi-stars me-1" aria-hidden="true"></i>Comfier
+        <% end %>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#main-nav"
+                aria-controls="main-nav" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="main-nav">
+          <ul class="navbar-nav me-auto">
+            <% GenerationKind.all.each do |kind| %>
+              <%= nav_item kind.label, kind.path, icon: kind.icon %>
+            <% end %>
+            <%= nav_item 'Results', generations_path, icon: 'bi-grid-3x3-gap',
+                         active: request.path.start_with?(generations_path) %>
+            <%= nav_item 'Shared', shared_index_path, icon: 'bi-globe',
+                         active: request.path.start_with?('/shared') %>
+            <li class="nav-item">
+              <%= link_to queue_path, class: ['nav-link', { active: current_page?(queue_path) }],
+                                   aria: { current: current_page?(queue_path) ? 'page' : nil } do %>
+                <i class="bi bi-list-task me-1" aria-hidden="true"></i>Queue
+                <% count = Generation.in_progress.count %>
+                <% if count.positive? %>
+                  <span id="queue_count" class="text-secondary num ms-1"><%= count %></span>
+                <% else %>
+                  <span id="queue_count" class="text-secondary num ms-1"></span>
+                <% end %>
+              <% end %>
+            </li>
+            <%= nav_item 'Settings', settings_path, icon: 'bi-gear',
+                         active: current_page?(settings_path) || request.path.start_with?('/admin') %>
+          </ul>
+
+          <div class="dropdown">
+            <button class="btn btn-sm btn-link text-body text-decoration-none dropdown-toggle d-flex align-items-center gap-2"
+                    type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <span class="avatar-sm"><%= current_user.initials %></span>
+              <span class="text-13"><%= current_user.display_name %></span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end text-13">
+              <li><span class="dropdown-item-text text-secondary text-12"><%= current_user.email %></span></li>
+              <li><%= link_to 'Settings', settings_path, class: 'dropdown-item' %></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><%= button_to 'Sign out', logout_path, method: :delete, class: 'dropdown-item', form: { data: { turbo: false } } %></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <main class="container-fluid py-3 app-main">
+      <%= render 'layouts/flash' %>
+      <%= content_for?(:content) ? yield(:content) : yield %>
+    </main>
+  </body>
+</html>

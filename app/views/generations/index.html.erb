@@ -1,0 +1,69 @@
+<% content_for :title, 'Results' %>
+<%= turbo_stream_from current_user, :generations %>
+
+<% total = @kind_counts.values.sum %>
+<% in_progress = @status_counts.fetch('queued', 0) + @status_counts.fetch('running', 0) %>
+<% failed = @status_counts.fetch('failed', 0) %>
+
+<div class="d-flex align-items-end justify-content-between mb-3">
+  <div>
+    <h1 class="h-page-title mb-0">Results</h1>
+    <div class="text-13 text-secondary mt-1">
+      <span class="text-body num"><%= total %></span> total
+      <% if in_progress.positive? %> · <span class="text-body num"><%= in_progress %></span> in progress<% end %>
+      <% if failed.positive? %> · <span class="text-danger num"><%= failed %></span> failed<% end %>
+    </div>
+  </div>
+</div>
+
+<div class="d-flex flex-wrap gap-2 mb-2">
+  <%= link_to 'All', generations_path(status: @status), class: ['filter-chip', { active: @kind.nil? }] %>
+  <% GenerationKind.all.each do |kind| %>
+    <% count = @kind_counts.fetch(kind.key, 0) %>
+    <%= link_to generations_path(kind: kind.key, status: @status),
+                class: ['filter-chip', { active: @kind == kind.key, muted: count.zero? }] do %>
+      <i class="bi <%= kind.icon %>" aria-hidden="true"></i> <%= kind.label %> <span class="num"><%= count %></span>
+    <% end %>
+  <% end %>
+  <span class="vr mx-1"></span>
+  <%= link_to generations_path(kind: @kind, status: @status == 'running' ? nil : 'running'),
+              class: ['filter-chip', { active: @status == 'running', muted: @status_counts.fetch('running', 0).zero? }] do %>
+    Generating <span class="num"><%= @status_counts.fetch('running', 0) %></span>
+  <% end %>
+  <%= link_to generations_path(kind: @kind, status: @status == 'failed' ? nil : 'failed'),
+              class: ['filter-chip', { active: @status == 'failed', danger: failed.positive?, muted: failed.zero? }] do %>
+    Failed <span class="num"><%= failed %></span>
+  <% end %>
+</div>
+
+<% if @kind || @status %>
+  <div class="text-12 text-secondary mb-3">
+    <%= [@kind, @status].compact.size %> <%= 'filter'.pluralize([@kind, @status].compact.size) %> active ·
+    <%= link_to 'Clear', generations_path %>
+  </div>
+<% else %>
+  <div class="mb-3"></div>
+<% end %>
+
+<% if @generations.any? %>
+  <div id="results_generations" class="result-grid result-grid-lg">
+    <%= render partial: 'generations/generation', collection: @generations %>
+  </div>
+  <% if @pagy.last > 1 %>
+    <nav class="mt-3 d-flex justify-content-center" aria-label="Pages"><%== @pagy.series_nav(:bootstrap) %></nav>
+  <% end %>
+<% elsif total.zero? %>
+  <div class="status-panel status-clear text-center py-5">
+    <p class="fw-medium mb-1">You haven't made anything yet.</p>
+    <p class="text-13 text-secondary mb-3">Pick a type to get started.</p>
+    <div class="d-flex justify-content-center flex-wrap gap-2">
+      <% GenerationKind.all.each do |kind| %>
+        <%= link_to kind.path, class: 'btn btn-outline-secondary btn-sm' do %>
+          <i class="bi <%= kind.icon %> me-1" aria-hidden="true"></i><%= kind.label %>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+<% else %>
+  <p class="text-13 text-secondary">Nothing matches these filters.</p>
+<% end %>

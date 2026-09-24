@@ -1,0 +1,12 @@
+gpu:
+  name: GPU box
+  base_url: http://comfy.test:8188
+  enabled: true
+  last_check_ok: true
+  last_checked_at: <%= 1.hour.ago.to_fs(:db) %>
+  last_check_message: ComfyUI 0.3.60 · NVIDIA RTX 4090
+
+offline:
+  name: Old laptop
+  base_url: http://old.test:8188
+  enabled: false

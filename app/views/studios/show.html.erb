@@ -1,0 +1,50 @@
+<% content_for :title, @kind.label %>
+<%= turbo_stream_from current_user, :generations %>
+
+<div class="d-flex align-items-end justify-content-between mb-3">
+  <div>
+    <h1 class="h-page-title mb-0"><i class="bi <%= @kind.icon %> me-2 text-secondary" aria-hidden="true"></i><%= @kind.label %></h1>
+    <% in_progress = @recent.count(&:in_progress?) %>
+    <% if in_progress.positive? %>
+      <div class="text-13 text-secondary mt-1"><span class="text-body"><%= in_progress %></span> in progress</div>
+    <% end %>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-5 col-xl-4">
+    <% if @workflow.nil? %>
+      <div class="status-panel status-clear text-center py-4">
+        <i class="bi <%= @kind.icon %> fs-2 text-secondary" aria-hidden="true"></i>
+        <p class="mb-1 mt-2 fw-medium"><%= @kind.label %> generation isn't set up yet.</p>
+        <% if current_user.admin? %>
+          <p class="text-13 text-secondary mb-3">Add a ComfyUI workflow for <%= @kind.noun %> to turn this page on.</p>
+          <%= link_to "+ Add #{@kind.noun} workflow", new_admin_workflow_path(kind: @kind.key),
+                      class: 'btn btn-primary btn-sm' %>
+        <% else %>
+          <p class="text-13 text-secondary mb-0">It'll show up here once an admin adds it.</p>
+        <% end %>
+      </div>
+    <% else %>
+      <% unless @backends_available %>
+        <div class="status-panel status-attention mb-3 text-13">
+          <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>
+          No ComfyUI backend is available, so nothing can run right now.
+          <%= link_to 'Add a backend', admin_backends_path if current_user.admin? %>
+        </div>
+      <% end %>
+      <%= render 'studios/form', generation: @generation, workflow: @workflow, workflows: @workflows, kind: @kind %>
+    <% end %>
+  </div>
+
+  <div class="col-lg-7 col-xl-8">
+    <div class="d-flex align-items-center justify-content-between mb-2">
+      <div class="h-section-label mb-0">Recent</div>
+      <%= link_to 'See all in Results', generations_path(kind: @kind.key), class: 'text-13' if @recent.any? %>
+    </div>
+    <div id="<%= @kind.key %>_generations" class="result-grid">
+      <%= render partial: 'generations/generation', collection: @recent %>
+    </div>
+    <p class="result-empty text-13 text-secondary">Nothing here yet — what you make will show up here.</p>
+  </div>
+</div>

@@ -1,0 +1,27 @@
+<% content_for :title, 'Shared' %>
+
+<div class="d-flex align-items-end justify-content-between mb-3">
+  <div>
+    <h1 class="h-page-title mb-0">Shared</h1>
+    <div class="text-13 text-secondary mt-1">Results members chose to share with everyone</div>
+  </div>
+</div>
+
+<div class="d-flex flex-wrap gap-2 mb-3">
+  <%= link_to 'All', shared_index_path, class: ['filter-chip', { active: @kind.nil? && params[:mine] != '1' }] %>
+  <% GenerationKind.all.each do |kind| %>
+    <%= link_to kind.label, shared_index_path(kind: kind.key), class: ['filter-chip', { active: @kind == kind.key }] %>
+  <% end %>
+  <%= link_to 'Only mine', shared_index_path(mine: 1, kind: @kind), class: ['filter-chip', { active: params[:mine] == '1' }] %>
+</div>
+
+<% if @generations.empty? %>
+  <p class="text-13 text-secondary">Nothing shared yet. Share one of your results from its page.</p>
+<% else %>
+  <div class="result-grid mb-3">
+    <% @generations.each do |generation| %>
+      <%= render 'shared/card', generation: %>
+    <% end %>
+  </div>
+  <%== @pagy.series_nav(:bootstrap) if @pagy.pages > 1 %>
+<% end %>

@@ -1,0 +1,11 @@
+<% content_for :content do %>
+  <div class="row g-4">
+    <div class="col-md-3 col-xl-2">
+      <%= render 'settings/nav' %>
+    </div>
+    <div class="col-md-9 col-xl-10">
+      <%= yield %>
+    </div>
+  </div>
+<% end %>
+<%= render template: 'layouts/application' %>

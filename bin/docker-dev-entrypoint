@@ -1,0 +1,8 @@
+#!/bin/bash -e
+
+# Gems live in a named volume shared across dev/test/lint containers, so install only what changed.
+bundle check >/dev/null 2>&1 || bundle install
+
+rm -f /rails/tmp/pids/server.pid
+
+exec "$@"

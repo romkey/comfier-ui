@@ -1,0 +1,43 @@
+/* App-specific layout. Shared component classes live in refresh.css. */
+
+body { font-size: 14px; }
+
+.app-navbar { background: var(--bs-body-bg); }
+.app-navbar .nav-link { font-size: 13px; padding-inline: 0.65rem !important; border-radius: var(--bs-border-radius-sm); }
+.app-navbar .nav-link.active { background: var(--bs-secondary-bg); }
+.app-main { max-width: 1600px; }
+
+.avatar-sm {
+  display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
+  font-size: 11px; font-weight: 600; background: var(--bs-secondary-bg);
+}
+
+.login-card { max-width: 22rem; margin-top: 10vh; }
+
+.btn-close-sm { font-size: 0.6rem; }
+
+/* Result grid */
+.result-grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+.result-grid-lg { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+.result-grid:has(.result-card) + .result-empty { display: none; }
+
+.result-card {
+  position: relative; border: 1px solid var(--app-border); border-radius: var(--bs-border-radius);
+  overflow: hidden; background: var(--app-surface);
+}
+.result-card:hover { border-color: var(--bs-border-color); }
+.result-media { position: relative; aspect-ratio: 1; display: grid; place-items: center; background: var(--bs-body-bg); }
+.result-media .output-media { width: 100%; height: 100%; object-fit: cover; border-radius: 0; }
+.result-media audio { position: relative; z-index: 2; width: calc(100% - 1rem); }
+.result-count {
+  position: absolute; right: 0.4rem; bottom: 0.4rem; padding: 0 0.35rem;
+  border-radius: var(--bs-border-radius-sm); background: rgba(0, 0, 0, 0.6);
+}
+.result-placeholder { display: grid; place-items: center; width: 100%; height: 100%; }
+.result-meta { padding: 0.45rem 0.6rem 0.5rem; }
+
+.output-media { display: block; max-width: 100%; border-radius: var(--bs-border-radius); }
+.output-full .output-media { max-height: 75vh; margin-inline: auto; }
+.output-file { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; padding: 1rem; max-width: 100%; }
+
+.studio-form summary { cursor: pointer; }

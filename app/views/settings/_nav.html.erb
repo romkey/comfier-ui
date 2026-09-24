@@ -1,0 +1,38 @@
+<nav class="settings-nav" aria-label="Settings">
+  <% if current_user.admin? %>
+    <% attention = @nav_unhealthy_backends.to_i + (@nav_backend_count.to_i.zero? ? 1 : 0) +
+                   @nav_kinds_without_workflows.to_a.size + @nav_workflows_missing_models.to_i %>
+    <% if attention.positive? %>
+      <div class="h-section-label">⚠ Needs attention</div>
+      <% if @nav_backend_count.to_i.zero? %>
+        <%= settings_nav_item 'No backends yet', new_admin_backend_path, icon: 'bi-hdd-network', attention: true %>
+      <% elsif @nav_unhealthy_backends.to_i.positive? %>
+        <%= settings_nav_item 'Unreachable backends', admin_backends_path, icon: 'bi-hdd-network',
+                              count: @nav_unhealthy_backends, attention: true %>
+      <% end %>
+      <% @nav_kinds_without_workflows.to_a.each do |key| %>
+        <% kind = GenerationKind.find(key) %>
+        <%= settings_nav_item "No #{kind.noun} workflow", new_admin_workflow_path(kind: key),
+                              icon: kind.icon, attention: true %>
+      <% end %>
+      <% if @nav_workflows_missing_models.to_i.positive? %>
+        <%= settings_nav_item 'Missing models', admin_workflows_path, icon: 'bi-box-seam',
+                              count: @nav_workflows_missing_models, attention: true %>
+      <% end %>
+    <% end %>
+  <% end %>
+
+  <div class="h-section-label">You</div>
+  <%= settings_nav_item 'Preferences', settings_path, icon: 'bi-sliders' %>
+
+  <% if current_user.admin? %>
+    <div class="h-section-label">Admin</div>
+    <%= settings_nav_item 'Backends', admin_backends_path, icon: 'bi-hdd-network', count: @nav_backend_count %>
+    <%= settings_nav_item 'Workflows', admin_workflows_path, icon: 'bi-diagram-3', count: @nav_workflow_count %>
+    <%= settings_nav_item 'Privacy notice', edit_admin_privacy_notice_path, icon: 'bi-shield-check' %>
+    <%= link_to '/admin/sidekiq', class: 'settings-nav-item', data: { turbo: false } do %>
+      <i class="bi bi-activity" aria-hidden="true"></i><span class="flex-grow-1">Job queue</span>
+      <i class="bi bi-box-arrow-up-right text-11" aria-hidden="true"></i>
+    <% end %>
+  <% end %>
+</nav>

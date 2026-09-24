@@ -1,0 +1,53 @@
+<% content_for :title, 'Settings' %>
+
+<div class="mb-3">
+  <h1 class="h-page-title mb-0">Your preferences</h1>
+  <div class="text-13 text-secondary mt-1">These fill in the forms for you. You can still change them each time.</div>
+</div>
+
+<%= form_with model: @user, url: settings_path, method: :patch, class: 'settings-form' do |f| %>
+  <% if @user.errors.any? %>
+    <div class="alert alert-danger py-2 text-13"><%= @user.errors.full_messages.to_sentence %></div>
+  <% end %>
+
+  <div class="mb-3">
+    <%= f.label :default_aspect_ratio, 'Default shape', class: 'form-label' %>
+    <%= f.select :default_aspect_ratio,
+                 Generation::ASPECT_RATIO_LABELS.map { |ratio, label| ["#{label} (#{ratio})", ratio] },
+                 {}, class: 'form-select form-select-sm' %>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :default_negative_prompt, 'Always avoid', class: 'form-label' %>
+    <%= f.text_area :default_negative_prompt, rows: 2, class: 'form-control form-control-sm',
+                                              placeholder: 'Things you never want to see, like "blurry, watermark"' %>
+    <div class="form-text text-12">Pre-filled in "More options" when a style supports it.</div>
+  </div>
+
+  <% if @backends.many? || @user.preferred_backend %>
+    <div class="mb-3">
+      <%= f.label :preferred_backend_id, 'Server', class: 'form-label' %>
+      <%= f.collection_select :preferred_backend_id, @backends, :id, :name,
+                              { include_blank: 'Automatic (least busy)' }, class: 'form-select form-select-sm' %>
+      <div class="form-text text-12">Automatic sends your work to whichever server has the shortest queue.</div>
+    </div>
+  <% end %>
+
+  <%= f.submit 'Save', class: 'btn btn-primary btn-sm' %>
+<% end %>
+
+<div class="text-12 text-secondary mt-5">
+  <div class="h-section-label">Privacy</div>
+  <% if @user.privacy_accepted_at %>
+    <div>You agreed to the privacy notice <%= friendly_time(@user.privacy_accepted_at) %>.
+      <%= link_to 'Read it again', privacy_path, class: 'link-secondary' %></div>
+  <% else %>
+    <div><%= link_to 'Read the privacy notice', privacy_path, class: 'link-secondary' %></div>
+  <% end %>
+</div>
+
+<div class="text-12 text-secondary mt-4">
+  <div class="h-section-label">About</div>
+  <div>Signed in as <%= @user.email %><%= ' · admin' if @user.admin? %></div>
+  <div>Version <%= AppVersion.current %></div>
+</div>

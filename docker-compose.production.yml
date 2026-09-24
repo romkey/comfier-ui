@@ -1,0 +1,73 @@
+name: comfier-ui
+
+# Production stack. Configure it with a .env file next to this one (see .env.example).
+# Set DATABASE_URL / REDIS_URL to point at external services, or use the bundled ones.
+
+x-app: &app
+  image: ${COMFIER_IMAGE:-comfier-ui:latest}
+  build:
+    context: .
+    dockerfile: Dockerfile
+  restart: unless-stopped
+  env_file:
+    - path: .env
+      required: true
+  environment:
+    RAILS_ENV: production
+    DATABASE_URL: ${DATABASE_URL:-postgres://comfier:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/comfier_ui_production}
+    REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+  volumes:
+    - storage:/rails/storage
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:18.6-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: comfier
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: comfier_ui_production
+    volumes:
+      - postgres:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "comfier"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:8.10-alpine
+    restart: unless-stopped
+    volumes:
+      - redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  web:
+    <<: *app
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:3000/up"]
+      interval: 15s
+      retries: 5
+
+  sidekiq:
+    <<: *app
+    command: bundle exec sidekiq -C config/sidekiq.yml
+
+  migrate:
+    <<: *app
+    profiles: [tools]
+    command: ./bin/rails db:migrate
+
+volumes:
+  postgres:
+  redis:
+  storage:

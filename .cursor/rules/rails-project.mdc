@@ -1,0 +1,22 @@
+---
+description: Core Rails project conventions for MemberZone
+alwaysApply: true
+---
+
+# MemberZone Project Conventions
+
+- **Stack:** Rails 8.1, Ruby 4.0.6, PostgreSQL 16, Redis 8, Sidekiq 8
+- **Frontend:** Bootstrap 5.3 via cssbundling-rails, Stimulus, Turbo, importmap-rails
+- **Auth:** OmniAuth with OpenID Connect (Authentik)
+- **Testing:** Minitest with fixtures, Capybara + Selenium for system tests
+- **Linting:** RuboCop with rubocop-rails plugin — run via `docker compose -f docker-compose.lint.yml run --rm rubocop` (build image with `docker compose -f docker-compose.lint.build.yml build rubocop` when needed)
+- **Local dev:** Use compose files: `docker-compose.dev.yml`, `docker-compose.test.yml`, `docker-compose.lint.yml` (see README)
+- **CI:** GitHub Actions builds and tests on push/PR to `main`; releases push to `ghcr.io` on version tags
+
+## Key Architectural Patterns
+
+- Service objects live in `app/services/` for external API integrations (Authentik, Google Sheets, Slack, Recharge, PayPal)
+- Background jobs use Sidekiq with sidekiq-cron; use plain queue names (no `queue_name_prefix`)
+- Pagination uses Pagy with Bootstrap nav helpers
+- PDF generation uses Prawn
+- Environment config via dotenv-rails (`.env` files)

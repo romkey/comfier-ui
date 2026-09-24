@@ -1,0 +1,113 @@
+<div class="row g-4">
+  <div class="col-xl-8">
+    <%= form_with model: [:admin, workflow], class: 'settings-form-wide', multipart: true do |f| %>
+      <% if workflow.errors.any? %>
+        <div class="alert alert-danger py-2 text-13"><%= workflow.errors.full_messages.to_sentence %></div>
+      <% end %>
+
+      <div class="row g-3 mb-3">
+        <div class="col-sm-8">
+          <%= f.label :name, class: 'form-label' %>
+          <%= f.text_field :name, class: 'form-control form-control-sm', required: true, placeholder: 'SDXL' %>
+        </div>
+        <div class="col-sm-4">
+          <%= f.label :kind, 'Page', class: 'form-label' %>
+          <%= f.select :kind, GenerationKind.all.map { [it.label, it.key] }, {}, class: 'form-select form-select-sm' %>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :description, class: 'form-label' %>
+        <%= f.text_field :description, class: 'form-control form-control-sm',
+                                       placeholder: 'Shown to users, e.g. "Photorealistic, slower"' %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :graph_json, 'Workflow (API format JSON)', class: 'form-label' %>
+        <%= f.text_area :graph_json, rows: 18, class: 'form-control form-control-sm font-monospace text-12',
+                                     spellcheck: false %>
+        <div class="d-flex align-items-center gap-2 mt-2">
+          <span class="text-12 text-secondary">or upload the exported file</span>
+          <%= file_field_tag 'workflow[graph_file]', accept: 'application/json,.json', id: 'workflow_graph_file',
+                                                     class: 'form-control form-control-sm w-auto' %>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-sm-3">
+          <%= f.label :steps, 'Default steps', class: 'form-label' %>
+          <%= f.number_field :steps, min: 1, max: 150, class: 'form-control form-control-sm num' %>
+          <div class="form-text text-12">Base for <code>{{steps}}</code> when Quality is Standard.</div>
+        </div>
+        <div class="col-sm-3">
+          <%= f.label :guidance, 'Default guidance', class: 'form-label' %>
+          <%= f.number_field :guidance, min: 0.1, max: 30, step: 0.1, class: 'form-control form-control-sm num' %>
+          <div class="form-text text-12">Base CFG for <code>{{cfg}}</code>.</div>
+        </div>
+        <div class="col-sm-3">
+          <%= f.label :base_resolution, class: 'form-label' %>
+          <div class="input-group input-group-sm">
+            <%= f.number_field :base_resolution, min: 64, max: 4096, step: 64, class: 'form-control num' %>
+            <span class="input-group-text">px</span>
+          </div>
+          <div class="form-text text-12">Square size; other shapes keep the same pixel count.</div>
+        </div>
+        <div class="col-sm-3">
+          <%= f.label :frame_rate, class: 'form-label' %>
+          <div class="input-group input-group-sm">
+            <%= f.number_field :frame_rate, min: 1, max: 120, class: 'form-control num' %>
+            <span class="input-group-text">fps</span>
+          </div>
+          <div class="form-text text-12">Used to turn length into <code>{{frames}}</code>.</div>
+        </div>
+        <div class="col-sm-3">
+          <%= f.label :position, 'Order', class: 'form-label' %>
+          <%= f.number_field :position, class: 'form-control form-control-sm num' %>
+          <div class="form-text text-12">Lowest is the default style.</div>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :required_models_text, 'Models', class: 'form-label' %>
+        <%= f.text_area :required_models_text, rows: 4, class: 'form-control form-control-sm font-monospace text-12',
+                                               spellcheck: false,
+                                               placeholder: 'vae/wan_2.1_vae.safetensors https://huggingface.co/…/wan_2.1_vae.safetensors' %>
+        <div class="form-text text-12">
+          One per line: <code>folder/file</code> and a direct download link. Files the workflow's loader nodes use
+          are added automatically; links are needed to install them from here.
+        </div>
+        <div class="d-flex align-items-center gap-2 mt-2">
+          <span class="text-12 text-secondary">or pick up links from the regular export (Workflow → Export)</span>
+          <%= file_field_tag 'workflow[models_file]', accept: 'application/json,.json', id: 'workflow_models_file',
+                                                      class: 'form-control form-control-sm w-auto' %>
+        </div>
+      </div>
+
+      <div class="form-check form-switch mb-3">
+        <%= f.check_box :enabled, class: 'form-check-input', role: 'switch' %>
+        <%= f.label :enabled, 'Offer this to users', class: 'form-check-label' %>
+      </div>
+
+      <div class="d-flex gap-2">
+        <%= f.submit workflow.new_record? ? 'Add workflow' : 'Save', class: 'btn btn-primary btn-sm' %>
+        <%= link_to 'Cancel', admin_workflows_path, class: 'btn btn-outline-secondary btn-sm' %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="col-xl-4">
+    <div class="sidebar-card">
+      <div class="h-section-label">Placeholders</div>
+      <p class="text-12 text-secondary">
+        Put these in node inputs. The form only shows fields for placeholders the workflow uses.
+        A value that is exactly <code>"{{seed}}"</code> becomes a number.
+      </p>
+      <dl class="detail-list text-12 mb-0">
+        <% Workflow::PLACEHOLDERS.each do |name, description| %>
+          <dt><code class="<%= 'text-success' if workflow.uses?(name) %>">{{<%= name %>}}</code></dt>
+          <dd class="text-secondary"><%= description %></dd>
+        <% end %>
+      </dl>
+    </div>
+  </div>
+</div>

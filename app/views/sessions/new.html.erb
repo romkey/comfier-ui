@@ -1,0 +1,37 @@
+<% content_for :title, 'Sign in' %>
+
+<div class="login-card mx-auto text-center">
+  <div class="fs-1 mb-2"><i class="bi bi-stars" aria-hidden="true"></i></div>
+  <h1 class="h-page-title mb-1">Comfier</h1>
+  <p class="text-13 text-secondary mb-4">Make images, video, audio and 3D models with ComfyUI.</p>
+
+  <% if Rails.application.config.x.authentik_configured %>
+    <%= button_to '/auth/authentik', class: 'btn btn-primary w-100', data: { turbo: false } do %>
+      <i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>Sign in with Authentik
+    <% end %>
+  <% end %>
+
+  <% if DevLogin.enabled? %>
+    <%= form_with url: dev_login_path, class: 'dev-login text-start mt-3', data: { turbo: false } do |f| %>
+      <div class="h-section-label">Developer sign-in</div>
+      <%= f.email_field :email, class: 'form-control form-control-sm mb-2', placeholder: 'Email',
+                                autocomplete: 'username', required: true, 'aria-label': 'Email' %>
+      <%= f.password_field :password, class: 'form-control form-control-sm mb-2', placeholder: 'Password',
+                                      autocomplete: 'current-password', required: true, 'aria-label': 'Password' %>
+      <%= f.submit 'Sign in',
+                   class: "btn #{Rails.application.config.x.authentik_configured ? 'btn-outline-secondary' : 'btn-primary'} btn-sm w-100" %>
+    <% end %>
+  <% elsif DevLogin.requested? %>
+    <div class="alert alert-warning text-13 text-start mt-3">
+      Developer sign-in is on but has no credentials. Set <code>DEV_LOGIN_EMAIL</code> and
+      <code>DEV_LOGIN_PASSWORD</code> in <code>.env</code> and restart.
+    </div>
+  <% end %>
+
+  <% unless Rails.application.config.x.authentik_configured || DevLogin.requested? %>
+    <div class="alert alert-warning text-13 text-start">
+      Sign-in isn't configured. Set <code>AUTHENTIK_ISSUER</code>, <code>AUTHENTIK_CLIENT_ID</code> and
+      <code>AUTHENTIK_CLIENT_SECRET</code>.
+    </div>
+  <% end %>
+</div>

@@ -1,0 +1,21 @@
+<% content_for :title, 'Privacy notice' %>
+
+<h1 class="h-page-title mb-3">Privacy notice</h1>
+<p class="text-13 text-secondary mb-3">
+  Version <%= @notice.version %>. New users must agree before they can use Comfier.
+</p>
+
+<%= form_with model: @notice, url: admin_privacy_notice_path, method: :patch, class: 'settings-form-wide' do |f| %>
+  <div class="mb-3">
+    <%= f.label :body, class: 'form-label' %>
+    <%= f.text_area :body, rows: 14, class: 'form-control form-control-sm' %>
+  </div>
+
+  <div class="form-check mb-3">
+    <%= check_box_tag :require_reacceptance, '1', false, class: 'form-check-input', id: 'require_reacceptance' %>
+    <%= label_tag :require_reacceptance, 'Ask everyone to agree again', class: 'form-check-label' %>
+    <div class="form-text text-12">Bumps the version so every user sees this page on their next visit.</div>
+  </div>
+
+  <%= f.submit 'Save', class: 'btn btn-primary btn-sm' %>
+<% end %>

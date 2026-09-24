@@ -1,0 +1,13 @@
+<% content_for :title, 'Privacy notice' %>
+
+<div class="auth-card mx-auto" style="max-width: 42rem;">
+  <h1 class="h-page-title mb-3">Privacy notice</h1>
+  <div class="text-13 mb-4"><%= simple_format @notice.body %></div>
+
+  <div class="d-flex gap-2">
+    <%= button_to 'I agree', accept_privacy_path, class: 'btn btn-primary btn-sm',
+                                                  form: { data: { turbo: false } } %>
+    <%= button_to 'Sign out', logout_path, method: :delete, class: 'btn btn-outline-secondary btn-sm',
+                                          form: { data: { turbo: false } } %>
+  </div>
+</div>

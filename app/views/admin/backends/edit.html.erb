@@ -1,0 +1,16 @@
+<% content_for :title, @backend.name %>
+
+<div class="text-12 text-secondary mb-2"><%= link_to 'Backends', admin_backends_path, class: 'link-secondary' %> /</div>
+<div class="d-flex align-items-center gap-2 mb-3">
+  <h1 class="h-page-title mb-0"><%= @backend.name %></h1>
+  <%= backend_status_dot(@backend) %>
+</div>
+
+<%= render 'form', backend: @backend %>
+
+<div class="text-12 text-secondary mt-5">
+  <div class="h-section-label">System</div>
+  <div>Last checked <%= friendly_time(@backend.last_checked_at).presence || 'never' %>
+    <% if @backend.last_check_message %> · <%= @backend.last_check_message %><% end %></div>
+  <div>Added <%= friendly_time(@backend.created_at) %> · updated <%= friendly_time(@backend.updated_at) %></div>
+</div>

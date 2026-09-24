@@ -1,0 +1,35 @@
+<%= tag.article id: dom_id(generation), class: ['result-card', "result-#{generation.status}"] do %>
+  <% output = generation.outputs.first if generation.succeeded? %>
+  <div class="result-media">
+    <% if output %>
+      <%= output_preview(output) %>
+      <% if generation.outputs.size > 1 %>
+        <span class="result-count text-11">+<%= generation.outputs.size - 1 %></span>
+      <% end %>
+    <% elsif generation.in_progress? %>
+      <div class="result-placeholder">
+        <div class="spinner-border spinner-border-sm text-secondary" role="status">
+          <span class="visually-hidden">Generating</span>
+        </div>
+      </div>
+    <% else %>
+      <div class="result-placeholder text-secondary">
+        <i class="bi bi-exclamation-octagon fs-4" aria-hidden="true"></i>
+      </div>
+    <% end %>
+  </div>
+  <div class="result-meta">
+    <%= link_to generation.title, generation_path(generation), class: 'stretched-link text-13 text-body text-truncate d-block',
+                                                                title: generation.prompt %>
+    <div class="d-flex align-items-center justify-content-between text-12 text-secondary mt-1">
+      <span class="d-flex align-items-center gap-2 min-w-0">
+        <%= generation_status(generation) %>
+        <span class="text-truncate"><%= generation.style_name %></span>
+        <% if generation.shared? %>
+          <i class="bi bi-globe" title="Shared" aria-hidden="true"></i>
+        <% end %>
+      </span>
+      <%= friendly_time(generation.created_at) %>
+    </div>
+  </div>
+<% end %>

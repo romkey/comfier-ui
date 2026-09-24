@@ -1,0 +1,150 @@
+<% content_for :title, @generation.title %>
+<% turbo_refreshes_with method: :morph, scroll: :preserve %>
+<%= turbo_stream_from @generation %>
+
+<div class="text-12 text-secondary mb-2">
+  <%= link_to 'Results', generations_path, class: 'link-secondary' %> /
+  <%= link_to @generation.kind_info.label, generations_path(kind: @generation.kind), class: 'link-secondary' %>
+</div>
+
+<div class="d-flex align-items-start justify-content-between gap-3 mb-3">
+  <div class="min-w-0">
+    <h1 class="h-page-title mb-1 text-truncate"><%= @generation.title %></h1>
+    <div class="d-flex align-items-center gap-2 text-13 text-secondary flex-wrap">
+      <%= generation_status(@generation) %>
+      <span><%= @generation.style_name %></span>
+      <% if @generation.shared? %>
+        <span class="badge text-bg-success-subtle">Shared</span>
+      <% end %>
+      <span>·</span>
+      <%= friendly_time(@generation.created_at) %>
+    </div>
+  </div>
+  <div class="d-flex gap-2 flex-shrink-0 flex-wrap justify-content-end">
+    <% if @generation.finished? && @generation.workflow %>
+      <%= button_to retry_generation_path(@generation), class: 'btn btn-primary btn-sm' do %>
+        <i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>Run again
+      <% end %>
+      <%= link_to "#{@generation.kind_info.path}?from=#{@generation.id}", class: 'btn btn-outline-secondary btn-sm' do %>
+        <i class="bi bi-pencil me-1" aria-hidden="true"></i>Tweak
+      <% end %>
+    <% end %>
+    <% if @generation.succeeded? && @generation.outputs.any? && @generation.kind == 'image' %>
+      <%= link_to image_studio_path(from: @generation.id), class: 'btn btn-outline-secondary btn-sm' do %>
+        <i class="bi bi-image me-1" aria-hidden="true"></i>Use as reference
+      <% end %>
+    <% end %>
+    <div class="dropdown">
+      <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false"
+              aria-label="More actions">
+        <i class="bi bi-three-dots" aria-hidden="true"></i>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end text-13">
+        <% if @generation.succeeded? %>
+          <% if @generation.shared? %>
+            <li>
+              <%= button_to 'Stop sharing', unshare_generation_path(@generation), method: :delete,
+                                                                                  class: 'dropdown-item' %>
+            </li>
+          <% else %>
+            <li class="px-3 py-2">
+              <%= form_with url: share_generation_path(@generation), method: :post, class: 'share-form' do %>
+                <div class="form-check mb-1">
+                  <%= check_box_tag :share_prompt, '1', true, class: 'form-check-input', id: 'share_prompt' %>
+                  <%= label_tag :share_prompt, 'Include prompt', class: 'form-check-label text-12' %>
+                </div>
+                <div class="form-check mb-2">
+                  <%= check_box_tag :share_input, '1', false, class: 'form-check-input', id: 'share_input' %>
+                  <%= label_tag :share_input, 'Include reference image', class: 'form-check-label text-12' %>
+                </div>
+                <%= submit_tag 'Share with everyone', class: 'btn btn-outline-secondary btn-sm w-100' %>
+              <% end %>
+            </li>
+          <% end %>
+        <% end %>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+          <%= button_to 'Delete', generation_path(@generation), method: :delete, class: 'dropdown-item text-danger',
+                                                                form: { data: { turbo_confirm: 'Delete this result?' } } %>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <% if @generation.failed? %>
+      <div class="status-panel status-attention mb-3">
+        <div class="fw-medium mb-1">This didn't work</div>
+        <div class="text-13 text-secondary text-break"><%= @generation.error_message %></div>
+      </div>
+    <% elsif @generation.in_progress? %>
+      <div class="status-panel status-clear text-center py-5 mb-3">
+        <div class="spinner-border text-secondary mb-2" role="status"><span class="visually-hidden">Working</span></div>
+        <div class="text-13 text-secondary">
+          <%= @generation.queued? ? 'Waiting for a ComfyUI server…' : 'ComfyUI is working on it. This page updates by itself.' %>
+        </div>
+      </div>
+    <% end %>
+
+    <div class="d-flex flex-column gap-3">
+      <% @generation.outputs.each do |output| %>
+        <figure class="output-full mb-0">
+          <%= output_preview(output, controls: true) %>
+          <figcaption class="d-flex justify-content-between align-items-center text-12 text-secondary mt-1">
+            <span class="text-truncate"><%= output.filename %></span>
+            <%= link_to rails_blob_path(output, disposition: 'attachment'), class: 'btn btn-outline-secondary btn-sm' do %>
+              <i class="bi bi-download me-1" aria-hidden="true"></i>Download
+            <% end %>
+          </figcaption>
+        </figure>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="sidebar-card">
+      <% if @generation.prompt.present? %>
+        <div class="h-section-label">Prompt</div>
+        <p class="text-13 mb-3 text-break"><%= @generation.prompt %></p>
+      <% end %>
+      <% if @generation.lyrics.present? %>
+        <div class="h-section-label">Lyrics</div>
+        <p class="text-13 mb-3 text-break"><%= @generation.lyrics %></p>
+      <% end %>
+      <% if @generation.negative_prompt.present? %>
+        <div class="h-section-label">Avoid</div>
+        <p class="text-13 mb-3 text-break"><%= @generation.negative_prompt %></p>
+      <% end %>
+      <% if @generation.input_image.attached? %>
+        <div class="h-section-label"><%= reference_image_label(@generation.kind_info) %></div>
+        <%= image_tag rails_blob_path(@generation.input_image, disposition: 'inline'), class: 'output-media mb-3',
+                                                                                       alt: 'Reference image' %>
+      <% end %>
+
+      <div class="h-section-label">Settings</div>
+      <dl class="detail-list text-13 mb-0">
+        <dt>Style</dt>
+        <dd><%= @generation.style_name %></dd>
+        <% generation_parameters(@generation).each do |label, value| %>
+          <dt><%= label %></dt>
+          <dd class="num"><%= value %></dd>
+        <% end %>
+      </dl>
+    </div>
+
+    <div class="text-12 text-secondary mt-3">
+      <div class="h-section-label">System</div>
+      <div>Created <%= friendly_time(@generation.created_at) %></div>
+      <% if @generation.completed_at %>
+        <div>Finished <%= friendly_time(@generation.completed_at) %>
+          (<%= distance_of_time_in_words(@generation.submitted_at || @generation.created_at, @generation.completed_at) %>)</div>
+      <% end %>
+      <% if current_user.admin? %>
+        <div>Backend: <%= @generation.backend&.name || '—' %></div>
+        <div>ComfyUI prompt: <code class="text-12"><%= @generation.comfy_prompt_id || '—' %></code></div>
+      <% end %>
+    </div>
+  </div>
+</div>

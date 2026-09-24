@@ -1,0 +1,70 @@
+<% content_for :title, 'Backends' %>
+
+<% enabled = @backends.count(&:enabled?) %>
+<% unreachable = @backends.count { it.enabled? && it.unhealthy? } %>
+
+<div class="d-flex align-items-end justify-content-between mb-3">
+  <div>
+    <h1 class="h-page-title mb-0">Backends</h1>
+    <div class="text-13 text-secondary mt-1">
+      <span class="text-body num"><%= @backends.size %></span> total ·
+      <span class="text-success num"><%= enabled %></span> enabled
+      <% if unreachable.positive? %> · <span class="text-danger num"><%= unreachable %></span> unreachable<% end %>
+    </div>
+  </div>
+  <%= link_to '+ Add backend', new_admin_backend_path, class: 'btn btn-primary btn-sm' %>
+</div>
+
+<% if @backends.empty? %>
+  <div class="status-panel status-attention">
+    <p class="fw-medium mb-1">No ComfyUI backends yet</p>
+    <p class="text-13 text-secondary mb-0">Nothing can be generated until you add at least one ComfyUI server.</p>
+  </div>
+<% else %>
+  <table class="table table-compact table-hover align-middle">
+    <thead>
+      <tr>
+        <th class="w-status"></th>
+        <th>Name</th>
+        <th>Status</th>
+        <th>Last checked</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @backends.each do |backend| %>
+        <tr class="row-link" data-controller="row-link" data-row-link-href-value="<%= edit_admin_backend_path(backend) %>">
+          <td><%= backend_status_dot(backend) %></td>
+          <td>
+            <%= link_to backend.name, edit_admin_backend_path(backend), class: 'text-body fw-medium' %>
+            <div class="text-12 text-secondary"><%= backend.base_url %></div>
+          </td>
+          <td class="text-12">
+            <%= backend_status_label(backend) %>
+            <% if (method = download_method(backend)) %>
+              <div class="text-secondary">Model downloads: <%= method %></div>
+            <% end %>
+          </td>
+          <td class="text-12 text-secondary"><%= friendly_time(backend.last_checked_at) || "—" %></td>
+          <td class="text-end text-nowrap">
+            <%= button_to 'Test', check_admin_backend_path(backend), class: 'btn btn-outline-secondary btn-sm',
+                                                                      form_class: 'd-inline' %>
+            <div class="dropdown d-inline">
+              <button class="btn btn-sm btn-link text-secondary" type="button" data-bs-toggle="dropdown"
+                      aria-expanded="false" aria-label="More actions for <%= backend.name %>">
+                <i class="bi bi-three-dots" aria-hidden="true"></i>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end text-13">
+                <li><%= link_to 'Edit', edit_admin_backend_path(backend), class: 'dropdown-item' %></li>
+                <li>
+                  <%= button_to 'Delete', admin_backend_path(backend), method: :delete, class: 'dropdown-item text-danger',
+                                          form: { data: { turbo_confirm: "Remove #{backend.name}?" } } %>
+                </li>
+              </ul>
+            </div>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

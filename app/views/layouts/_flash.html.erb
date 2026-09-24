@@ -1,0 +1,6 @@
+<% flash.each do |type, message| %>
+  <div class="alert <%= bootstrap_class_for(type) %> alert-dismissible fade show py-2 text-13" role="alert">
+    <%= message %>
+    <button type="button" class="btn-close btn-close-sm py-2" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+<% end %>

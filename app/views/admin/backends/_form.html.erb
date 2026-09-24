@@ -1,0 +1,40 @@
+<%= form_with model: [:admin, backend], class: 'settings-form' do |f| %>
+  <% if backend.errors.any? %>
+    <div class="alert alert-danger py-2 text-13"><%= backend.errors.full_messages.to_sentence %></div>
+  <% end %>
+
+  <div class="mb-3">
+    <%= f.label :name, class: 'form-label' %>
+    <%= f.text_field :name, class: 'form-control form-control-sm', required: true, placeholder: 'GPU box' %>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :base_url, 'ComfyUI URL', class: 'form-label' %>
+    <%= f.url_field :base_url, class: 'form-control form-control-sm', required: true,
+                               placeholder: 'http://comfyui.local:8188' %>
+    <div class="form-text text-12">The address you'd open ComfyUI at, reachable from this server.</div>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :auth_token, 'Auth token', class: 'form-label' %>
+    <%= f.password_field :auth_token, value: nil, class: 'form-control form-control-sm', autocomplete: 'off',
+                                      placeholder: backend.auth_token.present? ? 'Saved — leave blank to keep' : 'Optional' %>
+    <div class="form-text text-12">Sent as <code>Authorization: Bearer …</code> if ComfyUI sits behind an authenticating proxy.</div>
+    <% if backend.auth_token.present? %>
+      <div class="form-check mt-1">
+        <%= check_box_tag 'backend[clear_auth_token]', '1', false, class: 'form-check-input', id: 'backend_clear_auth_token' %>
+        <%= label_tag 'backend_clear_auth_token', 'Remove saved token', class: 'form-check-label text-13' %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="form-check form-switch mb-3">
+    <%= f.check_box :enabled, class: 'form-check-input', role: 'switch' %>
+    <%= f.label :enabled, 'Send new work to this backend', class: 'form-check-label' %>
+  </div>
+
+  <div class="d-flex gap-2">
+    <%= f.submit backend.new_record? ? 'Add backend' : 'Save', class: 'btn btn-primary btn-sm' %>
+    <%= link_to 'Cancel', admin_backends_path, class: 'btn btn-outline-secondary btn-sm' %>
+  </div>
+<% end %>

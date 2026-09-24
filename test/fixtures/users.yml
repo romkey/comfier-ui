@@ -1,0 +1,32 @@
+alice:
+  provider: authentik
+  uid: alice-uid
+  email: alice@example.com
+  name: Alice Artist
+  username: alice
+  admin: false
+  default_aspect_ratio: '1:1'
+  privacy_accepted_version: 1
+  privacy_accepted_at: <%= 1.day.ago.to_fs(:db) %>
+
+bob:
+  provider: authentik
+  uid: bob-uid
+  email: bob@example.com
+  name: Bob Builder
+  username: bob
+  admin: false
+  default_aspect_ratio: '16:9'
+  privacy_accepted_version: 1
+  privacy_accepted_at: <%= 1.day.ago.to_fs(:db) %>
+
+admin:
+  provider: authentik
+  uid: admin-uid
+  email: admin@example.com
+  name: Ada Admin
+  username: ada
+  admin: true
+  default_aspect_ratio: '1:1'
+  privacy_accepted_version: 1
+  privacy_accepted_at: <%= 1.day.ago.to_fs(:db) %>

@@ -1,0 +1,61 @@
+plugins:
+  - rubocop-rails
+  - rubocop-minitest
+  - rubocop-performance
+
+AllCops:
+  TargetRubyVersion: 4.0
+  NewCops: enable
+  Exclude:
+    - bin/**/*
+    - db/schema.rb
+    - node_modules/**/*
+    - tmp/**/*
+    - vendor/**/*
+
+Layout/LineLength:
+  Max: 120
+
+Style/FrozenStringLiteralComment:
+  Enabled: false
+
+Style/StringLiterals:
+  EnforcedStyle: single_quotes
+
+Style/Documentation:
+  Enabled: false
+
+Metrics/BlockLength:
+  Exclude:
+    - config/**/*
+    - test/**/*
+
+Metrics/MethodLength:
+  Max: 20
+
+Metrics/AbcSize:
+  Max: 25
+  Exclude:
+    - test/**/*
+
+Metrics/ClassLength:
+  Exclude:
+    - test/**/*
+
+Metrics:
+  Exclude:
+    - db/migrate/**/*
+
+Rails/EnvironmentVariableAccess:
+  Enabled: false
+
+# English-only UI; flash messages live next to the actions that set them.
+Rails/I18nLocaleTexts:
+  Enabled: false
+
+# Optional filter params (?kind=, ?status=) must not raise when absent.
+Rails/StrongParametersExpect:
+  Enabled: false
+
+Minitest/MultipleAssertions:
+  Max: 8

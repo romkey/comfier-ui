@@ -1,0 +1,13 @@
+# Generation status updates are broadcast from Sidekiq, so dev needs Redis too.
+development:
+  adapter: redis
+  url: <%= ENV.fetch("REDIS_URL") { "redis://localhost:6379/0" } %>
+  channel_prefix: comfier_ui_development
+
+test:
+  adapter: test
+
+production:
+  adapter: redis
+  url: <%= ENV.fetch("REDIS_URL") { "redis://localhost:6379/0" } %>
+  channel_prefix: comfier_ui_production

@@ -1,0 +1,98 @@
+<% models = workflow.required_models %>
+
+<section id="models" class="mt-5">
+  <div class="d-flex align-items-end justify-content-between mb-2">
+    <div>
+      <div class="h-section-label mb-0">Models on your backends</div>
+      <% missing_somewhere = backends.count { it.missing_models(workflow).any? } %>
+      <div class="text-12 text-secondary">
+        <%= pluralize(models.size, 'model') %>
+        <% if missing_somewhere.positive? %>
+          · <span class="text-warning"><%= pluralize(missing_somewhere, 'backend') %> missing some</span>
+          — jobs only go to backends that have them all
+        <% end %>
+      </div>
+    </div>
+    <% if backends.any? && models.any? %>
+      <%= button_to 'Re-check', check_models_admin_workflow_path(workflow), class: 'btn btn-outline-secondary btn-sm',
+                                                                            form: { data: { turbo_frame: '_top' } } %>
+    <% end %>
+  </div>
+
+  <% if models.empty? %>
+    <p class="text-13 text-secondary">This workflow doesn't load any model files that Comfier recognizes.</p>
+  <% elsif backends.empty? %>
+    <p class="text-13 text-secondary">Add a backend to see which of these models it has.</p>
+  <% else %>
+    <div class="table-responsive">
+      <table class="table table-compact align-middle mb-0">
+        <thead>
+          <tr>
+            <th>File</th>
+            <% backends.each do |backend| %>
+              <th class="text-center"><%= backend.name %></th>
+            <% end %>
+          </tr>
+        </thead>
+        <tbody>
+          <% models.each do |model| %>
+            <tr>
+              <td>
+                <span class="text-secondary"><%= model.directory %>/</span><%= model.name %>
+                <% unless model.url %><span class="text-12 text-secondary ms-1">· no download link</span><% end %>
+              </td>
+              <% backends.each do |backend| %>
+                <td class="text-center">
+                  <%= model_status_cell(backend, model, downloads[[backend.id, model.directory, model.name]]) %>
+                </td>
+              <% end %>
+            </tr>
+          <% end %>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td class="text-12 text-secondary">Checked</td>
+            <% backends.each do |backend| %>
+              <td class="text-center text-12">
+                <% missing = backend.missing_models(workflow) %>
+                <% installable = backend.downloadable_models(workflow) %>
+                <% if installable.any? %>
+                  <%= button_to "Install #{installable.size} missing", install_models_admin_workflow_path(workflow),
+                                params: { backend_id: backend.id }, class: 'btn btn-outline-secondary btn-sm',
+                                title: "Downloads via #{download_method(backend)}",
+                                form: { data: { turbo_frame: '_top' } } %>
+                <% elsif missing.any? %>
+                  <span class="text-secondary">Can't download here</span>
+                <% else %>
+                  <span class="text-secondary"><%= friendly_time(backend.inventory_checked_at) || 'never' %></span>
+                <% end %>
+              </td>
+            <% end %>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <% problems = model_problems(workflow, backends, downloads) %>
+    <% if problems.any? %>
+      <% problem_files = problems.sum { it.paths.size } %>
+      <div class="status-panel status-attention mt-3 text-13">
+        <div class="fw-medium mb-2">
+          <%= pluralize(problem_files, 'file') %> <%= problem_files == 1 ? 'needs' : 'need' %> attention
+        </div>
+        <ul class="list-unstyled mb-0">
+          <% problems.each do |problem| %>
+            <li class="mb-2">
+              <div>
+                <span class="fw-medium"><%= problem.backend.name %></span>
+                <span class="text-secondary">· <%= problem.title %> ·</span>
+                <span class="text-12 text-secondary"><%= problem.paths.to_sentence %></span>
+              </div>
+              <div><%= problem.message %></div>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+  <% end %>
+</section>

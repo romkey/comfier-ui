@@ -1,0 +1,21 @@
+# syntax=docker/dockerfile:1
+# Thin image for the dev, test and lint stacks. Application code is bind-mounted at /rails
+# and gems are installed into a named volume, so this image never needs rebuilding for
+# code or Gemfile changes.
+
+ARG RUBY_VERSION=4.0.7
+FROM docker.io/library/ruby:$RUBY_VERSION-slim
+
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y \
+      build-essential curl git libjemalloc2 libpq-dev libyaml-dev pkg-config postgresql-client && \
+    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+ENV BUNDLE_PATH="/usr/local/bundle" \
+    BUNDLE_JOBS="4"
+
+WORKDIR /rails
+
+COPY bin/docker-dev-entrypoint /usr/local/bin/docker-dev-entrypoint
+ENTRYPOINT ["docker-dev-entrypoint"]
+CMD ["bin/rails", "server", "-b", "0.0.0.0"]

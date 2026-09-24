@@ -1,0 +1,90 @@
+/* Shared component classes referenced by the UI rules (.cursor/rules/ui.mdc). */
+
+:root {
+  --app-border: var(--bs-border-color-translucent);
+  --app-surface: var(--bs-tertiary-bg);
+  --app-hover: rgba(255, 255, 255, 0.04);
+}
+
+/* Typography */
+.h-page-title { font-size: 1.25rem; font-weight: 600; letter-spacing: -0.01em; }
+.h-section-label {
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--bs-secondary-color); margin-bottom: 0.5rem;
+}
+.text-11 { font-size: 11px; }
+.text-12 { font-size: 12px; }
+.text-13 { font-size: 13px; }
+.fw-medium { font-weight: 500; }
+.num { font-variant-numeric: tabular-nums; }
+td.num, th.num { text-align: right; }
+.min-w-0 { min-width: 0; }
+
+/* Status dots */
+.status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--bs-secondary-color); flex-shrink: 0; }
+.status-dot.status-success { background: var(--bs-success); }
+.status-dot.status-danger { background: var(--bs-danger); }
+.status-dot.status-warning { background: var(--bs-warning); }
+.status-dot.status-muted { background: var(--bs-secondary-bg); outline: 1px solid var(--bs-border-color); }
+
+/* Filter chips */
+.filter-chip {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  padding: 0.2rem 0.6rem; font-size: 12px; line-height: 1.5;
+  border: 1px solid var(--app-border); border-radius: 999px;
+  color: var(--bs-body-color); text-decoration: none; background: transparent;
+}
+.filter-chip:hover { background: var(--app-hover); color: var(--bs-body-color); }
+.filter-chip.active { border-color: var(--bs-primary); background: var(--bs-primary-bg-subtle); color: var(--bs-primary-text-emphasis); }
+.filter-chip.warning { border-color: var(--bs-warning-border-subtle); color: var(--bs-warning-text-emphasis); }
+.filter-chip.danger { border-color: var(--bs-danger-border-subtle); color: var(--bs-danger-text-emphasis); }
+.filter-chip.muted { color: var(--bs-secondary-color); }
+
+/* KPI tiles */
+.kpi-tile { padding: 0.6rem 0.8rem; border: 1px solid var(--app-border); border-radius: var(--bs-border-radius); }
+.kpi-tile.clickable { cursor: pointer; }
+.kpi-tile.clickable:hover { background: var(--app-hover); }
+.kpi-tile.active { border-color: var(--bs-primary); }
+.kpi-tile.warning { border-color: var(--bs-warning-border-subtle); }
+
+/* Tables */
+.table-compact { font-size: 13px; --bs-table-bg: transparent; }
+.table-compact > :not(caption) > * > * { padding: 0.4rem 0.5rem; }
+.table-compact thead th {
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--bs-secondary-color); border-bottom-color: var(--app-border);
+}
+.table-compact .w-status { width: 1.25rem; }
+tr.row-link { cursor: pointer; }
+
+/* Settings */
+.settings-nav { display: flex; flex-direction: column; gap: 1px; }
+.settings-nav .h-section-label { margin: 1rem 0 0.25rem 0.5rem; }
+.settings-nav .h-section-label:first-child { margin-top: 0; }
+.settings-nav-item {
+  display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.5rem; font-size: 13px;
+  border-radius: var(--bs-border-radius-sm); color: var(--bs-body-color); text-decoration: none;
+}
+.settings-nav-item:hover { background: var(--app-hover); color: var(--bs-body-color); }
+.settings-nav-item.active { background: var(--bs-primary-bg-subtle); color: var(--bs-primary-text-emphasis); }
+.settings-nav-item.attention { color: var(--bs-warning-text-emphasis); }
+.settings-form { max-width: 36rem; }
+.settings-form .form-label, .settings-form-wide .form-label { font-size: 13px; font-weight: 500; }
+
+/* Panels and cards */
+.status-panel { padding: 0.9rem 1rem; border: 1px solid var(--app-border); border-radius: var(--bs-border-radius); }
+.status-panel.status-clear { background: var(--app-surface); }
+.status-panel.status-attention { border-color: var(--bs-warning-border-subtle); background: var(--bs-warning-bg-subtle); }
+.sidebar-card { padding: 1rem; border: 1px solid var(--app-border); border-radius: var(--bs-border-radius); background: var(--app-surface); }
+.detail-list { display: grid; grid-template-columns: max-content 1fr; gap: 0.25rem 1rem; }
+.detail-list dt { font-weight: 400; color: var(--bs-secondary-color); }
+.detail-list dd { margin: 0; overflow-wrap: anywhere; }
+
+/* Status pills */
+.status-pill { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.1rem 0.5rem; font-size: 12px; border-radius: 999px; }
+.status-pill-active { background: var(--bs-success-bg-subtle); color: var(--bs-success-text-emphasis); }
+.status-pill-attention { background: var(--bs-warning-bg-subtle); color: var(--bs-warning-text-emphasis); }
+.status-pill-overdue { background: var(--bs-danger-bg-subtle); color: var(--bs-danger-text-emphasis); }
+
+/* Money */
+.money .currency, .money .cents { color: var(--bs-secondary-color); }

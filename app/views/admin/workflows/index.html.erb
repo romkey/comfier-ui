@@ -1,0 +1,88 @@
+<% content_for :title, 'Workflows' %>
+
+<% total = @workflows.values.sum(&:size) %>
+<% missing = GenerationKind.all.reject { @workflows.key?(it.key) } %>
+
+<div class="d-flex align-items-end justify-content-between mb-3">
+  <div>
+    <h1 class="h-page-title mb-0">Workflows</h1>
+    <div class="text-13 text-secondary mt-1">
+      <span class="text-body num"><%= total %></span> total
+      <% if missing.any? %>
+        · <span class="text-warning"><%= missing.map(&:label).to_sentence %></span> not set up
+      <% end %>
+    </div>
+  </div>
+  <%= link_to '+ Add workflow', new_admin_workflow_path, class: 'btn btn-primary btn-sm' %>
+</div>
+
+<p class="text-13 text-secondary">
+  Each workflow is a ComfyUI graph exported with <strong>Export (API)</strong>, with
+  <code>{{placeholders}}</code> where user input goes. Users see them as "styles" on each page.
+</p>
+
+<% GenerationKind.all.each do |kind| %>
+  <div class="h-section-label mt-4"><i class="bi <%= kind.icon %> me-1" aria-hidden="true"></i><%= kind.label %></div>
+  <% workflows = @workflows.fetch(kind.key, []) %>
+  <% if workflows.empty? %>
+    <div class="text-13 text-secondary">
+      No <%= kind.noun %> workflows, so the <%= kind.label %> page is empty ·
+      <%= link_to 'Add one', new_admin_workflow_path(kind: kind.key) %>
+    </div>
+  <% else %>
+    <table class="table table-compact table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th class="w-status"></th>
+          <th>Name</th>
+          <th>Fields</th>
+          <th>Models</th>
+          <th class="num">Used</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% workflows.each do |workflow| %>
+          <tr class="row-link" data-controller="row-link" data-row-link-href-value="<%= edit_admin_workflow_path(workflow) %>">
+            <td>
+              <span class="status-dot status-<%= workflow.enabled? ? 'success' : 'muted' %>"
+                    title="<%= workflow.enabled? ? 'Enabled' : 'Disabled' %>"></span>
+            </td>
+            <td>
+              <%= link_to workflow.name, edit_admin_workflow_path(workflow), class: 'text-body fw-medium' %>
+              <% unless workflow.enabled? %><span class="badge text-bg-secondary-subtle ms-1">Disabled</span><% end %>
+              <% if workflow.description.present? %>
+                <div class="text-12 text-secondary text-truncate"><%= workflow.description %></div>
+              <% end %>
+            </td>
+            <td class="text-12 text-secondary"><%= workflow.placeholders.sort.join(', ').presence || 'none' %></td>
+            <% lacking = @backends.select { it.missing_models(workflow).any? } %>
+            <td class="text-12">
+              <% if lacking.any? %>
+                <span class="text-warning" title="Missing on <%= lacking.map(&:name).to_sentence %>">
+                  Missing on <%= lacking.one? ? lacking.first.name : "#{lacking.size} backends" %>
+                </span>
+              <% else %>
+                <span class="text-secondary num"><%= workflow.required_models.size.nonzero? || '—' %></span>
+              <% end %>
+            </td>
+            <% used = @usage_counts.fetch(workflow.id, 0) %>
+            <td class="num <%= 'text-secondary' if used.zero? %>"><%= used %></td>
+            <td class="text-end">
+              <div class="dropdown d-inline">
+                <button class="btn btn-sm btn-link text-secondary" type="button" data-bs-toggle="dropdown"
+                        aria-expanded="false" aria-label="More actions for <%= workflow.name %>">
+                  <i class="bi bi-three-dots" aria-hidden="true"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end text-13">
+                  <li><%= link_to 'Edit', edit_admin_workflow_path(workflow), class: 'dropdown-item' %></li>
+                  <li><%= delete_workflow_button(workflow, used: @usage_counts.fetch(workflow.id, 0)) %></li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+<% end %>

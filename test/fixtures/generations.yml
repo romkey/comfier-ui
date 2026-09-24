@@ -1,0 +1,51 @@
+alice_done:
+  user: alice
+  workflow: sd_image
+  workflow_name: SD 1.5
+  backend: gpu
+  kind: image
+  status: succeeded
+  prompt: A lighthouse at dusk
+  run_seconds: 28.5
+  negative_prompt: blurry
+  parameters: { seed: 42, aspect_ratio: '1:1', width: 512, height: 512 }
+  comfy_prompt_id: done-prompt
+  submitted_at: <%= 2.hours.ago.to_fs(:db) %>
+  completed_at: <%= 2.hours.ago.to_fs(:db) %>
+  created_at: <%= 2.hours.ago.to_fs(:db) %>
+
+alice_running:
+  user: alice
+  workflow: sd_image
+  workflow_name: SD 1.5
+  backend: gpu
+  kind: image
+  status: running
+  prompt: A castle in the clouds
+  parameters: { seed: 7, aspect_ratio: '1:1', width: 512, height: 512 }
+  comfy_prompt_id: running-prompt
+  submitted_at: <%= 1.minute.ago.to_fs(:db) %>
+  created_at: <%= 1.minute.ago.to_fs(:db) %>
+
+alice_failed:
+  user: alice
+  workflow: wan_video
+  workflow_name: Wan
+  backend: gpu
+  kind: video
+  status: failed
+  prompt: A dancing robot
+  parameters: { seed: 9, duration: 5, frames: 81 }
+  error_message: 'CheckpointLoaderSimple: Value not in list'
+  created_at: <%= 3.days.ago.to_fs(:db) %>
+
+bob_done:
+  user: bob
+  workflow: sd_image
+  workflow_name: SD 1.5
+  backend: gpu
+  kind: image
+  status: succeeded
+  prompt: Bob's secret project
+  parameters: { seed: 1 }
+  created_at: <%= 1.day.ago.to_fs(:db) %>

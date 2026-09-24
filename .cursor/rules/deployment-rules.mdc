@@ -1,0 +1,133 @@
+---
+alwaysApply: true
+---
+# Deployment Rules
+
+These rules govern how code is reviewed, merged, and deployed in this repository.
+They apply to all contributors, including AI coding assistants.
+
+`docs/development-workflow.md` explains the same process narratively, including how to run a
+local dev instance.
+
+---
+
+## Branch Model
+
+| Branch    | Purpose                          | Protected |
+|-----------|----------------------------------|-----------|
+| `main`    | Production — deployed automatically on merge | Yes — no direct push |
+| `staging` | Integration target — deployed automatically on merge | Yes — PRs required |
+| `feature/*` / `fix/*` | Developer working branches — deleted after merge | No |
+
+---
+
+## The Rules
+
+### 1. No direct pushes to `main` or `staging`
+All changes must arrive via pull request. Branch protection enforces this.
+
+### 2. All work branches target `staging`
+Open PRs from your feature or fix branch into `staging`, not `main`.
+
+### 3. PRs require at least one approval
+A reviewer other than the author must approve before merging.
+For small teams: if no review is possible within 48 hours and the change is low-risk,
+the author may self-merge with a note explaining why.
+
+### 4. Staging is always deployable
+Do not merge broken or half-finished work into `staging`.
+Use a Draft PR to share work-in-progress without triggering a review or merge.
+
+### 5. Production is promoted from staging, not deployed directly
+To get code onto `main`, open a PR from `staging` → `main` and merge it. That merge does
+**not** release anything — it only makes the code eligible. Cut the release separately by
+running `release.yml` (see Versioning below).
+
+### 6. Hotfixes are the only exception
+If production is broken and urgent:
+- Branch from `main` (e.g. `hotfix/brief-description`)
+- PR directly into `main` — bypass staging if necessary
+- After merging, open a follow-up PR from `main` → `staging` to re-sync
+
+### 7. Never commit secrets
+No passwords, API keys, tokens, or credentials belong in the repository.
+Use GitHub Actions Secrets for CI/CD credentials.
+Use server-side environment variables for runtime secrets.
+
+### 8. Delete branches after merging
+Keep the branch list clean. GitHub can be configured to do this automatically.
+
+---
+
+## What Publishes an Image
+
+| Event | Docker image tags | Deploys to |
+|---|---|---|
+| PR merged into `staging` | `:staging` | Staging server |
+| PR merged into `main` | *(nothing)* | — |
+| `release.yml` run manually | `:latest`, `:X.Y.Z`, `:MAJOR` + git tag `vX.Y.Z` | Production server |
+
+---
+
+## PR Checklist
+
+Before opening a PR, confirm:
+- [ ] The branch is up to date with `staging` (or `main` for hotfixes)
+- [ ] The change does what the PR title says
+- [ ] No secrets are included
+- [ ] The app runs locally (or in a dev environment) without errors
+- [ ] The PR description explains *what* changed and *why*
+
+---
+
+## Merging Strategy
+
+Use **Squash and Merge** for feature/fix PRs into `staging`.
+Use **Merge Commit** for the `staging` → `main` promotion PR (preserves history).
+
+A ruleset enforces the second one: `main` offers no squash or rebase button. Squashing a
+promotion copies staging's changes rather than absorbing its commits, so the branches stop
+sharing an ancestor and every later promotion conflicts on `db/schema.rb`.
+
+---
+
+## Notes for AI Assistants
+
+- Never suggest pushing directly to `main` or `staging`
+- Always recommend opening a PR with a clear description
+- Treat secrets in code as a hard blocker — flag immediately, do not proceed
+- When helping with CI/CD changes, keep the separation: `staging.yml` publishes staging
+  images on merge, `release.yml` is the only thing that versions and publishes production
+- If asked to "deploy" something, clarify whether staging or production is intended
+- Never reintroduce a `VERSION` file or hand-write a version number into a commit
+
+## Versioning
+
+This project uses semantic versioning (MAJOR.MINOR.PATCH).
+
+**The newest `v*` git tag is the canonical version. There is no `VERSION` file** — do not
+reintroduce one, and never hand-edit a version number in a PR.
+
+Releasing is a manual run of the `Release` workflow, not a branch and not a side effect of
+merging. Once the code you want is on `main`, either run it from the repository's Actions tab
+(**Actions** → **Release** → **Run workflow**) or from the terminal:
+
+```bash
+gh workflow run release.yml -f bump=minor      # or patch / major
+gh workflow run release.yml -f bump=minor -f dry_run=true   # preview only
+```
+
+`release.yml` reads the newest tag, computes the next version, builds the image with that
+version baked in, publishes `:latest` / `:X.Y.Z` / `:MAJOR`, then tags the commit and opens
+a GitHub Release. It refuses commits that are not on `main` and refuses to reuse a tag.
+
+The version reaches the app as `APP_VERSION`, baked at build time:
+
+| Build | `APP_VERSION` |
+|---|---|
+| Production release | `0.51.0+abc1234` |
+| Staging | `0.50.1+7.abc1234.staging` |
+| Local checkout | `git describe` output, else `dev` |
+
+Read it through `AppVersion` (`config/initializers/version.rb`): `.semver` for the number
+humans compare, `.commit` for the build metadata, `.current` for the whole string.

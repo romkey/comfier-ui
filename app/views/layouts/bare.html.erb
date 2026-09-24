@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+  <head>
+    <%= render 'layouts/head' %>
+  </head>
+
+  <body class="bare-layout">
+    <main class="container py-5">
+      <%= render 'layouts/flash' %>
+      <%= yield %>
+    </main>
+  </body>
+</html>

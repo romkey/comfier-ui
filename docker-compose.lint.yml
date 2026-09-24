@@ -1,0 +1,25 @@
+name: comfier-ui-lint
+
+x-lint: &lint
+  build:
+    context: .
+    dockerfile: Dockerfile.dev
+  image: comfier-ui-dev:latest
+  volumes:
+    - .:/rails
+    - bundle:/usr/local/bundle
+  environment:
+    RUBOCOP_CACHE_ROOT: /rails/tmp/rubocop
+
+services:
+  rubocop:
+    <<: *lint
+    command: bin/rubocop
+
+  brakeman:
+    <<: *lint
+    command: bin/brakeman --no-pager
+
+volumes:
+  bundle:
+    name: comfier-ui-bundle

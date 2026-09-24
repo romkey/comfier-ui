@@ -1,0 +1,32 @@
+<% content_for :title, @workflow.name %>
+<%= turbo_stream_from :model_downloads %>
+
+<div class="text-12 text-secondary mb-2"><%= link_to 'Workflows', admin_workflows_path, class: 'link-secondary' %> /</div>
+<div class="d-flex align-items-start justify-content-between gap-3 mb-3">
+  <div class="min-w-0">
+    <h1 class="h-page-title mb-0"><%= @workflow.name %></h1>
+    <% unless @workflow.enabled? %>
+      <span class="badge text-bg-secondary-subtle mt-1">Disabled</span>
+    <% end %>
+  </div>
+  <div class="dropdown flex-shrink-0">
+    <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false"
+            aria-label="More actions">
+      <i class="bi bi-three-dots" aria-hidden="true"></i>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end text-13">
+      <li><%= delete_workflow_button(@workflow, used: @usage_count) %></li>
+    </ul>
+  </div>
+</div>
+<%= render 'form', workflow: @workflow %>
+
+<%= turbo_frame_tag 'workflow_models', src: models_admin_workflow_path(@workflow),
+                                       data: { controller: 'frame-refresh' } do %>
+  <div class="text-12 text-secondary mt-5">Checking models…</div>
+<% end %>
+
+<div class="text-12 text-secondary mt-5">
+  <div class="h-section-label">System</div>
+  <div>Added <%= friendly_time(@workflow.created_at) %> · updated <%= friendly_time(@workflow.updated_at) %></div>
+</div>

@@ -1,0 +1,17 @@
+<%= tag.article class: 'result-card' do %>
+  <% output = generation.outputs.first %>
+  <div class="result-media">
+    <% if output %>
+      <%= output_preview(output) %>
+    <% else %>
+      <div class="result-placeholder text-secondary"><i class="bi bi-image fs-4" aria-hidden="true"></i></div>
+    <% end %>
+  </div>
+  <div class="result-meta">
+    <%= link_to generation.title, shared_path(generation), class: 'stretched-link text-13 text-body text-truncate d-block' %>
+    <div class="d-flex align-items-center justify-content-between text-12 text-secondary mt-1">
+      <span><%= generation.user.display_name %> · <%= generation.style_name %></span>
+      <%= friendly_time(generation.shared_at) %>
+    </div>
+  </div>
+<% end %>

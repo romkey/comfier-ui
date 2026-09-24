@@ -1,0 +1,9 @@
+current:
+  body: |
+    Comfier stores what you submit and what it produces on this server.
+
+    • Your prompts, reference images and results are kept here.
+    • Admins can see all of it.
+    • Shared results are visible to every signed-in user.
+    • Other users can see your name in the queue.
+  version: 1

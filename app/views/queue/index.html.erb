@@ -1,0 +1,56 @@
+<% content_for :title, 'Queue' %>
+<%= turbo_stream_from :queue %>
+<% turbo_refreshes_with method: :morph, scroll: :preserve %>
+
+<div class="d-flex align-items-end justify-content-between mb-3">
+  <div>
+    <h1 class="h-page-title mb-0">Queue</h1>
+    <div class="text-13 text-secondary mt-1">
+      <span class="text-body num"><%= @estimate[:count] %></span> jobs
+      <% if @estimate[:count].positive? %>
+        · clears in <%= queue_wait_label(@estimate[:total_clear_seconds]) %>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<% if @estimate[:jobs].empty? %>
+  <p class="text-13 text-secondary">Nothing waiting — jobs show up here as soon as someone hits Generate.</p>
+<% else %>
+  <div class="table-responsive">
+    <table class="table table-compact align-middle">
+      <thead>
+        <tr>
+          <th class="num">#</th>
+          <th>Who</th>
+          <th>Style</th>
+          <th>Status</th>
+          <th class="text-end">Done in</th>
+          <% if @show_backend %><th>Backend</th><% end %>
+        </tr>
+      </thead>
+      <tbody>
+        <% @estimate[:jobs].each do |estimate| %>
+          <% job = estimate.generation %>
+          <tr>
+            <td class="num text-secondary"><%= estimate.position %></td>
+            <td class="text-13"><%= queue_job_owner(job) %></td>
+            <td class="text-13">
+              <i class="bi <%= job.kind_info.icon %> text-secondary me-1" aria-hidden="true"></i>
+              <%= job.style_name %>
+              <% if job.user_id == current_user.id || current_user.admin? %>
+                <div class="text-12 text-secondary text-truncate" style="max-width: 16rem"><%= job.prompt %></div>
+              <% end %>
+            </td>
+            <td><%= queue_job_status(job) %></td>
+            <td class="text-end text-13 num"><%= queue_wait_label(estimate.remaining_seconds) %></td>
+            <% if @show_backend %>
+              <td class="text-12 text-secondary"><%= estimate.backend&.name || '—' %></td>
+            <% end %>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <p class="text-12 text-secondary mt-2">Estimates come from recent runs on each style. Jobs queued directly in ComfyUI aren't counted.</p>
+<% end %>

@@ -1,0 +1,164 @@
+<%= form_with model: generation, url: generations_path, class: 'studio-form card card-body', data: { turbo: false } do |f| %>
+  <% if generation.errors.any? %>
+    <div class="alert alert-danger py-2 text-13">
+      <%= generation.errors.full_messages.to_sentence %>
+    </div>
+  <% end %>
+
+  <%= f.hidden_field :workflow_id, value: workflow.id %>
+
+  <% if workflows.many? %>
+    <div class="mb-3">
+      <div class="form-label">Style</div>
+      <div class="d-flex flex-wrap gap-2">
+        <% workflows.each do |choice| %>
+          <%= link_to choice.name, "#{kind.path}?workflow_id=#{choice.id}",
+                      class: ['filter-chip', { active: choice == workflow }],
+                      title: choice.description %>
+        <% end %>
+      </div>
+    </div>
+  <% elsif workflow.description.present? %>
+    <p class="text-13 text-secondary"><%= workflow.description %></p>
+  <% end %>
+
+  <% if workflow.uses?(:image) %>
+    <div class="mb-3">
+      <%= f.label :input_image, reference_image_label(kind), class: 'form-label' %>
+      <% if generation.input_image.attached? %>
+        <div class="mb-2">
+          <%= image_tag rails_blob_path(generation.input_image, disposition: 'inline'), class: 'output-media',
+                                                                                       alt: 'Reference' %>
+        </div>
+      <% end %>
+      <%= f.file_field :input_image, accept: 'image/*', class: 'form-control',
+                                     required: !generation.input_image.attached? %>
+    </div>
+  <% end %>
+
+  <% if workflow.uses?(:prompt) %>
+    <div class="mb-3">
+      <%= f.label :prompt, 'Describe what you want', class: 'form-label' %>
+      <%= f.text_area :prompt, rows: 5, class: 'form-control', required: true, autofocus: true,
+                               placeholder: prompt_placeholder(kind) %>
+    </div>
+  <% end %>
+
+  <% if workflow.uses?(:lyrics) %>
+    <div class="mb-3">
+      <%= f.label :lyrics, 'Lyrics', class: 'form-label' %>
+      <%= f.text_area :lyrics, rows: 4, class: 'form-control', required: true,
+                               placeholder: 'Verse and chorus…' %>
+    </div>
+  <% end %>
+
+  <% if workflow.uses?(:width, :height) %>
+    <div class="mb-3">
+      <div class="form-label">Shape</div>
+      <div class="d-flex flex-wrap gap-2">
+        <% Generation::ASPECT_RATIO_LABELS.each do |ratio, label| %>
+          <%= f.radio_button :aspect_ratio, ratio, class: 'btn-check', id: "aspect_#{ratio.tr(':', '_')}",
+                                                   checked: generation.aspect_ratio == ratio %>
+          <label class="btn btn-outline-secondary btn-sm" for="aspect_<%= ratio.tr(':', '_') %>">
+            <%= label %> <span class="text-secondary text-11"><%= ratio %></span>
+          </label>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <% if workflow.uses?(:duration, :frames) %>
+    <div class="mb-3">
+      <%= f.label :duration, 'Length', class: 'form-label' %>
+      <div class="input-group input-group-sm w-auto">
+        <%= f.number_field :duration, value: generation.duration.presence || kind.default_duration,
+                                      min: Generation::DURATION_RANGE.min, max: Generation::DURATION_RANGE.max,
+                                      step: 1, class: 'form-control num' %>
+        <span class="input-group-text">seconds</span>
+      </div>
+    </div>
+  <% end %>
+
+  <% if workflow.uses?(:steps) %>
+    <div class="mb-3">
+      <div class="form-label">Quality</div>
+      <div class="d-flex flex-wrap gap-2">
+        <% { 'fast' => 'Fast', 'standard' => 'Standard', 'best' => 'Best' }.each do |value, label| %>
+          <%= f.radio_button :quality, value, class: 'btn-check', id: "quality_#{value}",
+                                             checked: (generation.quality || 'standard') == value %>
+          <label class="btn btn-outline-secondary btn-sm" for="quality_<%= value %>"><%= label %></label>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <% if workflow.uses?(:cfg) %>
+    <div class="mb-3">
+      <div class="form-label">Prompt strength</div>
+      <div class="d-flex flex-wrap gap-2">
+        <% { 'loose' => 'Loose', 'balanced' => 'Balanced', 'strict' => 'Strict' }.each do |value, label| %>
+          <%= f.radio_button :cfg_level, value, class: 'btn-check', id: "cfg_#{value}",
+                                                checked: (generation.cfg_level || 'balanced') == value %>
+          <label class="btn btn-outline-secondary btn-sm" for="cfg_<%= value %>"><%= label %></label>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <% if workflow.uses?(:denoise) && workflow.uses?(:image) %>
+    <div class="mb-3" data-controller="range-display">
+      <%= f.label :denoise, 'How much to change the reference', class: 'form-label' %>
+      <%= f.range_field :denoise, min: 10, max: 100, step: 5,
+                                  value: ((generation.denoise || 0.6) * 100).round,
+                                  class: 'form-range', data: { range_display_target: 'input', action: 'input->range-display#update' } %>
+      <div class="text-12 text-secondary"><span data-range-display-target="output"><%= ((generation.denoise || 0.6) * 100).round %></span>%</div>
+    </div>
+  <% end %>
+
+  <% if workflow.uses?(:batch_size) %>
+    <div class="mb-3">
+      <%= f.label :batch_size, 'How many', class: 'form-label' %>
+      <div class="d-flex flex-wrap gap-2">
+        <% Generation::BATCH_RANGE.each do |n| %>
+          <%= f.radio_button :batch_size, n, class: 'btn-check', id: "batch_#{n}",
+                                            checked: (generation.batch_size || 1).to_i == n %>
+          <label class="btn btn-outline-secondary btn-sm num" for="batch_<%= n %>"><%= n %></label>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <% if workflow.uses?(:negative_prompt, :seed) %>
+    <details class="mb-3">
+      <summary class="text-13 text-secondary">More options</summary>
+      <div class="pt-2">
+        <% if workflow.uses?(:negative_prompt) %>
+          <div class="mb-2">
+            <%= f.label :negative_prompt, 'Avoid', class: 'form-label text-13' %>
+            <%= f.text_area :negative_prompt, rows: 2, class: 'form-control form-control-sm',
+                                              placeholder: 'blurry, low quality, text' %>
+          </div>
+        <% end %>
+        <% if workflow.uses?(:seed) %>
+          <div>
+            <%= f.label :seed, class: 'form-label text-13' %>
+            <%= f.number_field :seed, value: nil, min: 0, max: Generation::MAX_SEED,
+                                      class: 'form-control form-control-sm num', placeholder: 'Random' %>
+            <div class="form-text text-12">Use the same seed and prompt to get the same result again.</div>
+          </div>
+        <% end %>
+      </div>
+    </details>
+  <% end %>
+
+  <% estimate = local_assigns[:queue_estimate] || @queue_estimate %>
+  <% if estimate && estimate[:count].positive? %>
+    <p class="text-12 text-secondary mb-2">
+      <span class="num"><%= estimate[:count] %></span> jobs ahead · <%= queue_wait_label(estimate[:new_job_wait_seconds]) %> wait
+    </p>
+  <% end %>
+
+  <%= f.button type: 'submit', class: 'btn btn-primary w-100' do %>
+    <i class="bi bi-magic me-1" aria-hidden="true"></i>Generate
+  <% end %>
+<% end %>
