@@ -43,4 +43,6 @@ All notable changes to this project are documented here. The format follows
 - Hugging Face `/blob/` page links are turned into `/resolve/` file links, and the downloader node refuses web pages
   instead of saving them as model files.
 - The test suite refuses to run against any database whose name doesn't end in `_test`.
+- README badges for Tests, Lint, Security, Ruby, Rails, ComfyUI and MIT license. CI split into three workflows for
+  separate status badges. MIT [LICENSE](LICENSE) added.
 - Agreeing to the privacy notice works even if the user's other settings no longer validate.
