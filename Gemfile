@@ -14,7 +14,7 @@ gem 'turbo-rails'
 gem 'tzinfo-data', platforms: %i[windows jruby]
 
 # Background jobs and Action Cable. Action Cable's Redis adapter (Rails 8.1.3) requires redis < 6.
-gem 'redis', '>= 4', '< 6'
+gem 'redis', '>= 4', '< 7'
 gem 'sidekiq', '~> 8.1'
 
 # SSO via Authentik (OpenID Connect)
