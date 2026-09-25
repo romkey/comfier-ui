@@ -35,6 +35,14 @@ module GenerationsHelper
     end
   end
 
+  def generation_shared_indicator(generation)
+    return unless generation.shared?
+
+    tag.span(class: 'result-shared', title: 'Shared') do
+      tag.i(class: 'bi bi-share-fill', aria: { hidden: true })
+    end
+  end
+
   def output_preview(attachment, controls: false)
     url = rails_blob_path(attachment, disposition: 'inline')
     case attachment.content_type

@@ -49,7 +49,7 @@ A page only shows the fields the chosen style uses. If a page says it has no wor
 **Results** shows everything you've made, newest first. Use the chips at the top to show one kind (Image, Video,
 Audio, 3D Model) or only things that are still generating or that failed.
 
-Each card shows the **style** that was used. Shared results have a small globe icon.
+Each card shows the **style** that was used. Shared results have a small green share icon in the lower-right corner of the thumbnail.
 
 Select a result to open it. From there you can:
 

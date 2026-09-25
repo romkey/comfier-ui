@@ -55,6 +55,14 @@ class GenerationsTest < ActionDispatch::IntegrationTest
     assert_select '.result-card', text: /Bob's secret project/, count: 0
   end
 
+  test 'results marks shared work with an icon on the thumbnail' do
+    generations(:alice_done).share!
+
+    get generations_path
+
+    assert_select '.result-shared .bi-share-fill', count: 1
+  end
+
   test 'results can be filtered by kind and status' do
     get generations_path, params: { kind: 'video' }
 
