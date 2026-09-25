@@ -1,6 +1,7 @@
 # One request to generate media, and whatever ComfyUI produced for it.
 class Generation < ApplicationRecord
   include GenerationParameters
+  include GenerationSharing
 
   ASPECT_RATIO_LABELS = {
     '1:1' => 'Square', '4:3' => 'Landscape', '3:4' => 'Portrait', '16:9' => 'Wide', '9:16' => 'Tall'
@@ -46,15 +47,12 @@ class Generation < ApplicationRecord
   scope :recent, -> { order(created_at: :desc, id: :desc) }
   scope :finished, -> { where(status: %i[succeeded failed]) }
   scope :in_progress, -> { where(status: %i[queued running]) }
-  scope :shared, -> { where.not(shared_at: nil) }
 
   def kind_info = GenerationKind.find(kind)
 
   def finished? = succeeded? || failed?
 
   def in_progress? = queued? || running?
-
-  def shared? = shared_at.present?
 
   def timed_out?(limit = self.class.timeout)
     (submitted_at || created_at) < limit.ago
@@ -68,25 +66,6 @@ class Generation < ApplicationRecord
 
   def succeed!
     update!(status: :succeeded, error_message: nil, completed_at: Time.current)
-  end
-
-  def share!(share_prompt: true, share_input: false)
-    update!(shared_at: Time.current, share_prompt:, share_input:)
-  end
-
-  def unshare!
-    update!(shared_at: nil)
-  end
-
-  def share_when_done?
-    ActiveModel::Type::Boolean.new.cast(share_when_done)
-  end
-
-  # Queued with "share result" checked — publish once outputs are saved.
-  def apply_pending_share!
-    return unless share_when_done?
-
-    update!(shared_at: Time.current, share_when_done: nil)
   end
 
   def style_name = workflow_name.presence || workflow&.name || 'Removed'

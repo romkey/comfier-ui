@@ -70,7 +70,7 @@ class SharedTest < ActionDispatch::IntegrationTest
     generation = Generation.order(:id).last
 
     assert_predicate generation, :share_when_done?
-    assert generation.share_prompt?
+    assert_predicate generation, :share_prompt?
     assert_not generation.share_input?
     assert_not generation.shared?
   end

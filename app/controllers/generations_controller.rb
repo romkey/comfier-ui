@@ -45,9 +45,7 @@ class GenerationsController < ApplicationController
   end
 
   def update_share
-    unless @generation.succeeded?
-      return head :unprocessable_entity
-    end
+    return head :unprocessable_content unless @generation.succeeded?
 
     if params[:share_result] == '1'
       @generation.share!(share_prompt: params[:share_prompt] == '1', share_input: params[:share_input] == '1')

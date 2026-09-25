@@ -49,7 +49,7 @@ class PollGenerationJobTest < ActiveJob::TestCase
 
     assert_predicate @generation, :succeeded?
     assert_predicate @generation, :shared?
-    assert @generation.share_prompt?
+    assert_predicate @generation, :share_prompt?
     assert_nil @generation.share_when_done
   end
 
