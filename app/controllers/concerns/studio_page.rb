@@ -11,5 +11,10 @@ module StudioPage
     @recent = current_user.generations.where(kind: kind.key).recent.with_attached_outputs.limit(RECENT_LIMIT)
     @backends_available = Backend.enabled.exists?
     @queue_estimate = QueueEstimator.call
+    kick_polls_for(current_user.generations.in_progress)
+  end
+
+  def kick_polls_for(generations)
+    generations.find_each { PollGenerationJob.perform_later(it) }
   end
 end

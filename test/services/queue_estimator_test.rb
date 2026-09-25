@@ -23,8 +23,10 @@ class QueueEstimatorTest < ActiveSupport::TestCase
   test 'history on the workflow improves the estimate' do
     workflow = workflows(:sd_image)
     5.times do
+      started = 50.seconds.ago
       Generation.create!(user: users(:alice), workflow:, kind: 'image', status: :succeeded, prompt: 'x',
                          parameters: { frames: 1, batch_size: 1, quality: 'standard' }, run_seconds: 40,
+                         processing_started_at: started, processing_ended_at: started + 40.seconds,
                          workflow_name: workflow.name, completed_at: Time.current)
     end
     job = Generation.create!(user: users(:bob), workflow:, kind: 'image', status: :queued, prompt: 'y',

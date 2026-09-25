@@ -20,7 +20,9 @@ class GenerationsController < ApplicationController
     @pagy, @generations = pagy(:offset, filtered, limit: PER_PAGE)
   end
 
-  def show; end
+  def show
+    PollGenerationJob.perform_later(@generation) if @generation.running?
+  end
 
   def create
     @generation = current_user.generations.new(generation_params)

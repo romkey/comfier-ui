@@ -119,7 +119,13 @@
     <div class="text-12 text-secondary mt-3">
       <div class="h-section-label">System</div>
       <div>Created <%= friendly_time(@generation.created_at) %></div>
-      <% if @generation.completed_at %>
+      <% if @generation.processing_started_at %>
+        <div>Started processing <%= friendly_time(@generation.processing_started_at) %></div>
+        <div>Waited <%= distance_of_time_in_words(@generation.created_at, @generation.processing_started_at) %> in queue</div>
+        <% if @generation.processing_ended_at %>
+          <div>Processing took <%= distance_of_time_in_words(@generation.processing_started_at, @generation.processing_ended_at) %></div>
+        <% end %>
+      <% elsif @generation.completed_at %>
         <div>Finished <%= friendly_time(@generation.completed_at) %>
           (<%= distance_of_time_in_words(@generation.submitted_at || @generation.created_at, @generation.completed_at) %>)</div>
       <% end %>

@@ -62,6 +62,25 @@ module Comfyui
       )
 
       assert_in_delta 28.5, result.run_seconds, 0.01
+      assert_in_delta Time.zone.at(1000), result.processing_started_at, 0.001
+      assert_in_delta Time.zone.at(1028.5), result.processing_ended_at, 0.001
+    end
+
+    test 'processing_ended_at falls back to execution_error' do
+      result = Result.new(
+        'status' => {
+          'status_str' => 'error',
+          'messages' => [
+            ['execution_start', { 'timestamp' => 2_000_000 }],
+            ['execution_error', { 'timestamp' => 2_001_000, 'node_type' => 'KSampler', 'exception_message' => 'OOM' }]
+          ]
+        },
+        'outputs' => {}
+      )
+
+      assert_in_delta Time.zone.at(2000), result.processing_started_at, 0.001
+      assert_in_delta Time.zone.at(2001), result.processing_ended_at, 0.001
+      assert_in_delta 1.0, result.run_seconds, 0.01
     end
   end
 end

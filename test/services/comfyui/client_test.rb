@@ -96,8 +96,27 @@ module Comfyui
 
     test 'result is pending while the prompt is not in history yet' do
       stub_request(:get, comfy_url(@backend, 'history/abc')).to_return(body: '{}')
+      stub_request(:get, comfy_url(@backend, 'history')).with(query: { max_items: '64' }).to_return(body: '{}')
 
       assert_predicate @client.result('abc'), :pending?
+    end
+
+    test 'result falls back to scanning recent history' do
+      entry = { status: { status_str: 'success', completed: true }, outputs: {} }
+      recent = stub_request(:get, comfy_url(@backend, 'history')).with(query: { max_items: '64' })
+      stub_request(:get, comfy_url(@backend, 'history/abc')).to_return(body: '{}')
+      recent.to_return(body: { 'abc' => entry }.to_json)
+
+      assert_predicate @client.result('abc'), :success?
+    end
+
+    test 'prompt_in_queue? checks running and pending prompts' do
+      stub_request(:get, comfy_url(@backend, 'queue'))
+        .to_return(body: { queue_running: [[1, 'running-id']], queue_pending: [[2, 'pending-id']] }.to_json)
+
+      assert @client.prompt_in_queue?('running-id')
+      assert @client.prompt_in_queue?('pending-id')
+      assert_not @client.prompt_in_queue?('gone-id')
     end
 
     test 'download fetches the file through /view' do

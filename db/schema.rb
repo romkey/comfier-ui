@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_24_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_25_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -71,6 +71,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_010000) do
     t.string "kind", null: false
     t.text "negative_prompt"
     t.jsonb "parameters", default: {}, null: false
+    t.datetime "processing_ended_at"
+    t.datetime "processing_started_at"
     t.text "prompt"
     t.float "run_seconds"
     t.boolean "share_input", default: false, null: false
@@ -104,7 +106,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_010000) do
     t.datetime "updated_at", null: false
     t.text "url", null: false
     t.string "via"
-    t.index ["backend_id", "directory", "name"], name: "index_model_downloads_one_active_per_file", unique: true, where: "((status)::text = ANY ((ARRAY['queued'::character varying, 'running'::character varying])::text[]))"
+    t.index ["backend_id", "directory", "name"], name: "index_model_downloads_one_active_per_file", unique: true, where: "((status)::text = ANY (ARRAY[('queued'::character varying)::text, ('running'::character varying)::text]))"
     t.index ["backend_id"], name: "index_model_downloads_on_backend_id"
   end
 

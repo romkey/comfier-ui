@@ -5,7 +5,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+- Generations that finished on ComfyUI but stayed "Generating" in Comfier: polling now checks ComfyUI's queue, falls back through recent history, fails clearly when history never arrives, and stops retrying forever when output downloads fail. Opening a result or studio page re-schedules polling for stuck jobs.
+
 ### Added
+- Processing timestamps on generations: when ComfyUI started and finished executing a workflow, plus derived queue wait and processing durations. Queue estimates now prefer actual processing time over end-to-end elapsed time.
 - Site footer with a GitHub link and the running app version.
 - Cancel for queued and running generations: users can stop their own jobs, admins can stop any job. Comfier asks ComfyUI to dequeue or interrupt the prompt when it was already submitted.
 - Sign-in with Authentik (OpenID Connect). Members of the admin group in Authentik become admins automatically.

@@ -115,6 +115,36 @@ class GenerationTest < ActiveSupport::TestCase
     assert_nil generation.error_message
   end
 
+  test 'queue_wait_seconds and processing_seconds come from processing timestamps' do
+    generation = generations(:alice_done)
+
+    assert_in_delta 45, generation.queue_wait_seconds, 1
+    assert_in_delta 28.5, generation.processing_seconds, 1
+  end
+
+  test 'record_processing_times! stores ComfyUI execution timestamps' do
+    generation = generations(:alice_running)
+    started = Time.zone.at(1_700_000_000)
+    ended = started + 12.seconds
+    result = Comfyui::Result.new(
+      'status' => {
+        'status_str' => 'success',
+        'messages' => [
+          ['execution_start', { 'timestamp' => started.to_f * 1000 }],
+          ['execution_success', { 'timestamp' => ended.to_f * 1000 }]
+        ]
+      },
+      'outputs' => {}
+    )
+
+    generation.record_processing_times!(result)
+    generation.reload
+
+    assert_in_delta started, generation.processing_started_at, 0.001
+    assert_in_delta ended, generation.processing_ended_at, 0.001
+    assert_in_delta 12, generation.run_seconds, 0.01
+  end
+
   test 'timed_out? compares against the submission time' do
     generation = generations(:alice_running)
 

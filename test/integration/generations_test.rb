@@ -94,6 +94,8 @@ class GenerationsTest < ActionDispatch::IntegrationTest
     assert_select 'a', text: /Download/
     assert_select 'button', text: /Run again/
     assert_select 'dd', text: '42'
+    assert_select '.text-12', text: /Started processing/
+    assert_select '.text-12', text: /Processing took/
   end
 
   test 'shows why a generation failed' do
