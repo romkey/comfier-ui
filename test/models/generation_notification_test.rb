@@ -51,6 +51,7 @@ class GenerationNotificationTest < ActiveSupport::TestCase
     skip 'libvips required' unless vips_available?
 
     large_png = Vips::Image.gaussnoise(1800, 1800).write_to_buffer('.png')
+
     assert_operator large_png.bytesize, :>, 500.kilobytes
 
     @generation.outputs.purge

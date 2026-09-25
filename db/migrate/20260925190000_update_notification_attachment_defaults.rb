@@ -1,9 +1,11 @@
 class UpdateNotificationAttachmentDefaults < ActiveRecord::Migration[8.1]
   def up
-    change_column :app_settings, :email_notification_attachment_max_mb, :decimal,
-                  precision: 8, scale: 3, default: 0.488, null: false
-    change_column :app_settings, :slack_notification_attachment_max_mb, :decimal,
-                  precision: 8, scale: 3, default: 5.0, null: false
+    change_table :app_settings, bulk: true do |t|
+      t.change :email_notification_attachment_max_mb, :decimal,
+               precision: 8, scale: 3, default: 0.488, null: false
+      t.change :slack_notification_attachment_max_mb, :decimal,
+               precision: 8, scale: 3, default: 5.0, null: false
+    end
 
     execute <<~SQL.squish
       UPDATE app_settings
@@ -15,9 +17,11 @@ class UpdateNotificationAttachmentDefaults < ActiveRecord::Migration[8.1]
   end
 
   def down
-    change_column :app_settings, :email_notification_attachment_max_mb, :decimal,
-                  precision: 6, scale: 2, default: 20, null: false
-    change_column :app_settings, :slack_notification_attachment_max_mb, :decimal,
-                  precision: 6, scale: 2, default: 20, null: false
+    change_table :app_settings, bulk: true do |t|
+      t.change :email_notification_attachment_max_mb, :decimal,
+               precision: 6, scale: 2, default: 20, null: false
+      t.change :slack_notification_attachment_max_mb, :decimal,
+               precision: 6, scale: 2, default: 20, null: false
+    end
   end
 end
