@@ -165,4 +165,50 @@ class PollGenerationJobTest < ActiveJob::TestCase
 
     assert_not_requested :get, comfy_url(@backend, 'history/done-prompt')
   end
+
+  test 'fails when a download is empty' do
+    stub_history(success_entry('empty.png'))
+    stub_queue
+    stub_request(:get, comfy_url(@backend, 'view')).with(query: hash_including({})).to_return(body: '')
+
+    PollGenerationJob.perform_now(@generation)
+
+    assert_predicate @generation.reload, :failed?
+    assert_match(/empty\.png/, @generation.error_message)
+    assert_not @generation.outputs.attached?
+  end
+
+  test 'does not attach twice when outputs are already saved' do
+    stub_history(success_entry('comfier_00001_.png'))
+    stub_queue
+    stub_request(:get, comfy_url(@backend, 'view')).with(query: hash_including({})).to_return(body: 'png-bytes')
+
+    PollGenerationJob.perform_now(@generation)
+    @generation.update!(status: 'running')
+
+    assert_no_difference -> { @generation.reload.outputs.count } do
+      PollGenerationJob.perform_now(@generation)
+    end
+  end
+
+  test 're-downloads when attachment records exist but files are missing from disk' do
+    stub_history(success_entry('comfier_00001_.png'))
+    stub_queue
+    stub_request(:get, comfy_url(@backend, 'view')).with(query: hash_including({})).to_return(body: 'fresh-png')
+
+    @generation.outputs.attach(
+      io: StringIO.new('orphaned'),
+      filename: 'orphan.png',
+      content_type: 'image/png'
+    )
+    blob = @generation.outputs.first.blob
+    FileUtils.rm_f(ActiveStorage::Blob.service.send(:path_for, blob.key))
+
+    PollGenerationJob.perform_now(@generation)
+    @generation.reload
+
+    assert_predicate @generation, :succeeded?
+    assert_equal(['comfier_00001_.png'], @generation.outputs.map { it.filename.to_s })
+    assert_equal 'fresh-png', @generation.outputs.first.download
+  end
 end

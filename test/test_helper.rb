@@ -23,12 +23,27 @@ module ActiveSupport
 
     teardown { OmniAuth.config.mock_auth[:authentik] = nil }
 
-    def auth_hash(uid:, email: 'person@example.com', name: 'Person', groups: [], provider: 'authentik')
+    def auth_hash(uid:, email: 'person@example.com', name: 'Person', groups: [], slack: nil)
+      raw_info = { 'groups' => groups }
+      raw_info['slack'] = slack if slack
       OmniAuth::AuthHash.new(
-        provider:, uid:,
+        provider: 'authentik', uid:,
         info: { email:, name:, nickname: email.split('@').first },
-        extra: { raw_info: { 'groups' => groups } }
+        extra: { raw_info: }
       )
+    end
+
+    # Sets environment variables for the block, restoring the previous values afterwards.
+    def with_env(vars)
+      previous = vars.keys.index_with { |key| ENV.fetch(key, nil) }
+      vars.each { |key, value| ENV[key] = value }
+      yield
+    ensure
+      previous.each { |key, value| ENV[key] = value }
+    end
+
+    def with_notifications_configured(&)
+      with_env({ 'SMTP_ADDRESS' => 'smtp.test', 'SLACK_BOT_TOKEN' => 'xoxb-test' }, &)
     end
 
     def png_upload(name = 'pixel.png')

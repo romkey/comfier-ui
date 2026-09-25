@@ -15,11 +15,15 @@ class User < ApplicationRecord
     user = find_or_initialize_by(provider: auth.provider.to_s, uid: auth.uid.to_s)
     info = auth.info || {}
     groups = Array(auth.dig('extra', 'raw_info', 'groups'))
+    slack = auth.dig('extra', 'raw_info', 'slack')
+    slack = {} unless slack.is_a?(Hash)
 
     user.assign_attributes(
       email: info['email'],
       name: info['name'],
       username: info['nickname'],
+      slack_uid: slack['uid'].presence,
+      slack_name: slack['name'].presence,
       admin: groups.include?(admin_group),
       last_signed_in_at: Time.current
     )
@@ -32,6 +36,16 @@ class User < ApplicationRecord
   def initials
     display_name.split(/[\s@._-]+/).first(2).map(&:first).join.upcase
   end
+
+  def email_reachable? = email.present? && GenerationMailer.configured?
+
+  def slack_reachable? = slack_uid.present? && SlackNotifier.configured?
+
+  def notify_via_email? = notify_email? && email_reachable?
+
+  def notify_via_slack? = notify_slack? && slack_reachable?
+
+  def wants_notifications? = notify_via_email? || notify_via_slack?
 
   def privacy_current?
     notice = PrivacyNotice.current

@@ -89,6 +89,22 @@ in the navbar updates as jobs start and finish.
 - **Server**: only shown when there's more than one. Leave it on **Automatic (least busy)** unless you've been asked
   to use a particular one.
 
+### Notifications
+
+Comfier can tell you when something you made is ready, fails, or is cancelled, so you don't have to keep the page
+open. Turn on either or both under **Settings → Notifications**:
+
+- **Email**: sent to the email address on your sign-in account.
+- **Slack**: a direct message from the Comfier bot, to the Slack account linked to your sign-in account.
+- **Include the finished file**: attaches the result to the email or Slack message. Files too large to attach are
+  left out, and the message links to the result instead.
+
+You can't change the email address or Slack account here; they come from your sign-in account. If a switch is greyed
+out, the note under it says why: the server may not have email or Slack set up, or your account may not be linked to
+Slack yet. Once your admins link it, sign out and back in.
+
+Notifications are off until you turn them on.
+
 ## For admins: backends
 
 A backend is a ComfyUI server Comfier sends work to. Find them under **Settings → Backends**.
@@ -172,6 +188,13 @@ Choose **Re-check** after adding or removing model files on a server by hand, or
 1. Open the result and choose **Tweak**.
 2. Change the prompt or shape, and clear **Seed** under **More options** if you want a different take.
 3. Choose **Generate**.
+
+### How to get a message when your work is done
+
+1. Open **Settings**.
+2. Under **Notifications**, turn on **Email**, **Slack**, or both.
+3. Turn on **Include the finished file** if you want the result attached.
+4. Choose **Save**.
 
 ### How to stop seeing the same unwanted things
 

@@ -3,6 +3,7 @@ class Generation < ApplicationRecord
   include GenerationParameters
   include GenerationSharing
   include GenerationTiming
+  include GenerationNotifying
 
   ASPECT_RATIO_LABELS = {
     '1:1' => 'Square', '4:3' => 'Landscape', '3:4' => 'Portrait', '16:9' => 'Wide', '9:16' => 'Tall'

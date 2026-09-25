@@ -1,6 +1,8 @@
 require 'test_helper'
 
 class GenerationTest < ActiveSupport::TestCase
+  include ActiveJob::TestHelper
+
   setup do
     @user = users(:alice)
   end
@@ -201,5 +203,40 @@ class GenerationTest < ActiveSupport::TestCase
     generation.unshare!
 
     assert_not generation.shared?
+  end
+
+  test 'finishing notifies the owner when they turned notifications on' do
+    @user.update!(notify_email: true)
+    generation = generations(:alice_running)
+
+    with_notifications_configured do
+      assert_enqueued_with(job: NotifyGenerationJob, args: [generation]) { generation.succeed! }
+    end
+  end
+
+  test 'failing and cancelling notify too' do
+    @user.update!(notify_email: true)
+
+    with_notifications_configured do
+      assert_enqueued_with(job: NotifyGenerationJob) { generations(:alice_running).fail!('Boom') }
+
+      queued = build.tap(&:save!)
+
+      assert_enqueued_with(job: NotifyGenerationJob) { GenerationCanceller.call(queued) }
+      assert_predicate queued, :cancelled?
+      assert_equal :cancelled, queued.outcome
+    end
+  end
+
+  test 'no notification for other updates or when notifications are off' do
+    generation = generations(:alice_running)
+
+    with_notifications_configured do
+      assert_no_enqueued_jobs(only: NotifyGenerationJob) { generation.succeed! }
+
+      @user.update!(notify_email: true)
+
+      assert_no_enqueued_jobs(only: NotifyGenerationJob) { generation.update!(prompt: 'Changed') }
+    end
   end
 end

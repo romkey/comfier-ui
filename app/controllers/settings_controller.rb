@@ -21,6 +21,7 @@ class SettingsController < ApplicationController
   end
 
   def settings_params
-    params.expect(user: %i[preferred_backend_id default_aspect_ratio default_negative_prompt])
+    params.expect(user: %i[preferred_backend_id default_aspect_ratio default_negative_prompt
+                           notify_email notify_slack notify_include_asset])
   end
 end

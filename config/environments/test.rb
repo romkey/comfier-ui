@@ -45,6 +45,8 @@ Rails.application.configure do
 
   config.active_job.queue_adapter = :test
 
+  config.action_mailer.delivery_method = :test
+
   config.active_record.encryption.primary_key = 'test-primary-key-test-primary-key'
   config.active_record.encryption.deterministic_key = 'test-deterministic-key-test-determ'
   config.active_record.encryption.key_derivation_salt = 'test-key-derivation-salt-test-salt'

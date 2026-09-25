@@ -21,6 +21,33 @@ class SettingsTest < ActionDispatch::IntegrationTest
     assert_equal 'text', users(:alice).default_negative_prompt
   end
 
+  test 'saves notification preferences' do
+    users(:alice).update!(slack_uid: 'U123', slack_name: 'alice.a')
+
+    with_notifications_configured do
+      get settings_path
+
+      assert_select '.form-text', text: /Sent to alice@example.com/
+      assert_select '.form-text', text: /Sent to alice.a/
+
+      patch settings_path, params: { user: { notify_email: '1', notify_slack: '1', notify_include_asset: '1' } }
+    end
+
+    user = users(:alice).reload
+
+    assert_predicate user, :notify_email?
+    assert_predicate user, :notify_slack?
+    assert_predicate user, :notify_include_asset?
+  end
+
+  test 'notification switches are off when the server or account lacks them' do
+    with_env('SMTP_ADDRESS' => nil, 'SLACK_BOT_TOKEN' => nil) { get settings_path }
+
+    assert_select 'input[name="user[notify_email]"][disabled]'
+    assert_select 'input[name="user[notify_slack]"][disabled]'
+    assert_select '.form-text', text: /Slack isn't set up/
+  end
+
   test 'rejects an unsupported aspect ratio' do
     patch settings_path, params: { user: { default_aspect_ratio: '7:1' } }
 

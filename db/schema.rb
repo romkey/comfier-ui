@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_25_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_25_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -125,10 +125,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_140000) do
     t.citext "email"
     t.datetime "last_signed_in_at"
     t.string "name"
+    t.boolean "notify_email", default: false, null: false
+    t.boolean "notify_include_asset", default: false, null: false
+    t.boolean "notify_slack", default: false, null: false
     t.bigint "preferred_backend_id"
     t.datetime "privacy_accepted_at"
     t.integer "privacy_accepted_version"
     t.string "provider", null: false
+    t.string "slack_name"
+    t.string "slack_uid"
     t.string "uid", null: false
     t.datetime "updated_at", null: false
     t.string "username"

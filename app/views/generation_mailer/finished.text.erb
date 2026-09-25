@@ -1,0 +1,13 @@
+<%= @notification.headline %>
+
+<%= @notification.title %>
+<% if @notification.error_message %>
+
+<%= @notification.error_message %>
+<% end %>
+<% if @notification.files_left_out? %>
+
+Too large to attach. Open it in Comfier.
+<% end %>
+
+Open in Comfier: <%= @notification.url %>

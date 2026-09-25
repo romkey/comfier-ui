@@ -12,7 +12,7 @@ class GenerationCanceller
     return Outcome.new(cancelled: false) unless @generation.in_progress?
 
     cancel_on_comfyui if @generation.running? && @generation.backend && @generation.comfy_prompt_id.present?
-    @generation.fail!('Cancelled')
+    @generation.fail!(Generation::CANCELLED_MESSAGE)
     Outcome.new(cancelled: true)
   end
 
