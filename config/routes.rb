@@ -35,6 +35,7 @@ Rails.application.routes.draw do
       post :check, on: :member
     end
     resource :privacy_notice, only: %i[edit update]
+    resource :app_setting, only: %i[edit update]
 
     resources :workflows, except: :show do
       member do

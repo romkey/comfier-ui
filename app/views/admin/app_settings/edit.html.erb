@@ -1,0 +1,24 @@
+<% content_for :title, 'Notifications' %>
+
+<h1 class="h-page-title mb-3">Notifications</h1>
+<p class="text-13 text-secondary mb-3">
+  Email and Slack notifications are sent when a member's generation finishes, fails, or is cancelled.
+</p>
+
+<%= form_with model: @settings, url: admin_app_setting_path, method: :patch, class: 'settings-form-wide' do |f| %>
+  <% if @settings.errors.any? %>
+    <div class="alert alert-danger py-2 text-13"><%= @settings.errors.full_messages.to_sentence %></div>
+  <% end %>
+
+  <div class="mb-3">
+    <%= f.label :notification_attachment_max_mb, 'Maximum attachment size (MB)', class: 'form-label' %>
+    <%= f.number_field :notification_attachment_max_mb, min: 0, max: 100, step: 1,
+                       class: 'form-control form-control-sm w-auto' %>
+    <div class="form-text text-12">
+      Total size of files attached to one notification. Set to 0 to always link instead of attach.
+      Files over this limit are linked to Comfier.
+    </div>
+  </div>
+
+  <%= f.submit 'Save', class: 'btn btn-primary btn-sm' %>
+<% end %>

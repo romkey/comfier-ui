@@ -1,0 +1,2 @@
+default:
+  notification_attachment_max_mb: 20

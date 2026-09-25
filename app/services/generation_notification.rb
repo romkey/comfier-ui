@@ -8,9 +8,9 @@ class GenerationNotification
 
   attr_reader :generation
 
-  def self.max_megabytes = ENV.fetch('NOTIFICATION_ATTACHMENT_MAX_MB', 20).to_i
+  def self.max_megabytes = AppSetting.notification_attachment_max_mb
 
-  def self.max_bytes = max_megabytes.megabytes
+  def self.max_bytes = AppSetting.notification_attachment_max_bytes
 
   def initialize(generation)
     @generation = generation

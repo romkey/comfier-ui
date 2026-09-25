@@ -85,7 +85,8 @@ with the output attached. Email addresses and Slack IDs come from Authentik; use
 - **Email**: set `SMTP_ADDRESS` (plus port, credentials and `MAIL_FROM`). Email is unavailable until it's set.
 - **Slack**: create a Slack app with a bot user, give the bot the `chat:write`, `im:write` and `files:write` scopes,
   install it to the workspace, and put its bot token in `SLACK_BOT_TOKEN`. Slack is unavailable until it's set.
-- Attachments larger than `NOTIFICATION_ATTACHMENT_MAX_MB` (default `20`, total per message) are replaced by a link.
+- Attachments over the size limit (default `20` MB total per message) are replaced by a link. Admins can change the
+  limit under **Settings → Notifications**.
 
 ### Environment variables
 
@@ -110,7 +111,7 @@ with the output attached. Email addresses and Slack IDs come from Authentik; use
 | `SMTP_AUTHENTICATION`, `SMTP_ENABLE_STARTTLS`, `SMTP_DOMAIN` | SMTP options (defaults `plain`, `true`, `APP_URL` host) |
 | `MAIL_FROM` | Sender address for notification emails |
 | `SLACK_BOT_TOKEN` | Slack bot token (`xoxb-…`) for Slack DM notifications |
-| `NOTIFICATION_ATTACHMENT_MAX_MB` | Largest total attachment size per notification (default `20`) |
+| `NOTIFICATION_ATTACHMENT_MAX_MB` | Default attachment size limit when the database is first created (default `20`; editable in Settings → Notifications) |
 
 ## Running locally
 

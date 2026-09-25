@@ -36,12 +36,11 @@ class GenerationMailerTest < ActionMailer::TestCase
 
   test 'links instead of attaching outputs over the size cap' do
     @user.update!(notify_include_asset: true)
+    app_settings(:default).update!(notification_attachment_max_mb: 0)
 
-    with_env('NOTIFICATION_ATTACHMENT_MAX_MB' => '0') do
-      mail = GenerationMailer.finished(@generation)
+    mail = GenerationMailer.finished(@generation)
 
-      assert_empty mail.attachments
-      assert_includes mail.text_part.body.to_s, 'Too large to attach'
-    end
+    assert_empty mail.attachments
+    assert_includes mail.text_part.body.to_s, 'Too large to attach'
   end
 end
