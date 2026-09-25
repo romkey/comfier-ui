@@ -27,6 +27,7 @@ class NotificationImageShrinkerTest < ActiveSupport::TestCase
 
     attachment = NotificationImageShrinker.prepare(blob, max_bytes: 500.kilobytes)
 
+    assert attachment, 'expected oversized png to be shrunk for notification attachment'
     assert_equal 'large.jpg', attachment.filename
     assert_equal 'image/jpeg', attachment.content_type
     assert_operator attachment.bytesize, :<=, 500.kilobytes

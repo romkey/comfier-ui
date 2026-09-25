@@ -64,7 +64,7 @@ class GenerationNotificationTest < ActiveSupport::TestCase
     email = GenerationNotification.new(@generation, channel: :email)
     files = email.attachable_files
 
-    assert_equal 1, files.size
+    assert_equal 1, files.size, 'expected oversized image to be shrunk into the email attachment limit'
     assert_equal 'image/jpeg', files.first.content_type
     assert_equal 'large.jpg', files.first.filename
     assert_operator files.first.bytesize, :<=, AppSetting.email_notification_attachment_max_bytes
