@@ -24,6 +24,34 @@ class WorkflowTest < ActiveSupport::TestCase
     assert_includes Workflow.find(workflow.id).graph_json, '"class_type": "CLIPTextEncode"'
   end
 
+  test 'accepts bare placeholders in numeric slots and keeps the typed text' do
+    typed = <<~JSON.strip
+      {
+        "1": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": {{width}},
+            "height": {{height}},
+            "batch_size": 1
+          }
+        }
+      }
+    JSON
+    workflow = Workflow.new(name: 'Bare placeholders', kind: 'image', graph_json: typed)
+
+    assert_predicate workflow, :valid?
+    assert_equal typed, workflow.graph_json
+    assert_equal '{{width}}', workflow.graph.dig('1', 'inputs', 'width')
+    assert_equal '{{height}}', workflow.graph.dig('1', 'inputs', 'height')
+  end
+
+  test 'normalize_graph_json leaves quoted placeholders and strings alone' do
+    json = '{"a": "{{prompt}}", "b": "prefix {{seed}} suffix", "c": {{width}}}'
+
+    assert_equal '{"a": "{{prompt}}", "b": "prefix {{seed}} suffix", "c": "{{width}}"}',
+                 WorkflowGraphJson.normalize(json)
+  end
+
   test 'rejects invalid JSON but keeps what the admin typed' do
     workflow = Workflow.new(name: 'New', kind: 'image', graph_json: '{ nope')
 

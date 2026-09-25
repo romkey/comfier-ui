@@ -44,13 +44,15 @@ class Workflow < ApplicationRecord # rubocop:disable Metrics/ClassLength
   end
 
   def graph_json=(text)
-    @graph_json = text
+    @graph_json = text.to_s
     @graph_json_error = nil
-    self.graph = JSON.parse(text.to_s)
+    self.graph = JSON.parse(WorkflowGraphJson.normalize(@graph_json))
   rescue JSON::ParserError => e
     @graph_json_error = e.message.truncate(200)
     self.graph = {}
   end
+
+  def self.normalize_graph_json(text) = WorkflowGraphJson.normalize(text)
 
   def placeholders
     @placeholders ||= Set.new.tap { |found| collect_placeholders(graph, found) }

@@ -25,7 +25,7 @@ class Generation < ApplicationRecord
   has_one_attached :input_image
 
   store_accessor :parameters, :seed, :aspect_ratio, :width, :height, :duration, :frames,
-                 :quality, :cfg_level, :denoise, :lyrics, :batch_size, :steps, :cfg
+                 :quality, :cfg_level, :denoise, :lyrics, :batch_size, :steps, :cfg, :share_when_done
 
   validates :workflow, presence: true, on: :create
   validates :prompt, presence: true, if: -> { workflow&.uses?(:prompt) }
@@ -76,6 +76,17 @@ class Generation < ApplicationRecord
 
   def unshare!
     update!(shared_at: nil)
+  end
+
+  def share_when_done?
+    ActiveModel::Type::Boolean.new.cast(share_when_done)
+  end
+
+  # Queued with "share result" checked — publish once outputs are saved.
+  def apply_pending_share!
+    return unless share_when_done?
+
+    update!(shared_at: Time.current, share_when_done: nil)
   end
 
   def style_name = workflow_name.presence || workflow&.name || 'Removed'

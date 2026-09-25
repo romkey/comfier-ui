@@ -13,9 +13,11 @@
     <div class="d-flex align-items-center gap-2 text-13 text-secondary flex-wrap">
       <%= generation_status(@generation) %>
       <span><%= @generation.style_name %></span>
-      <% if @generation.shared? %>
-        <span class="badge text-bg-success-subtle">Shared</span>
-      <% end %>
+      <span id="<%= dom_id(@generation, :shared_badge) %>">
+        <% if @generation.shared? %>
+          <span class="badge text-bg-success-subtle">Shared</span>
+        <% end %>
+      </span>
       <span>·</span>
       <%= friendly_time(@generation.created_at) %>
     </div>
@@ -40,29 +42,6 @@
         <i class="bi bi-three-dots" aria-hidden="true"></i>
       </button>
       <ul class="dropdown-menu dropdown-menu-end text-13">
-        <% if @generation.succeeded? %>
-          <% if @generation.shared? %>
-            <li>
-              <%= button_to 'Stop sharing', unshare_generation_path(@generation), method: :delete,
-                                                                                  class: 'dropdown-item' %>
-            </li>
-          <% else %>
-            <li class="px-3 py-2">
-              <%= form_with url: share_generation_path(@generation), method: :post, class: 'share-form' do %>
-                <div class="form-check mb-1">
-                  <%= check_box_tag :share_prompt, '1', true, class: 'form-check-input', id: 'share_prompt' %>
-                  <%= label_tag :share_prompt, 'Include prompt', class: 'form-check-label text-12' %>
-                </div>
-                <div class="form-check mb-2">
-                  <%= check_box_tag :share_input, '1', false, class: 'form-check-input', id: 'share_input' %>
-                  <%= label_tag :share_input, 'Include reference image', class: 'form-check-label text-12' %>
-                </div>
-                <%= submit_tag 'Share with everyone', class: 'btn btn-outline-secondary btn-sm w-100' %>
-              <% end %>
-            </li>
-          <% end %>
-        <% end %>
-        <li><hr class="dropdown-divider"></li>
         <li>
           <%= button_to 'Delete', generation_path(@generation), method: :delete, class: 'dropdown-item text-danger',
                                                                 form: { data: { turbo_confirm: 'Delete this result?' } } %>
@@ -146,5 +125,10 @@
         <div>ComfyUI prompt: <code class="text-12"><%= @generation.comfy_prompt_id || '—' %></code></div>
       <% end %>
     </div>
+
+    <%= render 'generations/share_controls',
+               generation: @generation,
+               live: @generation.succeeded?,
+               disabled: !@generation.succeeded? %>
   </div>
 </div>

@@ -8,8 +8,9 @@ module GenerationParameters
     return if workflow.nil?
 
     self.kind = workflow.kind
-    self.parameters = resolved_seed_entry
-                      .merge(optional_parameters)
+    share_later = share_when_done?
+    self.parameters = resolved_seed_entry.merge(optional_parameters)
+    self.share_when_done = true if share_later
   end
 
   def optional_parameters

@@ -1,0 +1,9 @@
+<%= turbo_stream.replace dom_id(@generation, :share_controls) do %>
+  <%= render 'generations/share_controls', generation: @generation, live: @generation.succeeded? %>
+<% end %>
+
+<%= turbo_stream.replace dom_id(@generation, :shared_badge) do %>
+  <% if @generation.shared? %>
+    <span class="badge text-bg-success-subtle">Shared</span>
+  <% end %>
+<% end %>

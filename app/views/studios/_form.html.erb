@@ -158,6 +158,8 @@
     </p>
   <% end %>
 
+  <%= render 'generations/share_controls', generation: generation, workflow: workflow, form_mode: true %>
+
   <%= f.button type: 'submit', class: 'btn btn-primary w-100' do %>
     <i class="bi bi-magic me-1" aria-hidden="true"></i>Generate
   <% end %>

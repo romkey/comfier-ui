@@ -1,0 +1,64 @@
+<% live = local_assigns.fetch(:live, false) %>
+<% disabled = local_assigns.fetch(:disabled, false) %>
+<% form_mode = local_assigns.fetch(:form_mode, false) %>
+<% wf = local_assigns[:workflow] || generation.workflow %>
+<% show_input = wf&.uses?(:image) || generation.input_image.attached? %>
+<% share_result = generation.shared? || generation.share_when_done? %>
+<% id_prefix = local_assigns.fetch(:id_prefix, form_mode ? 'studio_share' : 'generation_share') %>
+<% result_name = form_mode ? 'generation[share_result]' : 'share_result' %>
+<% prompt_name = form_mode ? 'generation[share_prompt]' : 'share_prompt' %>
+<% input_name = form_mode ? 'generation[share_input]' : 'share_input' %>
+
+<div <%= tag.attributes(
+  id: (dom_id(generation, :share_controls) if generation.persisted?),
+  class: 'share-controls border-top pt-3 mt-3',
+  data: {
+    controller: 'generation-share',
+    generation_share_url_value: (share_generation_path(generation) if live && generation.persisted?),
+    generation_share_live_value: live
+  }.compact
+) %>>
+  <div class="h-section-label mb-2">Share</div>
+
+  <% if disabled && !generation.succeeded? %>
+    <p class="text-12 text-secondary mb-2">Sharing can be turned on once this finishes.</p>
+  <% end %>
+
+  <div class="form-check mb-1">
+    <%= check_box_tag result_name, '1', share_result,
+                      class: 'form-check-input',
+                      id: "#{id_prefix}_result",
+                      disabled: disabled,
+                      data: {
+                        generation_share_target: 'shareResult',
+                        action: 'change->generation-share#update'
+                      } %>
+    <%= label_tag "#{id_prefix}_result", 'Share result with everyone', class: 'form-check-label text-13' %>
+  </div>
+
+  <div class="form-check mb-1">
+    <%= check_box_tag prompt_name, '1', generation.share_prompt?,
+                      class: 'form-check-input',
+                      id: "#{id_prefix}_prompt",
+                      disabled: disabled || !share_result,
+                      data: {
+                        generation_share_target: 'sharePrompt',
+                        action: 'change->generation-share#update'
+                      } %>
+    <%= label_tag "#{id_prefix}_prompt", 'Include prompt', class: 'form-check-label text-13' %>
+  </div>
+
+  <% if show_input %>
+    <div class="form-check mb-0">
+      <%= check_box_tag input_name, '1', generation.share_input?,
+                        class: 'form-check-input',
+                        id: "#{id_prefix}_input",
+                        disabled: disabled || !share_result,
+                        data: {
+                          generation_share_target: 'shareInput',
+                          action: 'change->generation-share#update'
+                        } %>
+      <%= label_tag "#{id_prefix}_input", 'Include reference image', class: 'form-check-label text-13' %>
+    </div>
+  <% end %>
+</div>

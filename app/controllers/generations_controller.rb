@@ -4,7 +4,7 @@ class GenerationsController < ApplicationController
 
   PER_PAGE = 24
 
-  before_action :set_generation, only: %i[show destroy retry share unshare]
+  before_action :set_generation, only: %i[show destroy retry update_share]
 
   def index
     scope = current_user.generations
@@ -23,6 +23,7 @@ class GenerationsController < ApplicationController
 
   def create
     @generation = current_user.generations.new(generation_params)
+    assign_share_intent(@generation)
     if @generation.save
       SubmitGenerationJob.perform_later(@generation)
       redirect_to kind_for(@generation).path, notice: 'Queued. Your result will appear below when it\'s ready.'
@@ -43,18 +44,21 @@ class GenerationsController < ApplicationController
     end
   end
 
-  def share
+  def update_share
     unless @generation.succeeded?
-      return redirect_to generation_path(@generation), alert: 'Only finished results can be shared.', status: :see_other
+      return head :unprocessable_entity
     end
 
-    @generation.share!(share_prompt: params[:share_prompt] == '1', share_input: params[:share_input] == '1')
-    redirect_to generation_path(@generation), notice: 'Shared with everyone.', status: :see_other
-  end
+    if params[:share_result] == '1'
+      @generation.share!(share_prompt: params[:share_prompt] == '1', share_input: params[:share_input] == '1')
+    else
+      @generation.unshare!
+    end
 
-  def unshare
-    @generation.unshare!
-    redirect_to generation_path(@generation), notice: 'No longer shared.', status: :see_other
+    respond_to do |format|
+      format.turbo_stream
+      format.html { redirect_to generation_path(@generation), notice: share_notice, status: :see_other }
+    end
   end
 
   def destroy
@@ -77,5 +81,16 @@ class GenerationsController < ApplicationController
 
   def kind_for(generation)
     generation.workflow&.kind_info || GenerationKind.find(generation.kind.presence || 'image')
+  end
+
+  def assign_share_intent(generation)
+    raw = params[:generation] || {}
+    generation.share_prompt = raw[:share_prompt] == '1'
+    generation.share_input = raw[:share_input] == '1'
+    generation.share_when_done = raw[:share_result] == '1'
+  end
+
+  def share_notice
+    @generation.shared? ? 'Shared with everyone.' : 'No longer shared.'
   end
 end

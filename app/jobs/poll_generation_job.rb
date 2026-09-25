@@ -42,5 +42,6 @@ class PollGenerationJob < ApplicationJob
     end
     generation.update!(run_seconds: result.run_seconds) if result.run_seconds
     generation.succeed!
+    generation.apply_pending_share!
   end
 end
