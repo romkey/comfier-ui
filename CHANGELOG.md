@@ -47,7 +47,7 @@ All notable changes to this project are documented here. The format follows
   separate status badges. MIT [LICENSE](LICENSE) added.
 - Agreeing to the privacy notice works even if the user's other settings no longer validate.
 
-## [v0.1.3] - 2026-09-25
+## [v0.1.4] - 2026-09-25
 
 ### Added
 - GitHub Actions workflows that build and publish Docker images to GHCR: [Staging](.github/workflows/staging.yml) on
