@@ -20,6 +20,7 @@ class NotifyGenerationJob < ApplicationJob
     return fan_out(generation) if channel.nil?
 
     user = generation.user
+    Rails.logger.info("Notifying user #{user.id} by #{channel} that generation #{generation.id} #{generation.outcome}")
     case channel
     when 'email' then GenerationMailer.finished(generation).deliver_now if user.notify_via_email?
     when 'slack' then SlackNotifier.call(generation) if user.notify_via_slack?

@@ -5,6 +5,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [v0.3.1] - 2026-09-25
+
+### Fixed
+- No notification was sent for generations queued with "Share result with everyone". Comfier now also logs when a
+  user has notifications on but the server or their account can't deliver them.
+
 ## [v0.3.0] - 2026-09-25
 
 ### Fixed

@@ -29,6 +29,33 @@ class PollGenerationJobTest < ActiveJob::TestCase
       outputs: { '9' => { images: files.map { { filename: it, subfolder: '', type: 'output' } } } } }
   end
 
+  test 'notifies the owner when polling finishes the generation' do
+    @generation.user.update!(notify_email: true)
+    stub_history(success_entry('comfier_00001_.png'))
+    stub_queue
+    stub_request(:get, comfy_url(@backend, 'view')).with(query: hash_including({})).to_return(body: 'png')
+
+    with_notifications_configured do
+      assert_enqueued_with(job: NotifyGenerationJob, args: [@generation]) do
+        PollGenerationJob.perform_now(@generation)
+      end
+    end
+  end
+
+  test 'notifies the owner when a shared-when-done generation finishes' do
+    @generation.user.update!(notify_email: true)
+    @generation.update!(share_when_done: true)
+    stub_history(success_entry('comfier_00001_.png'))
+    stub_queue
+    stub_request(:get, comfy_url(@backend, 'view')).with(query: hash_including({})).to_return(body: 'png')
+
+    with_notifications_configured do
+      assert_enqueued_with(job: NotifyGenerationJob, args: [@generation]) do
+        PollGenerationJob.perform_now(@generation)
+      end
+    end
+  end
+
   test 'checks again later while ComfyUI is still working' do
     stub_history(nil)
     stub_queue(running: [[1, 'running-prompt']])
