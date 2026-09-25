@@ -21,6 +21,10 @@ module GenerationsHelper
   end
 
   # Finished work is the common case, so it gets a quiet dot; anything else gets a labelled badge.
+  def generation_cancellable?(generation)
+    generation.in_progress? && (generation.user_id == current_user.id || current_user.admin?)
+  end
+
   def generation_status(generation)
     return tag.span(class: 'status-dot status-success', title: 'Done') if generation.succeeded?
 

@@ -5,6 +5,7 @@ class GenerationsController < ApplicationController
   PER_PAGE = 24
 
   before_action :set_generation, only: %i[show destroy retry update_share]
+  before_action :set_cancellable_generation, only: :cancel
 
   def index
     scope = current_user.generations
@@ -64,10 +65,23 @@ class GenerationsController < ApplicationController
     redirect_to generations_path, notice: 'Deleted.', status: :see_other
   end
 
+  def cancel
+    if GenerationCanceller.call(@generation).cancelled
+      redirect_back_or_to queue_path, notice: 'Cancelled.', status: :see_other
+    else
+      redirect_back_or_to queue_path, alert: 'This job is no longer running.', status: :see_other
+    end
+  end
+
   private
 
   def set_generation
     @generation = current_user.generations.find(params[:id])
+  end
+
+  def set_cancellable_generation
+    scope = current_user.admin? ? Generation.all : current_user.generations
+    @generation = scope.find(params[:id])
   end
 
   def generation_params

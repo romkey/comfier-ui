@@ -77,6 +77,16 @@ module Comfyui
       assert_equal 3, @client.queue_depth
     end
 
+    test 'cancel_prompt dequeues and interrupts the prompt' do
+      queue = stub_request(:post, comfy_url(@backend, 'queue')).with(body: { delete: ['abc-123'] }.to_json)
+      interrupt = stub_request(:post, comfy_url(@backend, 'interrupt')).with(body: { prompt_id: 'abc-123' }.to_json)
+
+      @client.cancel_prompt('abc-123')
+
+      assert_requested queue
+      assert_requested interrupt
+    end
+
     test 'result wraps the history entry for the prompt' do
       stub_request(:get, comfy_url(@backend, 'history/abc'))
         .to_return(body: { abc: { status: { status_str: 'success', completed: true }, outputs: {} } }.to_json)

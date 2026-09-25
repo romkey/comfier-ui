@@ -9,7 +9,7 @@ require 'json'
 require 'securerandom'
 require 'zlib'
 
-class FakeComfyui
+class FakeComfyui # rubocop:disable Metrics/ClassLength
   RENDER_SECONDS = 3
   DOWNLOADER = 'ComfierModelDownload'.freeze
   FOLDERS = %w[checkpoints diffusion_models text_encoders vae loras controlnet clip_vision upscale_models].freeze
@@ -40,9 +40,12 @@ class FakeComfyui
   end
 
   def post(request)
+    body = JSON.parse(request.body.read.presence || '{}')
     case request.path_info
-    when '/prompt' then submit(JSON.parse(request.body.read)['prompt'])
+    when '/prompt' then submit(body['prompt'])
     when '/upload/image' then json(name: 'upload.png', subfolder: '', type: 'input')
+    when '/queue' then cancel_queue(body)
+    when '/interrupt' then cancel_interrupt(body)
     end
   end
 
@@ -55,7 +58,8 @@ class FakeComfyui
 
   def history(id)
     prompt = @mutex.synchronize { @prompts[id] }
-    return json({}) if prompt.nil? || now - prompt[:at] < RENDER_SECONDS
+    return json({}) if prompt.nil? || (!prompt[:cancelled] && now - prompt[:at] < RENDER_SECONDS)
+    return json(id => cancelled_entry) if prompt[:cancelled]
     return json(id => finish_download(prompt[:download])) if prompt[:download]
 
     image = { filename: "fake_#{id[0, 8]}.png", subfolder: '', type: 'output' }
@@ -91,7 +95,30 @@ class FakeComfyui
     json(@mutex.synchronize { @models[folder].dup })
   end
 
-  def pending = @mutex.synchronize { @prompts.select { |_, prompt| now - prompt[:at] < RENDER_SECONDS }.keys }
+  def cancel_queue(body)
+    Array(body['delete']).each { |id| mark_cancelled(id) }
+    [200, {}, ['']]
+  end
+
+  def cancel_interrupt(body)
+    mark_cancelled(body['prompt_id']) if body['prompt_id'].present?
+    [200, {}, ['']]
+  end
+
+  def mark_cancelled(id)
+    @mutex.synchronize { @prompts[id]&.merge!(cancelled: true) }
+  end
+
+  def cancelled_entry
+    { status: { status_str: 'error', completed: true,
+                messages: [['execution_error', { node_type: 'Comfier', exception_message: 'Interrupted' }]] } }
+  end
+
+  def pending
+    @mutex.synchronize do
+      @prompts.reject { |_, prompt| prompt[:cancelled] }.select { |_, prompt| now - prompt[:at] < RENDER_SECONDS }.keys
+    end
+  end
 
   def now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 

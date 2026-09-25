@@ -26,6 +26,12 @@ module Comfyui
       Array(queue['queue_running']).size + Array(queue['queue_pending']).size
     end
 
+    # Drops a prompt from ComfyUI's pending queue and interrupts it when it's the one running.
+    def cancel_prompt(prompt_id)
+      perform(json_request(Net::HTTP::Post, 'queue', { delete: [prompt_id] }))
+      perform(json_request(Net::HTTP::Post, 'interrupt', { prompt_id: }))
+    end
+
     # Queues an API-format workflow graph and returns ComfyUI's prompt id.
     def submit(graph)
       body = parse_json(perform(json_request(Net::HTTP::Post, 'prompt', { prompt: graph, client_id: CLIENT_ID })))

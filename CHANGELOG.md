@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- Site footer with a GitHub link and the running app version.
+- Cancel for queued and running generations: users can stop their own jobs, admins can stop any job. Comfier asks ComfyUI to dequeue or interrupt the prompt when it was already submitted.
 - Sign-in with Authentik (OpenID Connect). Members of the admin group in Authentik become admins automatically.
 - Image, Video, Audio and 3D Model pages: a prompt box, shape picker, optional "avoid" text, seed, length and input
   image, showing only the fields the chosen style needs.

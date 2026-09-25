@@ -39,5 +39,7 @@ module ComfierUi
     config.active_record.encryption.key_derivation_salt = ENV.fetch('ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT', nil)
 
     config.generators.system_tests = nil
+
+    config.x.github_repo = 'https://github.com/romkey/comfier-ui'
   end
 end
