@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- GitHub Actions workflows that build and publish Docker images to GHCR: [Staging](.github/workflows/staging.yml) on
+  pushes to `staging`, and [Release](.github/workflows/release.yml) (manual on `main`) for production tags.
 - Sign-in with Authentik (OpenID Connect). Members of the admin group in Authentik become admins automatically.
 - Image, Video, Audio and 3D Model pages: a prompt box, shape picker, optional "avoid" text, seed, length and input
   image, showing only the fields the chosen style needs.

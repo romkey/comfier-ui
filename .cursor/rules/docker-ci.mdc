@@ -38,7 +38,8 @@ Dev/test bind-mount the repo at `/rails`; test images should not copy applicatio
 
 ## GitHub Actions
 
-- **ci.yml:** Runs on push/PR to `main`; sets up PostgreSQL 16 and Redis 8 as service containers; runs `bin/rails test`
-- **release.yml:** Triggered by `v*` tags; runs tests then builds and pushes Docker image to `ghcr.io`
+- **tests.yml:** Runs on push/PR to `main` and `staging`; PostgreSQL service; Rails tests + ComfyUI downloader node tests
+- **staging.yml:** Push to `staging`; builds and pushes `ghcr.io/<repo>:staging`
+- **release.yml:** Manual on `main`; runs tests, bumps semver from newest `v*` tag, builds and pushes production tags
 - Uses `ruby/setup-ruby` with bundler-cache and `actions/setup-node` with yarn cache
 - Concurrency: cancels in-progress runs for the same ref

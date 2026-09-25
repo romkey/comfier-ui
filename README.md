@@ -187,6 +187,23 @@ GitHub Actions runs on every pull request and on pushes to `staging` and `main`:
 [Security](.github/workflows/security.yml) (Brakeman, bundler-audit, importmap audit). Work branches target
 `staging`; see the deployment rules in `.cursor/rules/deployment-rules.mdc`.
 
+Docker images are built on GitHub and published to `ghcr.io/<owner>/comfier-ui`:
+
+| Workflow | When | Image tags |
+|---|---|---|
+| [Staging](.github/workflows/staging.yml) | Push to `staging` | `:staging` |
+| [Release](.github/workflows/release.yml) | Manual run on `main` | `:latest`, `:X.Y.Z`, `:MAJOR` |
+
+Cut a production release from `main` with **Actions → Release → Run workflow** (choose `patch`, `minor`, or `major`), or:
+
+```bash
+gh workflow run release.yml -f bump=patch
+gh workflow run release.yml -f bump=minor -f dry_run=true   # preview only
+```
+
+Set `COMFIER_IMAGE=ghcr.io/<owner>/comfier-ui:latest` (or `:staging` on staging) in production `.env`.
+The first push to GHCR may require making the package public under the repo's **Packages** settings.
+
 ## Architecture
 
 | Path | What lives there |
