@@ -76,7 +76,9 @@ Anyone in the `AUTHENTIK_ADMIN_GROUP` group (default `comfier-admins`) is an adm
 | `DEV_LOGIN_NAME`, `DEV_LOGIN_ADMIN` | The developer account's display name, and whether it's an admin (default `true`) |
 | `SECRET_KEY_BASE` | Production only; `bin/rails secret` |
 | `ACTIVE_RECORD_ENCRYPTION_*` | Production only; `bin/rails db:encryption:init`. Encrypts backend API tokens |
-| `POSTGRES_PASSWORD` | Production database password |
+| `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_USERNAME`, `POSTGRES_PASSWORD` | PostgreSQL connection |
+| `POSTGRES_DATABASE`, `POSTGRES_DATABASE_TEST`, `POSTGRES_DATABASE_PRODUCTION` | Database name per environment |
+| `POSTGRES_HOST_PORT` | Dev only: host port when compose publishes Postgres |
 | `TIME_ZONE`, `GENERATION_TIMEOUT_MINUTES`, `SIDEKIQ_CONCURRENCY`, `FORCE_SSL`, `ASSUME_SSL` | Optional tuning |
 | `MODEL_DOWNLOAD_TIMEOUT_HOURS` | How long a model download may run before it's marked failed (default `12`) |
 

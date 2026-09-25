@@ -6,8 +6,6 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
-- GitHub Actions workflows that build and publish Docker images to GHCR: [Staging](.github/workflows/staging.yml) on
-  pushes to `staging`, and [Release](.github/workflows/release.yml) (manual on `main`) for production tags.
 - Sign-in with Authentik (OpenID Connect). Members of the admin group in Authentik become admins automatically.
 - Image, Video, Audio and 3D Model pages: a prompt box, shape picker, optional "avoid" text, seed, length and input
   image, showing only the fields the chosen style needs.
@@ -48,3 +46,13 @@ All notable changes to this project are documented here. The format follows
 - README badges for Tests, Lint, Security, Ruby, Rails, ComfyUI and MIT license. CI split into three workflows for
   separate status badges. MIT [LICENSE](LICENSE) added.
 - Agreeing to the privacy notice works even if the user's other settings no longer validate.
+
+## [v0.1.3] - 2026-09-25
+
+### Added
+- GitHub Actions workflows that build and publish Docker images to GHCR: [Staging](.github/workflows/staging.yml) on
+  pushes to `staging`, and [Release](.github/workflows/release.yml) (manual on `main`) for production tags.
+- `image_processing` gem (libvips) for Active Storage image variants.
+
+### Changed
+- PostgreSQL connection settings use `POSTGRES_*` variables in `.env` instead of hardcoded compose values.

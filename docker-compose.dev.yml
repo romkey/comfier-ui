@@ -13,7 +13,7 @@ x-app: &app
       required: false
   environment:
     RAILS_ENV: development
-    DATABASE_URL: postgres://postgres:postgres@postgres:5432/comfier_ui_development
+    POSTGRES_HOST: postgres
     REDIS_URL: redis://redis:6379/0
   # Docker Desktop's resolver doesn't forward private domains (e.g. gpu-box.lan) to your LAN DNS.
   # Set DEV_DNS in .env to your LAN DNS server so ComfyUI backends can be added by hostname.
@@ -30,15 +30,19 @@ services:
   postgres:
     image: postgres:18.6-alpine
     container_name: comfier-ui-dev-postgres
+    env_file:
+      - path: .env
+        required: false
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: ${POSTGRES_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DATABASE:-comfier_ui_development}
     ports:
-      - "${DEV_DB_PORT:-5432}:5432"
+      - "${POSTGRES_HOST_PORT:-5432}:5432"
     volumes:
       - postgres:/var/lib/postgresql
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres"]
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USERNAME:-postgres}"]
       interval: 5s
       retries: 10
 

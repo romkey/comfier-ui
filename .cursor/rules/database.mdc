@@ -7,7 +7,7 @@ alwaysApply: false
 # Database and Migrations
 
 - **Database:** PostgreSQL 16
-- **Adapter:** `pg` gem with connection via `DATABASE_URL` or individual `DB_HOST`/`DB_PORT`/`DB_USERNAME`/`DB_PASSWORD` env vars
+- **Adapter:** `pg` gem with connection via `POSTGRES_*` env vars in `.env` (see `.env.example`); `DATABASE_URL` overrides if set
 
 ## Migration Conventions
 

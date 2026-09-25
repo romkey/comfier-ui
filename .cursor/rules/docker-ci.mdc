@@ -25,7 +25,7 @@ Use `-f docker-compose.<stack>.yml`; each stack sets a top-level `name:` so volu
 | `docker-compose.test.build.yml` | Same as test stack but forces a rebuild of the thin test image. |
 | `docker-compose.lint.yml` | RuboCop (quick): prebuilt `member_zone_rubocop:latest`, bind-mounted app; no Postgres service. |
 | `docker-compose.lint.build.yml` | Same as lint stack but **includes** a `build:` for `Dockerfile.rubocop`. |
-| `docker-compose.server.yml` | Prod/staging-style: **no** Postgres service; set `DATABASE_URL` (or DB\_\* ) for external DB. Includes Redis for Sidekiq unless `REDIS_URL` points elsewhere. |
+| `docker-compose.production.yml` | Production stack with bundled Postgres, Redis, web, and Sidekiq; configure `POSTGRES_*` in `.env`. |
 
 - **Dev migrate:** `docker compose -f docker-compose.dev.yml --profile tools run --rm migrate`
 - **Tests:** `docker compose -f docker-compose.test.yml run --rm test` — installs changed gems into the cached bundle volume and recreates the test DB before each run
