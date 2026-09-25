@@ -6,14 +6,11 @@ class GenerationNotification
     cancelled: 'Your %s was cancelled'
   }.freeze
 
-  attr_reader :generation
+  attr_reader :generation, :channel
 
-  def self.max_megabytes = AppSetting.notification_attachment_max_mb
-
-  def self.max_bytes = AppSetting.notification_attachment_max_bytes
-
-  def initialize(generation)
+  def initialize(generation, channel:)
     @generation = generation
+    @channel = channel.to_sym
   end
 
   delegate :outcome, :title, to: :generation
@@ -28,18 +25,37 @@ class GenerationNotification
 
   def include_files? = generation.user.notify_include_asset? && generation.succeeded? && generation.outputs.attached?
 
-  # Outputs that fit under the size cap, in order, until the cap is used up.
+  def max_bytes
+    case channel
+    when :email then AppSetting.email_notification_attachment_max_bytes
+    when :slack then AppSetting.slack_notification_attachment_max_bytes
+    else raise ArgumentError, "Unknown notification channel: #{channel.inspect}"
+    end
+  end
+
+  # Attachments that fit under the size cap, in order, until the cap is used up.
   def attachable_files
     return [] unless include_files?
 
-    budget = self.class.max_bytes
-    generation.outputs.select do |output|
-      next false if output.byte_size > budget
+    budget = max_bytes
+    generation.outputs.filter_map do |output|
+      attachment = prepare_attachment(output, max_bytes: budget)
+      next unless attachment
 
-      budget -= output.byte_size
-      true
+      budget -= attachment.bytesize
+      attachment
     end
   end
 
   def files_left_out? = include_files? && attachable_files.size < generation.outputs.size
+
+  private
+
+  def prepare_attachment(output, max_bytes:)
+    if NotificationImageShrinker.processable?(output.content_type)
+      NotificationImageShrinker.prepare(output, max_bytes:)
+    elsif output.byte_size <= max_bytes
+      NotificationAttachment.from_blob(output)
+    end
+  end
 end

@@ -18,7 +18,7 @@ class SlackNotifier
   def self.call(generation) = new(generation).call
 
   def initialize(generation)
-    @notification = GenerationNotification.new(generation)
+    @notification = GenerationNotification.new(generation, channel: :slack)
     @user = generation.user
   end
 
@@ -27,7 +27,7 @@ class SlackNotifier
     files = @notification.attachable_files
     return api('chat.postMessage', channel:, text: message) if files.empty?
 
-    uploaded = files.map { |output| upload(output) }
+    uploaded = files.map { |attachment| upload(attachment) }
     api('files.completeUploadExternal', channel_id: channel, initial_comment: message, files: uploaded.to_json)
   end
 
@@ -43,9 +43,9 @@ class SlackNotifier
 
   def escape(text) = text.to_s.gsub('&', '&amp;').gsub('<', '&lt;').gsub('>', '&gt;')
 
-  def upload(output)
-    data = output.download
-    filename = output.filename.to_s
+  def upload(attachment)
+    data = attachment.data
+    filename = attachment.filename
     target = api('files.getUploadURLExternal', filename:, length: data.bytesize)
     post(URI(target.fetch('upload_url')), data, 'application/octet-stream')
     { id: target.fetch('file_id'), title: filename }

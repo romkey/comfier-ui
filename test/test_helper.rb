@@ -46,6 +46,13 @@ module ActiveSupport
       with_env({ 'SMTP_ADDRESS' => 'smtp.test', 'SLACK_BOT_TOKEN' => 'xoxb-test' }, &)
     end
 
+    def vips_available?
+      require 'vips'
+      true
+    rescue LoadError
+      false
+    end
+
     def png_upload(name = 'pixel.png')
       Rack::Test::UploadedFile.new(file_fixture('pixel.png'), 'image/png', original_filename: name)
     end

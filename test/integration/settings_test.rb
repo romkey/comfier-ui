@@ -40,12 +40,11 @@ class SettingsTest < ActionDispatch::IntegrationTest
     assert_predicate user, :notify_include_asset?
   end
 
-  test 'shows fractional attachment limits in kilobytes' do
-    app_settings(:default).update!(notification_attachment_max_mb: 0.5)
-
+  test 'shows separate attachment limits per channel' do
     get settings_path
 
-    assert_select '.form-text', text: /Files over 512 KB are linked instead of attached/
+    assert_select '.form-text', text: /Email limit: 500 KB/
+    assert_select '.form-text', text: /Slack limit: 5 MB/
   end
 
   test 'notification switches are off when the server or account lacks them' do

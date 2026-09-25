@@ -53,7 +53,9 @@
                                            disabled: !(@user.email_reachable? || @user.slack_reachable?) %>
     <%= f.label :notify_include_asset, 'Include the finished file', class: 'form-check-label' %>
     <div class="form-text text-12 mt-0">
-      Files over <%= notification_attachment_limit_label %> are linked instead of attached.
+      Email limit: <%= notification_attachment_limit_label(:email) %>.
+      Slack limit: <%= notification_attachment_limit_label(:slack) %>.
+      Files over each channel's limit are linked instead of attached.
     </div>
   </div>
 

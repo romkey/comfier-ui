@@ -3,9 +3,9 @@ class GenerationMailer < ApplicationMailer
   def self.configured? = ENV['SMTP_ADDRESS'].present?
 
   def finished(generation)
-    @notification = GenerationNotification.new(generation)
-    @notification.attachable_files.each do |output|
-      attachments[output.filename.to_s] = { mime_type: output.content_type, content: output.download }
+    @notification = GenerationNotification.new(generation, channel: :email)
+    @notification.attachable_files.each do |attachment|
+      attachments[attachment.filename] = { mime_type: attachment.content_type, content: attachment.data }
     end
 
     mail(to: generation.user.email, subject: @notification.headline)

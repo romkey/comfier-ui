@@ -16,7 +16,7 @@ module Admin
     private
 
     def settings_params
-      params.expect(app_setting: [:notification_attachment_max_mb])
+      params.expect(app_setting: %i[email_notification_attachment_max_mb slack_notification_attachment_max_mb])
     end
   end
 end
