@@ -85,8 +85,8 @@ with the output attached. Email addresses and Slack IDs come from Authentik; use
 - **Email**: set `SMTP_ADDRESS` (plus port, credentials and `MAIL_FROM`). Email is unavailable until it's set.
 - **Slack**: create a Slack app with a bot user, give the bot the `chat:write`, `im:write` and `files:write` scopes,
   install it to the workspace, and put its bot token in `SLACK_BOT_TOKEN`. Slack is unavailable until it's set.
-- Attachments over the size limit (default `20` MB total per message) are replaced by a link. Admins can change the
-  limit under **Settings → Notifications**.
+- Attachments over the size limit (default `20` MB total per message; decimals allowed down to `0.01` MB) are replaced
+  by a link. Admins can change the limit under **Settings → Notifications**.
 
 ### Environment variables
 

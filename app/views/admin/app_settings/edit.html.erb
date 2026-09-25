@@ -12,11 +12,11 @@
 
   <div class="mb-3">
     <%= f.label :notification_attachment_max_mb, 'Maximum attachment size (MB)', class: 'form-label' %>
-    <%= f.number_field :notification_attachment_max_mb, min: 0, max: 100, step: 1,
+    <%= f.number_field :notification_attachment_max_mb, min: 0, max: 100, step: 0.01,
                        class: 'form-control form-control-sm w-auto' %>
     <div class="form-text text-12">
-      Total size of files attached to one notification. Set to 0 to always link instead of attach.
-      Files over this limit are linked to Comfier.
+      Total size of files attached to one notification. Decimals are allowed (for example, 0.5 for 512 KB).
+      Set to 0 to always link instead of attach. Files over this limit are linked to Comfier.
     </div>
   </div>
 

@@ -19,4 +19,11 @@ class AppSettingTest < ActiveSupport::TestCase
 
     assert_equal 0, AppSetting.notification_attachment_max_mb
   end
+
+  test 'supports fractional megabyte limits' do
+    app_settings(:default).update!(notification_attachment_max_mb: 0.5)
+
+    assert_in_delta 0.5, AppSetting.notification_attachment_max_mb
+    assert_equal 512.kilobytes, AppSetting.notification_attachment_max_bytes
+  end
 end

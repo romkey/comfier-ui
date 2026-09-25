@@ -53,7 +53,7 @@
                                            disabled: !(@user.email_reachable? || @user.slack_reachable?) %>
     <%= f.label :notify_include_asset, 'Include the finished file', class: 'form-check-label' %>
     <div class="form-text text-12 mt-0">
-      Files over <%= GenerationNotification.max_megabytes %> MB are linked instead of attached.
+      Files over <%= notification_attachment_limit_label %> are linked instead of attached.
     </div>
   </div>
 

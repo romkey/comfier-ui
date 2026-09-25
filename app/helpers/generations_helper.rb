@@ -35,6 +35,15 @@ module GenerationsHelper
     end
   end
 
+  def notification_attachment_limit_label
+    mb = GenerationNotification.max_megabytes.to_d
+    return '0 MB' if mb.zero?
+    return "#{(mb * 1024).round} KB" if mb < 1
+
+    precision = mb.frac.zero? ? 0 : 2
+    "#{number_with_precision(mb, precision:, strip_insignificant_zeros: true)} MB"
+  end
+
   def generation_shared_indicator(generation)
     return unless generation.shared?
 
