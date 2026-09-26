@@ -26,6 +26,15 @@ module Admin
       assert_response :not_found
     end
 
+    test 'admin can view report case with generation actions' do
+      sign_in_as users(:admin)
+
+      get admin_report_path(@case)
+
+      assert_response :success
+      assert_match 'Delete result', response.body
+    end
+
     test 'admin review removed unshares and revokes public link' do
       sign_in_as users(:admin)
 
