@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_24_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_25_210000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -43,9 +43,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_010000) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
+  create_table "app_settings", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.decimal "email_notification_attachment_max_mb", precision: 8, scale: 3, default: "0.488", null: false
+    t.text "placeholder_prompt"
+    t.decimal "slack_notification_attachment_max_mb", precision: 8, scale: 3, default: "5.0", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "backends", force: :cascade do |t|
     t.text "auth_token"
     t.string "base_url", null: false
+    t.boolean "cleanup_after_run", default: false, null: false
     t.datetime "created_at", null: false
     t.boolean "downloader_available", default: false, null: false
     t.boolean "enabled", default: true, null: false
@@ -71,6 +80,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_010000) do
     t.string "kind", null: false
     t.text "negative_prompt"
     t.jsonb "parameters", default: {}, null: false
+    t.datetime "processing_ended_at"
+    t.datetime "processing_started_at"
     t.text "prompt"
     t.float "run_seconds"
     t.boolean "share_input", default: false, null: false
@@ -104,7 +115,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_010000) do
     t.datetime "updated_at", null: false
     t.text "url", null: false
     t.string "via"
-    t.index ["backend_id", "directory", "name"], name: "index_model_downloads_one_active_per_file", unique: true, where: "((status)::text = ANY ((ARRAY['queued'::character varying, 'running'::character varying])::text[]))"
+    t.index ["backend_id", "directory", "name"], name: "index_model_downloads_one_active_per_file", unique: true, where: "((status)::text = ANY (ARRAY[('queued'::character varying)::text, ('running'::character varying)::text]))"
     t.index ["backend_id"], name: "index_model_downloads_on_backend_id"
   end
 
@@ -123,10 +134,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_010000) do
     t.citext "email"
     t.datetime "last_signed_in_at"
     t.string "name"
+    t.boolean "notify_email", default: false, null: false
+    t.boolean "notify_include_asset", default: false, null: false
+    t.boolean "notify_slack", default: false, null: false
     t.bigint "preferred_backend_id"
     t.datetime "privacy_accepted_at"
     t.integer "privacy_accepted_version"
     t.string "provider", null: false
+    t.string "slack_name"
+    t.string "slack_uid"
     t.string "uid", null: false
     t.datetime "updated_at", null: false
     t.string "username"

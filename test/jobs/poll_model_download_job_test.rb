@@ -9,7 +9,9 @@ class PollModelDownloadJobTest < ActiveJob::TestCase
   end
 
   def stub_history(entry)
-    stub_request(:get, comfy_url(@backend, 'history/dl-1')).to_return(body: (entry ? { 'dl-1' => entry } : {}).to_json)
+    body = entry ? { 'dl-1' => entry } : {}
+    stub_request(:get, comfy_url(@backend, 'history/dl-1')).to_return(body: body.to_json)
+    stub_request(:get, comfy_url(@backend, 'history')).with(query: { max_items: '64' }).to_return(body: body.to_json)
   end
 
   test 'keeps polling while the node is still running' do

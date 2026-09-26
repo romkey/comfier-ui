@@ -24,26 +24,42 @@ module Comfyui
     def files
       return [] if pending?
 
+      all_files.select { it.fetch('type', 'output') == 'output' }
+    end
+
+    # Every file ComfyUI recorded for the prompt, including previews in temp/.
+    def all_files
+      return [] if pending?
+
       (@entry['outputs'] || {}).values.flat_map do |node_output|
         node_output.values.flat_map { Array(it) }.select do |file|
-          file.is_a?(Hash) && file['filename'].present? && file.fetch('type', 'output') == 'output'
+          file.is_a?(Hash) && file['filename'].present?
         end
       end.uniq
     end
 
+    def processing_started_at = timestamp_for('execution_start')
+
+    def processing_ended_at = timestamp_for('execution_success') || timestamp_for('execution_error')
+
     # Wall-clock run time from ComfyUI's execution_start and execution_success messages.
     def run_seconds
-      return nil if pending?
-
-      messages = Array(@entry.dig('status', 'messages'))
-      started = message_timestamp(messages, 'execution_start')
-      finished = message_timestamp(messages, 'execution_success') || message_timestamp(messages, 'execution_error')
+      started = processing_started_at
+      finished = processing_ended_at
       return nil unless started && finished
 
       (finished - started).clamp(0, Float::INFINITY)
     end
 
     private
+
+    def timestamp_for(type)
+      return if pending?
+
+      messages = Array(@entry.dig('status', 'messages'))
+      epoch = message_timestamp(messages, type)
+      Time.zone.at(epoch) if epoch
+    end
 
     def message_timestamp(messages, type)
       _, data = messages.find { |message_type, _| message_type == type }

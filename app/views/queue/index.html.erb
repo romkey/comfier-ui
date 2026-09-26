@@ -27,6 +27,7 @@
           <th>Status</th>
           <th class="text-end">Done in</th>
           <% if @show_backend %><th>Backend</th><% end %>
+          <th class="text-end"></th>
         </tr>
       </thead>
       <tbody>
@@ -47,6 +48,9 @@
             <% if @show_backend %>
               <td class="text-12 text-secondary"><%= estimate.backend&.name || '—' %></td>
             <% end %>
+            <td class="text-end">
+              <%= render 'generations/cancel_button', generation: job if generation_cancellable?(job) %>
+            </td>
           </tr>
         <% end %>
       </tbody>

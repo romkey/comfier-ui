@@ -22,6 +22,44 @@ class UserTest < ActiveSupport::TestCase
     assert_equal 'Alice Renamed', users(:alice).name
   end
 
+  test 'from_omniauth links Slack from the slack claim' do
+    user = User.from_omniauth(auth_hash(uid: users(:alice).uid, slack: { 'uid' => 'U123', 'name' => 'alice.a' }))
+
+    assert_equal 'U123', user.slack_uid
+    assert_equal 'alice.a', user.slack_name
+  end
+
+  test 'from_omniauth clears the Slack link when the claim goes away' do
+    users(:alice).update!(slack_uid: 'U123', slack_name: 'alice.a')
+    user = User.from_omniauth(auth_hash(uid: users(:alice).uid))
+
+    assert_nil user.slack_uid
+    assert_nil user.slack_name
+  end
+
+  test 'notification channels need a preference, an address and server configuration' do
+    user = users(:alice)
+    user.assign_attributes(notify_email: true, notify_slack: true)
+
+    with_env('SMTP_ADDRESS' => nil, 'SLACK_BOT_TOKEN' => nil) do
+      assert_not user.notify_via_email?
+      assert_not user.notify_via_slack?
+    end
+
+    with_notifications_configured do
+      assert_predicate user, :notify_via_email?
+      assert_not user.notify_via_slack?
+
+      user.slack_uid = 'U123'
+
+      assert_predicate user, :notify_via_slack?
+
+      user.notify_email = false
+
+      assert_not user.notify_via_email?
+    end
+  end
+
   test 'admin rights follow membership of the Authentik admin group' do
     promoted = User.from_omniauth(auth_hash(uid: users(:alice).uid, groups: ['staff', User.admin_group]))
 

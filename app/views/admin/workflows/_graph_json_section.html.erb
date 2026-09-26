@@ -1,0 +1,37 @@
+<div id="workflow_graph_json_section" class="mb-3">
+  <% field_id = 'workflow_graph_json' %>
+  <% if form %>
+    <%= form.label :graph_json, 'Workflow (API format JSON)', class: 'form-label' %>
+    <%= form.text_area :graph_json, rows: 18, id: field_id,
+                       class: 'form-control form-control-sm font-monospace text-12', spellcheck: false %>
+  <% else %>
+    <%= label_tag field_id, 'Workflow (API format JSON)', class: 'form-label' %>
+    <%= text_area_tag 'workflow[graph_json]', workflow.graph_json, rows: 18, id: field_id,
+                      class: 'form-control form-control-sm font-monospace text-12', spellcheck: false %>
+  <% end %>
+  <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
+    <% if LiteLlm::Client.configured? %>
+      <% if form %>
+        <%= form.button type: 'submit', name: 'suggest_placeholders', value: '1',
+                        formnovalidate: true, class: 'btn btn-outline-secondary btn-sm',
+                        data: { turbo_submits_with: 'Suggesting…' } do %>
+          <i class="bi bi-magic" aria-hidden="true"></i> Suggest placeholders
+        <% end %>
+      <% else %>
+        <%= button_tag type: 'submit', name: 'suggest_placeholders', value: '1',
+                       formnovalidate: true, class: 'btn btn-outline-secondary btn-sm',
+                       data: { turbo_submits_with: 'Suggesting…' } do %>
+          <i class="bi bi-magic" aria-hidden="true"></i> Suggest placeholders
+        <% end %>
+      <% end %>
+      <span class="text-12 text-secondary">Uses LiteLLM (<code><%= ENV.fetch('LITELLM_MODEL') %></code>).
+        Edit the prompt under Settings → Workflow assistant.</span>
+    <% else %>
+      <%= tag.button 'Suggest placeholders', class: 'btn btn-outline-secondary btn-sm', disabled: true %>
+      <span class="text-12 text-secondary">
+        Set <%= LiteLlm::Client.missing_config_keys.map { |key| tag.code(key) }.to_sentence %>
+        in <code>.env</code> to enable.
+      </span>
+    <% end %>
+  </div>
+</div>

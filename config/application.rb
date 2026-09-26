@@ -7,7 +7,7 @@ require 'active_job/railtie'
 require 'active_record/railtie'
 require 'active_storage/engine'
 require 'action_controller/railtie'
-# require "action_mailer/railtie"
+require 'action_mailer/railtie'
 # require "action_mailbox/engine"
 # require "action_text/engine"
 require 'action_view/railtie'
@@ -39,5 +39,7 @@ module ComfierUi
     config.active_record.encryption.key_derivation_salt = ENV.fetch('ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT', nil)
 
     config.generators.system_tests = nil
+
+    config.x.github_repo = 'https://github.com/romkey/comfier-ui'
   end
 end

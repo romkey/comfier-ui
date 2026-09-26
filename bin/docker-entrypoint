@@ -1,5 +1,9 @@
 #!/bin/bash -e
 
+if [ "${ACTIVE_STORAGE_SERVICE:-local}" = "local" ]; then
+  mkdir -p /rails/storage
+fi
+
 # If running the rails server then create or migrate existing database
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   ./bin/rails db:prepare

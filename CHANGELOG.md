@@ -5,7 +5,48 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [v0.4.2] - 2026-09-26
+
+### Changed
+- **Suggest placeholders** now updates the workflow form in place via Turbo Stream instead of reloading the page.
+  Each run shows the LiteLLM request (model, endpoint, system prompt, user message) and the raw reply for debugging.
+
+## [v0.4.1] - 2026-09-26
+
 ### Added
+- Backends can opt in to deleting uploaded inputs, generated files, previews, and ComfyUI history after each run
+  finishes. File deletion uses the Comfier downloader node; without it, only the history entry is cleared.
+
+### Fixed
+- **Suggest placeholders** on the workflow form hit the wrong route and returned 404 on existing workflows.
+
+## [v0.4.0] - 2026-09-26
+
+### Added
+- Workflow assistant for admins: upload ComfyUI's API and regular exports together, optionally ask LiteLLM to suggest
+  `{{placeholders}}` in the API JSON, and edit the assistant prompt under Settings → Workflow assistant.
+  Configure `LITELLM_URL`, `LITELLM_API_KEY` and `LITELLM_MODEL` in `.env`.
+
+## [v0.3.1] - 2026-09-25
+
+### Fixed
+- No notification was sent for generations queued with "Share result with everyone". Comfier now also logs when a
+  user has notifications on but the server or their account can't deliver them.
+
+## [v0.3.0] - 2026-09-25
+
+### Fixed
+- Generated images 404 in production when web and Sidekiq did not share the same Active Storage volume. Documented
+  the requirement and added Sidekiq startup logging for Redis connectivity.
+- Generations that finished on ComfyUI but stayed "Generating" in Comfier: polling now checks ComfyUI's queue, falls back through recent history, fails clearly when history never arrives, and stops retrying forever when output downloads fail. Opening a result or studio page re-schedules polling for stuck jobs.
+
+### Added
+- Notifications by email and/or Slack direct message when a generation finishes, fails or is cancelled, chosen
+  under Settings → Notifications, optionally with the finished file attached. Email addresses and Slack accounts come
+  from Authentik (a new `slack` scope); admins configure SMTP and the Slack bot in `.env`.
+- Processing timestamps on generations: when ComfyUI started and finished executing a workflow, plus derived queue wait and processing durations. Queue estimates now prefer actual processing time over end-to-end elapsed time.
+- Site footer with a GitHub link and the running app version.
+- Cancel for queued and running generations: users can stop their own jobs, admins can stop any job. Comfier asks ComfyUI to dequeue or interrupt the prompt when it was already submitted.
 - Sign-in with Authentik (OpenID Connect). Members of the admin group in Authentik become admins automatically.
 - Image, Video, Audio and 3D Model pages: a prompt box, shape picker, optional "avoid" text, seed, length and input
   image, showing only the fields the chosen style needs.

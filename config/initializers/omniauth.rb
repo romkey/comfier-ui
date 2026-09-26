@@ -14,7 +14,7 @@ Rails.application.config.middleware.use OmniAuth::Builder do
              name: :authentik,
              issuer: authentik_issuer,
              discovery: true,
-             scope: %i[openid email profile],
+             scope: %i[openid email profile slack],
              response_type: :code,
              pkce: true,
              client_options: {

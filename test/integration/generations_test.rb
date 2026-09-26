@@ -55,6 +55,14 @@ class GenerationsTest < ActionDispatch::IntegrationTest
     assert_select '.result-card', text: /Bob's secret project/, count: 0
   end
 
+  test 'results marks shared work with an icon on the thumbnail' do
+    generations(:alice_done).share!
+
+    get generations_path
+
+    assert_select '.result-shared .bi-share-fill', count: 1
+  end
+
   test 'results can be filtered by kind and status' do
     get generations_path, params: { kind: 'video' }
 
@@ -94,6 +102,8 @@ class GenerationsTest < ActionDispatch::IntegrationTest
     assert_select 'a', text: /Download/
     assert_select 'button', text: /Run again/
     assert_select 'dd', text: '42'
+    assert_select '.text-12', text: /Started processing/
+    assert_select '.text-12', text: /Processing took/
   end
 
   test 'shows why a generation failed' do
@@ -142,5 +152,47 @@ class GenerationsTest < ActionDispatch::IntegrationTest
   test 'cannot delete someone else\'s generation' do
     assert_no_difference('Generation.count') { delete generation_path(generations(:bob_done)) }
     assert_response :not_found
+  end
+
+  test 'cancelling a running generation' do
+    generation = generations(:alice_running)
+    backend = backends(:gpu)
+    stub_request(:post, comfy_url(backend, 'queue')).with(body: { delete: ['running-prompt'] }.to_json)
+    stub_request(:post, comfy_url(backend, 'interrupt')).with(body: { prompt_id: 'running-prompt' }.to_json)
+
+    post cancel_generation_path(generation)
+
+    assert_redirected_to queue_path
+    assert_equal 'Cancelled.', flash[:notice]
+    assert_predicate generation.reload, :failed?
+    assert_equal 'Cancelled', generation.error_message
+  end
+
+  test 'cannot cancel someone else\'s generation' do
+    sign_in_as users(:bob)
+
+    post cancel_generation_path(generations(:alice_running))
+
+    assert_response :not_found
+    assert_predicate generations(:alice_running).reload, :running?
+  end
+
+  test 'admins can cancel anyone\'s generation' do
+    sign_in_as users(:admin)
+    generation = generations(:alice_running)
+    backend = backends(:gpu)
+    stub_request(:post, comfy_url(backend, 'queue')).with(body: { delete: ['running-prompt'] }.to_json)
+    stub_request(:post, comfy_url(backend, 'interrupt')).with(body: { prompt_id: 'running-prompt' }.to_json)
+
+    post cancel_generation_path(generation)
+
+    assert_redirected_to queue_path
+    assert_predicate generation.reload, :failed?
+  end
+
+  test 'the result page shows a cancel button while a job is running' do
+    get generation_path(generations(:alice_running))
+
+    assert_select 'button', text: /Cancel/
   end
 end

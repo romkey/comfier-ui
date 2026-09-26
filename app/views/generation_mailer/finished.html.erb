@@ -1,0 +1,12 @@
+<p style="font-size: 16px; font-weight: 500; margin: 0 0 8px;"><%= @notification.headline %></p>
+<p style="margin: 0 0 12px; color: #6c757d;"><%= @notification.title %></p>
+
+<% if @notification.error_message %>
+  <p style="margin: 0 0 12px;"><%= @notification.error_message %></p>
+<% end %>
+
+<% if @notification.files_left_out? %>
+  <p style="margin: 0 0 12px; color: #6c757d;">Too large to attach. Open it in Comfier.</p>
+<% end %>
+
+<p style="margin: 0;"><%= link_to 'Open in Comfier', @notification.url %></p>

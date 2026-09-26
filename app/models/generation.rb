@@ -2,6 +2,8 @@
 class Generation < ApplicationRecord
   include GenerationParameters
   include GenerationSharing
+  include GenerationTiming
+  include GenerationNotifying
 
   ASPECT_RATIO_LABELS = {
     '1:1' => 'Square', '4:3' => 'Landscape', '3:4' => 'Portrait', '16:9' => 'Wide', '9:16' => 'Tall'
@@ -41,6 +43,7 @@ class Generation < ApplicationRecord
   after_create_commit -> { broadcast_prepend_later_to [user, :generations], target: "#{kind}_generations" }
   after_update_commit -> { broadcast_replace_later_to [user, :generations] }
   after_update_commit -> { broadcast_refresh_later_to self }
+  after_update_commit :cleanup_backend_run, if: :saved_change_to_status?
   after_commit -> { broadcast_queue_updates }
   after_destroy_commit -> { broadcast_remove_to [user, :generations] }
 
@@ -93,6 +96,12 @@ class Generation < ApplicationRecord
   end
 
   def self.snap(value) = [(value / 64).round * 64, 64].max
+
+  def cleanup_backend_run
+    return unless finished?
+
+    Comfyui::GenerationCleaner.call(self)
+  end
 
   private
 

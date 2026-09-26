@@ -47,7 +47,10 @@ class SubmitGenerationJobTest < ActiveJob::TestCase
     assert_requested(:post, comfy_url(@backend, 'prompt')) do |req|
       JSON.parse(req.body).dig('prompt', '1', 'inputs', 'image') == "comfier-#{generation.id}-chest.png"
     end
-    assert_predicate generation.reload, :running?
+    generation.reload
+
+    assert_predicate generation, :running?
+    assert_equal "comfier-#{generation.id}-chest.png", generation.parameters['backend_input_image']
   end
 
   test 'fails with ComfyUI\'s explanation when the workflow is rejected' do

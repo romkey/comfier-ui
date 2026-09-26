@@ -10,6 +10,7 @@ class QueueTest < ActionDispatch::IntegrationTest
     assert_select 'h1', text: 'Queue'
     assert_match(/SD 1\.5/, response.body)
     assert_match(/You/, response.body)
+    assert_select 'button', text: /Cancel/
   end
 
   test 'the navbar includes queue and shared links' do

@@ -1,5 +1,5 @@
 module Admin
-  class WorkflowsController < BaseController
+  class WorkflowsController < BaseController # rubocop:disable Metrics/ClassLength
     before_action :set_workflow, only: %i[edit update destroy models check_models install_models]
     before_action :load_model_status, only: :models
 
@@ -24,21 +24,46 @@ module Admin
 
     def create
       @workflow = Workflow.new
+      return suggest_placeholders if params[:suggest_placeholders].present?
+
       assign_workflow
       if @workflow.save
-        redirect_to edit_admin_workflow_path(@workflow), notice: "Added #{@workflow.name}.", status: :see_other
+        redirect_to edit_admin_workflow_path(@workflow), notice: saved_notice("Added #{@workflow.name}."),
+                                                         status: :see_other
       else
         render :new, status: :unprocessable_content
       end
     end
 
     def update
+      return suggest_placeholders if params[:suggest_placeholders].present?
+
       assign_workflow
       if @workflow.save
-        redirect_to edit_admin_workflow_path(@workflow), notice: "Saved #{@workflow.name}.", status: :see_other
+        redirect_to edit_admin_workflow_path(@workflow), notice: saved_notice("Saved #{@workflow.name}."),
+                                                         status: :see_other
       else
         render :edit, status: :unprocessable_content
       end
+    end
+
+    def suggest_placeholders # rubocop:disable Metrics/AbcSize
+      assign_workflow
+      if !@workflow.graph.is_a?(Hash) || @workflow.graph.empty?
+        flash.now[:alert] = 'Paste or upload an API-format workflow JSON first.'
+        return respond_to_suggest_form
+      end
+
+      result = PlaceholderSuggester.call(@workflow.graph)
+      @workflow.graph_json = JSON.pretty_generate(result.graph)
+      @placeholder_suggestion = result
+      @placeholder_debug = result.debug
+      flash.now[:notice] = suggestion_notice(result)
+      respond_to_suggest_form
+    rescue PlaceholderSuggester::Error => e
+      @placeholder_debug = e.debug
+      flash.now[:alert] = e.message
+      respond_to_suggest_form
     end
 
     def destroy
@@ -77,11 +102,37 @@ module Admin
       permitted = params.expect(workflow: %i[name kind description graph_json graph_file enabled position
                                              base_resolution frame_rate steps guidance required_models_text
                                              models_file])
-      graph_file = permitted.delete(:graph_file)
-      models_file = permitted.delete(:models_file)
-      permitted[:graph_json] = graph_file.read if graph_file.respond_to?(:read)
+      exports = WorkflowExportRouter.route(
+        @workflow,
+        graph_file: permitted.delete(:graph_file),
+        models_file: permitted.delete(:models_file)
+      )
+      @export_swap_notice = exports.swap_notice
+      permitted[:graph_json] = exports.graph_content if exports.graph_content.present?
       @workflow.assign_attributes(permitted)
-      @workflow.import_models(models_file.read) if models_file.respond_to?(:read)
+      @workflow.import_models(exports.models_content) if exports.models_content.present?
+    end
+
+    def saved_notice(message)
+      [message, @export_swap_notice].compact.join(' ')
+    end
+
+    def suggestion_notice(result)
+      count = result.changes.count(&:placeholder_substitution?)
+      parts = ["Suggested #{count} #{'placeholder'.pluralize(count)}."]
+      parts << @export_swap_notice if @export_swap_notice.present?
+      parts << result.notes if result.notes.present?
+      parts.join(' ')
+    end
+
+    def respond_to_suggest_form
+      @usage_count = Generation.where(workflow_id: @workflow.id).count if @workflow.persisted?
+      status = flash.now[:alert].present? ? :unprocessable_content : :ok
+
+      respond_to do |format|
+        format.turbo_stream { render :suggest_placeholders, status: }
+        format.html { render(@workflow.persisted? ? :edit : :new, status:) }
+      end
     end
 
     def install_notice(backend, outcome)

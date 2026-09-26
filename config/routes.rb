@@ -23,6 +23,7 @@ Rails.application.routes.draw do
   resources :generations, path: 'results', only: %i[index show create destroy] do
     member do
       post :retry
+      post :cancel
       patch :share, action: :update_share
     end
   end
@@ -34,6 +35,8 @@ Rails.application.routes.draw do
       post :check, on: :member
     end
     resource :privacy_notice, only: %i[edit update]
+    resource :app_setting, only: %i[edit update]
+    resource :assistant_setting, only: %i[edit update]
 
     resources :workflows, except: :show do
       member do

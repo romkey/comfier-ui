@@ -28,7 +28,7 @@ class QueueEstimator
     work = job_work(generation)
     return FALLBACK_SECONDS.fetch(generation.kind, 60) if history.empty? || work.zero?
 
-    per_unit = history.map { |run| run.run_seconds / [job_work(run), 1].max }.sort
+    per_unit = history.filter_map { |run| run.processing_seconds&.fdiv([job_work(run), 1].max) }.sort
     (per_unit[per_unit.size / 2] * work).round.clamp(5, 3600)
   end
 
@@ -55,7 +55,7 @@ class QueueEstimator
   def recent_runs(generation)
     return [] unless generation.workflow_id
 
-    Generation.succeeded.where(workflow_id: generation.workflow_id).where.not(run_seconds: nil)
+    Generation.succeeded.where(workflow_id: generation.workflow_id).where.not(processing_started_at: nil)
               .order(completed_at: :desc).limit(20).to_a
   end
 

@@ -77,6 +77,43 @@ module Comfyui
       assert_equal 3, @client.queue_depth
     end
 
+    test 'cancel_prompt dequeues and interrupts the prompt' do
+      queue = stub_request(:post, comfy_url(@backend, 'queue')).with(body: { delete: ['abc-123'] }.to_json)
+      interrupt = stub_request(:post, comfy_url(@backend, 'interrupt')).with(body: { prompt_id: 'abc-123' }.to_json)
+
+      @client.cancel_prompt('abc-123')
+
+      assert_requested queue
+      assert_requested interrupt
+    end
+
+    test 'delete_history removes finished prompts' do
+      stub = stub_request(:post, comfy_url(@backend, 'history')).with(body: { delete: %w[abc-123 def-456] }.to_json)
+
+      @client.delete_history(%w[abc-123 def-456])
+
+      assert_requested stub
+    end
+
+    test 'cleanup_run posts files and input image to the Comfier cleanup route' do
+      files = [{ 'filename' => 'out.png', 'subfolder' => '', 'type' => 'output' }]
+      stub = stub_request(:post, comfy_url(@backend, 'comfier/cleanup'))
+             .with(body: { prompt_id: 'abc-123', files:, input_image: 'comfier/in.png' }.to_json)
+
+      @client.cleanup_run(prompt_id: 'abc-123', files:, input_image: 'comfier/in.png')
+
+      assert_requested stub
+    end
+
+    test 'cleanup_run falls back to history deletion when the cleanup route is missing' do
+      stub_request(:post, comfy_url(@backend, 'comfier/cleanup')).to_return(status: 404)
+      history = stub_request(:post, comfy_url(@backend, 'history')).with(body: { delete: ['abc-123'] }.to_json)
+
+      @client.cleanup_run(prompt_id: 'abc-123', files: [])
+
+      assert_requested history
+    end
+
     test 'result wraps the history entry for the prompt' do
       stub_request(:get, comfy_url(@backend, 'history/abc'))
         .to_return(body: { abc: { status: { status_str: 'success', completed: true }, outputs: {} } }.to_json)
@@ -86,8 +123,27 @@ module Comfyui
 
     test 'result is pending while the prompt is not in history yet' do
       stub_request(:get, comfy_url(@backend, 'history/abc')).to_return(body: '{}')
+      stub_request(:get, comfy_url(@backend, 'history')).with(query: { max_items: '64' }).to_return(body: '{}')
 
       assert_predicate @client.result('abc'), :pending?
+    end
+
+    test 'result falls back to scanning recent history' do
+      entry = { status: { status_str: 'success', completed: true }, outputs: {} }
+      recent = stub_request(:get, comfy_url(@backend, 'history')).with(query: { max_items: '64' })
+      stub_request(:get, comfy_url(@backend, 'history/abc')).to_return(body: '{}')
+      recent.to_return(body: { 'abc' => entry }.to_json)
+
+      assert_predicate @client.result('abc'), :success?
+    end
+
+    test 'prompt_in_queue? checks running and pending prompts' do
+      stub_request(:get, comfy_url(@backend, 'queue'))
+        .to_return(body: { queue_running: [[1, 'running-id']], queue_pending: [[2, 'pending-id']] }.to_json)
+
+      assert @client.prompt_in_queue?('running-id')
+      assert @client.prompt_in_queue?('pending-id')
+      assert_not @client.prompt_in_queue?('gone-id')
     end
 
     test 'download fetches the file through /view' do

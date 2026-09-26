@@ -2,7 +2,7 @@ require 'net/http'
 
 module Comfyui
   # Thin wrapper around the ComfyUI HTTP API for one backend.
-  class Client
+  class Client # rubocop:disable Metrics/ClassLength
     CLIENT_ID = 'comfier-ui'.freeze
     DOWNLOADER_NODE = 'ComfierModelDownload'.freeze
     NETWORK_ERRORS = [
@@ -26,6 +26,29 @@ module Comfyui
       Array(queue['queue_running']).size + Array(queue['queue_pending']).size
     end
 
+    # Drops a prompt from ComfyUI's pending queue and interrupts it when it's the one running.
+    def cancel_prompt(prompt_id)
+      perform(json_request(Net::HTTP::Post, 'queue', { delete: [prompt_id] }))
+      perform(json_request(Net::HTTP::Post, 'interrupt', { prompt_id: }))
+    end
+
+    # Drops one or more finished prompts from ComfyUI's history.
+    def delete_history(prompt_ids)
+      ids = Array(prompt_ids).compact_blank
+      return if ids.empty?
+
+      perform(json_request(Net::HTTP::Post, 'history', { delete: ids }))
+    end
+
+    # Deletes uploaded inputs, generated files, and the history entry for one run.
+    # Falls back to history-only cleanup when the Comfier cleanup route isn't installed.
+    def cleanup_run(prompt_id:, files:, input_image: nil)
+      payload = { prompt_id:, files:, input_image: input_image.presence }.compact
+      perform(json_request(Net::HTTP::Post, 'comfier/cleanup', payload))
+    rescue NotFound
+      delete_history([prompt_id])
+    end
+
     # Queues an API-format workflow graph and returns ComfyUI's prompt id.
     def submit(graph)
       body = parse_json(perform(json_request(Net::HTTP::Post, 'prompt', { prompt: graph, client_id: CLIENT_ID })))
@@ -33,7 +56,13 @@ module Comfyui
     end
 
     def result(prompt_id)
-      Result.new(get_json("history/#{ERB::Util.url_encode(prompt_id)}")[prompt_id])
+      Result.new(history_entry(prompt_id))
+    end
+
+    def prompt_in_queue?(prompt_id)
+      queue = get_json('queue')
+      prompt_ids_in(queue, 'queue_running').include?(prompt_id) ||
+        prompt_ids_in(queue, 'queue_pending').include?(prompt_id)
     end
 
     # Fetches an output file described by a history entry ({ filename, subfolder, type }).
@@ -70,6 +99,23 @@ module Comfyui
     private
 
     def get_json(path, query = nil) = parse_json(perform(Net::HTTP::Get.new(uri(path, query))))
+
+    def history_entry(prompt_id)
+      entry = lookup_history_entry(get_json("history/#{ERB::Util.url_encode(prompt_id)}"), prompt_id)
+      return entry if entry
+
+      lookup_history_entry(get_json('history', max_items: 64), prompt_id)
+    end
+
+    def lookup_history_entry(body, prompt_id)
+      return unless body.is_a?(Hash)
+
+      body[prompt_id] || body[prompt_id.to_s]
+    end
+
+    def prompt_ids_in(queue, key)
+      Array(queue[key]).filter_map { |item| item[1] if item.is_a?(Array) && item[1].present? }
+    end
 
     def json_request(klass, path, payload)
       klass.new(uri(path), 'Content-Type' => 'application/json').tap { it.body = payload.to_json }

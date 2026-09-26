@@ -1,6 +1,8 @@
 require 'test_helper'
 
 class GenerationTest < ActiveSupport::TestCase
+  include ActiveJob::TestHelper
+
   setup do
     @user = users(:alice)
   end
@@ -70,6 +72,31 @@ class GenerationTest < ActiveSupport::TestCase
     assert_predicate build(workflows(:image_to_3d), prompt: '', input_image: png_upload), :valid?
   end
 
+  test 'requires lyrics when the workflow uses them alongside a prompt' do
+    workflow = Workflow.create!(
+      name: 'Lyrics test audio',
+      kind: 'audio',
+      graph: {
+        '1' => { 'class_type' => 'CLIPTextEncode', 'inputs' => { 'text' => '{{prompt}}' } },
+        '2' => { 'class_type' => 'LyricsEncode', 'inputs' => { 'text' => '{{lyrics}}' } }
+      }
+    )
+
+    blank = build(workflow, prompt: 'upbeat jazz', lyrics: '')
+
+    assert_not blank.valid?
+    assert_includes blank.errors[:lyrics], "can't be blank"
+
+    generation = build(workflow, prompt: 'upbeat jazz', lyrics: "Verse one\nChorus")
+
+    assert_predicate generation, :valid?
+
+    generation.save!
+
+    assert_equal "Verse one\nChorus", generation.lyrics
+    assert_equal "Verse one\nChorus", generation.parameters['lyrics']
+  end
+
   test 'requires an input image when the workflow takes one' do
     generation = build(workflows(:image_to_3d))
 
@@ -113,6 +140,36 @@ class GenerationTest < ActiveSupport::TestCase
 
     assert_predicate generation, :succeeded?
     assert_nil generation.error_message
+  end
+
+  test 'queue_wait_seconds and processing_seconds come from processing timestamps' do
+    generation = generations(:alice_done)
+
+    assert_in_delta 45, generation.queue_wait_seconds, 1
+    assert_in_delta 28.5, generation.processing_seconds, 1
+  end
+
+  test 'record_processing_times! stores ComfyUI execution timestamps' do
+    generation = generations(:alice_running)
+    started = Time.zone.at(1_700_000_000)
+    ended = started + 12.seconds
+    result = Comfyui::Result.new(
+      'status' => {
+        'status_str' => 'success',
+        'messages' => [
+          ['execution_start', { 'timestamp' => started.to_f * 1000 }],
+          ['execution_success', { 'timestamp' => ended.to_f * 1000 }]
+        ]
+      },
+      'outputs' => {}
+    )
+
+    generation.record_processing_times!(result)
+    generation.reload
+
+    assert_in_delta started, generation.processing_started_at, 0.001
+    assert_in_delta ended, generation.processing_ended_at, 0.001
+    assert_in_delta 12, generation.run_seconds, 0.01
   end
 
   test 'timed_out? compares against the submission time' do
@@ -171,5 +228,40 @@ class GenerationTest < ActiveSupport::TestCase
     generation.unshare!
 
     assert_not generation.shared?
+  end
+
+  test 'finishing notifies the owner when they turned notifications on' do
+    @user.update!(notify_email: true)
+    generation = generations(:alice_running)
+
+    with_notifications_configured do
+      assert_enqueued_with(job: NotifyGenerationJob, args: [generation]) { generation.succeed! }
+    end
+  end
+
+  test 'failing and cancelling notify too' do
+    @user.update!(notify_email: true)
+
+    with_notifications_configured do
+      assert_enqueued_with(job: NotifyGenerationJob) { generations(:alice_running).fail!('Boom') }
+
+      queued = build.tap(&:save!)
+
+      assert_enqueued_with(job: NotifyGenerationJob) { GenerationCanceller.call(queued) }
+      assert_predicate queued, :cancelled?
+      assert_equal :cancelled, queued.outcome
+    end
+  end
+
+  test 'no notification for other updates or when notifications are off' do
+    generation = generations(:alice_running)
+
+    with_notifications_configured do
+      assert_no_enqueued_jobs(only: NotifyGenerationJob) { generation.succeed! }
+
+      @user.update!(notify_email: true)
+
+      assert_no_enqueued_jobs(only: NotifyGenerationJob) { generation.update!(prompt: 'Changed') }
+    end
   end
 end

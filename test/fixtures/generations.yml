@@ -11,6 +11,8 @@ alice_done:
   parameters: { seed: 42, aspect_ratio: '1:1', width: 512, height: 512 }
   comfy_prompt_id: done-prompt
   submitted_at: <%= 2.hours.ago.to_fs(:db) %>
+  processing_started_at: <%= (2.hours.ago + 45.seconds).to_fs(:db) %>
+  processing_ended_at: <%= (2.hours.ago + 45.seconds + 28.5.seconds).to_fs(:db) %>
   completed_at: <%= 2.hours.ago.to_fs(:db) %>
   created_at: <%= 2.hours.ago.to_fs(:db) %>
 

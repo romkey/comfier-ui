@@ -33,6 +33,32 @@
     </div>
   <% end %>
 
+  <div class="h-section-label mt-4">Notifications</div>
+  <div class="text-13 text-secondary mb-2">We'll tell you when something you made is ready, fails, or is cancelled.</div>
+
+  <div class="form-check form-switch mb-2">
+    <%= f.check_box :notify_email, class: 'form-check-input', role: 'switch', disabled: !@user.email_reachable? %>
+    <%= f.label :notify_email, 'Email', class: 'form-check-label' %>
+    <div class="form-text text-12 mt-0"><%= email_notification_note(@user) %></div>
+  </div>
+
+  <div class="form-check form-switch mb-2">
+    <%= f.check_box :notify_slack, class: 'form-check-input', role: 'switch', disabled: !@user.slack_reachable? %>
+    <%= f.label :notify_slack, 'Slack', class: 'form-check-label' %>
+    <div class="form-text text-12 mt-0"><%= slack_notification_note(@user) %></div>
+  </div>
+
+  <div class="form-check form-switch mb-3">
+    <%= f.check_box :notify_include_asset, class: 'form-check-input', role: 'switch',
+                                           disabled: !(@user.email_reachable? || @user.slack_reachable?) %>
+    <%= f.label :notify_include_asset, 'Include the finished file', class: 'form-check-label' %>
+    <div class="form-text text-12 mt-0">
+      Email limit: <%= notification_attachment_limit_label(:email) %>.
+      Slack limit: <%= notification_attachment_limit_label(:slack) %>.
+      Files over each channel's limit are linked instead of attached.
+    </div>
+  </div>
+
   <%= f.submit 'Save', class: 'btn btn-primary btn-sm' %>
 <% end %>
 

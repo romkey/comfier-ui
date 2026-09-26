@@ -62,6 +62,33 @@ Create an **OAuth2/OpenID Provider** and an application for it:
 
 Anyone in the `AUTHENTIK_ADMIN_GROUP` group (default `comfier-admins`) is an admin. This is re-checked on every sign-in.
 
+Comfier also requests a `slack` scope, which links users to Slack for notifications. In Authentik, create a
+**Scope Mapping** with scope name `slack` and an expression that returns the user's Slack member ID and name, e.g.:
+
+```python
+return {
+    "slack": {
+        "uid": request.user.attributes.get("slack_uid"),
+        "name": request.user.attributes.get("slack_name"),
+    }
+}
+```
+
+Add it to the provider's selected scopes. Comfier stores `uid` and `name` on every sign-in; users without a Slack
+link just can't turn on Slack notifications. If the scope mapping isn't set up, sign-in still works.
+
+### Notifications
+
+Users can choose to be told by email and/or Slack DM when a generation finishes, fails or is cancelled, optionally
+with the output attached. Email addresses and Slack IDs come from Authentik; users can't edit them.
+
+- **Email**: set `SMTP_ADDRESS` (plus port, credentials and `MAIL_FROM`). Email is unavailable until it's set.
+- **Slack**: create a Slack app with a bot user, give the bot the `chat:write`, `im:write` and `files:write` scopes,
+  install it to the workspace, and put its bot token in `SLACK_BOT_TOKEN`. Slack is unavailable until it's set.
+- Attachments over the channel's size limit are replaced by a link. Defaults are about **500 KB** for email and **5 MB**
+  for Slack, configurable under **Settings → Notifications**. Oversized JPEG, PNG and WebP outputs are re-encoded smaller
+  until they fit; other file types are attached as-is or linked.
+
 ### Environment variables
 
 | Variable | Purpose |
@@ -81,6 +108,15 @@ Anyone in the `AUTHENTIK_ADMIN_GROUP` group (default `comfier-admins`) is an adm
 | `POSTGRES_HOST_PORT` | Dev only: host port when compose publishes Postgres |
 | `TIME_ZONE`, `GENERATION_TIMEOUT_MINUTES`, `SIDEKIQ_CONCURRENCY`, `FORCE_SSL`, `ASSUME_SSL` | Optional tuning |
 | `MODEL_DOWNLOAD_TIMEOUT_HOURS` | How long a model download may run before it's marked failed (default `12`) |
+| `SMTP_ADDRESS`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD` | Outgoing mail server for email notifications |
+| `SMTP_AUTHENTICATION`, `SMTP_ENABLE_STARTTLS`, `SMTP_DOMAIN` | SMTP options (defaults `plain`, `true`, `APP_URL` host) |
+| `MAIL_FROM` | Sender address for notification emails |
+| `SLACK_BOT_TOKEN` | Slack bot token (`xoxb-…`) for Slack DM notifications |
+| `NOTIFICATION_ATTACHMENT_MAX_MB` | Fallback attachment limit for both channels when the database is first created |
+| `NOTIFICATION_EMAIL_ATTACHMENT_MAX_MB` | Default email attachment limit (about `0.488` MB / 500 KB); falls back to `NOTIFICATION_ATTACHMENT_MAX_MB` |
+| `NOTIFICATION_SLACK_ATTACHMENT_MAX_MB` | Default Slack attachment limit (`5` MB); falls back to `NOTIFICATION_ATTACHMENT_MAX_MB` |
+| `LITELLM_URL`, `LITELLM_API_KEY`, `LITELLM_MODEL` | LiteLLM proxy for the workflow placeholder assistant (Settings → Workflow assistant) |
+| `LITELLM_TIMEOUT_SECONDS` | Optional read timeout for LiteLLM requests (default `180`) |
 
 ## Running locally
 
@@ -154,8 +190,33 @@ docker compose -f docker-compose.production.yml --profile tools run --rm migrate
 docker compose -f docker-compose.production.yml up -d
 ```
 
-Uploaded inputs and generated outputs are stored with Active Storage on the `storage` volume. Back it up along with
-the database.
+Uploaded inputs and generated outputs are stored with Active Storage on local disk. Back them up along with the
+database. Both `web` and `sidekiq` must mount the same path (Docker volume or bind mount) — Sidekiq writes generated
+files during background jobs; the web process serves them. If only one container has the mount, images 404 with
+`ActiveStorage::DiskController` in the logs.
+
+Background jobs run in the `sidekiq` container, not `web`. Tail Sidekiq separately:
+
+```bash
+docker compose logs -f sidekiq
+```
+
+On startup Sidekiq logs the Redis URL it connected to. Web and Sidekiq must share the same `REDIS_URL` (compose
+default: `redis://redis:6379/0`, using the compose service name `redis`).
+
+To debug missing images or stuck jobs:
+
+```bash
+docker compose ps                                           # sidekiq must be running
+docker compose exec sidekiq printenv REDIS_URL
+docker compose exec web printenv REDIS_URL                # must match sidekiq
+docker compose exec redis redis-cli LLEN queue:default    # pending jobs, if any
+docker compose exec sidekiq ls -la /rails/storage
+docker compose exec web ls -la /rails/storage
+```
+
+Both containers should list the same blob directories under `/rails/storage`. If neither has files, regenerate after
+fixing storage — old blob records in Postgres won't recover.
 
 ### Preparing ComfyUI servers for model installs
 
@@ -225,6 +286,8 @@ The first push to GHCR may require making the package public under the repo's **
 | `app/models/privacy_notice.rb` | Privacy notice text and version; users must agree before using the app |
 | `app/services/queue_estimator.rb` | Estimates wait times from recent run durations and queue position |
 | `app/controllers/shared_controller.rb` | Gallery of results members chose to share |
+| `app/jobs/notify_generation_job.rb` | Sends finished/failed/cancelled notifications, one retried job per channel |
+| `app/mailers/generation_mailer.rb`, `app/services/slack_notifier.rb` | Email and Slack DM delivery |
 
 ### How a generation flows
 
@@ -233,6 +296,8 @@ The first push to GHCR may require making the package public under the repo's **
 3. `PollGenerationJob` checks `/history/{id}` every two seconds. When ComfyUI finishes, it downloads each output
    through `/view` and attaches it.
 4. Every status change is broadcast over Turbo Streams (Action Cable on Redis), so result cards update live.
+5. When it finishes, fails or is cancelled, `NotifyGenerationJob` emails and/or Slack-messages the owner if they
+   turned notifications on.
 
 ### Workflow placeholders
 

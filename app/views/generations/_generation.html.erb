@@ -17,6 +17,7 @@
         <i class="bi bi-exclamation-octagon fs-4" aria-hidden="true"></i>
       </div>
     <% end %>
+    <%= generation_shared_indicator(generation) %>
   </div>
   <div class="result-meta">
     <%= link_to generation.title, generation_path(generation), class: 'stretched-link text-13 text-body text-truncate d-block',
@@ -25,9 +26,6 @@
       <span class="d-flex align-items-center gap-2 min-w-0">
         <%= generation_status(generation) %>
         <span class="text-truncate"><%= generation.style_name %></span>
-        <% if generation.shared? %>
-          <i class="bi bi-globe" title="Shared" aria-hidden="true"></i>
-        <% end %>
       </span>
       <%= friendly_time(generation.created_at) %>
     </div>

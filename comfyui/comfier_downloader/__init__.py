@@ -146,3 +146,7 @@ class ComfierModelDownload:
 
 NODE_CLASS_MAPPINGS = {"ComfierModelDownload": ComfierModelDownload}
 NODE_DISPLAY_NAME_MAPPINGS = {"ComfierModelDownload": "Download model (Comfier)"}
+
+from .cleanup import register_routes
+
+register_routes()

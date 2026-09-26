@@ -21,6 +21,10 @@ module GenerationsHelper
   end
 
   # Finished work is the common case, so it gets a quiet dot; anything else gets a labelled badge.
+  def generation_cancellable?(generation)
+    generation.in_progress? && (generation.user_id == current_user.id || current_user.admin?)
+  end
+
   def generation_status(generation)
     return tag.span(class: 'status-dot status-success', title: 'Done') if generation.succeeded?
 
@@ -28,6 +32,14 @@ module GenerationsHelper
     tag.span(class: "badge text-bg-#{color}-subtle fw-medium") do
       safe_join([(tag.span(class: 'spinner-grow spinner-grow-sm me-1', aria: { hidden: true }) if generation.running?),
                  label].compact)
+    end
+  end
+
+  def generation_shared_indicator(generation)
+    return unless generation.shared?
+
+    tag.span(class: 'result-shared', title: 'Shared') do
+      tag.i(class: 'bi bi-share-fill', aria: { hidden: true })
     end
   end
 

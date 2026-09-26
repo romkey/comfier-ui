@@ -1,0 +1,11 @@
+<footer class="app-footer">
+  <div class="container-fluid app-main">
+    <div class="d-flex flex-wrap align-items-center gap-2 text-12 text-secondary">
+      <%= link_to Rails.application.config.x.github_repo, class: 'link-secondary', target: '_blank', rel: 'noopener' do %>
+        <i class="bi bi-github me-1" aria-hidden="true"></i>GitHub
+      <% end %>
+      <span aria-hidden="true">·</span>
+      <span title="<%= AppVersion.current %>">Version <%= AppVersion.semver %></span>
+    </div>
+  </div>
+</footer>

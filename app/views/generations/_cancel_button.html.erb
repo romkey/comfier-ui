@@ -1,0 +1,4 @@
+<%= button_to cancel_generation_path(generation), class: 'btn btn-outline-secondary btn-sm',
+                                                  form: { data: { turbo_confirm: 'Cancel this job?' } } do %>
+  <i class="bi bi-x-lg me-1" aria-hidden="true"></i>Cancel
+<% end %>

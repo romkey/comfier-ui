@@ -45,6 +45,15 @@ module WorkflowModels
 
   def ui_format?(data) = data.is_a?(Hash) && data['nodes'].is_a?(Array)
 
+  def api_format?(data)
+    return false unless data.is_a?(Hash) && data.any?
+    return false if ui_format?(data)
+
+    data.values.all? do |node|
+      node.is_a?(Hash) && node['class_type'].is_a?(String) && node['inputs'].is_a?(Hash)
+    end
+  end
+
   def from_ui_workflow(data)
     return [] unless ui_format?(data)
 
