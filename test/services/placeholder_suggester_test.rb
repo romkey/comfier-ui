@@ -79,8 +79,50 @@ class PlaceholderSuggesterTest < ActiveSupport::TestCase
 
     error = assert_raises(PlaceholderSuggester::Error) { PlaceholderSuggester.call(ORIGINAL) }
 
-    assert_match(/API format/, error.message)
+    assert_match(/API format|same node IDs/, error.message)
     assert_includes error.debug.raw_reply, '"workflow"'
+  end
+
+  test 'accepts a top-level workflow object when notes are siblings of node ids' do
+    suggested = ORIGINAL.deep_dup
+    suggested['6']['inputs']['text'] = '{{prompt}}'
+    stub_content(suggested.merge('notes' => 'Prompt only.').to_json)
+
+    result = PlaceholderSuggester.call(ORIGINAL)
+
+    assert_equal '{{prompt}}', result.graph.dig('6', 'inputs', 'text')
+    assert_equal 'Prompt only.', result.notes
+  end
+
+  test 'accepts replies wrapped in a top-level array' do
+    suggested = ORIGINAL.deep_dup
+    suggested['6']['inputs']['text'] = '{{prompt}}'
+    stub_content([{ workflow: suggested, notes: 'Array wrapper.' }].to_json)
+
+    result = PlaceholderSuggester.call(ORIGINAL)
+
+    assert_equal '{{prompt}}', result.graph.dig('6', 'inputs', 'text')
+    assert_equal 'Array wrapper.', result.notes
+  end
+
+  test 'accepts a workflow value that is JSON-encoded text' do
+    suggested = ORIGINAL.deep_dup
+    suggested['6']['inputs']['text'] = '{{prompt}}'
+    stub_content({ workflow: suggested.to_json, notes: 'Nested JSON string.' }.to_json)
+
+    result = PlaceholderSuggester.call(ORIGINAL)
+
+    assert_equal '{{prompt}}', result.graph.dig('6', 'inputs', 'text')
+    assert_equal 'Nested JSON string.', result.notes
+  end
+
+  test 'does not crash when the model returns a top-level JSON array without a workflow object' do
+    stub_content(['not a workflow'].to_json)
+
+    error = assert_raises(PlaceholderSuggester::Error) { PlaceholderSuggester.call(ORIGINAL) }
+
+    assert_match(/workflow object/, error.message)
+    assert_includes error.debug.raw_reply, 'not a workflow'
   end
 
   test 'flags changes that are not exact placeholder substitutions' do
@@ -96,8 +138,11 @@ class PlaceholderSuggesterTest < ActiveSupport::TestCase
   private
 
   def stub_completion(workflow:, notes:)
-    payload = { workflow:, notes: }.to_json
+    stub_content({ workflow:, notes: }.to_json)
+  end
+
+  def stub_content(content)
     stub_request(:post, 'http://litellm.test/v1/chat/completions')
-      .to_return(body: { choices: [{ message: { content: payload } }] }.to_json)
+      .to_return(body: { choices: [{ message: { content: } }] }.to_json)
   end
 end

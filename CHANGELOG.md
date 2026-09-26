@@ -5,6 +5,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [v0.4.4] - 2026-09-26
+
+### Fixed
+- **Suggest placeholders** accepts more LiteLLM reply shapes (top-level workflow JSON, array wrappers, and
+  JSON-encoded workflow strings) instead of failing while parsing the response.
+
 ## [v0.4.3] - 2026-09-26
 
 ### Fixed

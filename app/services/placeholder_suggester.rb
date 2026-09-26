@@ -18,6 +18,7 @@ class PlaceholderSuggester # rubocop:disable Metrics/ClassLength
   Result = Data.define(:graph, :notes, :changes, :debug)
 
   WHOLE_PLACEHOLDER = /\A\{\{\s*(\w+)\s*\}\}\z/
+  METADATA_KEYS = %w[notes note summary message explanation].freeze
 
   def self.call(graph) = new(graph).call
 
@@ -68,12 +69,64 @@ class PlaceholderSuggester # rubocop:disable Metrics/ClassLength
 
   def parse_reply(text, debug)
     json = extract_json(text)
-    raise Error.new('The model reply must include a "workflow" object', debug: debug.with(raw_reply: text)) unless
-      json['workflow'].is_a?(Hash)
+    workflow, notes = extract_workflow_payload(json)
+    unless workflow.is_a?(Hash) && workflow.any?
+      raise Error.new('The model reply must include a ComfyUI API-format workflow object',
+                      debug: debug.with(raw_reply: text))
+    end
 
-    json
+    { 'workflow' => workflow, 'notes' => notes.to_s.strip }
   rescue JSON::ParserError => e
     raise Error.new("The model reply wasn't valid JSON: #{e.message.truncate(200)}", debug: debug.with(raw_reply: text))
+  end
+
+  def extract_workflow_payload(json)
+    json = unwrap_payload(json)
+    return [nil, nil] unless json.is_a?(Hash)
+
+    notes = metadata_value(json)
+    workflow = [decode_workflow(json['workflow']), workflow_nodes(json)].compact.find do |candidate|
+      candidate.is_a?(Hash) && WorkflowModels.api_format?(candidate)
+    end
+    [workflow, notes]
+  end
+
+  def unwrap_payload(json)
+    case json
+    when Array
+      json.find { it.is_a?(Hash) }
+    else
+      json
+    end
+  end
+
+  def metadata_value(json)
+    METADATA_KEYS.lazy.map { |key| json[key] }.find(&:present?)
+  end
+
+  def decode_workflow(value)
+    case value
+    when Hash
+      nodes = workflow_nodes(value)
+      nodes if nodes.is_a?(Hash) && WorkflowModels.api_format?(nodes)
+    when String
+      decode_workflow(JSON.parse(value.strip))
+    end
+  rescue JSON::ParserError
+    nil
+  end
+
+  def workflow_nodes(json)
+    return json if json.is_a?(Hash) && json.values.all? { workflow_node?(it) }
+
+    return unless json.is_a?(Hash)
+
+    json.reject { |key, _| METADATA_KEYS.include?(key.to_s) }
+        .select { |_, value| workflow_node?(value) }
+  end
+
+  def workflow_node?(value)
+    value.is_a?(Hash) && value['class_type'].is_a?(String) && value['inputs'].is_a?(Hash)
   end
 
   def extract_json(text)
