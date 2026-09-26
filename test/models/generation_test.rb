@@ -88,6 +88,7 @@ class GenerationTest < ActiveSupport::TestCase
     assert_includes blank.errors[:lyrics], "can't be blank"
 
     generation = build(workflow, prompt: 'upbeat jazz', lyrics: "Verse one\nChorus")
+
     assert_predicate generation, :valid?
 
     generation.save!

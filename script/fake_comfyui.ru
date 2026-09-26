@@ -46,6 +46,12 @@ class FakeComfyui # rubocop:disable Metrics/ClassLength
     when '/prompt' then submit(body['prompt'])
     when '/upload/image' then json(name: 'upload.png', subfolder: '', type: 'input')
     when '/comfier/cleanup' then cleanup(body)
+    else post_control(request.path_info, body)
+    end
+  end
+
+  def post_control(path, body)
+    case path
     when '/history' then delete_history(body)
     when '/queue' then cancel_queue(body)
     when '/interrupt' then cancel_interrupt(body)

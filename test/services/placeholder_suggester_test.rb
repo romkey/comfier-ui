@@ -32,15 +32,22 @@ class PlaceholderSuggesterTest < ActiveSupport::TestCase
     assert_equal '{{prompt}}', result.graph.dig('6', 'inputs', 'text')
     assert_equal 'Replaced prompt and size inputs.', result.notes
     assert_equal 3, result.changes.size
-    assert_includes result.debug.user_message, 'Allowed placeholders:'
-    assert_includes result.debug.raw_reply, '"workflow"'
-    assert_equal 'gpt-test', result.debug.model
     assert result.changes.all?(&:placeholder_substitution?)
     prompt_change = result.changes.find { it.input == 'text' && it.node_id == '6' }
 
     assert_equal 'Positive', prompt_change.node_label
     assert_equal '{{prompt}}', prompt_change.to
-    assert prompt_change.placeholder_substitution?
+    assert_predicate prompt_change, :placeholder_substitution?
+  end
+
+  test 'includes LiteLLM debug metadata in the result' do
+    stub_completion(workflow: ORIGINAL, notes: '')
+
+    result = PlaceholderSuggester.call(ORIGINAL)
+
+    assert_includes result.debug.user_message, 'Allowed placeholders:'
+    assert_includes result.debug.raw_reply, '"workflow"'
+    assert_equal 'gpt-test', result.debug.model
   end
 
   test 'rejects replies that change node ids' do

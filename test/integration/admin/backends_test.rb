@@ -95,7 +95,7 @@ module Admin
 
       patch admin_backend_path(@backend), params: { backend: { cleanup_after_run: '1' } }
 
-      assert @backend.reload.cleanup_after_run?
+      assert_predicate @backend.reload, :cleanup_after_run?
 
       get edit_admin_backend_path(@backend)
 

@@ -28,6 +28,7 @@ module LiteLlm
         stub_request(:post, 'http://litellm.test/v1/chat/completions')
           .with(headers: { 'Authorization' => 'Bearer secret' }) do |request|
             body = JSON.parse(request.body)
+
             assert_equal 'gpt-test', body['model']
             assert_equal 'json_object', body.dig('response_format', 'type')
             assert_equal 'system rules', body.dig('messages', 0, 'content')
