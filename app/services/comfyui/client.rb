@@ -32,6 +32,23 @@ module Comfyui
       perform(json_request(Net::HTTP::Post, 'interrupt', { prompt_id: }))
     end
 
+    # Drops one or more finished prompts from ComfyUI's history.
+    def delete_history(prompt_ids)
+      ids = Array(prompt_ids).compact_blank
+      return if ids.empty?
+
+      perform(json_request(Net::HTTP::Post, 'history', { delete: ids }))
+    end
+
+    # Deletes uploaded inputs, generated files, and the history entry for one run.
+    # Falls back to history-only cleanup when the Comfier cleanup route isn't installed.
+    def cleanup_run(prompt_id:, files:, input_image: nil)
+      payload = { prompt_id:, files:, input_image: input_image.presence }.compact
+      perform(json_request(Net::HTTP::Post, 'comfier/cleanup', payload))
+    rescue NotFound
+      delete_history([prompt_id])
+    end
+
     # Queues an API-format workflow graph and returns ComfyUI's prompt id.
     def submit(graph)
       body = parse_json(perform(json_request(Net::HTTP::Post, 'prompt', { prompt: graph, client_id: CLIENT_ID })))

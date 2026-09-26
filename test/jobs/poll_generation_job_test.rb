@@ -218,6 +218,20 @@ class PollGenerationJobTest < ActiveJob::TestCase
     end
   end
 
+  test 'cleans up the backend when cleanup is enabled' do
+    @backend.update!(cleanup_after_run: true)
+    stub_history(success_entry('comfier_00001_.png'))
+    stub_queue
+    stub_request(:get, comfy_url(@backend, 'view')).with(query: hash_including({})).to_return(body: 'png')
+    cleanup = stub_request(:post, comfy_url(@backend, 'comfier/cleanup'))
+              .with(body: hash_including(prompt_id: 'running-prompt'))
+
+    PollGenerationJob.perform_now(@generation)
+
+    assert_predicate @generation.reload, :succeeded?
+    assert_requested cleanup
+  end
+
   test 're-downloads when attachment records exist but files are missing from disk' do
     stub_history(success_entry('comfier_00001_.png'))
     stub_queue

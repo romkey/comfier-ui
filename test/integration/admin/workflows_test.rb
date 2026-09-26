@@ -149,9 +149,9 @@ module Admin
             choices: [{ message: { content: { workflow: suggested, notes: 'Prompt only.' }.to_json } }]
           }.to_json)
 
-        post suggest_placeholders_admin_workflows_path,
-             params: { workflow_id: workflow.id, workflow: { name: workflow.name, kind: workflow.kind,
-                                                             graph_json: JSON.pretty_generate(literal_graph) } }
+        patch admin_workflow_path(workflow),
+              params: { suggest_placeholders: '1', workflow: { name: workflow.name, kind: workflow.kind,
+                                                               graph_json: JSON.pretty_generate(literal_graph) } }
       end
 
       assert_response :success

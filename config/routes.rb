@@ -39,9 +39,6 @@ Rails.application.routes.draw do
     resource :assistant_setting, only: %i[edit update]
 
     resources :workflows, except: :show do
-      collection do
-        post :suggest_placeholders
-      end
       member do
         get :models
         post :check_models

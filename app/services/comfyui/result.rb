@@ -24,9 +24,16 @@ module Comfyui
     def files
       return [] if pending?
 
+      all_files.select { it.fetch('type', 'output') == 'output' }
+    end
+
+    # Every file ComfyUI recorded for the prompt, including previews in temp/.
+    def all_files
+      return [] if pending?
+
       (@entry['outputs'] || {}).values.flat_map do |node_output|
         node_output.values.flat_map { Array(it) }.select do |file|
-          file.is_a?(Hash) && file['filename'].present? && file.fetch('type', 'output') == 'output'
+          file.is_a?(Hash) && file['filename'].present?
         end
       end.uniq
     end

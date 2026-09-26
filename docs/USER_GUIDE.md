@@ -113,6 +113,10 @@ A backend is a ComfyUI server Comfier sends work to. Find them under **Settings 
 - **Auth token**: only needed if ComfyUI sits behind a proxy that expects a bearer token. It's stored encrypted.
   Leave the field blank when editing to keep the saved token, or tick **Remove saved token**.
 - **Send new work to this backend**: turn it off to take a server out of rotation without deleting it.
+- **Delete backend files after each run**: once Comfier finishes with a result (success or failure), remove the
+  uploaded input, generated outputs, preview files, and the ComfyUI history entry from that server. Comfier keeps
+  the copies it downloaded. File deletion needs the Comfier downloader node installed on the backend; without it,
+  only the history entry is cleared.
 
 Comfier checks a backend when you save it; choose **Test** in the list to check it again. With several enabled backends, each
 new request goes to the reachable one with the shortest queue, unless the user picked a server in their settings.

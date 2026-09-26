@@ -12,7 +12,10 @@ class SubmitGenerationJob < ApplicationJob
     graph = WorkflowRenderer.render(generation.workflow.graph, generation.placeholder_values(image:))
     prompt_id = client.submit(graph)
 
-    generation.update!(backend:, comfy_prompt_id: prompt_id, status: :running, submitted_at: Time.current)
+    parameters = generation.parameters
+    parameters = parameters.merge('backend_input_image' => image) if image
+    generation.update!(backend:, comfy_prompt_id: prompt_id, status: :running, submitted_at: Time.current,
+                       parameters:)
     PollGenerationJob.set(wait: PollGenerationJob::INTERVAL).perform_later(generation)
   rescue BackendSelector::NoBackendAvailable, Comfyui::Error, WorkflowRenderer::MissingValue => e
     generation.fail!(e.message)

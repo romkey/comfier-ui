@@ -33,6 +33,16 @@
     <%= f.label :enabled, 'Send new work to this backend', class: 'form-check-label' %>
   </div>
 
+  <div class="form-check form-switch mb-3">
+    <%= f.check_box :cleanup_after_run, class: 'form-check-input', role: 'switch' %>
+    <%= f.label :cleanup_after_run, 'Delete backend files after each run', class: 'form-check-label' %>
+    <div class="form-text text-12">
+      Removes uploaded inputs, generated outputs, previews, and the ComfyUI history entry once Comfier finishes
+      with the result. Requires the Comfier downloader node on this backend for file deletion; otherwise only
+      history is cleared.
+    </div>
+  </div>
+
   <div class="d-flex gap-2">
     <%= f.submit backend.new_record? ? 'Add backend' : 'Save', class: 'btn btn-primary btn-sm' %>
     <%= link_to 'Cancel', admin_backends_path, class: 'btn btn-outline-secondary btn-sm' %>

@@ -18,6 +18,7 @@ class FakeComfyui # rubocop:disable Metrics/ClassLength
     @prompts = {}
     @models = Hash.new { |models, folder| models[folder] = [] }
     @models['checkpoints'] << 'v1-5-pruned-emaonly-fp16.safetensors'
+    @deleted_history = []
     @mutex = Mutex.new
   end
 
@@ -44,6 +45,8 @@ class FakeComfyui # rubocop:disable Metrics/ClassLength
     case request.path_info
     when '/prompt' then submit(body['prompt'])
     when '/upload/image' then json(name: 'upload.png', subfolder: '', type: 'input')
+    when '/comfier/cleanup' then cleanup(body)
+    when '/history' then delete_history(body)
     when '/queue' then cancel_queue(body)
     when '/interrupt' then cancel_interrupt(body)
     end
@@ -93,6 +96,18 @@ class FakeComfyui # rubocop:disable Metrics/ClassLength
     return [404, {}, ['not found']] unless FOLDERS.include?(folder)
 
     json(@mutex.synchronize { @models[folder].dup })
+  end
+
+  def cleanup(body)
+    deleted = Array(body['files']).filter_map { |file| file['filename'] if file.is_a?(Hash) }
+    deleted << body['input_image'] if body['input_image'].present?
+    @mutex.synchronize { @deleted_history << body['prompt_id'] if body['prompt_id'].present? }
+    json(deleted:, skipped: [])
+  end
+
+  def delete_history(body)
+    @mutex.synchronize { Array(body['delete']).each { |id| @deleted_history << id } }
+    [200, {}, ['']]
   end
 
   def cancel_queue(body)

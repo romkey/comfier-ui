@@ -87,6 +87,33 @@ module Comfyui
       assert_requested interrupt
     end
 
+    test 'delete_history removes finished prompts' do
+      stub = stub_request(:post, comfy_url(@backend, 'history')).with(body: { delete: %w[abc-123 def-456] }.to_json)
+
+      @client.delete_history(%w[abc-123 def-456])
+
+      assert_requested stub
+    end
+
+    test 'cleanup_run posts files and input image to the Comfier cleanup route' do
+      files = [{ 'filename' => 'out.png', 'subfolder' => '', 'type' => 'output' }]
+      stub = stub_request(:post, comfy_url(@backend, 'comfier/cleanup'))
+             .with(body: { prompt_id: 'abc-123', files:, input_image: 'comfier/in.png' }.to_json)
+
+      @client.cleanup_run(prompt_id: 'abc-123', files:, input_image: 'comfier/in.png')
+
+      assert_requested stub
+    end
+
+    test 'cleanup_run falls back to history deletion when the cleanup route is missing' do
+      stub_request(:post, comfy_url(@backend, 'comfier/cleanup')).to_return(status: 404)
+      history = stub_request(:post, comfy_url(@backend, 'history')).with(body: { delete: ['abc-123'] }.to_json)
+
+      @client.cleanup_run(prompt_id: 'abc-123', files: [])
+
+      assert_requested history
+    end
+
     test 'result wraps the history entry for the prompt' do
       stub_request(:get, comfy_url(@backend, 'history/abc'))
         .to_return(body: { abc: { status: { status_str: 'success', completed: true }, outputs: {} } }.to_json)

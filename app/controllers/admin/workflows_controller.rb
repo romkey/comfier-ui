@@ -1,7 +1,6 @@
 module Admin
   class WorkflowsController < BaseController # rubocop:disable Metrics/ClassLength
     before_action :set_workflow, only: %i[edit update destroy models check_models install_models]
-    before_action :load_workflow_for_suggest, only: :suggest_placeholders
     before_action :load_model_status, only: :models
 
     def index
@@ -25,6 +24,8 @@ module Admin
 
     def create
       @workflow = Workflow.new
+      return suggest_placeholders if params[:suggest_placeholders].present?
+
       assign_workflow
       if @workflow.save
         redirect_to edit_admin_workflow_path(@workflow), notice: saved_notice("Added #{@workflow.name}."),
@@ -35,6 +36,8 @@ module Admin
     end
 
     def update
+      return suggest_placeholders if params[:suggest_placeholders].present?
+
       assign_workflow
       if @workflow.save
         redirect_to edit_admin_workflow_path(@workflow), notice: saved_notice("Saved #{@workflow.name}."),
@@ -86,15 +89,6 @@ module Admin
       @workflow = Workflow.find(params[:id])
     end
 
-    def load_workflow_for_suggest
-      @workflow = if params[:workflow_id].present?
-                    Workflow.find(params[:workflow_id])
-                  else
-                    Workflow.new(kind: params.dig(:workflow, :kind).presence_in(GenerationKind.keys) || 'image')
-                  end
-      @usage_count = Generation.where(workflow_id: @workflow.id).count if @workflow.persisted?
-    end
-
     def load_model_status
       @backends = Backend.enabled.ordered.to_a
       @downloads = ModelDownload.where(backend: @backends).recent
@@ -130,6 +124,7 @@ module Admin
     end
 
     def render_suggest_form
+      @usage_count = Generation.where(workflow_id: @workflow.id).count if @workflow.persisted?
       status = flash.now[:alert].present? ? :unprocessable_content : :ok
       render(@workflow.persisted? ? :edit : :new, status:)
     end

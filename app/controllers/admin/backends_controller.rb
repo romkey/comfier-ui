@@ -53,7 +53,7 @@ module Admin
 
     # A blank token on edit means "keep the current one"; tick the clear box to remove it.
     def backend_params
-      permitted = params.expect(backend: %i[name base_url auth_token enabled clear_auth_token])
+      permitted = params.expect(backend: %i[name base_url auth_token enabled cleanup_after_run clear_auth_token])
       clear = ActiveModel::Type::Boolean.new.cast(permitted.delete(:clear_auth_token))
       permitted.delete(:auth_token) if permitted[:auth_token].blank?
       permitted[:auth_token] = nil if clear

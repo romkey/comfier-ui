@@ -23,6 +23,7 @@ module Comfyui
 
       assert_predicate result, :success?
       assert_equal %w[a.png b.mp4 c.flac], result.files.pluck('filename')
+      assert_equal %w[a.png b.mp4 c.flac preview.png], result.all_files.pluck('filename')
     end
 
     test 'reports the node and exception for execution errors' do

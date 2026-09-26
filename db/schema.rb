@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_25_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_25_210000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -54,6 +54,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_200000) do
   create_table "backends", force: :cascade do |t|
     t.text "auth_token"
     t.string "base_url", null: false
+    t.boolean "cleanup_after_run", default: false, null: false
     t.datetime "created_at", null: false
     t.boolean "downloader_available", default: false, null: false
     t.boolean "enabled", default: true, null: false

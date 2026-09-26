@@ -90,6 +90,18 @@ module Admin
       assert_not_includes response.body, 'super-secret'
     end
 
+    test 'backends can opt into cleanup after each run' do
+      sign_in_as users(:admin)
+
+      patch admin_backend_path(@backend), params: { backend: { cleanup_after_run: '1' } }
+
+      assert @backend.reload.cleanup_after_run?
+
+      get edit_admin_backend_path(@backend)
+
+      assert_select 'input[name="backend[cleanup_after_run]"][checked=checked]'
+    end
+
     test 'test connection' do
       sign_in_as users(:admin)
       stub_request(:get, comfy_url(@backend, 'system_stats')).to_raise(Errno::ECONNREFUSED)

@@ -3,8 +3,6 @@
     <%= render 'placeholder_suggestion', suggestion: local_assigns[:placeholder_suggestion] %>
 
     <%= form_with model: [:admin, workflow], class: 'settings-form-wide', multipart: true do |f| %>
-      <%= hidden_field_tag :workflow_id, workflow.id if workflow.persisted? %>
-
       <% if workflow.errors.any? %>
         <div class="alert alert-danger py-2 text-13"><%= workflow.errors.full_messages.to_sentence %></div>
       <% end %>
@@ -54,8 +52,8 @@
                                      spellcheck: false %>
         <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
           <% if LiteLlm::Client.configured? %>
-            <%= button_tag type: 'submit', formaction: suggest_placeholders_admin_workflows_path,
-                           class: 'btn btn-outline-secondary btn-sm' do %>
+            <%= f.button type: 'submit', name: 'suggest_placeholders', value: '1',
+                         formnovalidate: true, class: 'btn btn-outline-secondary btn-sm' do %>
               <i class="bi bi-magic" aria-hidden="true"></i> Suggest placeholders
             <% end %>
             <span class="text-12 text-secondary">Uses LiteLLM (<code><%= ENV.fetch('LITELLM_MODEL') %></code>).
