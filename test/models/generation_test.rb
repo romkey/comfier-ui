@@ -73,7 +73,14 @@ class GenerationTest < ActiveSupport::TestCase
   end
 
   test 'requires lyrics when the workflow uses them alongside a prompt' do
-    workflow = workflows(:stable_audio)
+    workflow = Workflow.create!(
+      name: 'Lyrics test audio',
+      kind: 'audio',
+      graph: {
+        '1' => { 'class_type' => 'CLIPTextEncode', 'inputs' => { 'text' => '{{prompt}}' } },
+        '2' => { 'class_type' => 'LyricsEncode', 'inputs' => { 'text' => '{{lyrics}}' } }
+      }
+    )
 
     blank = build(workflow, prompt: 'upbeat jazz', lyrics: '')
 
