@@ -40,6 +40,10 @@ module Admin
       get new_admin_workflow_path
 
       assert_select 'form[enctype=?]', 'multipart/form-data'
+      assert_select '.h-section-label', text: 'ComfyUI exports'
+      assert_select 'input[type=file][name="workflow[graph_file]"]'
+      assert_select 'input[type=file][name="workflow[models_file]"]'
+      assert_select 'button[disabled]', text: 'Suggest placeholders'
     end
 
     test 'adding a workflow from pasted JSON' do
@@ -103,6 +107,57 @@ module Admin
       assert_response :unprocessable_content
       assert_select '.alert-danger', text: /models folder/
       assert_select 'textarea[name="workflow[required_models_text]"]', text: '../evil.safetensors ftp://x'
+    end
+
+    test 'both export files can be uploaded together' do
+      workflow = workflows(:sd_image)
+      api = Rack::Test::UploadedFile.new(StringIO.new(workflow.graph.to_json), 'application/json',
+                                         original_filename: 'api.json')
+      ui = Rack::Test::UploadedFile.new(StringIO.new(ui_export.to_json), 'application/json',
+                                        original_filename: 'ui.json')
+
+      patch admin_workflow_path(workflow), params: { workflow: { graph_file: api, models_file: ui } }
+
+      assert_redirected_to edit_admin_workflow_path(workflow)
+      assert_equal 'https://hf.test/sd15.safetensors', workflow.reload.required_models.first.url
+    end
+
+    test 'swapped export files are routed correctly with a notice' do
+      workflow = workflows(:sd_image)
+      api = Rack::Test::UploadedFile.new(StringIO.new(workflow.graph.to_json), 'application/json',
+                                         original_filename: 'api.json')
+      ui = Rack::Test::UploadedFile.new(StringIO.new(ui_export.to_json), 'application/json',
+                                        original_filename: 'ui.json')
+
+      patch admin_workflow_path(workflow), params: { workflow: { graph_file: ui, models_file: api } }
+
+      assert_redirected_to edit_admin_workflow_path(workflow)
+      assert_match(/looked swapped/, flash[:notice])
+      assert_equal 'https://hf.test/sd15.safetensors', workflow.reload.required_models.first.url
+    end
+
+    test 'suggest placeholders rewrites the JSON without saving' do
+      workflow = workflows(:sd_image)
+      literal_graph = workflow.graph.deep_dup
+      literal_graph['6']['inputs']['text'] = 'a cat on a mat'
+      workflow.update!(graph: literal_graph)
+      suggested = literal_graph.deep_dup
+      suggested['6']['inputs']['text'] = '{{prompt}}'
+      with_env('LITELLM_URL' => 'http://litellm.test', 'LITELLM_MODEL' => 'gpt-test') do
+        stub_request(:post, 'http://litellm.test/v1/chat/completions')
+          .to_return(body: {
+            choices: [{ message: { content: { workflow: suggested, notes: 'Prompt only.' }.to_json } }]
+          }.to_json)
+
+        post suggest_placeholders_admin_workflows_path,
+             params: { workflow_id: workflow.id, workflow: { name: workflow.name, kind: workflow.kind,
+                                                             graph_json: JSON.pretty_generate(literal_graph) } }
+      end
+
+      assert_response :success
+      assert_select '.status-panel', text: /Suggested changes/
+      assert_select 'textarea[name="workflow[graph_json]"]', text: /"text": "{{prompt}}"/m
+      assert_equal 'a cat on a mat', workflow.reload.graph.dig('6', 'inputs', 'text')
     end
 
     test 'download links can be imported from a UI-format export' do
@@ -282,6 +337,15 @@ module Admin
     test 'removing a workflow keeps past generations' do
       assert_difference('Workflow.count', -1) { delete admin_workflow_path(workflows(:sd_image)) }
       assert_nil generations(:alice_done).reload.workflow
+    end
+
+    private
+
+    def ui_export
+      { nodes: [{ id: 4, type: 'CheckpointLoaderSimple', properties: { models: [
+        { name: 'v1-5-pruned-emaonly-fp16.safetensors', directory: 'checkpoints',
+          url: 'https://hf.test/sd15.safetensors' }
+      ] } }], links: [] }
     end
   end
 end

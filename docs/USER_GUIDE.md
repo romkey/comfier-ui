@@ -122,9 +122,11 @@ new request goes to the reachable one with the shortest queue, unless the user p
 A workflow decides what one style on one page does. Find them under **Settings → Workflows**.
 
 1. Build and test the workflow in ComfyUI.
-2. Export it with **Workflow → Export (API)**. The normal save format won't work; Comfier will tell you if you
-   paste the wrong one.
-3. In the exported JSON, replace the values users should control with placeholders:
+2. Export it twice: **Workflow → Export (API)** for the workflow itself, and **Workflow → Export** if you want
+   Comfier to pick up model download links from ComfyUI templates.
+3. In Comfier, choose **Add workflow** (or open an existing one). At the top, upload one or both export files
+   together, then either edit placeholders by hand or choose **Suggest placeholders** if LiteLLM is configured.
+4. Replace the values users should control with placeholders (or let the assistant suggest them):
 
    | Placeholder | Becomes |
    |---|---|
@@ -136,10 +138,14 @@ A workflow decides what one style on one page does. Find them under **Settings �
    | `{{frames}}` | Length × frame rate + 1 |
    | `{{image}}` | The uploaded starting image or picture of the object |
 
-4. In Comfier, choose **Add workflow**, pick the **Page** it belongs to, and paste or upload the JSON.
-5. Set **Base resolution** to the size the model was trained at (for example 512 for SD 1.5, 1024 for SDXL), and
+5. Pick the **Page** it belongs to, paste or upload the API JSON if you haven't already, and choose **Save**.
+6. Set **Base resolution** to the size the model was trained at (for example 512 for SD 1.5, 1024 for SDXL), and
    **Frame rate** for video.
-6. Leave **Offer this to users** ticked, and use **Order** to decide which style is listed first.
+7. Leave **Offer this to users** ticked, and use **Order** to decide which style is listed first.
+
+**Suggest placeholders** sends the API JSON to an LLM via LiteLLM (`LITELLM_URL`, `LITELLM_MODEL` and optionally
+`LITELLM_API_KEY` in `.env`). Comfier shows what it changed and fills the JSON textarea for you to review; nothing
+is saved until you choose **Save**. Edit the system prompt under **Settings → Workflow assistant**.
 
 To remove a workflow, open it (or use the **⋯** menu on the list) and choose **Delete**. Past results stay; they just
 lose the link back to this style.
@@ -159,8 +165,8 @@ link for each one. Either:
 
 - type them into **Models**, one per line: the folder, a slash, the file name, a space and a direct link, like
   `vae/wan_2.1_vae.safetensors https://huggingface.co/…/wan_2.1_vae.safetensors`; or
-- upload the same workflow saved with the regular **Workflow → Export** (not Export (API)) under **or pick up links
-  from the regular export**. Workflows based on ComfyUI's templates carry their download links in that file.
+- upload the regular export at the top of the workflow form (**Regular export**). Workflows based on ComfyUI's
+  templates carry their download links in that file.
 
 For Hugging Face, use the link to the file (`…/resolve/main/…`), not its web page (`…/blob/main/…`). Comfier fixes
 `/blob/` links for you, and the downloader refuses anything that turns out to be a web page.
@@ -210,8 +216,8 @@ Choose **Re-check** after adding or removing model files on a server by hand, or
 
 1. In ComfyUI, open the template from **Workflow → Browse Templates** and check it works.
 2. Save it twice: **Workflow → Export (API)** for the workflow itself, and **Workflow → Export** for its download links.
-3. In Comfier, add the workflow from the API file and add placeholders as usual, then upload the regular export
-   under **Models** and choose **Save**.
+3. In Comfier, add the workflow and upload both files at the top of the form. Use **Suggest placeholders** or add
+   placeholders by hand, then choose **Save**.
 4. On the workflow's page, choose **Install N missing** for each backend that needs the models.
 
 ### How to update the privacy notice (admins)

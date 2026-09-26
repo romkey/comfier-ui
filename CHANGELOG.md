@@ -5,6 +5,13 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [v0.4.0] - 2026-09-26
+
+### Added
+- Workflow assistant for admins: upload ComfyUI's API and regular exports together, optionally ask LiteLLM to suggest
+  `{{placeholders}}` in the API JSON, and edit the assistant prompt under Settings → Workflow assistant.
+  Configure `LITELLM_URL`, `LITELLM_API_KEY` and `LITELLM_MODEL` in `.env`.
+
 ## [v0.3.1] - 2026-09-25
 
 ### Fixed

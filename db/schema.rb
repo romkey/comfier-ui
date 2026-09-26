@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_25_190000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_25_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -46,6 +46,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_190000) do
   create_table "app_settings", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.decimal "email_notification_attachment_max_mb", precision: 8, scale: 3, default: "0.488", null: false
+    t.text "placeholder_prompt"
     t.decimal "slack_notification_attachment_max_mb", precision: 8, scale: 3, default: "5.0", null: false
     t.datetime "updated_at", null: false
   end

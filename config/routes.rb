@@ -36,8 +36,12 @@ Rails.application.routes.draw do
     end
     resource :privacy_notice, only: %i[edit update]
     resource :app_setting, only: %i[edit update]
+    resource :assistant_setting, only: %i[edit update]
 
     resources :workflows, except: :show do
+      collection do
+        post :suggest_placeholders
+      end
       member do
         get :models
         post :check_models

@@ -1,0 +1,28 @@
+<% if suggestion.present? %>
+  <div class="status-panel <%= suggestion.changes.any? { !it.placeholder_substitution? } ? 'status-attention' : 'status-clear' %> mb-3 text-13">
+    <div class="fw-medium mb-1">Suggested changes</div>
+    <% if suggestion.notes.present? %>
+      <p class="text-secondary mb-2"><%= suggestion.notes %></p>
+    <% end %>
+    <% if suggestion.changes.empty? %>
+      <p class="text-secondary mb-0">The model didn't change any values. Review the JSON below and edit by hand if needed.</p>
+    <% else %>
+      <ul class="list-compact mb-0">
+        <% suggestion.changes.each do |change| %>
+          <li class="<%= change.placeholder_substitution? ? 'text-secondary' : 'text-warning' %>">
+            <span class="text-body"><%= change.node_id %></span>
+            <%= change.node_label %>
+            · <code><%= change.input %></code>:
+            <span class="text-secondary"><%= truncate(change.from.to_s, length: 60) %></span>
+            →
+            <code><%= change.to %></code>
+            <% unless change.placeholder_substitution? %>
+              <span class="text-warning">(not a placeholder substitution)</span>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+    <p class="text-12 text-secondary mt-2 mb-0">Review the JSON below, then choose Save when it looks right.</p>
+  </div>
+<% end %>

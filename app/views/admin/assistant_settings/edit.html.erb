@@ -1,0 +1,50 @@
+<% content_for :title, 'Workflow assistant' %>
+
+<h1 class="h-page-title mb-3">Workflow assistant</h1>
+<p class="text-13 text-secondary mb-3">
+  When adding a workflow, Comfier can ask an LLM to replace literal values in the API export with
+  <code>{{placeholders}}</code>. The prompt below is sent as the system message; the allowed placeholder list and
+  the workflow JSON are appended automatically when you choose <strong>Suggest placeholders</strong>.
+</p>
+
+<% if LiteLlm::Client.configured? %>
+  <div class="text-13 mb-3">
+    <span class="status-dot status-success" aria-hidden="true"></span>
+    LiteLLM is configured for model <span class="text-body"><%= ENV.fetch('LITELLM_MODEL') %></span>.
+  </div>
+<% else %>
+  <div class="status-panel status-attention mb-3 text-13">
+    LiteLLM is not configured. Set
+    <% LiteLlm::Client.missing_config_keys.each do |key| %>
+      <code><%= key %></code><%= key == LiteLlm::Client.missing_config_keys.last ? '' : ' and ' %>
+    <% end %>
+    in <code>.env</code>. Optionally set <code>LITELLM_API_KEY</code> and <code>LITELLM_TIMEOUT_SECONDS</code>.
+  </div>
+<% end %>
+
+<%= form_with model: @settings, url: admin_assistant_setting_path, method: :patch, class: 'settings-form-wide' do |f| %>
+  <% if @settings.errors.any? %>
+    <div class="alert alert-danger py-2 text-13"><%= @settings.errors.full_messages.to_sentence %></div>
+  <% end %>
+
+  <div class="mb-3">
+    <%= f.label :placeholder_prompt, 'Prompt', class: 'form-label' %>
+    <%= f.text_area :placeholder_prompt, rows: 18, class: 'form-control form-control-sm font-monospace text-12',
+                                         spellcheck: false,
+                                         placeholder: AppSetting::DEFAULT_PLACEHOLDER_PROMPT %>
+    <div class="form-text text-12">
+      <% if @settings.using_default_placeholder_prompt? %>
+        Using the built-in default prompt.
+      <% else %>
+        Custom prompt in use. Choose <strong>Reset to default</strong> to restore the built-in prompt.
+      <% end %>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2">
+    <%= f.submit 'Save', class: 'btn btn-primary btn-sm' %>
+    <%= button_tag 'Reset to default', name: 'reset_prompt', value: '1',
+                   class: 'btn btn-outline-secondary btn-sm',
+                   form: { data: { turbo_confirm: 'Restore the built-in prompt?' } } %>
+  </div>
+<% end %>

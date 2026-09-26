@@ -1,9 +1,35 @@
 <div class="row g-4">
   <div class="col-xl-8">
+    <%= render 'placeholder_suggestion', suggestion: local_assigns[:placeholder_suggestion] %>
+
     <%= form_with model: [:admin, workflow], class: 'settings-form-wide', multipart: true do |f| %>
+      <%= hidden_field_tag :workflow_id, workflow.id if workflow.persisted? %>
+
       <% if workflow.errors.any? %>
         <div class="alert alert-danger py-2 text-13"><%= workflow.errors.full_messages.to_sentence %></div>
       <% end %>
+
+      <div class="mb-3">
+        <div class="h-section-label mb-2">ComfyUI exports</div>
+        <p class="text-12 text-secondary mb-2">
+          Upload both files at once, then choose Save or <strong>Suggest placeholders</strong>. Comfier detects
+          if they're in the wrong slots.
+        </p>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <%= label_tag 'workflow_graph_file', 'API export', class: 'form-label' %>
+            <%= file_field_tag 'workflow[graph_file]', accept: 'application/json,.json', id: 'workflow_graph_file',
+                                                       class: 'form-control form-control-sm' %>
+            <div class="form-text text-12">Workflow → Export (API). Fills the JSON below.</div>
+          </div>
+          <div class="col-md-6">
+            <%= label_tag 'workflow_models_file', 'Regular export (optional)', class: 'form-label' %>
+            <%= file_field_tag 'workflow[models_file]', accept: 'application/json,.json', id: 'workflow_models_file',
+                                                        class: 'form-control form-control-sm' %>
+            <div class="form-text text-12">Workflow → Export. Picks up model download links.</div>
+          </div>
+        </div>
+      </div>
 
       <div class="row g-3 mb-3">
         <div class="col-sm-8">
@@ -26,10 +52,21 @@
         <%= f.label :graph_json, 'Workflow (API format JSON)', class: 'form-label' %>
         <%= f.text_area :graph_json, rows: 18, class: 'form-control form-control-sm font-monospace text-12',
                                      spellcheck: false %>
-        <div class="d-flex align-items-center gap-2 mt-2">
-          <span class="text-12 text-secondary">or upload the exported file</span>
-          <%= file_field_tag 'workflow[graph_file]', accept: 'application/json,.json', id: 'workflow_graph_file',
-                                                     class: 'form-control form-control-sm w-auto' %>
+        <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
+          <% if LiteLlm::Client.configured? %>
+            <%= button_tag type: 'submit', formaction: suggest_placeholders_admin_workflows_path,
+                           class: 'btn btn-outline-secondary btn-sm' do %>
+              <i class="bi bi-magic" aria-hidden="true"></i> Suggest placeholders
+            <% end %>
+            <span class="text-12 text-secondary">Uses LiteLLM (<code><%= ENV.fetch('LITELLM_MODEL') %></code>).
+              Edit the prompt under Settings → Workflow assistant.</span>
+          <% else %>
+            <%= tag.button 'Suggest placeholders', class: 'btn btn-outline-secondary btn-sm', disabled: true %>
+            <span class="text-12 text-secondary">
+              Set <%= LiteLlm::Client.missing_config_keys.map { |key| tag.code(key) }.to_sentence %>
+              in <code>.env</code> to enable.
+            </span>
+          <% end %>
         </div>
       </div>
 
@@ -74,12 +111,8 @@
                                                placeholder: 'vae/wan_2.1_vae.safetensors https://huggingface.co/…/wan_2.1_vae.safetensors' %>
         <div class="form-text text-12">
           One per line: <code>folder/file</code> and a direct download link. Files the workflow's loader nodes use
-          are added automatically; links are needed to install them from here.
-        </div>
-        <div class="d-flex align-items-center gap-2 mt-2">
-          <span class="text-12 text-secondary">or pick up links from the regular export (Workflow → Export)</span>
-          <%= file_field_tag 'workflow[models_file]', accept: 'application/json,.json', id: 'workflow_models_file',
-                                                      class: 'form-control form-control-sm w-auto' %>
+          are added automatically; links are needed to install them from here. Use the regular export above to
+          pick up download links from ComfyUI templates.
         </div>
       </div>
 

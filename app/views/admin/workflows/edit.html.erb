@@ -19,7 +19,7 @@
     </ul>
   </div>
 </div>
-<%= render 'form', workflow: @workflow %>
+<%= render 'form', workflow: @workflow, placeholder_suggestion: @placeholder_suggestion %>
 
 <%= turbo_frame_tag 'workflow_models', src: models_admin_workflow_path(@workflow),
                                        data: { controller: 'frame-refresh' } do %>
