@@ -51,17 +51,19 @@ module Admin
       assign_workflow
       if !@workflow.graph.is_a?(Hash) || @workflow.graph.empty?
         flash.now[:alert] = 'Paste or upload an API-format workflow JSON first.'
-        return render_suggest_form
+        return respond_to_suggest_form
       end
 
       result = PlaceholderSuggester.call(@workflow.graph)
       @workflow.graph_json = JSON.pretty_generate(result.graph)
       @placeholder_suggestion = result
+      @placeholder_debug = result.debug
       flash.now[:notice] = suggestion_notice(result)
-      render_suggest_form
+      respond_to_suggest_form
     rescue PlaceholderSuggester::Error => e
+      @placeholder_debug = e.debug
       flash.now[:alert] = e.message
-      render_suggest_form
+      respond_to_suggest_form
     end
 
     def destroy
@@ -123,10 +125,14 @@ module Admin
       parts.join(' ')
     end
 
-    def render_suggest_form
+    def respond_to_suggest_form
       @usage_count = Generation.where(workflow_id: @workflow.id).count if @workflow.persisted?
       status = flash.now[:alert].present? ? :unprocessable_content : :ok
-      render(@workflow.persisted? ? :edit : :new, status:)
+
+      respond_to do |format|
+        format.turbo_stream { render :suggest_placeholders, status: }
+        format.html { render(@workflow.persisted? ? :edit : :new, status:) }
+      end
     end
 
     def install_notice(backend, outcome)

@@ -32,6 +32,9 @@ class PlaceholderSuggesterTest < ActiveSupport::TestCase
     assert_equal '{{prompt}}', result.graph.dig('6', 'inputs', 'text')
     assert_equal 'Replaced prompt and size inputs.', result.notes
     assert_equal 3, result.changes.size
+    assert_includes result.debug.user_message, 'Allowed placeholders:'
+    assert_includes result.debug.raw_reply, '"workflow"'
+    assert_equal 'gpt-test', result.debug.model
     assert result.changes.all?(&:placeholder_substitution?)
     prompt_change = result.changes.find { it.input == 'text' && it.node_id == '6' }
 
@@ -47,6 +50,7 @@ class PlaceholderSuggesterTest < ActiveSupport::TestCase
     error = assert_raises(PlaceholderSuggester::Error) { PlaceholderSuggester.call(ORIGINAL) }
 
     assert_match(/same node IDs/, error.message)
+    assert_includes error.debug.raw_reply, '"workflow"'
   end
 
   test 'rejects unknown placeholders' do

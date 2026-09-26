@@ -1,0 +1,12 @@
+<%= turbo_stream.replace 'workflow_placeholder_panel' do %>
+  <%= render 'placeholder_suggestion', suggestion: @placeholder_suggestion, debug: @placeholder_debug,
+                                       alert: flash.now[:alert], notice: flash.now[:notice] %>
+<% end %>
+
+<%= turbo_stream.replace 'workflow_graph_json_section' do %>
+  <%= render 'graph_json_section', workflow: @workflow, form: nil %>
+<% end %>
+
+<%= turbo_stream.replace 'workflow_placeholders_sidebar' do %>
+  <%= render 'placeholders_sidebar', workflow: @workflow %>
+<% end %>

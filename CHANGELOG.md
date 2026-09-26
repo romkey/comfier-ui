@@ -5,6 +5,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [v0.4.2] - 2026-09-26
+
+### Changed
+- **Suggest placeholders** now updates the workflow form in place via Turbo Stream instead of reloading the page.
+  Each run shows the LiteLLM request (model, endpoint, system prompt, user message) and the raw reply for debugging.
+
 ## [v0.4.1] - 2026-09-26
 
 ### Added

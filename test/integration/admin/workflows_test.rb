@@ -151,12 +151,16 @@ module Admin
 
         patch admin_workflow_path(workflow),
               params: { suggest_placeholders: '1', workflow: { name: workflow.name, kind: workflow.kind,
-                                                               graph_json: JSON.pretty_generate(literal_graph) } }
+                                                               graph_json: JSON.pretty_generate(literal_graph) } },
+              as: :turbo_stream
       end
 
       assert_response :success
-      assert_select '.status-panel', text: /Suggested changes/
-      assert_select 'textarea[name="workflow[graph_json]"]', text: /"text": "{{prompt}}"/m
+      assert_select 'turbo-stream[action=replace][target=workflow_placeholder_panel]'
+      assert_select 'turbo-stream[action=replace][target=workflow_graph_json_section]'
+      assert_select '.h-section-label', text: 'LiteLLM request'
+      assert_select 'summary', text: 'Raw reply'
+      assert_select 'textarea#workflow_graph_json', text: /"text": "{{prompt}}"/m
       assert_equal 'a cat on a mat', workflow.reload.graph.dig('6', 'inputs', 'text')
     end
 

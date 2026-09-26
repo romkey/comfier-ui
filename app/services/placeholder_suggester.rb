@@ -1,12 +1,21 @@
 # Asks LiteLLM to rewrite a ComfyUI API workflow with {{placeholders}} and reports what changed.
-class PlaceholderSuggester
+class PlaceholderSuggester # rubocop:disable Metrics/ClassLength
   Change = Data.define(:node_id, :node_label, :input, :from, :to, :placeholder) do
     def placeholder_substitution? = placeholder
   end
 
-  class Error < StandardError; end
+  Debug = Data.define(:model, :endpoint, :system_prompt, :user_message, :raw_reply)
 
-  Result = Data.define(:graph, :notes, :changes)
+  class Error < StandardError
+    attr_reader :debug
+
+    def initialize(message, debug: nil)
+      @debug = debug
+      super(message)
+    end
+  end
+
+  Result = Data.define(:graph, :notes, :changes, :debug)
 
   WHOLE_PLACEHOLDER = /\A\{\{\s*(\w+)\s*\}\}\z/
 
@@ -17,20 +26,33 @@ class PlaceholderSuggester
   end
 
   def call
-    graph = request_suggestion
-    validate!(graph)
-    Result.new(graph:, notes: @notes, changes: diff(@original, graph))
+    debug = build_debug
+    raw_reply = fetch_reply(debug)
+    debug = debug.with(raw_reply: raw_reply)
+    payload = parse_reply(raw_reply, debug)
+    graph = payload.fetch('workflow')
+    @notes = payload['notes'].to_s.strip
+    validate!(graph, debug)
+    Result.new(graph:, notes: @notes, changes: diff(@original, graph), debug:)
   end
 
   private
 
-  def request_suggestion
-    reply = LiteLlm::Client.chat(system: AppSetting.current.placeholder_prompt_or_default, user: user_message)
-    payload = parse_reply(reply)
-    @notes = payload['notes'].to_s.strip
-    payload.fetch('workflow')
+  def build_debug
+    system = AppSetting.current.placeholder_prompt_or_default
+    Debug.new(
+      model: LiteLlm::Client.model,
+      endpoint: "#{LiteLlm::Client.url}/v1/chat/completions",
+      system_prompt: system,
+      user_message: user_message,
+      raw_reply: nil
+    )
+  end
+
+  def fetch_reply(debug)
+    LiteLlm::Client.chat(system: debug.system_prompt, user: debug.user_message)
   rescue LiteLlm::Error => e
-    raise Error, e.message
+    raise Error.new(e.message, debug:)
   end
 
   def user_message
@@ -44,13 +66,14 @@ class PlaceholderSuggester
     MESSAGE
   end
 
-  def parse_reply(text)
+  def parse_reply(text, debug)
     json = extract_json(text)
-    raise Error, 'The model reply must include a "workflow" object' unless json['workflow'].is_a?(Hash)
+    raise Error.new('The model reply must include a "workflow" object', debug: debug.with(raw_reply: text)) unless
+      json['workflow'].is_a?(Hash)
 
     json
   rescue JSON::ParserError => e
-    raise Error, "The model reply wasn't valid JSON: #{e.message.truncate(200)}"
+    raise Error.new("The model reply wasn't valid JSON: #{e.message.truncate(200)}", debug: debug.with(raw_reply: text))
   end
 
   def extract_json(text)
@@ -59,18 +82,26 @@ class PlaceholderSuggester
     JSON.parse(stripped)
   end
 
-  def validate!(graph)
-    raise Error, 'The suggested workflow must stay in ComfyUI API format' unless WorkflowModels.api_format?(graph)
-    raise Error, 'The suggested workflow must keep the same node IDs' unless graph.keys.sort == @original.keys.sort
+  def validate!(graph, debug)
+    unless WorkflowModels.api_format?(graph)
+      raise Error.new('The suggested workflow must stay in ComfyUI API format', debug:)
+    end
+    unless graph.keys.sort == @original.keys.sort
+      raise Error.new('The suggested workflow must keep the same node IDs', debug:)
+    end
 
     graph.each do |node_id, node|
       original = @original.fetch(node_id)
-      raise Error, "Node #{node_id} changed class_type from #{original['class_type']} to #{node['class_type']}" if
-        node['class_type'] != original['class_type']
+      if node['class_type'] != original['class_type']
+        raise Error.new("Node #{node_id} changed class_type from #{original['class_type']} to #{node['class_type']}",
+                        debug:)
+      end
     end
 
     unknown = unknown_placeholders(graph)
-    raise Error, "The suggested workflow uses unknown placeholders: #{unknown.sort.join(', ')}" if unknown.any?
+    return if unknown.empty?
+
+    raise Error.new("The suggested workflow uses unknown placeholders: #{unknown.sort.join(', ')}", debug:)
   end
 
   def unknown_placeholders(node, found = Set.new)

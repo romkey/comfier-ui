@@ -1,0 +1,13 @@
+<div id="workflow_placeholders_sidebar" class="sidebar-card">
+  <div class="h-section-label">Placeholders</div>
+  <p class="text-12 text-secondary">
+    Put these in node inputs. The form only shows fields for placeholders the workflow uses.
+    A value that is exactly <code>"{{seed}}"</code> becomes a number.
+  </p>
+  <dl class="detail-list text-12 mb-0">
+    <% Workflow::PLACEHOLDERS.each do |name, description| %>
+      <dt><code class="<%= 'text-success' if workflow.uses?(name) %>">{{<%= name %>}}</code></dt>
+      <dd class="text-secondary"><%= description %></dd>
+    <% end %>
+  </dl>
+</div>

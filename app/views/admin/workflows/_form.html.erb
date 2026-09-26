@@ -1,8 +1,10 @@
 <div class="row g-4">
   <div class="col-xl-8">
-    <%= render 'placeholder_suggestion', suggestion: local_assigns[:placeholder_suggestion] %>
+    <%= render 'placeholder_suggestion', suggestion: local_assigns[:placeholder_suggestion],
+                                         debug: local_assigns[:placeholder_debug] %>
 
-    <%= form_with model: [:admin, workflow], class: 'settings-form-wide', multipart: true do |f| %>
+    <%= form_with model: [:admin, workflow], class: 'settings-form-wide', multipart: true,
+                  data: { turbo: true } do |f| %>
       <% if workflow.errors.any? %>
         <div class="alert alert-danger py-2 text-13"><%= workflow.errors.full_messages.to_sentence %></div>
       <% end %>
@@ -46,27 +48,7 @@
                                        placeholder: 'Shown to users, e.g. "Photorealistic, slower"' %>
       </div>
 
-      <div class="mb-3">
-        <%= f.label :graph_json, 'Workflow (API format JSON)', class: 'form-label' %>
-        <%= f.text_area :graph_json, rows: 18, class: 'form-control form-control-sm font-monospace text-12',
-                                     spellcheck: false %>
-        <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
-          <% if LiteLlm::Client.configured? %>
-            <%= f.button type: 'submit', name: 'suggest_placeholders', value: '1',
-                         formnovalidate: true, class: 'btn btn-outline-secondary btn-sm' do %>
-              <i class="bi bi-magic" aria-hidden="true"></i> Suggest placeholders
-            <% end %>
-            <span class="text-12 text-secondary">Uses LiteLLM (<code><%= ENV.fetch('LITELLM_MODEL') %></code>).
-              Edit the prompt under Settings → Workflow assistant.</span>
-          <% else %>
-            <%= tag.button 'Suggest placeholders', class: 'btn btn-outline-secondary btn-sm', disabled: true %>
-            <span class="text-12 text-secondary">
-              Set <%= LiteLlm::Client.missing_config_keys.map { |key| tag.code(key) }.to_sentence %>
-              in <code>.env</code> to enable.
-            </span>
-          <% end %>
-        </div>
-      </div>
+      <%= render 'graph_json_section', workflow:, form: f %>
 
       <div class="row g-3 mb-3">
         <div class="col-sm-3">
@@ -127,18 +109,6 @@
   </div>
 
   <div class="col-xl-4">
-    <div class="sidebar-card">
-      <div class="h-section-label">Placeholders</div>
-      <p class="text-12 text-secondary">
-        Put these in node inputs. The form only shows fields for placeholders the workflow uses.
-        A value that is exactly <code>"{{seed}}"</code> becomes a number.
-      </p>
-      <dl class="detail-list text-12 mb-0">
-        <% Workflow::PLACEHOLDERS.each do |name, description| %>
-          <dt><code class="<%= 'text-success' if workflow.uses?(name) %>">{{<%= name %>}}</code></dt>
-          <dd class="text-secondary"><%= description %></dd>
-        <% end %>
-      </dl>
-    </div>
+    <%= render 'placeholders_sidebar', workflow: %>
   </div>
 </div>
