@@ -3,13 +3,14 @@ source 'https://rubygems.org'
 gem 'rails', '~> 8.1.3', '>= 8.1.3.1'
 
 gem 'bootsnap', require: false
-gem 'image_processing', '~> 1.2'
+gem 'image_processing', '~> 2.1'
 gem 'importmap-rails'
 # json 3.0 dropped the positional options argument ActiveSupport::JSON.decode still passes (Rails 8.1.3).
 gem 'json', '< 3'
 gem 'pg', '~> 1.6'
 gem 'propshaft'
 gem 'puma', '>= 7.0'
+gem 'ruby-vips', '~> 2.0', require: false
 gem 'stimulus-rails'
 gem 'turbo-rails'
 gem 'tzinfo-data', platforms: %i[windows jruby]
