@@ -31,6 +31,8 @@ Rails.application.routes.draw do
   resource :settings, only: %i[show update]
 
   namespace :admin do
+    resources :users, only: :index
+
     resources :backends, except: :show do
       post :check, on: :member
     end

@@ -55,6 +55,13 @@ td.num, th.num { text-align: right; }
   color: var(--bs-secondary-color); border-bottom-color: var(--app-border);
 }
 .table-compact .w-status { width: 1.25rem; }
+.table-compact th .table-sort-link {
+  color: var(--bs-secondary-color);
+  text-decoration: none;
+}
+.table-compact th .table-sort-link:hover,
+.table-compact th .table-sort-link.active { color: var(--bs-body-color); }
+.table-compact th .table-sort-link .bi { font-size: 0.65rem; vertical-align: middle; }
 tr.row-link { cursor: pointer; }
 
 /* Settings */

@@ -27,6 +27,7 @@
 
   <% if current_user.admin? %>
     <div class="h-section-label">Admin</div>
+    <%= settings_nav_item 'Users', admin_users_path, icon: 'bi-people', count: @nav_user_count %>
     <%= settings_nav_item 'Backends', admin_backends_path, icon: 'bi-hdd-network', count: @nav_backend_count %>
     <%= settings_nav_item 'Workflows', admin_workflows_path, icon: 'bi-diagram-3', count: @nav_workflow_count %>
     <%= settings_nav_item 'Notifications', edit_admin_app_setting_path, icon: 'bi-bell' %>

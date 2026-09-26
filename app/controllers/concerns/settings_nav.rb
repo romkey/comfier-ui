@@ -12,6 +12,7 @@ module SettingsNav
   def load_settings_nav
     return unless current_user&.admin?
 
+    @nav_user_count = User.count
     @nav_backend_count = Backend.count
     @nav_unhealthy_backends = Backend.enabled.unhealthy.count
     @nav_workflow_count = Workflow.count
