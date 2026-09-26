@@ -1,0 +1,36 @@
+<% live = local_assigns.fetch(:live, false) %>
+<% disabled = local_assigns.fetch(:disabled, false) %>
+
+<div class="public-link-controls border-top pt-3 mt-3">
+  <div class="h-section-label mb-2">Public link</div>
+
+  <% if disabled && !generation.succeeded? %>
+    <p class="text-12 text-secondary mb-0">You can create a link once this finishes.</p>
+  <% elsif generation.publicly_linked? %>
+    <p class="text-12 text-secondary mb-2">Anyone with this link can view the result, even without an account.</p>
+    <div class="input-group input-group-sm mb-2" data-controller="clipboard">
+      <%= text_field_tag :public_link, public_share_url(generation.public_token),
+                         class: 'form-control font-monospace text-12',
+                         readonly: true,
+                         data: { clipboard_target: 'source' } %>
+      <button type="button" class="btn btn-outline-secondary" data-action="clipboard#copy">Copy</button>
+    </div>
+    <div class="d-flex gap-2 align-items-center flex-wrap">
+      <% if live %>
+        <%= button_to 'Change link', public_link_generation_path(generation), class: 'btn btn-outline-secondary btn-sm',
+                      form: { data: { turbo_confirm: 'The old link will stop working.', turbo_stream: true } } %>
+        <%= button_to 'Revoke link', public_link_generation_path(generation), method: :delete,
+                      class: 'btn btn-outline-danger btn-sm',
+                      form: { data: { turbo_confirm: 'Revoke this public link?', turbo_stream: true } } %>
+      <% end %>
+      <%= link_to 'See all your public links', public_links_path, class: 'text-12 link-secondary' %>
+    </div>
+  <% else %>
+    <p class="text-12 text-secondary mb-2">Anyone with the link can view this result, even without an account.</p>
+    <% if live %>
+      <%= button_to 'Create public link', public_link_generation_path(generation),
+                    class: 'btn btn-outline-secondary btn-sm',
+                    form: { data: { turbo_stream: true } } %>
+    <% end %>
+  <% end %>
+</div>

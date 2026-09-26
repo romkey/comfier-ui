@@ -219,15 +219,31 @@ class GenerationTest < ActiveSupport::TestCase
   test 'share! and unshare! toggle visibility' do
     generation = generations(:alice_done)
 
-    generation.share!(share_prompt: false, share_input: true)
+    generation.share!
 
     assert_predicate generation, :shared?
-    assert_not generation.share_prompt?
-    assert_predicate generation, :share_input?
 
     generation.unshare!
 
     assert_not generation.shared?
+  end
+
+  test 'public links can be created, rotated, and revoked' do
+    generation = generations(:alice_done)
+    generation.update!(status: :succeeded)
+
+    generation.create_public_link!
+    token = generation.public_token
+
+    assert_predicate generation, :publicly_linked?
+
+    generation.create_public_link!
+
+    assert_not_equal token, generation.public_token
+
+    generation.revoke_public_link!
+
+    assert_not generation.publicly_linked?
   end
 
   test 'finishing notifies the owner when they turned notifications on' do

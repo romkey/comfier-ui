@@ -33,6 +33,13 @@
     </div>
   <% end %>
 
+  <div class="h-section-label mt-4">Sharing</div>
+  <div class="form-check form-switch mb-3">
+    <%= f.check_box :share_by_default, class: 'form-check-input', role: 'switch' %>
+    <%= f.label :share_by_default, 'Share new results with everyone by default', class: 'form-check-label' %>
+    <div class="form-text text-12 mt-0">Pre-checks sharing when you generate. You can still change it each time.</div>
+  </div>
+
   <div class="h-section-label mt-4">Notifications</div>
   <div class="text-13 text-secondary mb-2">We'll tell you when something you made is ready, fails, or is cancelled.</div>
 

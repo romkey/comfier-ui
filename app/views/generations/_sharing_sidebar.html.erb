@@ -1,0 +1,12 @@
+<%= render 'generations/share_controls',
+           generation: generation,
+           live: local_assigns[:live],
+           disabled: local_assigns[:disabled],
+           form_mode: local_assigns[:form_mode],
+           workflow: local_assigns[:workflow] %>
+<% unless local_assigns[:form_mode] %>
+  <%= render 'generations/public_link_controls',
+             generation: generation,
+             live: local_assigns[:live],
+             disabled: local_assigns[:disabled] %>
+<% end %>

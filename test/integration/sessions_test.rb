@@ -30,6 +30,10 @@ class SessionsTest < ActionDispatch::IntegrationTest
     follow_redirect!
     post accept_privacy_path
 
+    assert_redirected_to welcome_sharing_path
+    follow_redirect!
+    patch welcome_sharing_path, params: { share_by_default: '0' }
+
     assert_redirected_to '/results'
     follow_redirect!
 

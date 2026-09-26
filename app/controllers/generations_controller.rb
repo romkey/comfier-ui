@@ -4,7 +4,7 @@ class GenerationsController < ApplicationController
 
   PER_PAGE = 24
 
-  before_action :set_generation, only: %i[show destroy retry update_share]
+  before_action :set_generation, only: %i[show destroy retry update_share create_public_link revoke_public_link]
   before_action :set_cancellable_generation, only: :cancel
 
   def index
@@ -51,15 +51,24 @@ class GenerationsController < ApplicationController
     return head :unprocessable_content unless @generation.succeeded?
 
     if params[:share_result] == '1'
-      @generation.share!(share_prompt: params[:share_prompt] == '1', share_input: params[:share_input] == '1')
+      @generation.share!
     else
       @generation.unshare!
     end
 
-    respond_to do |format|
-      format.turbo_stream
-      format.html { redirect_to generation_path(@generation), notice: share_notice, status: :see_other }
-    end
+    respond_to_sharing_update
+  end
+
+  def create_public_link
+    return head :unprocessable_content unless @generation.succeeded?
+
+    @generation.create_public_link!
+    respond_to_sharing_update(notice: 'Public link ready.')
+  end
+
+  def revoke_public_link
+    @generation.revoke_public_link!
+    respond_to_sharing_update(notice: 'Public link revoked.')
   end
 
   def destroy
@@ -99,9 +108,16 @@ class GenerationsController < ApplicationController
 
   def assign_share_intent(generation)
     raw = params[:generation] || {}
-    generation.share_prompt = raw[:share_prompt] == '1'
-    generation.share_input = raw[:share_input] == '1'
     generation.share_when_done = raw[:share_result] == '1'
+  end
+
+  def respond_to_sharing_update(notice: nil)
+    respond_to do |format|
+      format.turbo_stream { render :update_share }
+      format.html do
+        redirect_to generation_path(@generation), notice: notice || share_notice, status: :see_other
+      end
+    end
   end
 
   def share_notice

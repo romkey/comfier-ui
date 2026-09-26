@@ -13,9 +13,12 @@
     <div class="d-flex align-items-center gap-2 text-13 text-secondary flex-wrap">
       <%= generation_status(@generation) %>
       <span><%= @generation.style_name %></span>
-      <span id="<%= dom_id(@generation, :shared_badge) %>">
+      <span id="<%= dom_id(@generation, :sharing_badges) %>">
         <% if @generation.shared? %>
           <span class="badge text-bg-success-subtle">Shared</span>
+        <% end %>
+        <% if @generation.publicly_linked? %>
+          <span class="badge text-bg-primary-subtle">Public link</span>
         <% end %>
       </span>
       <span>·</span>
@@ -135,9 +138,11 @@
       <% end %>
     </div>
 
-    <%= render 'generations/share_controls',
-               generation: @generation,
-               live: @generation.succeeded?,
-               disabled: !@generation.succeeded? %>
+    <div id="<%= dom_id(@generation, :sharing_sidebar) %>">
+      <%= render 'generations/sharing_sidebar',
+                 generation: @generation,
+                 live: @generation.succeeded?,
+                 disabled: !@generation.succeeded? %>
+    </div>
   </div>
 </div>

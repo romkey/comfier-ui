@@ -4,7 +4,7 @@ class SharedTest < ActionDispatch::IntegrationTest
   setup { sign_in_as users(:bob) }
 
   test 'the shared gallery lists results others chose to share' do
-    generations(:alice_done).share!(share_prompt: true, share_input: false)
+    generations(:alice_done).share!
 
     get shared_index_path
 
@@ -13,9 +13,9 @@ class SharedTest < ActionDispatch::IntegrationTest
     assert_select 'a', text: /lighthouse/i
   end
 
-  test 'a shared detail shows the prompt when the sharer included it' do
+  test 'a shared detail shows the prompt and reference when present' do
     generation = generations(:alice_done)
-    generation.share!(share_prompt: true)
+    generation.share!
 
     get shared_path(generation)
 
@@ -24,23 +24,11 @@ class SharedTest < ActionDispatch::IntegrationTest
     assert_select 'a', text: 'Try this prompt'
   end
 
-  test 'a shared detail hides the prompt when the sharer left it out' do
-    generation = generations(:alice_done)
-    generation.share!(share_prompt: false)
-
-    get shared_path(generation)
-
-    assert_response :success
-    assert_select 'a', text: 'Try this prompt', count: 0
-  end
-
   test 'members can share and unshare their own results' do
     sign_in_as users(:alice)
     generation = generations(:alice_done)
 
-    patch share_generation_path(generation),
-          params: { share_result: '1', share_prompt: '1', share_input: '0' },
-          as: :turbo_stream
+    patch share_generation_path(generation), params: { share_result: '1' }, as: :turbo_stream
 
     assert_response :success
     assert_predicate generation.reload, :shared?
@@ -60,9 +48,7 @@ class SharedTest < ActionDispatch::IntegrationTest
         generation: {
           workflow_id: workflow.id,
           prompt: 'A shared sunset',
-          share_result: '1',
-          share_prompt: '1',
-          share_input: '0'
+          share_result: '1'
         }
       }
     end
@@ -70,8 +56,6 @@ class SharedTest < ActionDispatch::IntegrationTest
     generation = Generation.order(:id).last
 
     assert_predicate generation, :share_when_done?
-    assert_predicate generation, :share_prompt?
-    assert_not generation.share_input?
     assert_not generation.shared?
   end
 

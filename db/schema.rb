@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_25_210000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_26_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -83,9 +83,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_210000) do
     t.datetime "processing_ended_at"
     t.datetime "processing_started_at"
     t.text "prompt"
+    t.datetime "public_shared_at"
+    t.string "public_token"
     t.float "run_seconds"
-    t.boolean "share_input", default: false, null: false
-    t.boolean "share_prompt", default: true, null: false
     t.datetime "shared_at"
     t.string "status", default: "queued", null: false
     t.datetime "submitted_at"
@@ -95,6 +95,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_210000) do
     t.string "workflow_name"
     t.index ["backend_id"], name: "index_generations_on_backend_id"
     t.index ["comfy_prompt_id"], name: "index_generations_on_comfy_prompt_id"
+    t.index ["public_token"], name: "index_generations_on_public_token", unique: true, where: "(public_token IS NOT NULL)"
     t.index ["shared_at"], name: "index_generations_on_shared_at", where: "(shared_at IS NOT NULL)"
     t.index ["user_id", "kind", "created_at"], name: "index_generations_on_user_id_and_kind_and_created_at"
     t.index ["user_id", "status"], name: "index_generations_on_user_id_and_status"
@@ -141,6 +142,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_210000) do
     t.datetime "privacy_accepted_at"
     t.integer "privacy_accepted_version"
     t.string "provider", null: false
+    t.boolean "share_by_default"
     t.string "slack_name"
     t.string "slack_uid"
     t.string "uid", null: false

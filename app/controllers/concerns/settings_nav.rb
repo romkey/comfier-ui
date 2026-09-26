@@ -10,8 +10,13 @@ module SettingsNav
   private
 
   def load_settings_nav
-    return unless current_user&.admin?
+    return unless current_user
 
+    @nav_public_link_count = current_user.generations.publicly_linked.count
+    load_admin_settings_nav if current_user.admin?
+  end
+
+  def load_admin_settings_nav
     @nav_user_count = User.count
     @nav_backend_count = Backend.count
     @nav_unhealthy_backends = Backend.enabled.unhealthy.count

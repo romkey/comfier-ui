@@ -1,0 +1,83 @@
+<% content_for :title, 'Public links' %>
+
+<div class="d-flex align-items-end justify-content-between mb-3">
+  <div>
+    <h1 class="h-page-title mb-0">Public links</h1>
+    <div class="text-13 text-secondary mt-1">
+      <span class="text-body num"><%= @generations.size %></span> public <%= 'link'.pluralize(@generations.size) %>
+    </div>
+  </div>
+  <% if @generations.any? %>
+    <div class="dropdown">
+      <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="dropdown" aria-label="More">
+        <i class="bi bi-three-dots" aria-hidden="true"></i>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end text-13">
+        <li>
+          <%= button_to 'Revoke all public links', public_links_path, method: :delete,
+                        class: 'dropdown-item text-danger',
+                        form: { data: { turbo_confirm: 'Revoke every public link you created?' } } %>
+        </li>
+      </ul>
+    </div>
+  <% end %>
+</div>
+
+<% if @generations.empty? %>
+  <div class="status-panel status-clear">
+    <p class="text-13 text-secondary mb-0">You haven't made any public links. Create one from any result's page.</p>
+  </div>
+<% else %>
+  <table class="table table-compact table-hover align-middle">
+    <thead>
+      <tr>
+        <th class="w-status"></th>
+        <th>Result</th>
+        <th>Link created</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @generations.each do |generation| %>
+        <tr class="row-link" data-controller="row-link" data-row-link-href-value="<%= generation_path(generation) %>">
+          <td class="text-secondary">
+            <% if (thumb = generation.outputs.first) %>
+              <%= image_tag rails_blob_path(thumb, disposition: 'inline'),
+                            class: 'rounded', style: 'width: 2.5rem; height: 2.5rem; object-fit: cover;',
+                            alt: '' %>
+            <% end %>
+          </td>
+          <td>
+            <%= link_to generation.title, generation_path(generation), class: 'text-body fw-medium' %>
+            <div class="text-12 text-secondary"><%= generation.kind_info.label %></div>
+          </td>
+          <td class="text-12 text-secondary"><%= friendly_time(generation.public_shared_at) %></td>
+          <td class="text-end text-nowrap">
+            <div class="input-group input-group-sm d-inline-flex w-auto me-1" data-controller="clipboard"
+                 onclick="event.stopPropagation()">
+              <%= text_field_tag :link, public_share_url(generation.public_token),
+                                 class: 'form-control font-monospace text-12',
+                                 style: 'width: 12rem;',
+                                 readonly: true,
+                                 data: { clipboard_target: 'source' } %>
+              <button type="button" class="btn btn-outline-secondary" data-action="clipboard#copy">Copy</button>
+            </div>
+            <div class="dropdown d-inline" onclick="event.stopPropagation()">
+              <button class="btn btn-sm btn-link text-secondary" type="button" data-bs-toggle="dropdown"
+                      aria-label="More">
+                <i class="bi bi-three-dots" aria-hidden="true"></i>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end text-13">
+                <li>
+                  <%= button_to 'Revoke', public_link_generation_path(generation), method: :delete,
+                                class: 'dropdown-item text-danger',
+                                form: { data: { turbo_confirm: 'Revoke this public link?' } } %>
+                </li>
+              </ul>
+            </div>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

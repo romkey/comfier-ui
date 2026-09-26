@@ -94,7 +94,7 @@ class PollGenerationJobTest < ActiveJob::TestCase
   end
 
   test 'shares the result when share was requested at create time' do
-    @generation.update!(share_when_done: true, share_prompt: true, share_input: false)
+    @generation.update!(share_when_done: true)
     stub_history(success_entry('comfier_00001_.png'))
     stub_request(:get, comfy_url(@backend, 'view')).with(query: hash_including({})).to_return(body: 'png')
 
@@ -103,7 +103,6 @@ class PollGenerationJobTest < ActiveJob::TestCase
 
     assert_predicate @generation, :succeeded?
     assert_predicate @generation, :shared?
-    assert_predicate @generation, :share_prompt?
     assert_nil @generation.share_when_done
   end
 

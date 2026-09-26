@@ -8,6 +8,7 @@ alice:
   default_aspect_ratio: '1:1'
   privacy_accepted_version: 1
   privacy_accepted_at: <%= 1.day.ago.to_fs(:db) %>
+  share_by_default: false
 
 bob:
   provider: authentik
@@ -19,6 +20,7 @@ bob:
   default_aspect_ratio: '16:9'
   privacy_accepted_version: 1
   privacy_accepted_at: <%= 1.day.ago.to_fs(:db) %>
+  share_by_default: false
 
 admin:
   provider: authentik
@@ -30,3 +32,4 @@ admin:
   default_aspect_ratio: '1:1'
   privacy_accepted_version: 1
   privacy_accepted_at: <%= 1.day.ago.to_fs(:db) %>
+  share_by_default: false

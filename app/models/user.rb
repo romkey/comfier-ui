@@ -52,6 +52,10 @@ class User < ApplicationRecord
     privacy_accepted_version == notice.version
   end
 
+  def revoke_all_public_links!
+    generations.publicly_linked.update_all(public_token: nil, public_shared_at: nil, updated_at: Time.current) # rubocop:disable Rails/SkipsModelValidations
+  end
+
   private
 
   def preferred_backend_is_enabled

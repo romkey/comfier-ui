@@ -43,6 +43,18 @@ module GenerationsHelper
     end
   end
 
+  def public_output_preview(generation, attachment, index, controls: false)
+    url = public_share_output_path(generation.public_token, index)
+    case attachment.content_type
+    when %r{\Aimage/} then image_tag(url, alt: '', class: 'output-media', loading: 'lazy')
+    when %r{\Avideo/}
+      video_tag(url, class: 'output-media', controls:, muted: !controls, loop: true, playsinline: true,
+                     preload: 'metadata')
+    when %r{\Aaudio/} then audio_tag(url, controls: true, class: 'w-100', preload: 'metadata')
+    else file_output(attachment)
+    end
+  end
+
   def output_preview(attachment, controls: false)
     url = rails_blob_path(attachment, disposition: 'inline')
     case attachment.content_type

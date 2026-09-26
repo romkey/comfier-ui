@@ -13,7 +13,7 @@
     </div>
   </div>
   <div class="d-flex gap-2">
-    <% if @generation.share_prompt? && @generation.prompt.present? %>
+    <% if @generation.prompt.present? %>
       <%= link_to "Try this prompt", "#{@generation.kind_info.path}?from=#{@generation.id}",
                   class: 'btn btn-outline-secondary btn-sm' %>
     <% end %>
@@ -43,11 +43,11 @@
   </div>
   <div class="col-lg-4">
     <div class="sidebar-card">
-      <% if @generation.share_prompt? && @generation.prompt.present? %>
+      <% if @generation.prompt.present? %>
         <div class="h-section-label">Prompt</div>
         <p class="text-13 mb-3 text-break"><%= @generation.prompt %></p>
       <% end %>
-      <% if @generation.share_input? && @generation.input_image.attached? %>
+      <% if @generation.input_image.attached? %>
         <div class="h-section-label">Reference</div>
         <%= image_tag rails_blob_path(@generation.input_image, disposition: 'inline'), class: 'output-media mb-3',
                                                                                        alt: 'Reference image' %>

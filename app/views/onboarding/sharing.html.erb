@@ -1,0 +1,27 @@
+<% content_for :title, 'Default sharing' %>
+
+<div class="auth-card mx-auto" style="max-width: 42rem;">
+  <h1 class="h-page-title mb-2">How should new results be shared?</h1>
+  <p class="text-13 text-secondary mb-4">
+    When you finish something, you can always share or keep it private on each result.
+    This only sets the default for new work.
+  </p>
+
+  <div class="d-flex flex-column gap-2 mb-4">
+    <%= button_to welcome_sharing_path, method: :patch, params: { share_by_default: '1' },
+                  class: 'btn btn-outline-secondary text-start py-3',
+                  form: { data: { turbo: false } } do %>
+      <div class="fw-medium">Share my results with other members</div>
+      <div class="text-12 text-secondary fw-normal">New results go to the Shared gallery unless you turn sharing off.</div>
+    <% end %>
+
+    <%= button_to welcome_sharing_path, method: :patch, params: { share_by_default: '0' },
+                  class: 'btn btn-outline-secondary text-start py-3',
+                  form: { data: { turbo: false } } do %>
+      <div class="fw-medium">Keep my results private</div>
+      <div class="text-12 text-secondary fw-normal">Only you see new results until you choose to share them.</div>
+    <% end %>
+  </div>
+
+  <p class="text-12 text-secondary mb-0">You can change this anytime in Settings.</p>
+</div>

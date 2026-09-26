@@ -11,6 +11,11 @@ Rails.application.routes.draw do
 
   get 'privacy', to: 'privacy#show', as: :privacy
   post 'privacy/accept', to: 'privacy#accept', as: :accept_privacy
+  get 'welcome/sharing', to: 'onboarding#sharing', as: :welcome_sharing
+  patch 'welcome/sharing', to: 'onboarding#update_sharing'
+
+  get 'p/:token', to: 'public_shares#show', as: :public_share
+  get 'p/:token/outputs/:index', to: 'public_shares#output', as: :public_share_output
   get 'queue', to: 'queue#index', as: :queue
   get 'shared', to: 'shared#index', as: :shared_index
   get 'shared/:id', to: 'shared#show', as: :shared
@@ -25,10 +30,13 @@ Rails.application.routes.draw do
       post :retry
       post :cancel
       patch :share, action: :update_share
+      post :public_link, action: :create_public_link
+      delete :public_link, action: :revoke_public_link
     end
   end
 
   resource :settings, only: %i[show update]
+  resource :public_links, only: %i[show destroy], path: 'settings/public-links'
 
   namespace :admin do
     resources :users, only: :index
