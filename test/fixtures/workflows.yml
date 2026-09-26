@@ -89,6 +89,19 @@ wan_video:
       inputs:
         seed: '{{seed}}'
 
+stable_audio:
+  name: Stable Audio
+  kind: audio
+  graph:
+    '1':
+      class_type: CLIPTextEncode
+      inputs:
+        text: '{{prompt}}'
+    '2':
+      class_type: LyricsEncode
+      inputs:
+        text: '{{lyrics}}'
+
 image_to_3d:
   name: Hunyuan3D
   kind: model_3d

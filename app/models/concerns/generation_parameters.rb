@@ -9,7 +9,9 @@ module GenerationParameters
 
     self.kind = workflow.kind
     share_later = share_when_done?
+    stored_lyrics = lyrics if workflow.uses?(:lyrics)
     self.parameters = resolved_seed_entry.merge(optional_parameters)
+    self.parameters['lyrics'] = stored_lyrics.to_s if workflow.uses?(:lyrics)
     self.share_when_done = true if share_later
   end
 

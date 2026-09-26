@@ -72,6 +72,23 @@ class GenerationTest < ActiveSupport::TestCase
     assert_predicate build(workflows(:image_to_3d), prompt: '', input_image: png_upload), :valid?
   end
 
+  test 'requires lyrics when the workflow uses them alongside a prompt' do
+    workflow = workflows(:stable_audio)
+
+    blank = build(workflow, prompt: 'upbeat jazz', lyrics: '')
+
+    assert_not blank.valid?
+    assert_includes blank.errors[:lyrics], "can't be blank"
+
+    generation = build(workflow, prompt: 'upbeat jazz', lyrics: "Verse one\nChorus")
+    assert_predicate generation, :valid?
+
+    generation.save!
+
+    assert_equal "Verse one\nChorus", generation.lyrics
+    assert_equal "Verse one\nChorus", generation.parameters['lyrics']
+  end
+
   test 'requires an input image when the workflow takes one' do
     generation = build(workflows(:image_to_3d))
 
