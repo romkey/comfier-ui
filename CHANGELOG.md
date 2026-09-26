@@ -5,9 +5,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [v0.4.1] - 2026-09-26
+
 ### Added
 - Backends can opt in to deleting uploaded inputs, generated files, previews, and ComfyUI history after each run
   finishes. File deletion uses the Comfier downloader node; without it, only the history entry is cleared.
+
+### Fixed
+- **Suggest placeholders** on the workflow form hit the wrong route and returned 404 on existing workflows.
 
 ## [v0.4.0] - 2026-09-26
 
