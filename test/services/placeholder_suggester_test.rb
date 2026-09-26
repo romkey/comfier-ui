@@ -70,6 +70,19 @@ class PlaceholderSuggesterTest < ActiveSupport::TestCase
     assert_match(/unknown placeholders: mystery/, error.message)
   end
 
+  test 'does not crash when the model returns a non-hash _meta or inputs on a node' do
+    suggested = ORIGINAL.deep_dup
+    suggested['6']['inputs']['text'] = '{{prompt}}'
+    suggested['6']['_meta'] = ['broken']
+    suggested['7'] = suggested['7'].merge('inputs' => [])
+    stub_completion(workflow: suggested, notes: 'Broken metadata.')
+
+    error = assert_raises(PlaceholderSuggester::Error) { PlaceholderSuggester.call(ORIGINAL) }
+
+    assert_match(/API format/, error.message)
+    assert_includes error.debug.raw_reply, '"workflow"'
+  end
+
   test 'flags changes that are not exact placeholder substitutions' do
     suggested = ORIGINAL.deep_dup
     suggested['6']['inputs']['text'] = 'prefix {{prompt}}'

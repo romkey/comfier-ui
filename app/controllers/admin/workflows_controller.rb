@@ -64,6 +64,10 @@ module Admin
       @placeholder_debug = e.debug
       flash.now[:alert] = e.message
       respond_to_suggest_form
+    rescue StandardError => e
+      Rails.logger.error("Suggest placeholders failed: #{e.class}: #{e.message}\n#{e.backtrace.first(5).join("\n")}")
+      flash.now[:alert] = "Suggest placeholders failed: #{e.message}"
+      respond_to_suggest_form
     end
 
     def destroy

@@ -5,6 +5,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [v0.4.3] - 2026-09-26
+
+### Fixed
+- **Suggest placeholders** no longer returns HTTP 500 when the model reply has unexpected node shapes; errors show
+  in the debug panel instead.
+
 ## [v0.4.2] - 2026-09-26
 
 ### Changed

@@ -22,7 +22,7 @@ class PlaceholderSuggester # rubocop:disable Metrics/ClassLength
   def self.call(graph) = new(graph).call
 
   def initialize(graph)
-    @original = graph.deep_dup
+    @original = normalize_graph(graph)
   end
 
   def call
@@ -30,7 +30,7 @@ class PlaceholderSuggester # rubocop:disable Metrics/ClassLength
     raw_reply = fetch_reply(debug)
     debug = debug.with(raw_reply: raw_reply)
     payload = parse_reply(raw_reply, debug)
-    graph = payload.fetch('workflow')
+    graph = normalize_graph(payload.fetch('workflow'))
     @notes = payload['notes'].to_s.strip
     validate!(graph, debug)
     Result.new(graph:, notes: @notes, changes: diff(@original, graph), debug:)
@@ -118,10 +118,11 @@ class PlaceholderSuggester # rubocop:disable Metrics/ClassLength
 
   def diff(before, after)
     before.flat_map do |node_id, node|
-      next [] unless node['inputs'].is_a?(Hash)
+      inputs = node['inputs']
+      next [] unless inputs.is_a?(Hash)
 
-      node['inputs'].filter_map do |input, old_value|
-        new_value = after.dig(node_id, 'inputs', input)
+      inputs.filter_map do |input, old_value|
+        new_value = input_value(node_after(after, node_id), input)
         next if old_value == new_value
 
         Change.new(
@@ -136,8 +137,39 @@ class PlaceholderSuggester # rubocop:disable Metrics/ClassLength
     end
   end
 
+  def node_after(graph, node_id)
+    graph[node_id] || graph[node_id.to_s]
+  end
+
+  def input_value(node, input_name)
+    inputs = node.is_a?(Hash) ? node['inputs'] : nil
+    inputs.is_a?(Hash) ? inputs[input_name] : nil
+  end
+
   def node_label(node)
-    node.dig('_meta', 'title').presence || node['class_type']
+    meta = node.is_a?(Hash) ? node['_meta'] : nil
+    title = meta.is_a?(Hash) ? meta['title'] : nil
+    title.presence || node['class_type']
+  end
+
+  def normalize_graph(graph)
+    return {} unless graph.is_a?(Hash)
+
+    graph.transform_keys(&:to_s).transform_values { normalize_node(it) }
+  end
+
+  def normalize_node(node)
+    return node unless node.is_a?(Hash)
+
+    node.transform_values { normalize_value(it) }
+  end
+
+  def normalize_value(value)
+    case value
+    when Hash then normalize_node(value)
+    when Array then value.map { normalize_value(it) }
+    else value
+    end
   end
 
   def placeholder_substitution?(from, to)
