@@ -40,6 +40,7 @@
     <div class="mb-3">
       <%= f.label :prompt, 'Describe what you want', class: 'form-label' %>
       <%= f.text_area :prompt, rows: 5, class: 'form-control', required: true, autofocus: true,
+                               data: { prompt_reuse_target: 'prompt' },
                                placeholder: prompt_placeholder(kind) %>
     </div>
   <% end %>

@@ -46,6 +46,11 @@
       </button>
       <ul class="dropdown-menu dropdown-menu-end text-13">
         <li>
+          <%= link_to "#{@generation.kind_info.path}?from=#{@generation.id}", class: 'dropdown-item' do %>
+            <i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>Reuse settings
+          <% end %>
+        </li>
+        <li>
           <%= button_to 'Delete', generation_path(@generation), method: :delete, class: 'dropdown-item text-danger',
                                                                 form: { data: { turbo_confirm: 'Delete this result?' } } %>
         </li>

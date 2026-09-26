@@ -47,6 +47,9 @@ body { font-size: 14px; }
 }
 .result-placeholder { display: grid; place-items: center; width: 100%; height: 100%; }
 .result-meta { padding: 0.45rem 0.6rem 0.5rem; }
+/* Cards also render in Results and Turbo broadcasts; enable prompt reuse only in the audio studio. */
+.reuse-prompt-button { display: none; position: relative; z-index: 2; }
+[data-controller~="prompt-reuse"] .reuse-prompt-button { display: inline-flex; }
 
 .output-media { display: block; max-width: 100%; border-radius: var(--bs-border-radius); }
 .output-full .output-media { max-height: 75vh; margin-inline: auto; }

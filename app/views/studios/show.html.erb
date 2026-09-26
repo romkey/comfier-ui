@@ -11,7 +11,7 @@
   </div>
 </div>
 
-<div class="row g-4">
+<div class="row g-4" <%= tag.attributes(data: { controller: 'prompt-reuse' }) if @kind.key == 'audio' && @workflow&.uses?(:prompt) %>>
   <div class="col-lg-5 col-xl-4">
     <% if @workflow.nil? %>
       <div class="status-panel status-clear text-center py-4">
