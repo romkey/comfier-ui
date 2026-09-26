@@ -10,6 +10,7 @@ gem 'json', '< 3'
 gem 'pg', '~> 1.6'
 gem 'propshaft'
 gem 'puma', '>= 7.0'
+gem 'ruby-vips', '~> 2.0', require: false
 gem 'stimulus-rails'
 gem 'turbo-rails'
 gem 'tzinfo-data', platforms: %i[windows jruby]
