@@ -17,6 +17,12 @@ class SlackNotifier
 
   def self.call(generation) = new(generation).call
 
+  def self.direct_message(slack_uid, text)
+    bot = allocate
+    channel = bot.send(:api, 'conversations.open', users: slack_uid).dig('channel', 'id')
+    bot.send(:api, 'chat.postMessage', channel:, text:)
+  end
+
   def initialize(generation)
     @notification = GenerationNotification.new(generation, channel: :slack)
     @user = generation.user

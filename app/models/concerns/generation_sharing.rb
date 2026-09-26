@@ -5,7 +5,7 @@ module GenerationSharing
   PUBLIC_TOKEN_BYTES = 48
 
   included do
-    scope :shared, -> { where.not(shared_at: nil) }
+    scope :shared, -> { where.not(shared_at: nil).where(hidden_for_review_at: nil) }
     scope :publicly_linked, -> { where.not(public_token: nil) }
   end
 

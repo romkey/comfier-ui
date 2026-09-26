@@ -22,7 +22,8 @@ class PublicSharesController < ApplicationController
   private
 
   def set_generation
-    @generation = Generation.succeeded.with_attached_outputs.find_by!(public_token: params[:token])
+    @generation = Generation.succeeded.where(hidden_for_review_at: nil)
+                            .with_attached_outputs.find_by!(public_token: params[:token])
   end
 
   def set_noindex_headers

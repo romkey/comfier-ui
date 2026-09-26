@@ -2,6 +2,7 @@
 class Generation < ApplicationRecord
   include GenerationParameters
   include GenerationSharing
+  include GenerationContentReports
   include GenerationTiming
   include GenerationNotifying
 

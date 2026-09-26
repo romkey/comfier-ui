@@ -1,0 +1,4 @@
+<p class="fw-medium"><%= @notification.headline %></p>
+<% @notification.lines.each do |line| %>
+  <p class="text-13 mb-1"><%= line.gsub('*', '') %></p>
+<% end %>

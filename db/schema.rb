@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_26_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_26_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -47,6 +47,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_120000) do
     t.datetime "created_at", null: false
     t.decimal "email_notification_attachment_max_mb", precision: 8, scale: 3, default: "0.488", null: false
     t.text "placeholder_prompt"
+    t.integer "report_auto_hide_threshold", default: 3, null: false
     t.decimal "slack_notification_attachment_max_mb", precision: 8, scale: 3, default: "5.0", null: false
     t.datetime "updated_at", null: false
   end
@@ -77,6 +78,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_120000) do
     t.datetime "completed_at"
     t.datetime "created_at", null: false
     t.text "error_message"
+    t.datetime "hidden_for_review_at"
     t.string "kind", null: false
     t.text "negative_prompt"
     t.jsonb "parameters", default: {}, null: false
@@ -125,6 +127,43 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_120000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "version", default: 1, null: false
+  end
+
+  create_table "report_cases", force: :cascade do |t|
+    t.string "conclusion"
+    t.datetime "created_at", null: false
+    t.bigint "generation_id"
+    t.string "generation_title", null: false
+    t.bigint "owner_id", null: false
+    t.integer "reports_count", default: 0, null: false
+    t.text "review_note"
+    t.datetime "reviewed_at"
+    t.bigint "reviewed_by_id"
+    t.string "status", default: "open", null: false
+    t.datetime "updated_at", null: false
+    t.index ["generation_id", "status"], name: "index_report_cases_on_generation_id_and_status"
+    t.index ["generation_id"], name: "index_report_cases_on_generation_id"
+    t.index ["generation_id"], name: "index_report_cases_one_open_per_generation", unique: true, where: "(((status)::text = 'open'::text) AND (generation_id IS NOT NULL))"
+    t.index ["owner_id"], name: "index_report_cases_on_owner_id"
+    t.index ["reviewed_by_id"], name: "index_report_cases_on_reviewed_by_id"
+    t.index ["status"], name: "index_report_cases_on_status"
+  end
+
+  create_table "reports", force: :cascade do |t|
+    t.string "category", null: false
+    t.citext "contact_email"
+    t.datetime "created_at", null: false
+    t.bigint "generation_id"
+    t.text "reason", null: false
+    t.bigint "report_case_id", null: false
+    t.string "reporter_digest", null: false
+    t.bigint "reporter_id"
+    t.string "source", null: false
+    t.datetime "updated_at", null: false
+    t.index ["generation_id"], name: "index_reports_on_generation_id"
+    t.index ["report_case_id", "reporter_digest"], name: "index_reports_on_report_case_id_and_reporter_digest", unique: true
+    t.index ["report_case_id"], name: "index_reports_on_report_case_id"
+    t.index ["reporter_id"], name: "index_reports_on_reporter_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -177,5 +216,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_120000) do
   add_foreign_key "generations", "users", on_delete: :cascade
   add_foreign_key "generations", "workflows", on_delete: :nullify
   add_foreign_key "model_downloads", "backends", on_delete: :cascade
+  add_foreign_key "report_cases", "generations"
+  add_foreign_key "report_cases", "users", column: "owner_id"
+  add_foreign_key "report_cases", "users", column: "reviewed_by_id"
+  add_foreign_key "reports", "generations"
+  add_foreign_key "reports", "report_cases"
+  add_foreign_key "reports", "users", column: "reporter_id"
   add_foreign_key "users", "backends", column: "preferred_backend_id", on_delete: :nullify
 end

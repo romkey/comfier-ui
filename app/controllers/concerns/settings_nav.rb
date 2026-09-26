@@ -17,6 +17,7 @@ module SettingsNav
   end
 
   def load_admin_settings_nav
+    @nav_open_reports = ReportCase.open_cases.count
     @nav_user_count = User.count
     @nav_backend_count = Backend.count
     @nav_unhealthy_backends = Backend.enabled.unhealthy.count

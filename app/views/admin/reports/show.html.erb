@@ -1,0 +1,113 @@
+<% content_for :title, "Report · #{@report_case.display_title}" %>
+
+<div class="text-12 text-secondary mb-2">
+  <%= link_to 'Reports', admin_reports_path, class: 'link-secondary' %> /
+  <%= @report_case.display_title.truncate(40) %>
+</div>
+
+<div class="d-flex align-items-start justify-content-between gap-3 mb-3">
+  <div>
+    <h1 class="h-page-title mb-1"><%= @report_case.display_title %></h1>
+    <div class="d-flex gap-2 flex-wrap text-13">
+      <%= report_case_status(@report_case) %>
+      <% if @generation&.hidden_for_review? %>
+        <span class="badge text-bg-warning-subtle">Hidden from sharing</span>
+      <% end %>
+      <span class="text-secondary">Owner: <%= @report_case.owner.display_name %></span>
+    </div>
+  </div>
+</div>
+
+<% if @generation %>
+  <div class="mb-4">
+    <% @generation.outputs.each do |output| %>
+      <figure class="output-full mb-2">
+        <%= output_preview(output, controls: true) %>
+      </figure>
+    <% end %>
+  </div>
+
+  <div class="sidebar-card mb-4">
+    <div class="h-section-label">Sharing</div>
+    <div class="text-13 text-secondary mb-2">
+      <% if @generation.shared? %>Shared with members<% else %>Not on the Shared gallery<% end %>
+      ·
+      <% if @generation.publicly_linked? %>Public link active<% else %>No public link<% end %>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <% if @generation.shared? %>
+        <%= button_to 'Stop sharing with members', unshare_admin_report_path(@report_case), method: :delete,
+                      class: 'btn btn-outline-secondary btn-sm' %>
+      <% end %>
+      <% if @generation.publicly_linked? %>
+        <%= button_to 'Revoke public link', revoke_public_link_admin_report_path(@report_case), method: :delete,
+                      class: 'btn btn-outline-secondary btn-sm' %>
+      <% end %>
+      <div class="dropdown">
+        <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="dropdown" aria-label="More">
+          <i class="bi bi-three-dots" aria-hidden="true"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end text-13">
+          <li>
+            <%= button_to 'Delete result', destroy_generation_admin_report_path(@report_case), method: :delete,
+                          class: 'dropdown-item text-danger',
+                          form: { data: { turbo_confirm: 'Delete this result permanently?' } } %>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<div class="mb-4">
+  <div class="h-section-label">Reports (<%= @reports.size %>)</div>
+  <div class="list-compact">
+    <% @reports.each do |report| %>
+      <div class="border-bottom py-2">
+        <div class="d-flex justify-content-between gap-2 text-13">
+          <span class="fw-medium"><%= report.category_label %></span>
+          <span class="text-12 text-secondary"><%= friendly_time(report.created_at) %></span>
+        </div>
+        <p class="text-13 mb-1 text-break"><%= report.reason %></p>
+        <div class="text-12 text-secondary">
+          <%= report.public? ? 'Public link' : (report.reporter&.display_name || 'Member') %>
+          <% if report.contact_email.present? %> · <%= report.contact_email %><% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<% if @report_case.reviewed? %>
+  <div class="text-13 text-secondary mb-4">
+    Reviewed by <%= @report_case.reviewed_by.display_name %>
+    · <%= friendly_time(@report_case.reviewed_at) %>
+    · <%= @report_case.removed? ? 'Removed' : 'Okay' %>
+    <% if @report_case.review_note.present? %>
+      <div class="text-12 mt-1"><%= @report_case.review_note %></div>
+    <% end %>
+  </div>
+<% else %>
+  <%= form_with url: admin_report_path(@report_case), method: :patch, class: 'settings-form-wide' do |f| %>
+    <div class="h-section-label">Review</div>
+    <div class="mb-3">
+      <div class="form-check">
+        <%= radio_button_tag 'report_case[conclusion]', 'removed', false, class: 'form-check-input', id: 'conclusion_removed' %>
+        <%= label_tag 'conclusion_removed', 'Removed — stop sharing and revoke public link', class: 'form-check-label text-13' %>
+      </div>
+      <div class="form-check mb-2">
+        <%= radio_button_tag 'report_case[conclusion]', 'okay', false, class: 'form-check-input', id: 'conclusion_okay' %>
+        <%= label_tag 'conclusion_okay', 'Okay — restore sharing visibility', class: 'form-check-label text-13' %>
+      </div>
+      <div class="form-check ms-4 mb-2">
+        <%= check_box_tag 'report_case[delete_generation]', '1', false, class: 'form-check-input', id: 'delete_generation' %>
+        <%= label_tag 'delete_generation', 'Also delete the result', class: 'form-check-label text-13' %>
+      </div>
+    </div>
+    <div class="mb-3">
+      <%= label_tag 'report_case_review_note', 'Note (optional)', class: 'form-label' %>
+      <%= text_area_tag 'report_case[review_note]', nil, rows: 2, class: 'form-control form-control-sm' %>
+    </div>
+    <%= f.submit 'Save review', class: 'btn btn-primary btn-sm' %>
+  <% end %>
+<% end %>

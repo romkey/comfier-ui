@@ -19,7 +19,12 @@ Rails.application.routes.draw do
   get 'queue', to: 'queue#index', as: :queue
   get 'shared', to: 'shared#index', as: :shared_index
   get 'shared/:id', to: 'shared#show', as: :shared
+  post 'shared/:id/report', to: 'reports#create', as: :shared_report
   delete 'shared/:id', to: 'shared#unshare', as: :unshare_shared
+  delete 'shared/:id/public_link', to: 'shared#revoke_public_link', as: :revoke_public_link_shared
+  delete 'shared/:id/generation', to: 'shared#destroy_generation', as: :destroy_shared_generation
+
+  post 'p/:token/report', to: 'public_reports#create', as: :public_share_report
 
   GenerationKind::ALL.each do |kind|
     get kind.path, to: 'studios#show', defaults: { kind: kind.key }, as: :"#{kind.key}_studio"
@@ -46,6 +51,13 @@ Rails.application.routes.draw do
     end
     resource :privacy_notice, only: %i[edit update]
     resource :app_setting, only: %i[edit update]
+    resources :reports, only: %i[index show update] do
+      member do
+        delete :unshare
+        delete :revoke_public_link
+        delete :generation, action: :destroy_generation
+      end
+    end
     resource :assistant_setting, only: %i[edit update]
 
     resources :workflows, except: :show do

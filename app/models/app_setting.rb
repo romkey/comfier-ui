@@ -25,6 +25,8 @@ class AppSetting < ApplicationRecord
 
   validates(*ATTACHMENT_LIMIT_ATTRS,
             numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 100 })
+  validates :report_auto_hide_threshold,
+            numericality: { only_integer: true, greater_than_or_equal_to: 0, less_than_or_equal_to: 100 }
 
   def self.current
     first || create!(email_notification_attachment_max_mb: default_email_notification_attachment_max_mb,

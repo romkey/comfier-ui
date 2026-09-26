@@ -1,0 +1,51 @@
+<% modal_id = local_assigns.fetch(:modal_id, dom_id(generation, :report_modal)) %>
+
+<button type="button" class="btn btn-outline-secondary btn-sm text-danger border-danger-subtle"
+        data-bs-toggle="modal" data-bs-target="#<%= modal_id %>"
+        title="Report this result" aria-label="Report this result">
+  <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+</button>
+
+<div class="modal fade" id="<%= modal_id %>" tabindex="-1" aria-labelledby="<%= modal_id %>_label" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <%= form_with url: form_url, method: :post, class: 'text-13' do |f| %>
+        <div class="modal-header py-2">
+          <h2 class="modal-title h6" id="<%= modal_id %>_label">Report this result</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-12 text-secondary">Admins will see your reason. The result itself isn't sent anywhere.</p>
+
+          <div class="visually-hidden" aria-hidden="true">
+            <%= text_field_tag ReportSubmission::HONEYPOT_PARAM, '', tabindex: -1, autocomplete: 'off' %>
+          </div>
+
+          <div class="mb-3">
+            <%= label_tag :report_category, 'Category', class: 'form-label' %>
+            <%= select_tag 'report[category]',
+                           options_for_select(Report::CATEGORIES.map { |k, v| [v, k] }),
+                           { include_blank: 'Choose…', required: true, class: 'form-select form-select-sm' } %>
+          </div>
+
+          <div class="mb-3">
+            <%= label_tag :report_reason, 'Reason', class: 'form-label' %>
+            <%= text_area_tag 'report[reason]', nil, rows: 4, required: true, maxlength: 2000,
+                                                    class: 'form-control form-control-sm',
+                                                    placeholder: 'What is wrong with this result?' %>
+          </div>
+
+          <div class="mb-0">
+            <%= label_tag :report_contact_email, 'Contact email (optional)', class: 'form-label' %>
+            <%= email_field_tag 'report[contact_email]', local_assigns[:contact_email],
+                                class: 'form-control form-control-sm', autocomplete: 'email' %>
+          </div>
+        </div>
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <%= f.submit 'Send report', class: 'btn btn-primary btn-sm' %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

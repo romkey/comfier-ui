@@ -59,6 +59,11 @@
 
 <div class="row g-4">
   <div class="col-lg-8">
+    <% if @generation.hidden_for_review? %>
+      <div class="status-panel status-attention mb-3">
+        <div class="text-13">Hidden from sharing while an admin reviews a report.</div>
+      </div>
+    <% end %>
     <% if @generation.failed? %>
       <div class="status-panel status-attention mb-3">
         <div class="fw-medium mb-1">This didn't work</div>

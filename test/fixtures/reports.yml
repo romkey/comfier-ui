@@ -1,0 +1,8 @@
+alice_report:
+  report_case: alice_open
+  generation: alice_done
+  category: code_of_conduct
+  reason: This breaks our community rules
+  reporter: bob
+  source: member
+  reporter_digest: <%= Digest::SHA256.hexdigest('user:bob') %>

@@ -4,7 +4,11 @@
 <% end %>
 
 <div class="mx-auto" style="max-width: 56rem;">
-  <h1 class="h-page-title mb-3">Shared result</h1>
+  <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
+    <h1 class="h-page-title mb-0">Shared result</h1>
+    <%= render 'reports/modal', generation: @generation, form_url: public_share_report_path(@generation.public_token),
+                                modal_id: 'public_report_modal' %>
+  </div>
 
   <div class="d-flex flex-column gap-3 mb-4">
     <% @generation.outputs.each_with_index do |output, index| %>

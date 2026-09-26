@@ -8,6 +8,8 @@ class PrivacyNotice < ApplicationRecord
     • If you share a result, every signed-in user can see the output, your prompt, and any reference image.
     • You can create a public link so people without an account can view a result. Public links show only the output.
     • Other users can see your name and what kind of job you're running while it's in the queue.
+    • If you report a shared result, we store your reason, any contact email you provide, and a one-way hash of
+      your IP address (for anonymous public-link reports). Admins are notified; the result itself is not sent.
 
     Don't put anything here you wouldn't want an admin — or, if you share it, other members — to read.
   TEXT
