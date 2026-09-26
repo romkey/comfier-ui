@@ -18,11 +18,11 @@
   <table class="table table-compact table-hover align-middle">
     <thead>
       <tr>
-        <th><%= users_sort_link 'User', 'user', default: 'asc' %></th>
-        <th><%= users_sort_link 'Last login', 'last_login' %></th>
-        <th><%= users_sort_link 'Joined', 'joined' %></th>
-        <th class="w-status"><%= users_sort_link 'Role', 'role' %></th>
-        <th class="text-end"><%= users_sort_link 'Generations', 'generations' %></th>
+        <th><%= users_sort_link 'User', 'user', sort: @sort, sort_dir: @sort_dir, default: 'asc' %></th>
+        <th><%= users_sort_link 'Last login', 'last_login', sort: @sort, sort_dir: @sort_dir %></th>
+        <th><%= users_sort_link 'Joined', 'joined', sort: @sort, sort_dir: @sort_dir %></th>
+        <th class="w-status"><%= users_sort_link 'Role', 'role', sort: @sort, sort_dir: @sort_dir %></th>
+        <th class="text-end"><%= users_sort_link 'Generations', 'generations', sort: @sort, sort_dir: @sort_dir %></th>
       </tr>
     </thead>
     <tbody>

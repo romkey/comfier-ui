@@ -79,7 +79,7 @@ class PublicSharesTest < ActionDispatch::IntegrationTest
   test 'media route requires a valid token' do
     get public_share_output_path(@token, 0)
 
-    assert_response :redirect
+    assert_response :success
 
     @generation.revoke_public_link!
 

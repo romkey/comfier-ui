@@ -1,15 +1,21 @@
 module Admin
   module UsersHelper
-    def users_sort_link(label, column, default: 'desc')
-      active = @sort == column
-      dir = active && @sort_dir == 'asc' ? 'desc' : (active ? 'asc' : default)
+    def users_sort_link(label, column, sort:, sort_dir:, default: 'desc')
+      active = sort == column
+      dir = if active
+              sort_dir == 'asc' ? 'desc' : 'asc'
+            else
+              default
+            end
       classes = ['table-sort-link', { active: }]
 
       link_to admin_users_path(sort: column, dir: dir), class: classes do
-        safe_join([
-          label,
-          (tag.i(class: "bi bi-caret-#{@sort_dir == 'asc' ? 'up' : 'down'}-fill ms-1", aria: { hidden: true }) if active)
-        ].compact)
+        parts = [label]
+        if active
+          caret = sort_dir == 'asc' ? 'up' : 'down'
+          parts << tag.i(class: "bi bi-caret-#{caret}-fill ms-1", aria: { hidden: true })
+        end
+        safe_join(parts)
       end
     end
   end

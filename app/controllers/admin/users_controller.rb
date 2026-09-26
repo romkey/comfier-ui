@@ -2,6 +2,10 @@ module Admin
   class UsersController < BaseController
     PER_PAGE = 50
     SORTS = %w[user last_login joined role generations].freeze
+    USER_NAME_ORDER = Arel.sql(
+      "LOWER(COALESCE(NULLIF(users.name, ''), NULLIF(users.username, ''), NULLIF(users.email, ''), ''))"
+    ).freeze
+    GENERATION_COUNT = Arel.sql('COUNT(generations.id)').freeze
 
     def index
       @sort = params[:sort].presence_in(SORTS) || 'last_login'
@@ -18,26 +22,35 @@ module Admin
     end
 
     def sorted_users
-      dir = @sort_dir.upcase
-      case @sort
-      when 'user'
-        User.order(Arel.sql(<<~SQL.squish))
-          LOWER(COALESCE(NULLIF(users.name, ''), NULLIF(users.username, ''), NULLIF(users.email, ''), '')) #{dir},
-          users.created_at DESC
-        SQL
-      when 'last_login'
-        nulls = @sort_dir == 'asc' ? 'NULLS FIRST' : 'NULLS LAST'
-        User.order(Arel.sql("users.last_signed_in_at #{dir} #{nulls}, users.created_at DESC"))
-      when 'joined'
-        User.order(created_at: @sort_dir, id: :asc)
-      when 'role'
-        User.order(admin: @sort_dir, created_at: :desc)
-      when 'generations'
-        User.left_joins(:generations).group('users.id')
-            .order(Arel.sql("COUNT(generations.id) #{dir}, users.created_at DESC"))
+      {
+        'user' => -> { order_by_expression(USER_NAME_ORDER).order(created_at: :desc) },
+        'last_login' => -> { order_by_last_login },
+        'joined' => -> { User.order(created_at: @sort_dir, id: :asc) },
+        'role' => -> { User.order(admin: @sort_dir, created_at: :desc) },
+        'generations' => -> { order_by_generation_count }
+      }.fetch(@sort, -> { order_by_last_login_desc }).call
+    end
+
+    def order_by_last_login
+      if @sort_dir == 'asc'
+        User.order(Arel.sql('users.last_signed_in_at ASC NULLS FIRST, users.created_at DESC'))
       else
-        User.order(Arel.sql('users.last_signed_in_at DESC NULLS LAST, users.created_at DESC'))
+        order_by_last_login_desc
       end
+    end
+
+    def order_by_last_login_desc
+      User.order(Arel.sql('users.last_signed_in_at DESC NULLS LAST, users.created_at DESC'))
+    end
+
+    def order_by_generation_count
+      scope = User.left_joins(:generations).group('users.id')
+      scope = @sort_dir == 'asc' ? scope.order(GENERATION_COUNT.asc) : scope.order(GENERATION_COUNT.desc)
+      scope.order(created_at: :desc)
+    end
+
+    def order_by_expression(expression)
+      @sort_dir == 'asc' ? User.order(expression.asc) : User.order(expression.desc)
     end
   end
 end

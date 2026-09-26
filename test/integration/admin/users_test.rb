@@ -38,6 +38,7 @@ module Admin
 
       assert_response :success
       names = css_select('tbody tr td:first-child .fw-medium').map(&:text)
+
       assert_equal names.sort, names
     end
 
