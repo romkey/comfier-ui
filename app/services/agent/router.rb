@@ -17,7 +17,7 @@ module Agent
     Candidate = Data.define(:backend, :availability, :prediction, :finish_at, :tiebreak)
     NO_SERVERS = 'No servers you can use are online.'
     WAITING_FOR_OWN = 'Waiting for your server to come online'
-    UNAVAILABLE = %w[offline starting].freeze
+    UNAVAILABLE = %w[offline starting paused].freeze
 
     def self.route!(generation, **) = new(generation, **).route!
 
@@ -67,7 +67,7 @@ module Agent
     end
 
     def pool
-      scope = @policy.usable_agent_backends.includes(:backend_speed, :backend_inventory)
+      scope = @policy.usable_agent_backends.where(paused: false).includes(:backend_speed, :backend_inventory)
       scope = scope.where.not(id: @generation.excluded_backend_ids) if @generation.excluded_backend_ids.any?
       return scope.where(id: @only.id).to_a if @only
       return scope.where(id: @generation.pinned_backend_id).to_a if @generation.pinned_backend_id
@@ -110,14 +110,16 @@ module Agent
         backend.max_queued_per_other_user
     end
 
-    def availability_reason(backend, availability)
+    def availability_reason(_backend, availability)
       return availability.reasons.first(3).join('; ') if availability.blocked?
-      return unless availability.needs_downloads?
-      unless backend.allows_auto_download_for?(@user)
-        return "missing models, and #{backend.name} doesn't download automatically"
-      end
+      return missing_models_reason(availability) if availability.needs_downloads?
 
       nil
+    end
+
+    def missing_models_reason(availability)
+      names = availability.models.map { "#{it['folder']}/#{it['filename']}" }.first(3).join(', ')
+      "missing models (#{names.presence || 'required files'})"
     end
 
     def score(backend, availability)
