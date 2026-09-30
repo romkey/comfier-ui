@@ -15,7 +15,9 @@ module Agent
     def submit(user: @alice)
       gen = Generation.create!(user:, workflow: @workflow, prompt: 'x', kind: :image, status: :queued,
                                agent_state: 'routing', filled_workflow_json: { '1' => {} })
-      Router.route!(gen)
+      availability = Availability.compute(@workflow, @backend)
+      gen.agent_transition!(from: 'routing', to: 'waiting_models', backend_id: @backend.id, queued_at: Time.current)
+      DownloadPlanner.ensure_downloads!(@backend, availability.models, generation: gen, auto: true)
       gen.reload
     end
 

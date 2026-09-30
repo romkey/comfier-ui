@@ -82,24 +82,21 @@ module Agent
       assert_equal backend, Router.route!(routing_job)
     end
 
-    test 'missing models go to waiting_models and start a download' do
+    test 'servers missing models are not chosen' do
       backend = create_agent_backend!(owner: @alice)
-      socket = bring_online!(backend, node_types: inventory_for(@workflow)[:node_types])
+      bring_online!(backend, node_types: inventory_for(@workflow)[:node_types])
       set_model_links(@workflow, url: 'https://hf.test/sd15.safetensors', bytes: 2.gigabytes)
-      gen = routing_job
 
-      assert_equal backend, Router.route!(gen)
-      assert_equal 'waiting_models', gen.reload.agent_state
-      assert_equal 'https://hf.test/sd15.safetensors', socket.last_of_type('model.download')['url']
+      error = assert_raises(Router::UnroutableError) { Router.route!(routing_job) }
+      assert_match 'missing models', error.message
     end
 
-    test 'another user job does not trigger downloads under owner_jobs policy' do
-      backend = create_agent_backend!(owner: @alice, visibility: 'public')
-      bring_online!(backend, node_types: inventory_for(@workflow)[:node_types])
-      set_model_links(@workflow, url: 'https://hf.test/sd15.safetensors')
+    test 'paused servers are not chosen' do
+      paused = create_agent_backend!(owner: @alice, name: 'Paused box', paused: true)
+      ready = create_agent_backend!(owner: @bob, name: 'Ready box', visibility: 'public')
+      [paused, ready].each { bring_online_for!(it, @workflow) }
 
-      error = assert_raises(Router::UnroutableError) { Router.route!(routing_job(user: @bob)) }
-      assert_match "doesn't download automatically", error.message
+      assert_equal ready, Router.route!(routing_job)
     end
 
     test 'missing node types block with an explanation' do
