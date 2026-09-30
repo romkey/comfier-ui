@@ -62,6 +62,8 @@ module ActiveSupport
       Rack::Test::UploadedFile.new(file_fixture('pixel.png'), 'image/png', original_filename: name)
     end
 
+    def png_bytes = File.binread(file_fixture('pixel.png'))
+
     def comfy_url(backend, path) = "#{backend.base_url}/#{path}"
 
     # Stubs what Backend#refresh_inventory! asks for. `models` maps folder names to the files in them.

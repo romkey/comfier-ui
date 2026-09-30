@@ -23,8 +23,29 @@
   <% end %>
 
   <% if workflow.uses?(:image) %>
+    <% source_generation = local_assigns[:source_generation] || @source_generation %>
+    <% reference_sources = local_assigns[:reference_sources] || @reference_sources %>
+    <% reference_source = local_assigns[:reference_source] || @reference_source %>
     <div class="mb-3">
-      <%= f.label :input_image, reference_image_label(kind), class: 'form-label' %>
+      <% if source_generation && reference_sources&.any? %>
+        <% if reference_sources.many? %>
+          <div class="form-label"><%= reference_image_label(kind) %></div>
+          <div class="d-flex flex-wrap gap-2 mb-2">
+            <% reference_sources.each do |choice| %>
+              <% chip_params = { from: source_generation.id, reference: choice, workflow_id: workflow.id } %>
+              <%= link_to(choice == 'original' ? 'Original upload' : 'Last result',
+                          "#{kind.path}?#{chip_params.to_query}",
+                          class: ['filter-chip', { active: reference_source == choice }]) %>
+            <% end %>
+          </div>
+        <% else %>
+          <%= f.label :input_image, reference_image_label(kind), class: 'form-label' %>
+        <% end %>
+        <%= f.hidden_field :reference_from_id, value: source_generation.id %>
+        <%= f.hidden_field :reference_source, value: reference_source %>
+      <% else %>
+        <%= f.label :input_image, reference_image_label(kind), class: 'form-label' %>
+      <% end %>
       <% if generation.input_image.attached? %>
         <div class="mb-2">
           <%= image_tag rails_blob_path(generation.input_image, disposition: 'inline'), class: 'output-media',
@@ -32,7 +53,10 @@
         </div>
       <% end %>
       <%= f.file_field :input_image, accept: 'image/*', class: 'form-control',
-                                     required: !generation.input_image.attached? %>
+                                     required: !generation.input_image.attached? && reference_sources.blank? %>
+      <% if source_generation && reference_sources&.any? %>
+        <div class="form-text text-12 text-secondary">Upload a different file to replace this, or generate as-is.</div>
+      <% end %>
     </div>
   <% end %>
 

@@ -144,6 +144,26 @@ class GenerationsTest < ActionDispatch::IntegrationTest
     assert_equal original.input_image.blob, users(:alice).generations.recent.first.input_image.blob
   end
 
+  test 'creating from a tweak reuses the reference without re-uploading' do
+    source = users(:alice).generations.create!(workflow: workflows(:image_to_3d), input_image: png_upload)
+    source.outputs.attach(io: StringIO.new(png_bytes), filename: 'out.png', content_type: 'image/png')
+    source.succeed!
+
+    assert_enqueued_with(job: SubmitGenerationJob) do
+      post generations_path, params: {
+        generation: {
+          workflow_id: workflows(:image_to_3d).id,
+          reference_from_id: source.id,
+          reference_source: 'result'
+        }
+      }
+    end
+
+    copy = users(:alice).generations.recent.first
+
+    assert_equal source.outputs.first.blob, copy.input_image.blob
+  end
+
   test 'deleting a generation' do
     assert_difference('Generation.count', -1) { delete generation_path(generations(:alice_done)) }
     assert_redirected_to generations_path

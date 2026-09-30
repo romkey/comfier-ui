@@ -83,6 +83,25 @@ class StudiosTest < ActionDispatch::IntegrationTest
     assert_select 'textarea[name="generation[negative_prompt]"]', text: 'blurry'
   end
 
+  test 'prefills a reused reference and offers original vs result when tweaking' do
+    source = users(:alice).generations.create!(workflow: workflows(:image_to_3d), input_image: png_upload)
+    source.outputs.attach(io: StringIO.new(png_bytes), filename: 'out.png', content_type: 'image/png')
+    source.succeed!
+
+    get '/3d', params: { from: source.id }
+
+    assert_select 'img[alt="Reference"]'
+    assert_select 'input[name="generation[reference_from_id]"][value=?]', source.id.to_s
+    assert_select 'input[name="generation[reference_source]"][value="result"]'
+    assert_select 'a.filter-chip.active', text: 'Last result'
+    assert_select 'a.filter-chip', text: 'Original upload'
+
+    get '/3d', params: { from: source.id, reference: 'original' }
+
+    assert_select 'input[name="generation[reference_source]"][value="original"]'
+    assert_select 'a.filter-chip.active', text: 'Original upload'
+  end
+
   test 'cannot prefill from someone else\'s generation' do
     get '/image', params: { from: generations(:bob_done).id }
 

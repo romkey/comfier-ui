@@ -1,6 +1,7 @@
 # "Results": everything the user has generated, plus creating and re-running generations.
-class GenerationsController < ApplicationController
+class GenerationsController < ApplicationController # rubocop:disable Metrics/ClassLength
   include StudioPage
+  include GenerationReferenceReuse
 
   PER_PAGE = 24
 
@@ -27,11 +28,13 @@ class GenerationsController < ApplicationController
   def create
     @generation = current_user.generations.new(generation_params)
     assign_share_intent(@generation)
+    attach_reused_reference(@generation)
     if @generation.save
       SubmitGenerationJob.perform_later(@generation)
       redirect_to kind_for(@generation).path, notice: 'Queued. Your result will appear below when it\'s ready.'
     else
       load_studio(kind_for(@generation), workflow_id: @generation.workflow_id)
+      reapply_reference_after_failed_create
       render 'studios/show', status: :unprocessable_content
     end
   end

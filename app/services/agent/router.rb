@@ -110,7 +110,7 @@ module Agent
         backend.max_queued_per_other_user
     end
 
-    def availability_reason(backend, availability)
+    def availability_reason(_backend, availability)
       return availability.reasons.first(3).join('; ') if availability.blocked?
       return missing_models_reason(availability) if availability.needs_downloads?
 
