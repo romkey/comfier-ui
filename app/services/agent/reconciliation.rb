@@ -69,10 +69,6 @@ module Agent
     end
 
     # Jobs parked in `routing` because this user's servers were offline, or pinned here.
-    def route_waiting!
-      Generation.where(agent_state: 'routing', agent_phase: 'waiting_for_server')
-                .where('pinned_backend_id = :id OR user_id = :owner', id: @backend.id, owner: @backend.owner_user_id)
-                .find_each { JobLifecycle.route!(it) }
-    end
+    def route_waiting! = ServerPause.route_waiting!(@backend)
   end
 end

@@ -103,8 +103,12 @@ class ServersController < ApplicationController # rubocop:disable Metrics/ClassL
   def change_pause(paused)
     @backend.update!(paused:)
     Agent::Commands.send_message(@backend.id, { 'type' => paused ? 'config.pause' : 'config.resume' })
-    Agent::ServerPause.reroute_jobs!(@backend) if paused
-    Agent::Dispatcher.dispatch_for!(@backend) unless paused
+    if paused
+      Agent::ServerPause.reroute_jobs!(@backend)
+    else
+      Agent::ServerPause.route_waiting!(@backend)
+      Agent::Dispatcher.dispatch_for!(@backend)
+    end
     Agent::Presence.publish!(@backend, force: true)
     audit(paused ? :server_paused : :server_resumed, "#{paused ? 'Paused' : 'Resumed'} #{@backend.name}")
     redirect_back_or_to server_path(@backend), status: :see_other

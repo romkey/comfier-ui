@@ -12,6 +12,13 @@ module Agent
       backend.generations.where(agent_state: ON_PAUSE).includes(:user).find_each { park_or_reroute!(backend, it) }
     end
 
+    # Jobs parked while this server was paused (or offline) try routing again once it accepts work.
+    def route_waiting!(backend)
+      Generation.where(agent_state: 'routing', agent_phase: 'waiting_for_server')
+                .where('pinned_backend_id = :id OR user_id = :owner', id: backend.id, owner: backend.owner_user_id)
+                .find_each { JobLifecycle.route!(it) }
+    end
+
     def park_or_reroute!(backend, gen)
       policy = BackendPolicy.new(gen.user)
       if gen.pinned_backend_id == backend.id ||

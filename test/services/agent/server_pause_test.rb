@@ -29,6 +29,13 @@ module Agent
       assert_nil gen.reload.backend_id
       assert_equal 'routing', gen.agent_state
       assert_equal 'waiting_for_server', gen.agent_phase
+
+      @own.update!(paused: false)
+      ServerPause.route_waiting!(@own)
+
+      assert_equal @own.id, gen.reload.backend_id
+      assert_equal 'queued', gen.agent_state
+      assert_nil gen.agent_phase
     end
 
     private
