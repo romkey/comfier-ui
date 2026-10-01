@@ -50,6 +50,8 @@ class BackendTest < ActiveSupport::TestCase
 
     assert backend.refresh_inventory!(%w[vae])
     assert_equal({ 'loras' => ['old.safetensors'], 'vae' => ['sub/ae.safetensors'] }, backend.model_inventory)
+    assert_equal ['sub/ae.safetensors'], backend.backend_models.where(folder: 'vae').pluck(:filename)
+    assert_predicate backend.backend_inventory, :present?
     assert_equal '4.2.2', backend.manager_version
     assert_not backend.downloader_available?
     assert_predicate backend, :can_download_models?

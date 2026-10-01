@@ -71,6 +71,8 @@ module Agent
 
     def missing_node_reasons
       have = Array(@backend.backend_inventory.node_types_json)
+      return [] if @backend.legacy? && have.empty?
+
       (@requirements.node_types - have).map { "Node type #{it} isn't installed" }
     end
 
@@ -78,7 +80,7 @@ module Agent
       missing.filter_map do |model|
         if model['url'].blank?
           "#{model['folder']}/#{model['filename']} is missing and has no download link"
-        elsif !@backend.model_downloads_enabled?
+        elsif !@backend.can_download_models?
           "#{model['folder']}/#{model['filename']} is missing and #{@backend.name} doesn't allow model downloads"
         end
       end

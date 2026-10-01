@@ -104,6 +104,7 @@ class Backend < ApplicationRecord # rubocop:disable Metrics/ClassLength
     update!(model_inventory: model_inventory.merge(listed), inventory_checked_at: Time.current,
             downloader_available: downloader, manager_version: manager,
             manager_catalog: downloader || manager.nil? ? {} : fetch_manager_catalog(api))
+    sync_routing_inventory!(listed, api)
     true
   rescue Comfyui::Error
     false
@@ -182,6 +183,16 @@ class Backend < ApplicationRecord # rubocop:disable Metrics/ClassLength
     end
   rescue Comfyui::Error
     manager_catalog
+  end
+
+  # Legacy servers report models over HTTP; the router uses the same inventory rows as agent servers.
+  def sync_routing_inventory!(listed, api)
+    node_types = api.object_info_class_types
+    hash = Digest::SHA256.hexdigest(JSON.generate([listed, node_types]))
+    Agent::InventoryStore.store!(self, { 'hash' => hash, 'models' => listed, 'node_types' => node_types })
+  rescue Comfyui::Error
+    hash = Digest::SHA256.hexdigest(JSON.generate(listed))
+    Agent::InventoryStore.store!(self, { 'hash' => hash, 'models' => listed, 'node_types' => [] })
   end
 
   def describe_stats(stats)

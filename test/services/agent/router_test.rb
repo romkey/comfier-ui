@@ -139,5 +139,25 @@ module Agent
       assert_includes names, legacy.name
       assert_includes names, agent.name
     end
+
+    test 'legacy HTTP inventory refresh makes the admin backend routable' do
+      legacy = Backend.create!(name: 'Shared GPU', connection_kind: 'legacy', base_url: 'http://legacy.test:8188',
+                               enabled: true, last_check_ok: true)
+      inv = inventory_for(@workflow)
+      stub_inventory(legacy, { checkpoints: inv[:models]['checkpoints'] })
+      stub_request(:get, comfy_url(legacy, 'object_info'))
+        .to_return(body: inv[:node_types].index_with { {} }.to_json)
+
+      assert legacy.refresh_inventory!
+      assert_predicate legacy.backend_inventory, :present?
+
+      agent = create_agent_backend!(owner: @alice, visibility: 'public')
+      bring_online_for!(agent, @workflow)
+
+      names = Router.new(routing_job).candidates.map { it.backend.name }
+
+      assert_includes names, legacy.name
+      assert_includes names, agent.name
+    end
   end
 end

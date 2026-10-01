@@ -74,6 +74,7 @@ module ActiveSupport
         { body: Array(models[request.uri.path.split('/').last]).to_json }
       end
       node = Comfyui::Client::DOWNLOADER_NODE
+      stub_request(:get, comfy_url(backend, 'object_info')).to_return(body: {}.to_json)
       stub_request(:get,
                    comfy_url(backend,
                              "object_info/#{node}")).to_return(body: (downloader ? { node => {} } : {}).to_json)

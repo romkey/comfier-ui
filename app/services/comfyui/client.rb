@@ -94,6 +94,13 @@ module Comfyui
       false
     end
 
+    # Installed custom node class names (keys of ComfyUI's /object_info document).
+    def object_info_class_types
+      get_json('object_info').keys.sort
+    rescue NotFound
+      []
+    end
+
     include ManagerEndpoints
 
     private
