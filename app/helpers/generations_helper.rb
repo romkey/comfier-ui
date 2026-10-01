@@ -5,7 +5,8 @@ module GenerationsHelper
     'queued' => %w[secondary Queued],
     'running' => %w[primary Generating…],
     'succeeded' => %w[success Done],
-    'failed' => %w[danger Failed]
+    'failed' => %w[danger Failed],
+    'cancelled' => %w[secondary Cancelled]
   }.freeze
 
   PROMPT_PLACEHOLDERS = {
@@ -27,10 +28,14 @@ module GenerationsHelper
     generation.in_progress? && (generation.user_id == current_user.id || current_user.admin?)
   end
 
+  def generation_result_status(generation)
+    generation.cancelled? ? 'cancelled' : generation.status
+  end
+
   def generation_status(generation)
     return tag.span(class: 'status-dot status-success', title: 'Done') if generation.succeeded?
 
-    color, label = STATUS_BADGES.fetch(generation.status)
+    color, label = STATUS_BADGES.fetch(generation_result_status(generation))
     tag.span(class: "badge text-bg-#{color}-subtle fw-medium") do
       safe_join([(tag.span(class: 'spinner-grow spinner-grow-sm me-1', aria: { hidden: true }) if generation.running?),
                  label].compact)

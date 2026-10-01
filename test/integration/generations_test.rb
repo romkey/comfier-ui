@@ -174,6 +174,23 @@ class GenerationsTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  test 'cancelled results show as cancelled, not failed' do
+    generation = generations(:alice_running)
+    backend = backends(:gpu)
+    stub_request(:post, comfy_url(backend, 'queue')).with(body: { delete: ['running-prompt'] }.to_json)
+    stub_request(:post, comfy_url(backend, 'interrupt')).with(body: { prompt_id: 'running-prompt' }.to_json)
+
+    post cancel_generation_path(generation)
+
+    get generation_path(generation)
+
+    assert_response :success
+    assert_select '.badge', text: 'Cancelled'
+    assert_select '.badge', text: 'Failed', count: 0
+    assert_select '.status-panel', text: /You cancelled this job/
+    assert_select '.status-panel', text: /This didn't work/, count: 0
+  end
+
   test 'cancelling a running generation' do
     generation = generations(:alice_running)
     backend = backends(:gpu)

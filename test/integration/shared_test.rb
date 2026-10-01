@@ -3,6 +3,19 @@ require 'test_helper'
 class SharedTest < ActionDispatch::IntegrationTest
   setup { sign_in_as users(:bob) }
 
+  test 'failed and cancelled shares stay out of the gallery' do
+    failed = generations(:alice_failed)
+    failed.share!
+    cancelled = generations(:alice_running)
+    cancelled.update!(status: :failed, error_message: Generation::CANCELLED_MESSAGE, completed_at: Time.current)
+    cancelled.share!
+
+    get shared_index_path
+
+    assert_response :success
+    assert_select '.result-card', count: 0
+  end
+
   test 'the shared gallery lists results others chose to share' do
     generations(:alice_done).share!
 

@@ -3,8 +3,8 @@ class SharedController < ApplicationController
   PER_PAGE = 24
 
   def index
-    @kind_counts = Generation.shared.group(:kind).count
-    scope = Generation.shared.recent.with_attached_outputs.includes(:user, :workflow)
+    @kind_counts = Generation.shared_gallery.group(:kind).count
+    scope = Generation.shared_gallery.recent.with_attached_outputs.includes(:user, :workflow)
     @kind = params[:kind].presence_in(GenerationKind.keys)
     scope = scope.where(kind: @kind) if @kind
     scope = scope.where(user: current_user) if params[:mine] == '1'
@@ -12,7 +12,7 @@ class SharedController < ApplicationController
   end
 
   def show
-    @generation = Generation.shared.with_attached_outputs.find(params[:id])
+    @generation = Generation.shared_gallery.with_attached_outputs.find(params[:id])
   end
 
   def unshare

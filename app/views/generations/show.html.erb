@@ -64,7 +64,11 @@
         <div class="text-13">Hidden from sharing while an admin reviews a report.</div>
       </div>
     <% end %>
-    <% if @generation.failed? %>
+    <% if @generation.cancelled? %>
+      <div class="status-panel status-clear mb-3">
+        <div class="text-13 text-secondary">You cancelled this job.</div>
+      </div>
+    <% elsif @generation.failed? %>
       <div class="status-panel status-attention mb-3">
         <div class="fw-medium mb-1">This didn't work</div>
         <div class="text-13 text-secondary text-break" style="white-space: pre-line"><%= @generation.error_message %></div>

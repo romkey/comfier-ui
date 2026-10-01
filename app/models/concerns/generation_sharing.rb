@@ -6,6 +6,7 @@ module GenerationSharing
 
   included do
     scope :shared, -> { where.not(shared_at: nil).where(hidden_for_review_at: nil) }
+    scope :shared_gallery, -> { shared.succeeded }
     scope :publicly_linked, -> { where.not(public_token: nil) }
   end
 
