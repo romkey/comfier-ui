@@ -48,7 +48,7 @@ class AppSetting < ApplicationRecord
   end
 
   def invalidate_all_sessions!
-    increment!(:session_epoch)
+    update!(session_epoch: session_epoch + 1)
   end
 
   def self.env_attachment_max_mb(specific_key, fallback)

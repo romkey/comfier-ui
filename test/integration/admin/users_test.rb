@@ -72,6 +72,5 @@ module Admin
 
       assert_response :not_found
     end
-
   end
 end

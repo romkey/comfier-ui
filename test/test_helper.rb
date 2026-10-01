@@ -28,12 +28,14 @@ module ActiveSupport
 
     teardown { OmniAuth.config.mock_auth[:authentik] = nil }
 
-    def auth_hash(uid:, email: 'person@example.com', name: 'Person', nickname: nil, groups: [], slack: nil)
+    def auth_hash(uid:, email: 'person@example.com', name: 'Person', **extras)
+      groups = extras.fetch(:groups, [])
       raw_info = { 'groups' => groups }
-      raw_info['slack'] = slack if slack
+      raw_info['slack'] = extras[:slack] if extras[:slack]
+      nickname = extras.fetch(:nickname, email.split('@').first)
       OmniAuth::AuthHash.new(
         provider: 'authentik', uid:,
-        info: { email:, name:, nickname: nickname || email.split('@').first },
+        info: { email:, name:, nickname: },
         extra: { raw_info: }
       )
     end
