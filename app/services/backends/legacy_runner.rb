@@ -3,13 +3,18 @@ module Backends
   class LegacyRunner
     def submit(generation)
       backend = BackendSelector.call(generation.user, generation.workflow)
+      submit_to(generation, backend)
+    end
+
+    def submit_to(generation, backend)
       client = backend.client
       image = upload_input_image(client, generation) if generation.input_image.attached?
-      graph = WorkflowRenderer.render(generation.workflow.graph, generation.placeholder_values(image:))
+      graph = generation.filled_workflow_json.presence ||
+              WorkflowRenderer.render(generation.workflow.graph, generation.placeholder_values(image:))
       prompt_id = client.submit(graph)
       parameters = image ? generation.parameters.merge('backend_input_image' => image) : generation.parameters
       generation.update!(backend:, comfy_prompt_id: prompt_id, status: :running, submitted_at: Time.current,
-                         parameters:)
+                         parameters:, agent_state: nil, agent_phase: nil)
       PollGenerationJob.set(wait: PollGenerationJob::INTERVAL).perform_later(generation)
     end
 

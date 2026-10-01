@@ -33,12 +33,20 @@ class EstimatesController < ApplicationController
 
   def summary(candidate)
     prediction = candidate.prediction
-    ahead = candidate.backend.generations.agent_waiting.count + candidate.backend.generations.agent_on_server.count
+    ahead = queue_ahead(candidate.backend)
     run = duration_estimate(prediction.total_ms, confidence: prediction.confidence, p90_ms: prediction.p90_ms)
     start = candidate.finish_at - (prediction.total_ms / 1000.0)
     text = "Estimated: #{run} on #{candidate.backend.name}"
     text += ", starts #{eta_phrase(start)} (#{ahead} #{'job'.pluralize(ahead)} ahead)" if ahead.positive?
     text
+  end
+
+  def queue_ahead(backend)
+    if backend.agent?
+      backend.generations.agent_waiting.count + backend.generations.agent_on_server.count
+    else
+      backend.generations.where(status: %w[queued running], agent_state: nil).count
+    end
   end
 
   def notice(candidates)

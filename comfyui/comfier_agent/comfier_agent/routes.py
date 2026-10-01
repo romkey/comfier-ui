@@ -79,7 +79,8 @@ def register_routes() -> None:
     except ImportError:
         return
 
-    routes = PromptServer.instance.routes
+    server = PromptServer.instance
+    routes = server.routes
 
     @routes.get("/comfier-agent/status")
     async def status(_request):
@@ -100,27 +101,31 @@ def register_routes() -> None:
             "restart_needed": restart_needed,
         })
 
-    @routes.post("/comfier/cleanup")
-    async def comfier_cleanup(request):
-        from comfier_agent.cleanup import delete_file, delete_input_image
+    if not getattr(server, "comfier_cleanup_route", False):
 
-        data = await request.json()
-        deleted = []
-        skipped = []
-        for file_desc in data.get("files") or []:
-            if not isinstance(file_desc, dict):
-                continue
-            filename = file_desc.get("filename")
-            if not filename:
-                continue
-            if delete_file(filename, file_desc.get("subfolder", ""), file_desc.get("type", "output")):
-                deleted.append(filename)
-            else:
-                skipped.append(filename)
-        input_image = data.get("input_image")
-        if input_image:
-            (deleted if delete_input_image(input_image) else skipped).append(input_image)
-        prompt_id = data.get("prompt_id")
-        if prompt_id:
-            PromptServer.instance.prompt_queue.delete_history_item(prompt_id)
-        return web.json_response({"deleted": deleted, "skipped": skipped})
+        @routes.post("/comfier/cleanup")
+        async def comfier_cleanup(request):
+            from comfier_agent.cleanup import delete_file, delete_input_image
+
+            data = await request.json()
+            deleted = []
+            skipped = []
+            for file_desc in data.get("files") or []:
+                if not isinstance(file_desc, dict):
+                    continue
+                filename = file_desc.get("filename")
+                if not filename:
+                    continue
+                if delete_file(filename, file_desc.get("subfolder", ""), file_desc.get("type", "output")):
+                    deleted.append(filename)
+                else:
+                    skipped.append(filename)
+            input_image = data.get("input_image")
+            if input_image:
+                (deleted if delete_input_image(input_image) else skipped).append(input_image)
+            prompt_id = data.get("prompt_id")
+            if prompt_id:
+                server.prompt_queue.delete_history_item(prompt_id)
+            return web.json_response({"deleted": deleted, "skipped": skipped})
+
+        server.comfier_cleanup_route = True

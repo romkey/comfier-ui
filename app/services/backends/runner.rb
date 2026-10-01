@@ -4,12 +4,11 @@ module Backends
   module Runner
     module_function
 
-    # Agent servers take every job from users who can use one; legacy backends take the rest.
+    # Routes each new job to the best legacy backend or agent server the user can use.
     def for(generation)
       return AgentRunner.new if generation.agent_job?
-      return AgentRunner.new if BackendPolicy.new(generation.user).usable_agent_backends.exists?
 
-      LegacyRunner.new
+      AgentRunner.new
     end
 
     def for_backend(backend) = backend.agent? ? AgentRunner.new : LegacyRunner.new

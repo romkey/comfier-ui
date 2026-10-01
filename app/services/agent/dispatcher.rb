@@ -89,11 +89,16 @@ module Agent
         'filename' => input.filename, 'bytes' => input.bytes }.compact
     end
 
-    # 3 × p90 once there's a prediction, within 5 minutes and 4 hours.
+    # 3 × p90 when the estimate is meaningful (≥ 5 minutes); otherwise the workflow default (1 hour).
+    # A hard 5-minute floor used to kill slow first runs on new servers with low p90 estimates.
     def timeout_s(job)
-      return (3 * job.predicted_p90_ms / 1000.0).round.clamp(300, 14_400) if job.predicted_p90_ms.to_i.positive?
+      default = job.workflow&.default_timeout_s || 3600
+      return default unless job.predicted_p90_ms.to_i.positive?
 
-      job.workflow&.default_timeout_s || 3600
+      computed = (3 * job.predicted_p90_ms / 1000.0).round
+      return default if computed < 300
+
+      computed.clamp(300, 14_400)
     end
 
     def base_url = Dispatcher.base_url

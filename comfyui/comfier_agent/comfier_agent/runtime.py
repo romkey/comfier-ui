@@ -218,7 +218,9 @@ class AgentRuntime:
     async def _heartbeat_loop(self) -> None:
         while True:
             if self.connection.connected:
-                await self._publish_status(force=False)
+                # Comfier expires presence after ~30s without a status; send every heartbeat even
+                # when the snapshot fingerprint is unchanged.
+                await self._publish_status(force=True)
             await asyncio.sleep(self.config.heartbeat_seconds)
 
     async def _inventory_loop(self) -> None:

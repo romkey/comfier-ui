@@ -2,7 +2,15 @@
 
 import atexit
 import logging
+import os
+import sys
 import threading
+
+# ComfyUI loads this __init__ via importlib under a path-based module name, not as the
+# `comfier_agent` package. Put this directory on sys.path so `comfier_agent/` resolves.
+_NODE_DIR = os.path.dirname(os.path.realpath(__file__))
+if _NODE_DIR not in sys.path:
+    sys.path.insert(0, _NODE_DIR)
 
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
@@ -23,30 +31,33 @@ def _register_routes() -> None:
 
 
 def _start_agent_thread() -> None:
-    from comfier_agent.config import load_config
-    from comfier_agent.runtime import AgentRuntime
-    import asyncio
+    try:
+        from comfier_agent.config import load_config
+        from comfier_agent.runtime import AgentRuntime
+        import asyncio
 
-    config = load_config()
-    if not config.ok:
-        LOG.warning(config.idle_reason)
-        return
+        config = load_config()
+        if not config.ok:
+            LOG.warning(config.idle_reason)
+            return
 
-    def runner() -> None:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        runtime = AgentRuntime(config)
-        _runtime_ref.append(runtime)
-        from comfier_agent.routes import set_runtime
+        def runner() -> None:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            runtime = AgentRuntime(config)
+            _runtime_ref.append(runtime)
+            from comfier_agent.routes import set_runtime
 
-        set_runtime(runtime)
-        try:
-            loop.run_until_complete(runtime.run(sidecar=False))
-        except Exception:
-            LOG.exception("Comfier agent thread exited")
+            set_runtime(runtime)
+            try:
+                loop.run_until_complete(runtime.run(sidecar=False))
+            except Exception:
+                LOG.exception("Comfier agent thread exited")
 
-    thread = threading.Thread(target=runner, name="comfier-agent", daemon=True)
-    thread.start()
+        thread = threading.Thread(target=runner, name="comfier-agent", daemon=True)
+        thread.start()
+    except Exception:
+        LOG.exception("Comfier agent failed to start")
 
 
 def _shutdown() -> None:

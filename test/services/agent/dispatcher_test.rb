@@ -125,5 +125,13 @@ module Agent
       assert_equal 600, @socket.last_of_type('job.assign')['timeout_s']
       assert_equal 'dispatched', gen.reload.agent_state
     end
+
+    test 'low p90 estimates use the workflow default timeout, not a five-minute floor' do
+      gen = queued_job(predicted_p90_ms: 4_000)
+      agent_request(@backend)
+
+      assert_equal 3600, @socket.last_of_type('job.assign')['timeout_s']
+      assert_equal 'dispatched', gen.reload.agent_state
+    end
   end
 end

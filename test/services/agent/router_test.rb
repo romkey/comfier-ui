@@ -8,6 +8,7 @@ module Agent
       @alice = users(:alice)
       @bob = users(:bob)
       @workflow = workflows(:sd_image)
+      Backend.legacy.update_all(enabled: false) # rubocop:disable Rails/SkipsModelValidations
     end
 
     def routing_job(user: @alice, **attrs)
@@ -123,6 +124,20 @@ module Agent
       set_speed(fast, 0.25)
 
       assert_equal fast, Router.route!(routing_job(work_units: 30))
+    end
+
+    test 'legacy backends and agent servers both appear as routing candidates' do
+      legacy = Backend.create!(name: 'Legacy box', connection_kind: 'legacy', base_url: 'http://legacy.test:8188',
+                               enabled: true, last_check_ok: true)
+      inv = inventory_for(@workflow)
+      InventoryStore.store!(legacy, { 'hash' => 'legacy', 'models' => inv[:models], 'node_types' => inv[:node_types] })
+      agent = create_agent_backend!(owner: @alice, visibility: 'public')
+      bring_online_for!(agent, @workflow)
+
+      names = Router.new(routing_job).candidates.map { it.backend.name }
+
+      assert_includes names, legacy.name
+      assert_includes names, agent.name
     end
   end
 end
