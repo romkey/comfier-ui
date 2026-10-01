@@ -45,7 +45,7 @@ module Agent
       return wait_for_own_server!(reasons) if candidates.empty? && wait_for_own_server?(reasons)
       raise UnroutableError, reasons if candidates.empty?
 
-      chosen = candidates.min_by { [it.finish_at.to_f.round, *it.tiebreak] }
+      chosen = candidates.min_by { [it.finish_at.to_f, *it.tiebreak] }
       assign!(chosen)
       chosen.backend
     end
@@ -148,11 +148,18 @@ module Agent
       "missing models (#{names.presence || 'required files'})"
     end
 
+    # Prefer the user's agent over other agents when affinity is prefer_mine, not over shared legacy backends.
+    def own_agent_tiebreak(backend)
+      return 1 unless backend.agent? && @policy.affinity == 'prefer_mine' && backend.owned_by?(@user)
+
+      0
+    end
+
     def score(backend, availability)
       prediction = Perf::Predictor.predict(@generation, backend)
       start = [backlog_end(backend), download_eta(backend, availability)].max
       Candidate.new(backend:, availability:, prediction:, finish_at: start + (prediction.total_ms / 1000.0),
-                    tiebreak: [backend.owned_by?(@user) ? 0 : 1, failure_rate(backend), queue_length(backend)])
+                    tiebreak: [own_agent_tiebreak(backend), failure_rate(backend), queue_length(backend)])
     end
 
     def backlog_end(backend)

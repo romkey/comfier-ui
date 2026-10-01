@@ -122,6 +122,16 @@ class Backend < ApplicationRecord # rubocop:disable Metrics/ClassLength
 
   def missing_models(workflow) = workflow.required_models.select { model_status(it) == :missing }
 
+  # Populates backend_inventory from the last HTTP model listing so routing works without a post-upgrade refresh.
+  def ensure_routing_inventory!
+    return backend_inventory if agent? || backend_inventory.present?
+    return if model_inventory.blank?
+
+    hash = Digest::SHA256.hexdigest(JSON.generate(model_inventory))
+    Agent::InventoryStore.store!(self, { 'hash' => hash, 'models' => model_inventory, 'node_types' => [] })
+    backend_inventory
+  end
+
   def can_download_models? = agent? ? model_downloads_enabled? : downloader_available? || manager_version.present?
 
   # How this backend would fetch a file: :agent and :node need a download link, :manager needs an

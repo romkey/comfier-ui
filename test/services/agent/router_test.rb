@@ -140,6 +140,22 @@ module Agent
       assert_includes names, agent.name
     end
 
+    test 'second job uses legacy when the agent already has one queued' do
+      legacy = Backend.create!(name: 'Legacy GPU', connection_kind: 'legacy', base_url: 'http://legacy.test:8188',
+                               enabled: true, last_check_ok: true,
+                               model_inventory: { 'checkpoints' => ['v1-5-pruned-emaonly-fp16.safetensors'] },
+                               inventory_checked_at: Time.current)
+      stub_request(:post, comfy_url(legacy, 'prompt')).to_return(body: { prompt_id: 'p-legacy' }.to_json)
+      agent = create_agent_backend!(owner: @alice, visibility: 'public')
+      bring_online_for!(agent, @workflow)
+
+      first = routing_job
+
+      assert_equal agent, Router.route!(first)
+
+      assert_equal legacy, Router.route!(routing_job)
+    end
+
     test 'legacy HTTP inventory refresh makes the admin backend routable' do
       legacy = Backend.create!(name: 'Shared GPU', connection_kind: 'legacy', base_url: 'http://legacy.test:8188',
                                enabled: true, last_check_ok: true)

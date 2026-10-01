@@ -42,11 +42,11 @@ module Agent
     end
 
     def compute
+      @backend.ensure_routing_inventory! if @backend.legacy?
       return blocked(["#{@backend.name} hasn't reported its models yet"]) unless @backend.backend_inventory
 
-      matcher = ModelMatcher.new(@backend.backend_models.pluck(:folder, :filename))
-      missing = @requirements.models.reject { matcher.present?(it['folder'], it['filename']) }
-      hints = missing.filter_map { hint(matcher, it) }
+      missing = missing_models
+      hints = hints_for(missing)
       reasons = missing_node_reasons + strict_reasons(missing) + model_reasons(missing)
       return blocked(reasons, hints) if reasons.any?
       return Result.new(status: :ready, models: [], total_bytes: nil, reasons: [], hints:) if missing.empty?
@@ -67,6 +67,18 @@ module Agent
 
     def blocked(reasons, hints = [], models = [])
       Result.new(status: :blocked, models:, total_bytes: nil, reasons:, hints:)
+    end
+
+    def missing_models
+      matcher = ModelMatcher.new(@backend.backend_models.pluck(:folder, :filename))
+      @requirements.models.reject { matcher.present?(it['folder'], it['filename']) }
+    end
+
+    def hints_for(missing)
+      return [] if @backend.legacy?
+
+      matcher = ModelMatcher.new(@backend.backend_models.pluck(:folder, :filename))
+      missing.filter_map { hint(matcher, it) }
     end
 
     def missing_node_reasons
@@ -103,7 +115,12 @@ module Agent
     # With object_info cached, literal values for list-typed inputs must be one of the options.
     # Models already counted as missing (and being downloaded) are skipped.
     def strict_reasons(missing)
-      info = @backend.backend_object_infos.first&.data
+      return [] if @backend.legacy?
+
+      strict_combo_reasons(missing, @backend.backend_object_infos.first&.data)
+    end
+
+    def strict_combo_reasons(missing, info)
       return [] if info.blank?
 
       skip = missing.to_set { it['filename'] }
