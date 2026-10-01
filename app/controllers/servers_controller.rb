@@ -40,7 +40,9 @@ class ServersController < ApplicationController # rubocop:disable Metrics/ClassL
 
     @backend = Backend.new(server_params.merge(connection_kind: 'agent', owner_user: current_user))
     if @backend.save
-      flash.now[:alert] = unknown_emails_alert(sync_shares!)
+      if (share_alert = unknown_emails_alert(sync_shares!))
+        flash.now[:alert] = share_alert
+      end
       @new_key = @backend.issue_agent_key!
       audit(:server_registered, "Registered server #{@backend.name}")
       audit(:server_key_created, "Created a key for #{@backend.name}")
@@ -55,7 +57,9 @@ class ServersController < ApplicationController # rubocop:disable Metrics/ClassL
   def update
     before = @backend.attributes.slice(*policy_attributes)
     if @backend.update(server_params)
-      flash[:alert] = unknown_emails_alert(sync_shares!)
+      if (share_alert = unknown_emails_alert(sync_shares!))
+        flash[:alert] = share_alert
+      end
       audit_policy_changes(before)
       redirect_to settings_server_path(@backend), notice: 'Saved.', status: :see_other
     else

@@ -8,6 +8,18 @@
       <% if @admin_count.positive? %> · <span class="text-body num"><%= @admin_count %></span> admin<% end %>
     </div>
   </div>
+  <div class="d-flex gap-2">
+    <%= button_to 'Require sign-in again',
+                  force_relogin_admin_users_path,
+                  method: :post,
+                  class: 'btn btn-outline-secondary btn-sm',
+                  form: {
+                    data: {
+                      turbo_confirm: 'Sign everyone out? They will sign in through Authentik again and pick up ' \
+                                     'their username from their profile.'
+                    }
+                  } %>
+  </div>
 </div>
 
 <% if @users.empty? %>
@@ -31,7 +43,12 @@
         <tr>
           <td>
             <div class="fw-medium"><%= user.display_name %></div>
-            <div class="text-12 text-secondary"><%= user.email.presence || user.username.presence || '—' %></div>
+            <div class="text-12 text-secondary">
+              <%= user.email.presence || '—' %>
+              <% if user.name.present? && user.name != user.display_name %>
+                · <%= user.name %>
+              <% end %>
+            </div>
           </td>
           <td class="text-12 text-secondary">
             <%= friendly_time(user.last_signed_in_at) || tag.span('Never', class: 'text-secondary') %>

@@ -58,6 +58,18 @@ class ServersTest < ActionDispatch::IntegrationTest
     assert_no_match 'Agent box', response.body
   end
 
+  test 'saving server settings shows only the success notice when share emails are fine' do
+    backend = create_agent_backend!(owner: @alice, name: 'Studio PC')
+    sign_in_as @alice
+    patch server_path(backend), params: { backend: { name: 'Renamed PC', share_emails: '' } }
+
+    follow_redirect!
+
+    assert_response :success
+    assert_select '.alert.alert-success', text: 'Saved.'
+    assert_select '.alert.alert-danger', count: 0
+  end
+
   test 'sharing by email lets that user see and use the server, but not manage it' do
     backend = create_agent_backend!(owner: @alice)
     sign_in_as @alice

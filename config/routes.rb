@@ -69,7 +69,9 @@ Rails.application.routes.draw do
   end
 
   namespace :admin do
-    resources :users, only: :index
+    resources :users, only: :index do
+      post :force_relogin, on: :collection
+    end
 
     resources :backends, except: :show do
       member do

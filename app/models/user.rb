@@ -48,7 +48,7 @@ class User < ApplicationRecord
     user
   end
 
-  def display_name = name.presence || username.presence || email.presence || 'User'
+  def display_name = username.presence || name.presence || email.presence || 'User'
 
   def initials
     display_name.split(/[\s@._-]+/).first(2).map(&:first).join.upcase

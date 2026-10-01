@@ -38,7 +38,7 @@ class SessionsTest < ActionDispatch::IntegrationTest
     follow_redirect!
 
     assert_response :success
-    assert_select '.navbar', text: /Fresh Face/
+    assert_select '.navbar', text: /fresh/
   end
 
   test 'signing in without a saved page goes home' do
@@ -99,6 +99,15 @@ class SessionsTest < ActionDispatch::IntegrationTest
     get '/image'
 
     assert_select '.navbar-nav .nav-link', text: /Log/
+  end
+
+  test 'invalid session epoch sends the user back to login' do
+    sign_in_as users(:alice)
+    AppSetting.current.invalidate_all_sessions!
+
+    get '/image'
+
+    assert_redirected_to login_path
   end
 
   test 'sign-in and sign-out create log entries' do

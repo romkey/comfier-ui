@@ -28,12 +28,12 @@ module ActiveSupport
 
     teardown { OmniAuth.config.mock_auth[:authentik] = nil }
 
-    def auth_hash(uid:, email: 'person@example.com', name: 'Person', groups: [], slack: nil)
+    def auth_hash(uid:, email: 'person@example.com', name: 'Person', nickname: nil, groups: [], slack: nil)
       raw_info = { 'groups' => groups }
       raw_info['slack'] = slack if slack
       OmniAuth::AuthHash.new(
         provider: 'authentik', uid:,
-        info: { email:, name:, nickname: email.split('@').first },
+        info: { email:, name:, nickname: nickname || email.split('@').first },
         extra: { raw_info: }
       )
     end
@@ -90,7 +90,8 @@ module ActionDispatch
   class IntegrationTest
     def sign_in_as(user)
       groups = user.admin? ? [User.admin_group] : []
-      OmniAuth.config.mock_auth[:authentik] = auth_hash(uid: user.uid, email: user.email, name: user.name, groups:)
+      OmniAuth.config.mock_auth[:authentik] =
+        auth_hash(uid: user.uid, email: user.email, name: user.name, nickname: user.username, groups:)
       get '/auth/authentik/callback'
       follow_redirect!
     end

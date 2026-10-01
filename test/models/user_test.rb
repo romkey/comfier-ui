@@ -79,17 +79,17 @@ class UserTest < ActiveSupport::TestCase
     ENV.delete('AUTHENTIK_ADMIN_GROUP')
   end
 
-  test 'display_name falls back from name to username to email' do
+  test 'display_name falls back from username to name to email' do
     user = User.new(email: 'x@example.com')
 
     assert_equal 'x@example.com', user.display_name
-    user.username = 'xavier'
-
-    assert_equal 'xavier', user.display_name
     user.name = 'Xavier X'
 
     assert_equal 'Xavier X', user.display_name
-    assert_equal 'XX', user.initials
+    user.username = 'xavier'
+
+    assert_equal 'xavier', user.display_name
+    assert_equal 'X', user.initials
   end
 
   test 'default aspect ratio must be one we support' do

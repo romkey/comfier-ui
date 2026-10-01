@@ -19,8 +19,8 @@ module Admin
 
       assert_response :success
       assert_select 'h1', text: 'Users'
-      assert_select 'td', text: /Alice Artist/
-      assert_select 'td', text: /Bob Builder/
+      assert_select 'td', text: /alice/
+      assert_select 'td', text: /bob/
       assert_select '.badge', text: 'Admin'
       assert_select '.settings-nav-item.active', text: /Users/
     end
@@ -32,7 +32,7 @@ module Admin
 
       assert_response :success
       assert_select 'th .table-sort-link.active', text: /Generations/
-      assert_match(/Alice Artist/, css_select('tbody tr').first.text)
+      assert_match(/alice/, css_select('tbody tr').first.text)
 
       get admin_users_path(sort: 'user', dir: 'asc')
 
@@ -50,5 +50,28 @@ module Admin
       assert_response :success
       assert_select 'th .table-sort-link.active', text: /Last login/
     end
+
+    test 'require sign-in again bumps session epoch and keeps the admin signed in' do
+      sign_in_as users(:admin)
+      post force_relogin_admin_users_path
+
+      assert_redirected_to admin_users_path
+      assert_equal 1, AppSetting.current.session_epoch
+      follow_redirect!
+
+      assert_response :success
+      get admin_users_path
+
+      assert_response :success
+    end
+
+    test 'non-admins cannot force sign-in again' do
+      sign_in_as users(:alice)
+
+      post force_relogin_admin_users_path
+
+      assert_response :not_found
+    end
+
   end
 end

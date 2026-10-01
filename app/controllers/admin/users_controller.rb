@@ -3,7 +3,7 @@ module Admin
     PER_PAGE = 50
     SORTS = %w[user last_login joined role generations].freeze
     USER_NAME_ORDER = Arel.sql(
-      "LOWER(COALESCE(NULLIF(users.name, ''), NULLIF(users.username, ''), NULLIF(users.email, ''), ''))"
+      "LOWER(COALESCE(NULLIF(users.username, ''), NULLIF(users.name, ''), NULLIF(users.email, ''), ''))"
     ).freeze
     GENERATION_COUNT = Arel.sql('COUNT(generations.id)').freeze
 
@@ -13,6 +13,15 @@ module Admin
       @pagy, @users = pagy(:offset, sorted_users, limit: PER_PAGE)
       @admin_count = User.where(admin: true).count
       @generation_counts = Generation.where(user_id: @users.map(&:id)).group(:user_id).count
+    end
+
+    def force_relogin
+      settings = AppSetting.current
+      settings.invalidate_all_sessions!
+      session[:session_epoch] = settings.session_epoch
+      redirect_to admin_users_path,
+                  notice: 'Everyone must sign in again on their next visit. Profiles will refresh from Authentik.',
+                  status: :see_other
     end
 
     private

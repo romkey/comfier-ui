@@ -10,6 +10,7 @@ class AppSetting < ApplicationRecord
   CHAT_NOTICE_URL_FORMAT = %r{\Ahttps?://\S+\z}i
   validates :chat_notice_url, format: { with: CHAT_NOTICE_URL_FORMAT, allow_blank: true }
   validates :chat_default_model, length: { maximum: 255 }, allow_blank: true
+  validates :session_epoch, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
   def chat_notice?
     chat_notice_text.present?
@@ -44,6 +45,10 @@ class AppSetting < ApplicationRecord
 
   def using_default_placeholder_prompt?
     placeholder_prompt.blank?
+  end
+
+  def invalidate_all_sessions!
+    increment!(:session_epoch)
   end
 
   def self.env_attachment_max_mb(specific_key, fallback)

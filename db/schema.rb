@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_01_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -69,6 +69,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_120000) do
     t.decimal "email_notification_attachment_max_mb", precision: 8, scale: 3, default: "0.488", null: false
     t.text "placeholder_prompt"
     t.integer "report_auto_hide_threshold", default: 3, null: false
+    t.integer "session_epoch", default: 0, null: false
     t.decimal "slack_notification_attachment_max_mb", precision: 8, scale: 3, default: "5.0", null: false
     t.datetime "updated_at", null: false
   end
