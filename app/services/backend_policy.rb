@@ -33,6 +33,14 @@ class BackendPolicy
            .or(Backend.agent.enabled.where(visibility: 'shared', id: shared))
   end
 
+  # Legacy HTTP backends and agent servers this user may run jobs on.
+  def runnable_backends
+    return Backend.none if @user.nil?
+
+    legacy_ids = Backend.legacy.enabled.select { can_use?(it) }.map(&:id)
+    Backend.where(id: usable_agent_backends.select(:id)).or(Backend.where(id: legacy_ids)).ordered
+  end
+
   # Servers listed on /servers: usable ones, plus everything for admins.
   def listable_backends
     return Backend.agent.kept if @user&.admin?

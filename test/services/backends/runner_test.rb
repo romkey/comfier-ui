@@ -6,13 +6,7 @@ module Backends
       Generation.new(user:, workflow: workflows(:sd_image), prompt: 'x', kind: :image)
     end
 
-    test 'users without agent servers use legacy backends' do
-      assert_instance_of LegacyRunner, Runner.for(generation)
-    end
-
-    test 'users who can use an agent server submit to agents' do
-      create_agent_backend!(owner: users(:bob), visibility: 'public')
-
+    test 'new jobs dispatch through submission and routing' do
       assert_instance_of AgentRunner, Runner.for(generation)
     end
 

@@ -182,7 +182,7 @@
     </p>
   <% end %>
 
-  <% servers = BackendPolicy.new(current_user).usable_agent_backends.includes(:owner_user).ordered.to_a %>
+  <% servers = BackendPolicy.new(current_user).runnable_backends.includes(:owner_user).to_a %>
   <% if servers.any? %>
     <div class="mb-3" data-controller="estimate" data-estimate-url-value="<%= estimate_path %>">
       <% if servers.many? %>

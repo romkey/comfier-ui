@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 module Agent
-  # Picks the agent server a job should run on: the eligible server with the earliest predicted
-  # finish (its backlog, any downloads, then the job itself). Ties go to the user's own server,
-  # then the lower recent failure rate, then the shorter queue.
+  # Picks where a job should run: the eligible legacy backend or agent server with the earliest
+  # predicted finish (backlog, downloads, then the job). Ties go to the user's own server, then
+  # the lower recent failure rate, then the shorter queue.
   class Router # rubocop:disable Metrics/ClassLength
     class UnroutableError < StandardError
       attr_reader :reasons
@@ -67,22 +67,35 @@ module Agent
     end
 
     def pool
-      scope = @policy.usable_agent_backends.where(paused: false).includes(:backend_speed, :backend_inventory)
-      scope = scope.where.not(id: @generation.excluded_backend_ids) if @generation.excluded_backend_ids.any?
-      return scope.where(id: @only.id).to_a if @only
-      return scope.where(id: @generation.pinned_backend_id).to_a if @generation.pinned_backend_id
+      if @only
+        return [@only] if backend_runnable?(@only)
 
-      with_affinity(scope.to_a)
+        return []
+      end
+      if @generation.pinned_backend_id
+        pinned = Backend.find_by(id: @generation.pinned_backend_id)
+        return pinned && backend_runnable?(pinned) ? [pinned] : []
+      end
+
+      combined = @policy.runnable_backends.includes(:backend_speed, :backend_inventory).to_a
+      combined.reject! { |b| b.agent? && b.paused? }
+      combined.reject! { @generation.excluded_backend_ids.include?(it.id) }
+      with_affinity(combined)
     end
 
     def with_affinity(backends)
       case @policy.affinity
-      when 'mine_only' then backends.select { it.owned_by?(@user) }
-      when 'prefer_mine'
-        own = backends.select { it.owned_by?(@user) && Presence.online?(it) && !it.paused? }
-        own.any? ? own : backends
+      when 'mine_only' then backends.select { it.agent? && it.owned_by?(@user) }
       else backends
       end
+    end
+
+    def backend_runnable?(backend)
+      return false unless @policy.can_use?(backend)
+      return false if backend.agent? && backend.paused?
+      return false if @generation.excluded_backend_ids.include?(backend.id)
+
+      true
     end
 
     def ineligible_reason(backend, availability)
@@ -90,6 +103,12 @@ module Agent
     end
 
     def state_reason(backend)
+      if backend.legacy?
+        return 'offline' if backend.last_check_ok == false
+
+        return nil
+      end
+
       return 'offline' unless Presence.online?(backend)
       return 'starting' unless backend.backend_inventory
 
@@ -98,9 +117,9 @@ module Agent
 
     def fit_reason(backend)
       return "doesn't run the #{@workflow.name} style" unless backend.allows_workflow?(@workflow)
-      return 'not enough GPU memory' if @min_vram && backend.vram_total.to_i <= @min_vram
+      return 'not enough GPU memory' if backend.agent? && @min_vram && backend.vram_total.to_i <= @min_vram
 
-      'queue limit for other users reached' if over_queue_limit?(backend)
+      'queue limit for other users reached' if backend.agent? && over_queue_limit?(backend)
     end
 
     def over_queue_limit?(backend)
@@ -124,9 +143,33 @@ module Agent
 
     def score(backend, availability)
       prediction = Perf::Predictor.predict(@generation, backend)
-      start = [Timeline.backlog_end(backend), download_eta(backend, availability)].max
+      start = [backlog_end(backend), download_eta(backend, availability)].max
       Candidate.new(backend:, availability:, prediction:, finish_at: start + (prediction.total_ms / 1000.0),
                     tiebreak: [backend.owned_by?(@user) ? 0 : 1, failure_rate(backend), queue_length(backend)])
+    end
+
+    def backlog_end(backend)
+      backend.legacy? ? legacy_backlog_end(backend) : Timeline.backlog_end(backend)
+    end
+
+    def legacy_backlog_end(backend)
+      clock = Time.current
+      backend.generations.where(status: :running, agent_state: nil).order(:submitted_at).find_each do |gen|
+        clock += legacy_remaining_s(gen)
+      end
+      backend.generations.where(status: :queued, agent_state: nil, backend_id: backend.id)
+               .order(:created_at).find_each do |gen|
+        clock += (gen.predicted_total_ms || 60_000) / 1000.0
+      end
+      clock
+    end
+
+    def legacy_remaining_s(gen)
+      ms = gen.predicted_total_ms || 60_000
+      return ms / 1000.0 unless gen.running_at
+
+      elapsed_ms = (Time.current - gen.running_at) * 1000
+      [(ms - elapsed_ms) / 1000.0, 5].max
     end
 
     def download_eta(backend, availability)
@@ -146,7 +189,13 @@ module Agent
       total.zero? ? 0.0 : (recent.failures.count.to_f / total).round(2)
     end
 
-    def queue_length(backend) = backend.generations.agent_waiting.count
+    def queue_length(backend)
+      if backend.legacy?
+        backend.generations.where(status: %w[queued running], agent_state: nil).count
+      else
+        backend.generations.agent_waiting.count + backend.generations.agent_on_server.count
+      end
+    end
 
     def wait_for_own_server?(reasons)
       return false if reasons.empty?
@@ -161,11 +210,14 @@ module Agent
     end
 
     def assign!(candidate)
+      return assign_legacy!(candidate) if candidate.backend.legacy?
+
+      assign_agent!(candidate)
+    end
+
+    def assign_agent!(candidate)
       backend = candidate.backend
-      attrs = { backend_id: backend.id, queued_at: Time.current, queue_order: queue_order, agent_phase: nil,
-                predicted_total_ms: candidate.prediction.total_ms, predicted_p90_ms: candidate.prediction.p90_ms,
-                prediction_confidence: candidate.prediction.confidence,
-                prediction_source: candidate.prediction.source, warm: candidate.prediction.warm }
+      attrs = prediction_attrs(candidate)
       if candidate.availability.needs_downloads?
         return unless @generation.agent_transition!(from: 'routing', to: 'waiting_models', **attrs)
 
@@ -176,6 +228,21 @@ module Agent
         Dispatcher.dispatch_for!(backend)
       end
       Timeline.schedule(backend)
+    end
+
+    def assign_legacy!(candidate)
+      backend = candidate.backend
+      @generation.update!(prediction_attrs(candidate).merge(
+                            backend_id: backend.id, queued_at: Time.current, queue_order: queue_order, agent_phase: nil
+                          ))
+      Backends::LegacyRunner.new.submit_to(@generation, backend)
+    end
+
+    def prediction_attrs(candidate)
+      { backend_id: candidate.backend.id, queued_at: Time.current, queue_order: queue_order, agent_phase: nil,
+        predicted_total_ms: candidate.prediction.total_ms, predicted_p90_ms: candidate.prediction.p90_ms,
+        prediction_confidence: candidate.prediction.confidence,
+        prediction_source: candidate.prediction.source, warm: candidate.prediction.warm }
     end
 
     # Requeued jobs go ahead of everything else but keep their original order among themselves.

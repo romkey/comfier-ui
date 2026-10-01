@@ -49,7 +49,11 @@ def register_routes():
     except ImportError:
         return
 
-    routes = PromptServer.instance.routes
+    server = PromptServer.instance
+    if getattr(server, "comfier_cleanup_route", False):
+        return
+
+    routes = server.routes
 
     @routes.post("/comfier/cleanup")
     async def comfier_cleanup(request):
@@ -80,3 +84,5 @@ def register_routes():
             PromptServer.instance.prompt_queue.delete_history_item(prompt_id)
 
         return web.json_response({"deleted": deleted, "skipped": skipped})
+
+    server.comfier_cleanup_route = True
