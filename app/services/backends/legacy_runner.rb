@@ -9,8 +9,7 @@ module Backends
     def submit_to(generation, backend)
       client = backend.client
       image = upload_input_image(client, generation) if generation.input_image.attached?
-      graph = generation.filled_workflow_json.presence ||
-              WorkflowRenderer.render(generation.workflow.graph, generation.placeholder_values(image:))
+      graph = graph_for_legacy(generation, uploaded_image: image)
       prompt_id = client.submit(graph)
       parameters = image ? generation.parameters.merge('backend_input_image' => image) : generation.parameters
       generation.update!(backend:, comfy_prompt_id: prompt_id, status: :running, submitted_at: Time.current,
@@ -40,6 +39,23 @@ module Backends
         client.upload_image(file, filename: "comfier-#{generation.id}-#{blob.filename.sanitized}",
                                   content_type: blob.content_type)
       end
+    end
+
+    # Agent submission stores comfier-input:// refs in filled_workflow_json; legacy ComfyUI needs filenames.
+    def graph_for_legacy(generation, uploaded_image:)
+      if generation.input_image.attached?
+        return WorkflowRenderer.render(generation.workflow.graph,
+                                       generation.placeholder_values(image: uploaded_image))
+      end
+
+      filled = generation.filled_workflow_json
+      return filled if filled.present? && !agent_input_refs?(filled)
+
+      WorkflowRenderer.render(generation.workflow.graph, generation.placeholder_values)
+    end
+
+    def agent_input_refs?(graph)
+      JSON.generate(graph).include?('comfier-input://')
     end
   end
 end

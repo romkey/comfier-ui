@@ -45,7 +45,7 @@ class SubmitGenerationJobTest < ActiveJob::TestCase
     SubmitGenerationJob.perform_now(generation)
 
     assert_requested(:post, comfy_url(@backend, 'prompt')) do |req|
-      JSON.parse(req.body).dig('prompt', '1', 'inputs', 'image') == 'comfier-input://in_0'
+      JSON.parse(req.body).dig('prompt', '1', 'inputs', 'image') == "comfier-#{generation.id}-chest.png"
     end
     generation.reload
 
