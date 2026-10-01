@@ -67,20 +67,27 @@ module Agent
     end
 
     def pool
-      if @only
-        return [@only] if backend_runnable?(@only)
-
-        return []
-      end
-      if @generation.pinned_backend_id
-        pinned = Backend.find_by(id: @generation.pinned_backend_id)
-        return pinned && backend_runnable?(pinned) ? [pinned] : []
-      end
+      restricted = restricted_pool
+      return restricted unless restricted.nil?
 
       combined = @policy.runnable_backends.includes(:backend_speed, :backend_inventory).to_a
       combined.reject! { |b| b.agent? && b.paused? }
       combined.reject! { @generation.excluded_backend_ids.include?(it.id) }
       with_affinity(combined)
+    end
+
+    def restricted_pool
+      return only_pool if @only
+      return pinned_pool if @generation.pinned_backend_id
+
+      nil
+    end
+
+    def only_pool = backend_runnable?(@only) ? [@only] : []
+
+    def pinned_pool
+      pinned = Backend.find_by(id: @generation.pinned_backend_id)
+      pinned && backend_runnable?(pinned) ? [pinned] : []
     end
 
     def with_affinity(backends)
@@ -158,7 +165,7 @@ module Agent
         clock += legacy_remaining_s(gen)
       end
       backend.generations.where(status: :queued, agent_state: nil, backend_id: backend.id)
-               .order(:created_at).find_each do |gen|
+             .order(:created_at).find_each do |gen|
         clock += (gen.predicted_total_ms || 60_000) / 1000.0
       end
       clock
