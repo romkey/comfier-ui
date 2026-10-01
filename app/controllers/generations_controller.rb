@@ -15,7 +15,7 @@ class GenerationsController < ApplicationController # rubocop:disable Metrics/Cl
     @kind = params[:kind].presence_in(GenerationKind.keys)
     @status = params[:status].presence_in(Generation.statuses.keys)
 
-    filtered = scope.recent.with_attached_outputs.includes(:workflow)
+    filtered = scope.recent.with_attached_outputs.with_attached_output_poster.includes(:workflow)
     filtered = filtered.where(kind: @kind) if @kind
     filtered = filtered.where(status: @status) if @status
     @pagy, @generations = pagy(:offset, filtered, limit: PER_PAGE)

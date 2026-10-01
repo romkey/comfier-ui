@@ -7,6 +7,7 @@ class Generation < ApplicationRecord # rubocop:disable Metrics/ClassLength
   include GenerationNotifying
   include GenerationActivityLogging
   include GenerationAgent
+  include GenerationVideoPoster
 
   ASPECT_RATIO_LABELS = {
     '1:1' => 'Square', '4:3' => 'Landscape', '3:4' => 'Portrait', '16:9' => 'Wide', '9:16' => 'Tall'

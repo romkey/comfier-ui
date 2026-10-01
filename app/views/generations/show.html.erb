@@ -98,7 +98,7 @@
     <div class="d-flex flex-column gap-3">
       <% @generation.outputs.each do |output| %>
         <figure class="output-full mb-0">
-          <%= output_preview(output, controls: true) %>
+          <%= output_preview(output, controls: true, poster_url: video_poster_url(@generation)) %>
           <figcaption class="d-flex justify-content-between align-items-center text-12 text-secondary mt-1">
             <span class="text-truncate"><%= output.filename %></span>
             <%= link_to rails_blob_path(output, disposition: 'attachment'), class: 'btn btn-outline-secondary btn-sm' do %>

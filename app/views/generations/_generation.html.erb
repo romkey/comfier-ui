@@ -1,25 +1,9 @@
 <%= tag.article id: dom_id(generation), class: ['result-card', "result-#{generation_result_status(generation)}"] do %>
-  <% output = generation.outputs.first if generation.succeeded? %>
+  <% output = primary_result_output(generation) %>
   <div class="result-media">
-    <% if output %>
-      <%= output_preview(output) %>
-      <% if generation.outputs.size > 1 %>
-        <span class="result-count text-11">+<%= generation.outputs.size - 1 %></span>
-      <% end %>
-    <% elsif generation.in_progress? %>
-      <div class="result-placeholder">
-        <div class="spinner-border spinner-border-sm text-secondary" role="status">
-          <span class="visually-hidden">Generating</span>
-        </div>
-      </div>
-    <% elsif generation.cancelled? %>
-      <div class="result-placeholder text-secondary">
-        <i class="bi bi-slash-circle fs-4" aria-hidden="true"></i>
-      </div>
-    <% else %>
-      <div class="result-placeholder text-secondary">
-        <i class="bi bi-exclamation-octagon fs-4" aria-hidden="true"></i>
-      </div>
+    <%= result_media_preview(generation) %>
+    <% if output && generation.outputs.size > 1 %>
+      <span class="result-count text-11">+<%= generation.outputs.size - 1 %></span>
     <% end %>
     <%= generation_shared_indicator(generation) %>
   </div>

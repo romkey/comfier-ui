@@ -50,25 +50,60 @@ module GenerationsHelper
     end
   end
 
+  def video_poster_url(generation)
+    return unless generation.output_poster.attached?
+
+    rails_blob_path(generation.output_poster, disposition: 'inline')
+  end
+
+  def result_media_preview(generation)
+    output = primary_result_output(generation)
+    if generation.succeeded? && output&.content_type.to_s.start_with?('video/') && generation.output_poster.attached?
+      tag.div(class: 'result-video-poster') do
+        safe_join([
+          image_tag(video_poster_url(generation), alt: '', class: 'output-media', loading: 'lazy'),
+          tag.span(class: 'result-play', aria: { hidden: true }) { tag.i(class: 'bi bi-play-fill') }
+        ])
+      end
+    elsif output
+      output_preview(output, poster_url: video_poster_url(generation))
+    elsif generation.in_progress?
+      tag.div(class: 'result-placeholder') do
+        tag.div(class: 'spinner-border spinner-border-sm text-secondary', role: 'status') do
+          tag.span('Generating', class: 'visually-hidden')
+        end
+      end
+    elsif generation.cancelled?
+      tag.div(class: 'result-placeholder text-secondary') do
+        tag.i(class: 'bi bi-slash-circle fs-4', aria: { hidden: true })
+      end
+    else
+      tag.div(class: 'result-placeholder text-secondary') do
+        tag.i(class: 'bi bi-exclamation-octagon fs-4', aria: { hidden: true })
+      end
+    end
+  end
+
   def public_output_preview(generation, attachment, index, controls: false)
     url = public_share_output_path(generation.public_token, index)
+    poster = video_poster_url(generation) if attachment.content_type.to_s.start_with?('video/')
     case attachment.content_type
     when %r{\Aimage/} then image_tag(url, alt: '', class: 'output-media', loading: 'lazy')
     when %r{\Avideo/}
-      video_tag(url, class: 'output-media', controls:, muted: !controls, loop: true, playsinline: true,
+      video_tag(url, class: 'output-media', controls:, poster:, muted: !controls, loop: true, playsinline: true,
                      preload: 'metadata')
     when %r{\Aaudio/} then audio_tag(url, controls: true, class: 'w-100', preload: 'metadata')
     else file_output(attachment)
     end
   end
 
-  def output_preview(attachment, controls: false)
+  def output_preview(attachment, controls: false, poster_url: nil)
     url = rails_blob_path(attachment, disposition: 'inline')
     case attachment.content_type
     when %r{\Aimage/} then image_tag(url, alt: attachment.filename.to_s, class: 'output-media', loading: 'lazy')
     when %r{\Avideo/}
-      video_tag(url, class: 'output-media', controls:, muted: !controls, loop: true, playsinline: true,
-                     preload: 'metadata')
+      video_tag(url, class: 'output-media', controls:, poster: poster_url, muted: !controls, loop: true,
+                     playsinline: true, preload: 'metadata')
     when %r{\Aaudio/} then audio_tag(url, controls: true, class: 'w-100', preload: 'metadata')
     else file_output(attachment)
     end
@@ -79,6 +114,14 @@ module GenerationsHelper
       safe_join([tag.i(class: 'bi bi-box fs-2 text-secondary', aria: { hidden: true }),
                  tag.span(attachment.filename.to_s, class: 'text-12 text-secondary text-truncate mw-100')])
     end
+  end
+
+  def primary_result_output(generation)
+    return unless generation.succeeded?
+
+    generation.outputs.find { |output| output.content_type.to_s.start_with?('video/') } ||
+      generation.outputs.find { |output| output.content_type.to_s.start_with?('image/') } ||
+      generation.outputs.first
   end
 
   def generation_parameters(generation)

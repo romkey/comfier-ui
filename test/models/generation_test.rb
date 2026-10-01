@@ -246,6 +246,16 @@ class GenerationTest < ActiveSupport::TestCase
     assert_not generation.publicly_linked?
   end
 
+  test 'queues a poster extraction when a video succeeds' do
+    generation = build(workflows(:wan_video)).tap(&:save!)
+
+    assert_enqueued_with(job: ExtractVideoPosterJob) { generation.succeed! }
+  end
+
+  test 'does not queue poster extraction for image generations' do
+    assert_no_enqueued_jobs(only: ExtractVideoPosterJob) { generations(:alice_running).succeed! }
+  end
+
   test 'finishing notifies the owner when they turned notifications on' do
     @user.update!(notify_email: true)
     generation = generations(:alice_running)

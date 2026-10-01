@@ -4,7 +4,8 @@ class SharedController < ApplicationController
 
   def index
     @kind_counts = Generation.shared_gallery.group(:kind).count
-    scope = Generation.shared_gallery.recent.with_attached_outputs.includes(:user, :workflow)
+    scope = Generation.shared_gallery.recent.with_attached_outputs.with_attached_output_poster
+                      .includes(:user, :workflow)
     @kind = params[:kind].presence_in(GenerationKind.keys)
     scope = scope.where(kind: @kind) if @kind
     scope = scope.where(user: current_user) if params[:mine] == '1'

@@ -1,11 +1,6 @@
 <%= tag.article class: 'result-card' do %>
-  <% output = generation.outputs.first %>
   <div class="result-media">
-    <% if output %>
-      <%= output_preview(output) %>
-    <% else %>
-      <div class="result-placeholder text-secondary"><i class="bi bi-image fs-4" aria-hidden="true"></i></div>
-    <% end %>
+    <%= result_media_preview(generation) %>
   </div>
   <div class="result-meta">
     <%= link_to generation.title, shared_path(generation), class: 'stretched-link text-13 text-body text-truncate d-block' %>
