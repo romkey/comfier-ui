@@ -137,6 +137,16 @@ class ServersTest < ActionDispatch::IntegrationTest
     assert_predicate backend.backend_keys.active, :none?
   end
 
+  test 'server page title keeps apostrophes in the document title' do
+    backend = create_agent_backend!(owner: @alice, name: "romkey's Mac Mini")
+    sign_in_as @alice
+
+    get server_path(backend)
+
+    assert_response :success
+    assert_match %r{<title>romkey's Mac Mini · Comfier</title>}, response.body
+  end
+
   test 'the server page and chart data load for owners' do
     backend = create_agent_backend!(owner: @alice)
     bring_online_for!(backend, workflows(:sd_image))

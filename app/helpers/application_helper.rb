@@ -3,6 +3,13 @@ module ApplicationHelper
 
   def bootstrap_class_for(flash_type) = "alert-#{FLASH_CLASSES.fetch(flash_type.to_s, 'secondary')}"
 
+  # Text for <title>: escape markup-sensitive characters only. ERB's default escape turns
+  # apostrophes into &#39;, which Safari shows literally in the tab title.
+  def document_title(*parts)
+    text = parts.compact.map { |part| CGI.unescapeHTML(part.to_s) }.join(' · ')
+    text.gsub('&', '&amp;').gsub('<', '&lt;').gsub('>', '&gt;').html_safe
+  end
+
   # Relative date with the full timestamp on hover.
   def friendly_time(time)
     return if time.nil?

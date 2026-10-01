@@ -21,4 +21,10 @@ class ApplicationHelperTest < ActionView::TestCase
   test 'friendly_time is empty for nil' do
     assert_nil friendly_time(nil)
   end
+
+  test 'document_title keeps apostrophes and escapes markup' do
+    assert_equal "romkey's Mac Mini · Comfier", document_title("romkey's Mac Mini", 'Comfier')
+    assert_equal "romkey's Mac Mini · Comfier", document_title('romkey&#39;s Mac Mini', 'Comfier')
+    assert_equal 'A &amp; B &lt;script&gt;', document_title('A & B <script>')
+  end
 end
