@@ -1,0 +1,4 @@
+gpu_sd15:
+  backend: gpu
+  folder: checkpoints
+  filename: v1-5-pruned-emaonly-fp16.safetensors

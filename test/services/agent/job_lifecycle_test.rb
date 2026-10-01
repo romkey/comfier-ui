@@ -9,6 +9,7 @@ module Agent
     setup do
       @alice = users(:alice)
       @workflow = workflows(:sd_image)
+      backends(:gpu).update!(enabled: false)
       @backend = create_agent_backend!(owner: @alice)
       @socket = bring_online_for!(@backend, @workflow)
     end

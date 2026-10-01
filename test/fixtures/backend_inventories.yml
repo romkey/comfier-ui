@@ -1,0 +1,13 @@
+gpu:
+  backend: gpu
+  inventory_hash: fixture-gpu-inventory
+  models_json:
+    checkpoints:
+      - v1-5-pruned-emaonly-fp16.safetensors
+  node_types_json:
+    - CheckpointLoaderSimple
+    - CLIPTextEncode
+    - EmptyLatentImage
+    - KSampler
+    - LoadImage
+    - SaveImage

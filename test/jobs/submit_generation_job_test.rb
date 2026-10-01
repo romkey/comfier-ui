@@ -45,7 +45,7 @@ class SubmitGenerationJobTest < ActiveJob::TestCase
     SubmitGenerationJob.perform_now(generation)
 
     assert_requested(:post, comfy_url(@backend, 'prompt')) do |req|
-      JSON.parse(req.body).dig('prompt', '1', 'inputs', 'image') == "comfier-#{generation.id}-chest.png"
+      JSON.parse(req.body).dig('prompt', '1', 'inputs', 'image') == 'comfier-input://in_0'
     end
     generation.reload
 
@@ -68,7 +68,7 @@ class SubmitGenerationJobTest < ActiveJob::TestCase
     SubmitGenerationJob.perform_now(@generation)
 
     assert_predicate @generation.reload, :failed?
-    assert_match(/No ComfyUI backend/, @generation.error_message)
+    assert_match(/No server/, @generation.error_message)
   end
 
   test 'fails when the backend is unreachable' do

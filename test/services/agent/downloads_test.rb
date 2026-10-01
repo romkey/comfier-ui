@@ -7,6 +7,7 @@ module Agent
     setup do
       @alice = users(:alice)
       @workflow = workflows(:sd_image)
+      backends(:gpu).update!(enabled: false)
       set_model_links(@workflow, url: 'https://huggingface.co/x/sd15.safetensors', bytes: 2.gigabytes)
       @backend = create_agent_backend!(owner: @alice)
       @socket = bring_online!(@backend, node_types: inventory_for(@workflow)[:node_types])
