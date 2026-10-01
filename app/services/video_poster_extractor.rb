@@ -17,7 +17,7 @@ class VideoPosterExtractor
     return false unless video
 
     frame = extract_frame(video)
-    return false if frame.blank?
+    return false if frame.nil? || frame.empty?
 
     @generation.output_poster.attach(
       io: StringIO.new(frame),
@@ -38,11 +38,12 @@ class VideoPosterExtractor
         self.class.ffmpeg_path, '-hide_banner', '-loglevel', 'error', '-y',
         '-i', file.path, '-frames:v', '1', '-q:v', '2', '-f', 'image2pipe', '-'
       )
-      return stdout.b if status.success? && stdout.present?
+      stdout = stdout.b
+      return stdout if status.success? && !stdout.empty?
 
-      Rails.logger.warn(
-        "VideoPosterExtractor: ffmpeg failed for generation #{@generation.id}: #{stderr.to_s.lines.last&.strip}"
-      )
+      detail = stderr.to_s.dup.force_encoding(Encoding::UTF_8)
+      detail = detail.scrub.lines.last&.strip
+      Rails.logger.warn("VideoPosterExtractor: ffmpeg failed for generation #{@generation.id}: #{detail}")
       nil
     end
   end
