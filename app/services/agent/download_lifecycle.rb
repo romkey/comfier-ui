@@ -119,6 +119,8 @@ module Agent
     def broadcast(download)
       return unless Store.once_per?("download_broadcast:#{download.id}", ttl: 1)
 
+      Turbo::StreamsChannel.broadcast_refresh_later_to(:model_downloads)
+      Turbo::StreamsChannel.broadcast_refresh_later_to([download.backend, :downloads])
       Presence.publish!(download.backend)
     end
   end

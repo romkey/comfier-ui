@@ -2,6 +2,14 @@ module Servers
   # Manual model downloads onto a server, and cancelling them.
   class DownloadsController < ApplicationController
     before_action :set_backend
+    before_action :require_view, only: :index
+    before_action :require_manage, only: %i[create destroy]
+
+    def index
+      @downloads = @backend.model_downloads.agent.recent.limit(20)
+      @can_manage = BackendPolicy.new(current_user).can_manage?(@backend)
+      render layout: false
+    end
 
     def create
       requirements = selected_requirements
@@ -20,6 +28,14 @@ module Servers
 
     def set_backend
       @backend = Backend.agent.kept.find(params[:server_id])
+    end
+
+    def require_view
+      policy = BackendPolicy.new(current_user)
+      head :not_found unless policy.can_manage?(@backend) || policy.can_use?(@backend)
+    end
+
+    def require_manage
       head :not_found unless BackendPolicy.new(current_user).can_manage?(@backend)
     end
 

@@ -28,7 +28,12 @@ class ModelDownload < ApplicationRecord
   scope :active, -> { where(status: %i[queued running]) }
   scope :recent, -> { order(created_at: :desc) }
 
-  after_commit -> { broadcast_refresh_later_to :model_downloads }
+  after_commit :broadcast_download_refreshes
+
+  def broadcast_download_refreshes
+    broadcast_refresh_later_to(:model_downloads)
+    broadcast_refresh_later_to([backend, :downloads])
+  end
 
   def self.timeout = ENV.fetch('MODEL_DOWNLOAD_TIMEOUT_HOURS', 12).to_i.hours
 

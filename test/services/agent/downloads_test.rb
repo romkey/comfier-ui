@@ -4,6 +4,8 @@ require 'test_helper'
 
 module Agent
   class DownloadsTest < ActiveSupport::TestCase
+    include ActiveJob::TestHelper
+
     setup do
       @alice = users(:alice)
       @workflow = workflows(:sd_image)
@@ -34,7 +36,9 @@ module Agent
       assert_equal 'waiting_models', gen.agent_state
       assert_equal 'sent', download.agent_state
 
-      download_event('model.download.progress', state: 'downloading', bytes_done: 1.gigabyte, speed_bps: 50_000_000)
+      assert_enqueued_jobs(2, only: Turbo::Streams::BroadcastStreamJob) do
+        download_event('model.download.progress', state: 'downloading', bytes_done: 1.gigabyte, speed_bps: 50_000_000)
+      end
 
       assert_equal 1.gigabyte, download.bytes_done
 

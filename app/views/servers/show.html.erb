@@ -1,5 +1,6 @@
 <% content_for :title, @backend.name %>
 <%= turbo_stream_from @backend, :presence %>
+<%= turbo_stream_from @backend, :downloads %>
 
 <div class="small text-secondary mb-2"><%= link_to 'Servers', servers_path, class: 'link-secondary' %></div>
 
@@ -59,7 +60,10 @@
       <p class="text-13 text-secondary">No one is waiting.</p>
     <% end %>
 
-    <%= render 'servers/downloads', backend: @backend, downloads: @downloads, can_manage: @can_manage %>
+    <%= turbo_frame_tag "server_downloads_#{@backend.id}", src: server_downloads_path(@backend),
+                        data: { controller: 'frame-refresh' } do %>
+      <%= render 'servers/downloads', backend: @backend, downloads: @downloads, can_manage: @can_manage %>
+    <% end %>
 
     <div class="h-section-label mt-4">Styles</div>
     <table class="table table-compact align-middle">
