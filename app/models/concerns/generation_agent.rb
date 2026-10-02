@@ -89,9 +89,14 @@ module GenerationAgent
 
   def pinned_backend_usable
     backend = Backend.find_by(id: pinned_backend_id)
-    return if backend && BackendPolicy.new(user).can_use?(backend)
+    return unless backend
 
-    errors.add(:pinned_backend_id, "isn't a server you can use")
+    if workflow
+      reason = StudioServerPin.new(workflow, user).block_reason(backend)
+      errors.add(:pinned_backend_id, reason) if reason
+    elsif !BackendPolicy.new(user).can_use?(backend)
+      errors.add(:pinned_backend_id, "isn't a server you can use")
+    end
   end
 
   def queued_line

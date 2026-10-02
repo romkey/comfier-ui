@@ -1,0 +1,4 @@
+<%= turbo_frame_tag "server_styles_#{@backend.id}" do %>
+  <%= render 'servers/styles', backend: @backend, workflows: @workflows, availability: @availability,
+                                can_manage: @can_manage %>
+<% end %>

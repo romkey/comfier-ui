@@ -49,6 +49,13 @@ module Agent
       assert_equal 'completed', download.agent_state
     end
 
+    test 'completing a download enqueues availability recompute' do
+      submit
+      assert_enqueued_with(job: RecomputeAvailabilityJob, args: [{ backend_id: @backend.id }]) do
+        download_event('model.download.completed', sha256: 'c' * 64, bytes: 2.gigabytes)
+      end
+    end
+
     test 'two jobs needing the same file share one download' do
       first = submit
       second = submit

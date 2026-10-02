@@ -122,4 +122,20 @@ class StudiosTest < ActionDispatch::IntegrationTest
 
     assert_select '.status-panel.status-attention', text: /No ComfyUI backend is available/
   end
+
+  test 'grays out servers that do not have the workflow models installed' do
+    ready = create_agent_backend!(owner: users(:alice), name: 'Studio ready', visibility: 'public')
+    bring_online_for!(ready, workflows(:sd_image))
+    Agent::Availability.recompute_for_backend!(ready)
+
+    missing = create_agent_backend!(owner: users(:alice), name: 'Studio empty', visibility: 'public')
+    bring_online!(missing, node_types: inventory_for(workflows(:sd_image))[:node_types])
+    Agent::Availability.recompute_for_backend!(missing)
+
+    get '/image'
+
+    assert_select 'select[name="generation[pinned_backend_id]"] option[disabled]',
+                  text: /Studio empty.*models not installed yet/
+    assert_select 'select[name="generation[pinned_backend_id]"] option:not([disabled])', text: /Studio ready/
+  end
 end

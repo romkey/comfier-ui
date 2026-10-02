@@ -1,0 +1,22 @@
+<div class="h-section-label mt-4">Styles</div>
+<table class="table table-compact align-middle">
+  <tbody>
+    <% workflows.each do |workflow| %>
+      <% record = availability[workflow.id] %>
+      <tr>
+        <td><%= workflow.name %> <span class="text-12 text-secondary"><%= workflow.kind_info.label %></span></td>
+        <td><%= availability_cell(record) %></td>
+        <td class="text-12 text-secondary">
+          <%= Array(record&.details&.dig('reasons')).first %>
+          <% Array(record&.details&.dig('hints')).each do |hint| %><div class="text-warning"><%= hint %></div><% end %>
+        </td>
+        <td class="text-end">
+          <% if can_manage && record&.needs_downloads? %>
+            <%= button_to 'Download', server_downloads_path(backend, workflow_id: workflow.id),
+                          class: 'btn btn-outline-secondary btn-sm' %>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
