@@ -7,7 +7,7 @@ module ApplicationHelper
   # apostrophes into &#39;, which Safari shows literally in the tab title.
   def document_title(*parts)
     text = parts.compact.map { |part| CGI.unescapeHTML(part.to_s) }.join(' · ')
-    text.gsub('&', '&amp;').gsub('<', '&lt;').gsub('>', '&gt;').html_safe
+    text.gsub('&', '&amp;').gsub('<', '&lt;').gsub('>', '&gt;').html_safe # rubocop:disable Rails/OutputSafety -- Safari tab titles
   end
 
   # Relative date with the full timestamp on hover.

@@ -73,6 +73,7 @@ Keep the branch list clean. GitHub can be configured to do this automatically.
 
 Before opening a PR, confirm:
 - [ ] The branch is up to date with `staging` (or `main` for hotfixes)
+- [ ] **RuboCop and the full test suite passed locally** (see `pre-push-verification.mdc`)
 - [ ] The change does what the PR title says
 - [ ] No secrets are included
 - [ ] The app runs locally (or in a dev environment) without errors
@@ -93,6 +94,7 @@ sharing an ancestor and every later promotion conflicts on `db/schema.rb`.
 
 ## Notes for AI Assistants
 
+- **Always run lint and tests locally before `git push`, merge, or release** — see `pre-push-verification.mdc`; do not skip because the change “looks small”
 - Never suggest pushing directly to `main` or `staging`
 - Always recommend opening a PR with a clear description
 - Treat secrets in code as a hard blocker — flag immediately, do not proceed

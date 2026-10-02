@@ -13,22 +13,30 @@ class VideoPosterExtractor
     return false unless @generation.video? && @generation.succeeded?
     return true if @generation.output_poster.attached?
 
-    video = @generation.outputs.find { |output| output.content_type.to_s.start_with?('video/') }
+    video = primary_video_output
     return false unless video
 
     frame = extract_frame(video)
-    return false if frame.nil? || frame.empty?
+    return false if frame.blank?
 
+    save_poster_frame(frame)
+    true
+  end
+
+  private
+
+  def primary_video_output
+    @generation.outputs.find { |output| output.content_type.to_s.start_with?('video/') }
+  end
+
+  def save_poster_frame(frame)
     @generation.output_poster.attach(
       io: StringIO.new(frame),
       filename: 'poster.jpg',
       content_type: 'image/jpeg'
     )
-    @generation.touch
-    true
+    @generation.update!(updated_at: Time.current)
   end
-
-  private
 
   def extract_frame(attachment)
     return unless self.class.available?

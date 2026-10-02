@@ -1,0 +1,40 @@
+---
+description: Run RuboCop and tests before any git push, merge, or release
+alwaysApply: true
+---
+
+# Pre-push verification (required)
+
+Before **git push**, merging a PR, or running **Release**, lint and test locally. Do not push or release on failing checks — fix first, then re-run.
+
+## When this applies
+
+- Any change under `app/`, `config/`, `db/`, `lib/`, `test/`, or CI/Docker files that affect the Rails app
+- When the user asks to commit, push, open a PR, merge, or release
+- After substantive edits even if the user did not ask to push yet (run before offering to push)
+
+## Commands (run in order)
+
+From the repo root:
+
+```bash
+docker compose -f docker-compose.lint.yml run --rm rubocop
+docker compose -f docker-compose.test.yml run --rm test
+```
+
+If the lint image is missing or stale:
+
+```bash
+docker compose -f docker-compose.lint.build.yml build rubocop
+```
+
+For a focused change, you may run targeted tests (e.g. `bin/rails test test/services/agent/downloads_test.rb` inside the test compose service) **in addition to** lint — still run the full test suite before push unless the user explicitly accepts a narrower scope.
+
+## Agent workflow
+
+1. Finish code changes.
+2. Run RuboCop; fix offenses (auto-correct when safe).
+3. Run tests; fix failures.
+4. Only then: `git commit`, `git push`, PR merge, or `gh workflow run release.yml`.
+
+If checks cannot run (Docker unavailable), say so and do not push or release until the user confirms CI is acceptable.
