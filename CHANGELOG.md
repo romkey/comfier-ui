@@ -5,6 +5,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [v0.12.3] - 2026-10-02
+
+### Added
+- **Model downloads**: Comfier Agent and the Comfier downloader node honor `HF_ENDPOINT` on the ComfyUI machine,
+  rewriting Hugging Face Hub URLs through a caching proxy while forwarding `HF_TOKEN` (and optional `HF_PROXY_TOKEN`).
+
 ## [v0.9.2] - 2026-09-28
 
 ### Fixed

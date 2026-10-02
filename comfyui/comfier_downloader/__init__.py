@@ -5,13 +5,17 @@ one-node workflow through the normal /prompt API, so installing models needs no 
 no ComfyUI-Manager configuration.
 
 Install: copy this folder into ComfyUI/custom_nodes/ and restart ComfyUI.
-Gated or members-only files: set HF_TOKEN and/or CIVITAI_TOKEN in ComfyUI's environment.
+Gated or members-only files: set HF_TOKEN and/or CIVITAI_TOKEN in ComfyUI's environment. Optional caching proxy:
+set HF_ENDPOINT (and optionally HF_PROXY_TOKEN / HF_PROXY_TOKEN_HEADER) like huggingface_hub.
 """
 
+import logging
 import os
 import urllib.error
 import urllib.parse
 import urllib.request
+
+LOG = logging.getLogger("comfier_downloader")
 
 import folder_paths
 
@@ -25,6 +29,32 @@ TIMEOUT_SECONDS = 60
 USER_AGENT = "comfier-downloader/1.0"
 # Tokens are only ever sent to the site they belong to.
 TOKEN_ENV = {"huggingface.co": "HF_TOKEN", "civitai.com": "CIVITAI_TOKEN"}
+HF_HUB_HOSTS = frozenset({"huggingface.co", "www.huggingface.co", "hf.co"})
+
+
+def _is_hf_hub_url(url):
+    return _host(url) in HF_HUB_HOSTS
+
+
+def _hf_endpoint():
+    return (os.environ.get("HF_ENDPOINT") or "").strip() or None
+
+
+def _proxy_token_header_name():
+    return (os.environ.get("HF_PROXY_TOKEN_HEADER") or "X-Proxy-Token").strip()
+
+
+def _rewrite_hf_endpoint(url):
+    endpoint = _hf_endpoint()
+    if not endpoint or not _is_hf_hub_url(url):
+        return url, False
+    ep = urllib.parse.urlparse(endpoint.rstrip("/"))
+    orig = urllib.parse.urlparse(url)
+    ep_path = ep.path.rstrip("/")
+    path = f"{ep_path}{orig.path}" if ep_path else orig.path
+    rewritten = urllib.parse.urlunparse((ep.scheme, ep.netloc, path, orig.params, orig.query, orig.fragment))
+    LOG.info("HF_ENDPOINT rewrite: %s -> %s", url, rewritten)
+    return rewritten, True
 
 
 class _DropAuthOnHostChange(urllib.request.HTTPRedirectHandler):
@@ -32,10 +62,10 @@ class _DropAuthOnHostChange(urllib.request.HTTPRedirectHandler):
     so the token isn't carried across a redirect to a different host."""
 
     def redirect_request(self, req, fp, code, msg, headers, newurl):
-        new = super().redirect_request(req, fp, code, msg, headers, newurl)
-        if new is not None and _host(newurl) != _host(req.full_url):
-            new.remove_header("Authorization")
-        return new
+        if _host(newurl) != _host(req.full_url):
+            # CDN and other cross-host redirects must not carry Hub or proxy credentials.
+            return urllib.request.Request(newurl, headers={"User-Agent": USER_AGENT})
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
 def _host(url):
@@ -73,10 +103,16 @@ def resolve_target(directory, filename):
 
 def fetch(url, target):
     """Streams url to target via a .part file, so a half-finished download is never picked up."""
+    original_url = url
+    token = token_for(_host(original_url))
+    via_proxy = False
+    url, via_proxy = _rewrite_hf_endpoint(url)
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    token = token_for(_host(url))
     if token:
         request.add_header("Authorization", f"Bearer {token}")
+    proxy_token = os.environ.get("HF_PROXY_TOKEN")
+    if via_proxy and proxy_token:
+        request.add_header(_proxy_token_header_name(), proxy_token.strip())
 
     os.makedirs(os.path.dirname(target), exist_ok=True)
     partial = target + ".part"
@@ -103,7 +139,9 @@ def fetch(url, target):
     except urllib.error.HTTPError as error:
         error.close()
         hint = " Set HF_TOKEN or CIVITAI_TOKEN for ComfyUI if the file needs a login." if error.code in (401, 403) else ""
-        raise RuntimeError(f"{url} returned HTTP {error.code}.{hint}") from error
+        where = original_url if via_proxy else url
+        suffix = " (via HF_ENDPOINT)" if via_proxy and where != url else ""
+        raise RuntimeError(f"{where} returned HTTP {error.code}.{hint}{suffix}") from error
     finally:
         if os.path.exists(partial):
             os.remove(partial)

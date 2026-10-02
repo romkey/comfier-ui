@@ -118,6 +118,9 @@ class AgentConfig:
     min_free_disk_gb: float = 10.0
     max_concurrent_downloads: int = 1
     allow_pickle_formats: bool = True
+    hf_endpoint: str | None = None
+    hf_proxy_token: str | None = None
+    hf_proxy_token_header: str = "X-Proxy-Token"
     agent_version: str = __version__
     config_path: Path | None = None
 
@@ -228,6 +231,12 @@ def load_config(*, sidecar: bool = False, overrides: dict[str, Any] | None = Non
     cfg.inventory_poll_seconds = _env_int("COMFIER_INVENTORY_POLL_SECONDS", cfg.inventory_poll_seconds)
     cfg.max_download_mb = _env_int("COMFIER_MAX_DOWNLOAD_MB", cfg.max_download_mb)
     cfg.upload_retry_s = _env_int("COMFIER_UPLOAD_RETRY_SECONDS", cfg.upload_retry_s)
+    if os.environ.get("HF_ENDPOINT"):
+        cfg.hf_endpoint = os.environ["HF_ENDPOINT"].strip()
+    if os.environ.get("HF_PROXY_TOKEN"):
+        cfg.hf_proxy_token = os.environ["HF_PROXY_TOKEN"].strip()
+    if os.environ.get("HF_PROXY_TOKEN_HEADER"):
+        cfg.hf_proxy_token_header = os.environ["HF_PROXY_TOKEN_HEADER"].strip()
 
     if sidecar and not cfg.comfyui_url:
         cfg.comfyui_url = detect_comfyui_url()

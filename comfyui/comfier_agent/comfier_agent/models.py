@@ -17,6 +17,13 @@ from urllib.parse import urlparse
 import aiohttp
 
 from comfier_agent.config import AgentConfig
+from comfier_agent.hf_endpoint import (
+    ensure_hf_authorization,
+    hf_endpoint_host_allowed,
+    host_matches_allowlist,
+    proxy_headers,
+    rewrite_url,
+)
 from comfier_agent.protocol import compact
 from comfier_agent.resources import _paths_for_disk_check
 from comfier_agent.transfer import CHUNK, MAX_REDIRECTS, REDIRECT_STATUSES, redirect_target, same_host
@@ -132,9 +139,14 @@ class ModelDownloadManager:
             os.makedirs(os.path.dirname(final_path), exist_ok=True)
             resume = os.path.getsize(part) if os.path.exists(part) else 0
             headers = dict(msg.get("headers") or {})
-            url = msg["url"]
+            original_url = msg["url"]
+            url = original_url
             if self._is_frontend_url(url):
                 headers["Authorization"] = f"Bearer {self.config.api_key}"
+            ensure_hf_authorization(headers, original_url)
+            url, via_proxy = rewrite_url(url, self.config.hf_endpoint)
+            if via_proxy:
+                headers.update(proxy_headers(self.config))
 
             sha = hashlib.sha256() if not resume else None
             bytes_total = msg.get("bytes")
@@ -312,7 +324,10 @@ class ModelDownloadManager:
                 return scheme in ("https", "http")
             return scheme == "https"
         host = (urlparse(url).hostname or "").lower()
-        return any(host == h or host.endswith("." + h) for h in self.config.model_download_hosts)
+        allowed = self.config.model_download_hosts
+        if host_matches_allowlist(host, allowed):
+            return True
+        return hf_endpoint_host_allowed(host, allowed, self.config.hf_endpoint)
 
     def _is_frontend_url(self, url: str) -> bool:
         a = urlparse(url)
