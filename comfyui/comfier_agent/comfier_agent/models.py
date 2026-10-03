@@ -22,8 +22,10 @@ from comfier_agent.hf_cli import (
     HfCliCancelled,
     HfCliError,
     HfCliUnavailable,
-    download_file as hf_cli_download,
     parse_hf_resolve_url,
+)
+from comfier_agent.hf_cli import (
+    download_file as hf_cli_download,
 )
 from comfier_agent.hf_endpoint import (
     ensure_hf_authorization,
@@ -318,11 +320,12 @@ class ModelDownloadManager:
         headers: dict[str, str],
         original_url: str,
     ) -> None:
-        st = self.active.get(download_id)
-        cancel = lambda: bool(st and st.cancel)
+        def cancel_check() -> bool:
+            state = self.active.get(download_id)
+            return bool(state and state.cancel)
 
         async def progress_loop() -> None:
-            while not cancel():
+            while not cancel_check():
                 if os.path.isfile(part):
                     done = os.path.getsize(part)
                     await self._progress(download_id, done, msg.get("bytes"), 0, time.time())
@@ -338,7 +341,7 @@ class ModelDownloadManager:
                 url=original_url,
                 dest_path=part,
                 headers=headers,
-                cancel_check=cancel,
+                cancel_check=cancel_check,
             )
         finally:
             progress_task.cancel()
