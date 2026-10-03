@@ -65,7 +65,9 @@ Rails.application.routes.draw do
     resources :keys, only: %i[create destroy], controller: 'servers/keys' do
       post :rotate, on: :collection
     end
-    resources :downloads, only: %i[index create destroy], controller: 'servers/downloads'
+    resources :downloads, only: %i[index create destroy], controller: 'servers/downloads' do
+      delete :clear, on: :collection
+    end
     resource :styles, only: :show, controller: 'servers/styles'
   end
 

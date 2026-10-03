@@ -15,9 +15,9 @@ module Agent
       def compute(workflow, backend) = new(workflow, backend).compute
 
       def store!(workflow, backend)
-        result = compute(workflow, backend)
+        result = new(workflow, backend).compute
         record = WorkflowAvailability.find_or_initialize_by(workflow_id: workflow.id, backend_id: backend.id)
-        record.update!(status: result.status.to_s, details: details(result))
+        record.update!(status: result.status.to_s, details: details(result, Requirements.for(workflow).models.size))
         result
       end
 
@@ -29,9 +29,10 @@ module Agent
         Backend.agent.kept.find_each { store!(workflow, it) }
       end
 
-      def details(result)
+      def details(result, required_model_count = nil)
         { 'reasons' => result.reasons, 'hints' => result.hints, 'total_bytes' => result.total_bytes,
-          'models' => result.models.map { it.slice('folder', 'filename', 'bytes') } }
+          'models' => result.models.map { it.slice('folder', 'filename', 'bytes') },
+          'required_model_count' => required_model_count }
       end
     end
 

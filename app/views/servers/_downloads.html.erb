@@ -1,4 +1,11 @@
-<div class="h-section-label mt-4">Downloads</div>
+<div class="d-flex align-items-end justify-content-between mt-4 mb-2">
+  <div class="h-section-label mb-0">Downloads</div>
+  <% if can_manage && backend.model_downloads.agent.finished.exists? %>
+    <%= button_to 'Clear log', clear_server_downloads_path(backend), method: :delete,
+                  class: 'btn btn-outline-secondary btn-sm',
+                  form: { data: { turbo_confirm: 'Remove finished downloads from this log?' } } %>
+  <% end %>
+</div>
 <% if downloads.any? %>
   <table class="table table-compact align-middle">
     <tbody>

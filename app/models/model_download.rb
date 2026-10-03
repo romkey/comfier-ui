@@ -26,6 +26,7 @@ class ModelDownload < ApplicationRecord
   validate :requirement_is_valid
 
   scope :active, -> { where(status: %i[queued running]) }
+  scope :finished, -> { where(agent_state: %w[completed failed cancelled]) }
   scope :recent, -> { order(created_at: :desc) }
 
   after_commit :broadcast_download_refreshes

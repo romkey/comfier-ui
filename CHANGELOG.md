@@ -5,6 +5,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [v0.12.7] - 2026-10-03
+
+### Added
+- **Servers**: Styles that need downloads show how many models are already on the server (for example, 2 of 5
+  downloaded). Owners can clear finished entries from the server download log.
+
 ## [v0.12.6] - 2026-10-03
 
 ### Fixed

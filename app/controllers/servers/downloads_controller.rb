@@ -3,7 +3,7 @@ module Servers
   class DownloadsController < ApplicationController
     before_action :set_backend
     before_action :require_view, only: :index
-    before_action :require_manage, only: %i[create destroy]
+    before_action :require_manage, only: %i[create destroy clear]
 
     def index
       @downloads = @backend.model_downloads.agent.recent.limit(20)
@@ -22,6 +22,15 @@ module Servers
       download = @backend.model_downloads.find(params[:id])
       Agent::DownloadLifecycle.cancel_by_user!(download, user: current_user)
       redirect_back_or_to server_path(@backend), notice: 'Cancelling the download.', status: :see_other
+    end
+
+    def clear
+      scope = @backend.model_downloads.agent.finished
+      count = scope.count
+      scope.delete_all
+      Turbo::StreamsChannel.broadcast_refresh_later_to([@backend, :downloads]) if count.positive?
+      notice = count.positive? ? "Cleared #{count} finished download(s)." : 'Nothing to clear.'
+      redirect_back_or_to server_path(@backend), notice:, status: :see_other
     end
 
     private

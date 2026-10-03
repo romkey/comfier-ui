@@ -164,6 +164,21 @@ class ServersTest < ActionDispatch::IntegrationTest
     assert response.parsed_body.key?('utilization')
   end
 
+  test 'owners can clear finished downloads from the log' do
+    backend = create_agent_backend!(owner: @alice)
+    backend.model_downloads.create!(directory: 'checkpoints', name: 'done.safetensors', url: 'https://hf.test/done',
+                                    via: :agent, agent_state: 'completed', status: :succeeded)
+    backend.model_downloads.create!(directory: 'checkpoints', name: 'active.safetensors', url: 'https://hf.test/active',
+                                    via: :agent, agent_state: 'downloading', status: :running)
+    sign_in_as @alice
+
+    delete clear_server_downloads_path(backend)
+
+    assert_redirected_to server_path(backend)
+    assert_equal 1, backend.model_downloads.count
+    assert_equal 'downloading', backend.model_downloads.sole.agent_state
+  end
+
   test 'download tokens are write-only' do
     sign_in_as @alice
     post source_credentials_path, params: { source_credential: { host: 'huggingface.co', secret: 'hf_secret1234' } }

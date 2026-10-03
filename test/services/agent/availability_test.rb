@@ -48,6 +48,15 @@ module Agent
       assert_equal 2.gigabytes, result.total_bytes
     end
 
+    test 'stored availability records how many models the workflow needs' do
+      set_model_links(@workflow, url: 'https://hf.test/sd15')
+      bring_online!(@backend, node_types: @node_types)
+      Availability.store!(@workflow, @backend)
+      record = WorkflowAvailability.find_by!(workflow: @workflow, backend: @backend)
+
+      assert_equal Agent::Requirements.for(@workflow).models.size, record.details['required_model_count']
+    end
+
     test 'missing models are blocked when downloads are off' do
       set_model_links(@workflow, url: 'https://hf.test/sd15')
       bring_online!(@backend, node_types: @node_types)
