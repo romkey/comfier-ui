@@ -17,6 +17,11 @@ made) and **Settings** (your preferences, plus backends and workflows for admins
 
 See [docs/USER_GUIDE.md](docs/USER_GUIDE.md) for how to use it.
 
+## AI disclosure
+
+This README was drafted with AI assistance and edited under human guidance. Treat it as a living document: if
+something looks wrong or out of date, open an issue or send a pull request.
+
 ## Requirements
 
 Everything runs in Docker; you only need Docker with Compose v2 on the host.
