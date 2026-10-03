@@ -5,6 +5,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [v0.12.6] - 2026-10-03
+
+### Fixed
+- **Comfier Agent**: Ruff lint fixes in the model download manager (CI on `main`).
+
 ## [v0.12.5] - 2026-10-03
 
 ### Added
