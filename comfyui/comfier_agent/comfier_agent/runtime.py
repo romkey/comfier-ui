@@ -161,6 +161,8 @@ class AgentRuntime:
             "active_jobs": self.jobs.active_jobs_for_hello() if self.jobs else [],
             "active_downloads": self.models.active_for_hello() if self.models else [],
             "model_downloads_enabled": self.config.allow_model_downloads,
+            "max_concurrent_downloads": self.config.max_concurrent_downloads,
+            "use_hf_cli": self.config.use_hf_cli,
         }
         await self.connection.send(msg)
 

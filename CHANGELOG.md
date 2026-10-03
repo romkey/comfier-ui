@@ -5,6 +5,13 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [v0.12.5] - 2026-10-03
+
+### Added
+- **Comfier Agent**: Hugging Face Hub downloads default to the `hf` CLI (with HTTP fallback), honoring
+  `HF_ENDPOINT` and the Hub token. The Comfier panel configures CLI use and download concurrency (0 = unlimited).
+- **Servers**: **Download all** queues every missing installable model across styles on an agent server.
+
 ## [v0.12.3] - 2026-10-02
 
 ### Added

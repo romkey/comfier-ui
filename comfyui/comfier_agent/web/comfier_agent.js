@@ -90,13 +90,27 @@ function renderForm(root, status, onSaved) {
   });
   const name = el("input", { type: "text", value: cfg.backend_name || "" });
   const share = el("input", { type: "checkbox", checked: !!cfg.accept_when_local_busy });
+  const hfCli = el("input", { type: "checkbox", checked: cfg.use_hf_cli !== false });
+  const concurrency = el("input", {
+    type: "number",
+    min: "0",
+    max: "32",
+    value: cfg.max_concurrent_downloads ?? 1,
+    style: "max-width: 5rem",
+  });
   const result = el("div", { class: "muted" });
   const save = el("button", { type: "button" }, "Save and reconnect");
   save.addEventListener("click", async () => {
     save.disabled = true;
     result.textContent = "";
     try {
-      const body = { frontend_url: url.value.trim(), backend_name: name.value.trim(), accept_when_local_busy: share.checked };
+      const body = {
+        frontend_url: url.value.trim(),
+        backend_name: name.value.trim(),
+        accept_when_local_busy: share.checked,
+        use_hf_cli: hfCli.checked,
+        max_concurrent_downloads: parseInt(concurrency.value, 10) || 0,
+      };
       if (key.value.trim()) body.api_key = key.value.trim();
       const resp = await fetch("/comfier-agent/config", {
         method: "POST",
@@ -118,6 +132,10 @@ function renderForm(root, status, onSaved) {
     el("label", {}, "API key"), key,
     el("label", {}, "Server name"), name,
     el("div", { class: "check" }, share, "Take Comfier jobs while my own ComfyUI queue is busy"),
+    el("h3", {}, "Model downloads"),
+    el("div", { class: "check" }, hfCli, "Use the Hugging Face CLI when a link is from the Hub"),
+    el("label", {}, "Downloads at once (0 = no limit)"),
+    concurrency,
     save, result,
   );
 }

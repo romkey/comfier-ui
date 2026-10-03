@@ -1,4 +1,10 @@
-<div class="h-section-label mt-4">Styles</div>
+<div class="d-flex align-items-end justify-content-between mt-4 mb-2">
+  <div class="h-section-label mb-0">Styles</div>
+  <% if can_manage && (all_missing = backend.downloadable_missing_models).any? %>
+    <%= button_to "Download all (#{all_missing.size})", server_downloads_path(backend),
+                  params: { all: true }, class: 'btn btn-outline-secondary btn-sm' %>
+  <% end %>
+</div>
 <table class="table table-compact align-middle">
   <tbody>
     <% workflows.each do |workflow| %>

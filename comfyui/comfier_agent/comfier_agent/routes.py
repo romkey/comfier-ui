@@ -15,7 +15,15 @@ def set_runtime(runtime) -> None:
     _runtime = runtime
 
 
-CONFIG_KEYS = ("frontend_url", "api_key", "backend_name", "accept_when_local_busy", "enabled")
+CONFIG_KEYS = (
+    "frontend_url",
+    "api_key",
+    "backend_name",
+    "accept_when_local_busy",
+    "enabled",
+    "max_concurrent_downloads",
+    "use_hf_cli",
+)
 # Changing these means reconnecting with the new values; the rest apply on the next status update.
 RECONNECT_KEYS = frozenset({"frontend_url", "api_key", "backend_name"})
 

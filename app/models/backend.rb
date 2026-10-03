@@ -134,6 +134,26 @@ class Backend < ApplicationRecord # rubocop:disable Metrics/ClassLength
 
   def can_download_models? = agent? ? model_downloads_enabled? : downloader_available? || manager_version.present?
 
+  # From the agent hello: 0 means no limit on concurrent downloads. Default 1 when unknown.
+  def agent_download_concurrency
+    val = system_json.dig('model_download', 'max_concurrent')
+    val.nil? ? 1 : val.to_i
+  end
+
+  def agent_use_hf_cli?
+    system_json.dig('model_download', 'use_hf_cli') != false
+  end
+
+  def downloadable_missing_models
+    workflows_for_server.flat_map { downloadable_models(it) }.uniq(&:path)
+  end
+
+  def workflows_for_server
+    scope = Workflow.enabled.ordered
+    ids = allowed_workflow_ids
+    ids.present? ? scope.where(id: ids) : scope
+  end
+
   # How this backend would fetch a file: :agent and :node need a download link, :manager needs an
   # exact catalog entry.
   def download_route(requirement)

@@ -49,7 +49,7 @@ module Agent
       gpu = primary_gpu(message)
       @backend.update!(
         agent_version: message['agent_version'], comfyui_version: message['comfyui_version'],
-        system_json: message['system'] || {}, model_downloads_enabled: message['model_downloads_enabled'] == true,
+        system_json: hello_system_json(message), model_downloads_enabled: message['model_downloads_enabled'] == true,
         gpu_name: gpu&.dig('name'), vram_total: gpu && (gpu['vram_total_bytes'] || gpu['vram_total']),
         last_seen_at: Time.current, connected_at: Time.current, offline_since: nil, offline_reason: nil
       )
@@ -59,6 +59,16 @@ module Agent
       Reconciliation.on_hello!(@backend, message)
       push_pause_state
       Presence.publish!(@backend, force: true)
+    end
+
+    def hello_system_json(message)
+      download_settings = {
+        'max_concurrent' => message['max_concurrent_downloads'],
+        'use_hf_cli' => message['use_hf_cli']
+      }.compact
+      system = (message['system'] || {}).deep_dup
+      system['model_download'] = download_settings if download_settings.any?
+      system
     end
 
     def primary_gpu(message)

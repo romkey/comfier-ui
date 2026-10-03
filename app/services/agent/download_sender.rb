@@ -11,10 +11,20 @@ module Agent
 
     def flush_queue!(backend)
       return false unless Presence.online?(backend)
-      return false if ModelDownload.exists?(backend_id: backend.id, agent_state: IN_FLIGHT)
 
-      download = next_download(backend)
-      download ? send!(download) : false
+      sent = false
+      loop do
+        in_flight = ModelDownload.where(backend_id: backend.id, agent_state: IN_FLIGHT).count
+        limit = backend.agent_download_concurrency
+        break if limit.positive? && in_flight >= limit
+
+        download = next_download(backend)
+        break unless download
+
+        send!(download)
+        sent = true
+      end
+      sent
     end
 
     def next_download(backend)

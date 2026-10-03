@@ -41,14 +41,19 @@ module Servers
 
     # Either a workflow's missing models, or one file given by folder, name, and link.
     def selected_requirements
-      if params[:workflow_id].present?
-        workflow = Workflow.find(params[:workflow_id])
-        Agent::Availability.compute(workflow, @backend).models.map do |model|
-          ModelRequirement.new(directory: model['folder'], name: model['filename'], url: model['url'])
-        end
-      else
-        requirement = ModelRequirement.new(directory: params[:folder], name: params[:filename], url: params[:url])
-        requirement.problems.empty? && requirement.url ? [requirement] : []
+      return @backend.downloadable_missing_models if download_all?
+      return workflow_requirements if params[:workflow_id].present?
+
+      requirement = ModelRequirement.new(directory: params[:folder], name: params[:filename], url: params[:url])
+      requirement.problems.empty? && requirement.url ? [requirement] : []
+    end
+
+    def download_all? = ActiveModel::Type::Boolean.new.cast(params[:all])
+
+    def workflow_requirements
+      workflow = Workflow.find(params[:workflow_id])
+      Agent::Availability.compute(workflow, @backend).models.map do |model|
+        ModelRequirement.new(directory: model['folder'], name: model['filename'], url: model['url'])
       end
     end
   end
