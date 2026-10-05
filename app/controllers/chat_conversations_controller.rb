@@ -36,6 +36,16 @@ class ChatConversationsController < ApplicationController
     end
   end
 
+  def notice_redirect
+    url = AppSetting.current.chat_notice_url.to_s
+    unless url.match?(AppSetting::CHAT_NOTICE_URL_FORMAT)
+      redirect_to chats_path, alert: 'Notice link is not available.', status: :see_other
+      return
+    end
+
+    redirect_to url, allow_other_host: true
+  end
+
   def destroy
     unless LiteLlm::Client.configured?
       redirect_to chats_path, alert: 'Chat is not available.', status: :see_other

@@ -39,7 +39,16 @@ class ChatTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select '.status-panel', text: /Use the main bot/
-    assert_select 'a[href=?]', 'https://chat.example.com'
+    assert_select 'a[href=?]', chat_notice_link_path
+  end
+
+  test 'chat notice link redirects to configured URL when valid' do
+    app_settings(:default).update!(chat_notice_url: 'https://chat.example.com')
+    sign_in_as users(:alice)
+
+    get chat_notice_link_path
+
+    assert_redirected_to 'https://chat.example.com'
   end
 
   test 'creating a message enqueues a reply job' do
