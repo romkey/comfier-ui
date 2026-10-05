@@ -28,7 +28,10 @@ module Servers
       scope = @backend.model_downloads.agent.finished
       count = scope.count
       scope.delete_all
-      Turbo::StreamsChannel.broadcast_refresh_later_to([@backend, :downloads]) if count.positive?
+      if count.positive?
+        Turbo::StreamsChannel.broadcast_refresh_later_to([@backend, :downloads],
+                                                         target: "server_downloads_#{@backend.id}")
+      end
       notice = count.positive? ? "Cleared #{count} finished download(s)." : 'Nothing to clear.'
       redirect_back_or_to server_path(@backend), notice:, status: :see_other
     end

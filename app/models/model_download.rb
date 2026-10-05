@@ -33,7 +33,7 @@ class ModelDownload < ApplicationRecord
 
   def broadcast_download_refreshes
     broadcast_refresh_later_to(:model_downloads)
-    broadcast_refresh_later_to([backend, :downloads])
+    broadcast_refresh_later_to([backend, :downloads], target: "server_downloads_#{backend.id}")
   end
 
   def self.timeout = ENV.fetch('MODEL_DOWNLOAD_TIMEOUT_HOURS', 12).to_i.hours

@@ -17,6 +17,7 @@ class RecomputeAvailabilityJob < ApplicationJob
   end
 
   def broadcast_styles!(backend)
-    Turbo::StreamsChannel.broadcast_refresh_later_to([backend, :styles])
+    Turbo::StreamsChannel.broadcast_refresh_later_to([backend, :styles],
+                                                     target: "server_styles_#{backend.id}")
   end
 end
