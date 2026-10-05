@@ -83,10 +83,10 @@ module Agent
     end
 
     def missing_node_reasons
-      have = Array(@backend.backend_inventory.node_types_json)
+      have = @backend.installed_node_types.to_set
       return [] if @backend.legacy? && have.empty?
 
-      (@requirements.node_types - have).map { "Node type #{it} isn't installed" }
+      Requirements.node_types_for(@workflow).reject { have.include?(it) }.map { "Node type #{it} isn't installed" }
     end
 
     def model_reasons(missing)

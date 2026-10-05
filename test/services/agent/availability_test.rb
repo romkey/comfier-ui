@@ -22,6 +22,17 @@ module Agent
       assert_predicate compute, :ready?
     end
 
+    test 'object_info counts as installed even when inventory node_types are stale' do
+      bring_online_for!(@backend, @workflow)
+      stale = Array(@backend.backend_inventory.node_types_json) - @node_types.first(1)
+      @backend.backend_inventory.update!(node_types_json: stale)
+
+      info = @node_types.index_with { { 'input' => { 'required' => {} } } }
+      store_object_info(info)
+
+      assert_predicate compute, :ready?
+    end
+
     test 'folder aliases count as the same folder' do
       matcher = ModelMatcher.new([%w[diffusion_models flux.safetensors], %w[text_encoders t5.safetensors]])
 

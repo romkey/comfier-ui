@@ -9,8 +9,10 @@ All notable changes to this project are documented here. The format follows
 - **Servers**: Styles **Re-scan** preserves the “Re-scanning…” state until fresh inventory arrives, live frame
   reloads no longer show “Content missing”, and style availability recomputes on every agent inventory message even
   when the model list hash is unchanged.
-- **Servers**: Targeted Turbo Frame refresh uses the styles URL (via `Turbo.visit`) so lazy-loaded frames still
-  update after they lose their `src` attribute.
+- **Servers**: Targeted Turbo Frame refresh restores `src` and forces a frame reload so styles and downloads stay
+  current after lazy load strips the frame URL.
+- **Servers**: Style availability treats cached ComfyUI `object_info` as authoritative for installed custom nodes,
+  syncs node types when it arrives, and reads required nodes from the live workflow graph.
 
 ## [v0.12.8] - 2026-10-05
 

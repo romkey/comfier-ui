@@ -1,5 +1,4 @@
 import { Controller } from "@hotwired/stimulus"
-import { Turbo } from "@hotwired/turbo-rails"
 
 // Reloads one Turbo Frame when a targeted refresh stream arrives, without morphing the whole page.
 export default class extends Controller {
@@ -21,12 +20,21 @@ export default class extends Controller {
     if (target && target !== this.element.id) return
 
     event.preventDefault()
+    this.refreshFrame()
+  }
 
-    const url = this.element.getAttribute("src") || (this.hasSrcValue ? this.srcValue : null)
-    if (url) {
-      Turbo.visit(url, { frame: this.element.id })
-    } else {
+  refreshFrame() {
+    const baseUrl = this.element.getAttribute("src") || (this.hasSrcValue ? this.srcValue : null)
+    if (!baseUrl) {
       this.element.reload()
+      return
     }
+
+    const url = new URL(baseUrl, window.location.href)
+    url.searchParams.set("refresh", Date.now().toString())
+
+    this.element.removeAttribute("complete")
+    this.element.setAttribute("src", url.toString())
+    this.element.reload()
   }
 }
