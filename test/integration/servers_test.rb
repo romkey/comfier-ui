@@ -119,7 +119,7 @@ class ServersTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_match 'Re-scanning', response.body
     assert_select "turbo-frame#server_styles_#{backend.id}" do |frames|
-      assert frames.one?
+      assert_predicate frames, :one?
       assert_nil frames.first['src']
     end
     assert socket.last_of_type('inventory.refresh')
