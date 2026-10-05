@@ -74,6 +74,14 @@ class Backend < ApplicationRecord # rubocop:disable Metrics/ClassLength
     end
   end
 
+  # Custom node class names reported by the agent (inventory message and/or cached object_info).
+  def installed_node_types
+    names = Array(backend_inventory&.node_types_json).map(&:to_s)
+    info = backend_object_infos.first&.data
+    names.concat(info.keys.map(&:to_s)) if info.present?
+    names.uniq
+  end
+
   def speed_index = backend_speed&.speed_index || 1.0
 
   def online? = agent? ? Agent::Presence.online?(self) : last_check_ok != false

@@ -11,8 +11,14 @@ module Agent
       def for(workflow)
         extract!(workflow) if workflow.structure_hash.blank?
         rows = workflow.workflow_models.to_a
-        Req.new(node_types: Array(workflow.requirements_json&.dig('node_types')),
-                models: rows.map(&:to_requirement_h))
+        Req.new(node_types: node_types_for(workflow), models: rows.map(&:to_requirement_h))
+      end
+
+      # Prefer the live API graph over cached requirements_json (stale after graph edits).
+      def node_types_for(workflow)
+        graph = workflow.graph || {}
+        from_graph = graph.values.filter_map { |node| node['class_type'].to_s.strip if node.is_a?(Hash) }.uniq.sort
+        from_graph.presence || Array(workflow.requirements_json&.dig('node_types'))
       end
 
       def extract!(workflow) = new(workflow).extract!
