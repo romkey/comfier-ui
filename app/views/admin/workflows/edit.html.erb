@@ -27,7 +27,8 @@
 <%= render 'form', workflow: @workflow, placeholder_suggestion: @placeholder_suggestion %>
 
 <%= turbo_frame_tag 'workflow_models', src: models_admin_workflow_path(@workflow),
-                                       data: { controller: 'frame-refresh' } do %>
+                                       data: { controller: 'frame-refresh',
+                                               frame_refresh_src_value: models_admin_workflow_path(@workflow) } do %>
   <div class="text-12 text-secondary mt-5">Checking models…</div>
 <% end %>
 

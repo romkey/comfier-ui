@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Reloads managed Turbo Frames on refresh streams instead of full-page Turbo refresh.
+// Reloads managed Turbo Frames on targeted refresh streams instead of Turbo's default frame reload.
 export default class extends Controller {
   static values = { src: String }
 
@@ -18,19 +18,13 @@ export default class extends Controller {
     if (stream.getAttribute("action") !== "refresh") return
 
     const target = stream.getAttribute("target")
+    if (!target) return
 
-    if (target) {
-      // Every frame-refresh controller must block Turbo's default targeted refresh. After Re-scan (or
-      // lazy load), the styles frame often has no `src`; Turbo's built-in reload then shows
-      // "Content missing". Only the matching frame performs our src-aware reload.
-      event.preventDefault()
-      if (target === this.element.id) this.refreshFrame()
-      return
-    }
-
-    // Untargeted refresh (e.g. :model_downloads on the workflow editor): reload this frame only.
+    // Every frame-refresh controller must block Turbo's default targeted refresh. After Re-scan (or
+    // lazy load), managed frames often have no `src`; Turbo's built-in reload then shows
+    // "Content missing". Only the matching frame performs our src-aware reload.
     event.preventDefault()
-    this.refreshFrame()
+    if (target === this.element.id) this.refreshFrame()
   }
 
   refreshFrame() {
