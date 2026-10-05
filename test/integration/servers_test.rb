@@ -123,10 +123,22 @@ class ServersTest < ActionDispatch::IntegrationTest
       assert_nil frames.first['src']
     end
     assert socket.last_of_type('inventory.refresh')
+  end
+
+  test 'styles frame responses omit src but the server page frame keeps it for reload' do
+    backend = create_agent_backend!(owner: @alice)
+    sign_in_as @alice
 
     get server_styles_path(backend), headers: { 'Turbo-Frame' => "server_styles_#{backend.id}" }
 
     assert_response :success
+    assert_select "turbo-frame#server_styles_#{backend.id}" do |frames|
+      assert_predicate frames, :one?
+      assert_nil frames.first['src']
+    end
+
+    get server_path(backend)
+
     assert_select "turbo-frame#server_styles_#{backend.id}[src=?]", server_styles_path(backend)
   end
 
