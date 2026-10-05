@@ -102,7 +102,8 @@ module Agent
 
     test 'missing node types block with an explanation' do
       backend = create_agent_backend!(owner: @alice)
-      bring_online!(backend, models: inventory_for(@workflow)[:models], node_types: [])
+      inv = inventory_for(@workflow)
+      bring_online!(backend, models: inv[:models], node_types: inv[:node_types] - ['CLIPTextEncode'])
 
       error = assert_raises(Router::UnroutableError) { Router.route!(routing_job) }
       assert_match 'Agent box', error.message
