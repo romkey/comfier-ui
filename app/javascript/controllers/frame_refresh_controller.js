@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Reloads one Turbo Frame when a targeted refresh stream arrives, without morphing the whole page.
+// Reloads managed Turbo Frames on targeted refresh streams instead of Turbo's default frame reload.
 export default class extends Controller {
   static values = { src: String }
 
@@ -21,7 +21,7 @@ export default class extends Controller {
     if (!target) return
 
     // Every frame-refresh controller must block Turbo's default targeted refresh. After Re-scan (or
-    // lazy load), the styles frame often has no `src`; Turbo's built-in reload then shows
+    // lazy load), managed frames often have no `src`; Turbo's built-in reload then shows
     // "Content missing". Only the matching frame performs our src-aware reload.
     event.preventDefault()
     if (target === this.element.id) this.refreshFrame()

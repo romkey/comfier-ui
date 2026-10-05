@@ -32,7 +32,7 @@ class ModelDownload < ApplicationRecord
   after_commit :broadcast_download_refreshes
 
   def broadcast_download_refreshes
-    broadcast_refresh_later_to(:model_downloads)
+    broadcast_refresh_later_to(:model_downloads, target: 'workflow_models')
     broadcast_refresh_later_to([backend, :downloads], target: "server_downloads_#{backend.id}")
   end
 

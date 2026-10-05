@@ -12,6 +12,8 @@ All notable changes to this project are documented here. The format follows
 - **Servers**: Targeted Turbo Frame refresh restores `src` and forces a frame reload so styles and downloads stay
   current after lazy load strips the frame URL; all `frame-refresh` controllers now block Turbo's default targeted
   refresh so sibling frames cannot leave a `src`-less frame showing "Content missing" after Re-scan.
+- **Workflows / servers**: Model download refresh streams target `workflow_models` and the downloads frame so
+  layout `:queue` refreshes still update the server page while the workflow editor reloads models via stored frame `src`.
 - **Servers**: Style availability treats cached ComfyUI `object_info` as authoritative for installed custom nodes,
   syncs node types when it arrives, and reads required nodes from the live workflow graph.
 
