@@ -26,9 +26,10 @@ module Agent
       json = ActiveSupport::Gzip.decompress(gz)
       raise ArgumentError, 'object_info too large' if json.bytesize > MAX_BYTES
 
-      JSON.parse(json)
+      data = JSON.parse(json)
       record = BackendObjectInfo.find_or_initialize_by(backend_id: backend.id)
       record.update!(object_info_hash: hash, blob_gz: gz)
+      sync_node_types!(backend, data.keys)
       RecomputeAvailabilityJob.perform_later(backend_id: backend.id)
       record
     rescue ArgumentError, Zlib::Error, JSON::ParserError => e
@@ -38,6 +39,16 @@ module Agent
 
     # The option list for a list-typed input (ComfyUI's `["a", "b"]` or `["COMBO", {options: [...]}]`),
     # or nil when the input isn't a list.
+    def sync_node_types!(backend, keys)
+      inventory = BackendInventory.find_by(backend_id: backend.id)
+      return unless inventory
+
+      merged = (Array(inventory.node_types_json) + keys).map(&:to_s).uniq.sort
+      return if merged == Array(inventory.node_types_json).map(&:to_s).sort
+
+      inventory.update!(node_types_json: merged)
+    end
+
     def options_for(object_info, class_type, input)
       spec = object_info.dig(class_type, 'input', 'required', input) ||
              object_info.dig(class_type, 'input', 'optional', input)

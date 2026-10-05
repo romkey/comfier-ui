@@ -47,7 +47,9 @@
         "system": { "type": "object" },
         "active_jobs": { "type": "array" },
         "active_downloads": { "type": "array" },
-        "model_downloads_enabled": { "type": "boolean" }
+        "model_downloads_enabled": { "type": "boolean" },
+        "max_concurrent_downloads": { "type": "integer" },
+        "use_hf_cli": { "type": "boolean" }
       },
       "additionalProperties": true
     },

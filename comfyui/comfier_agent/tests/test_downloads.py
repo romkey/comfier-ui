@@ -32,6 +32,7 @@ class FileServer:
         app.router.add_get("/slow/{name}", self.slow_file)
         app.router.add_get("/missing/{name}", self.missing)
         app.router.add_get("/redirect/{name}", self.redirect)
+        app.router.add_get("/{path:.*}", self.hub_path)
         self.runner = web.AppRunner(app)
         self.port = 0
 
@@ -43,6 +44,11 @@ class FileServer:
 
     def url(self, path: str, host: str = "127.0.0.1") -> str:
         return f"http://{host}:{self.port}{path}"
+
+    async def hub_path(self, request):
+        if request.path.endswith(".safetensors"):
+            return await self.file(request)
+        return web.Response(status=404)
 
     async def file(self, request):
         self.requests.append({"path": request.path, "headers": dict(request.headers)})
@@ -64,7 +70,9 @@ class FileServer:
 
     async def redirect(self, request):
         self.requests.append({"path": request.path, "headers": dict(request.headers)})
-        raise web.HTTPFound(self.url(f"/file/{request.match_info['name']}", host="localhost"))
+        if request.match_info["name"] != "model.safetensors":
+            return web.Response(status=404)
+        raise web.HTTPFound(self.url("/file/model.safetensors", host="localhost"))
 
 
 @pytest.fixture
@@ -217,6 +225,53 @@ async def test_redirect_to_a_host_outside_the_allowlist_fails(downloads):
     url = downloads["server"].url("/redirect/model.safetensors")
     failed = terminal(await downloads["run"](downloads["manager"](model_download_hosts=["127.0.0.1"]), url=url))
     assert (failed["reason"], failed["detail"]) == ("host_not_allowed", "localhost")
+
+
+@pytest.mark.asyncio
+async def test_hf_endpoint_rewrite_forwards_credentials(downloads):
+    port = downloads["server"].port
+    endpoint = f"http://127.0.0.1:{port}"
+    hf_url = "https://huggingface.co/acme/model/resolve/main/model.safetensors"
+    headers = {"Authorization": "Bearer comfier_hf"}
+    done = terminal(await downloads["run"](
+        downloads["manager"](hf_endpoint=endpoint, hf_proxy_token="proxy-secret"),
+        url=hf_url,
+        headers=headers,
+        sha256=SHA,
+    ))
+    assert done["type"] == "model.download.completed"
+    req = downloads["server"].requests[0]
+    assert req["path"] == "/acme/model/resolve/main/model.safetensors"
+    assert req["headers"]["Authorization"] == "Bearer comfier_hf"
+    assert req["headers"]["X-Proxy-Token"] == "proxy-secret"
+
+
+@pytest.mark.asyncio
+async def test_hf_endpoint_uses_local_hf_token_when_comfier_sent_none(downloads, monkeypatch):
+    port = downloads["server"].port
+    endpoint = f"http://127.0.0.1:{port}"
+    hf_url = "https://huggingface.co/acme/model/resolve/main/model.safetensors"
+    monkeypatch.setenv("HF_TOKEN", "local_hf")
+    done = terminal(await downloads["run"](
+        downloads["manager"](hf_endpoint=endpoint),
+        url=hf_url,
+        sha256=SHA,
+    ))
+    assert done["type"] == "model.download.completed"
+    assert downloads["server"].requests[0]["headers"]["Authorization"] == "Bearer local_hf"
+
+
+@pytest.mark.asyncio
+async def test_hf_endpoint_with_hub_allowlist(downloads):
+    port = downloads["server"].port
+    endpoint = f"http://127.0.0.1:{port}"
+    hf_url = "https://huggingface.co/acme/model/resolve/main/model.safetensors"
+    done = terminal(await downloads["run"](
+        downloads["manager"](hf_endpoint=endpoint, model_download_hosts=["huggingface.co"]),
+        url=hf_url,
+        sha256=SHA,
+    ))
+    assert done["type"] == "model.download.completed"
 
 
 @pytest.mark.asyncio

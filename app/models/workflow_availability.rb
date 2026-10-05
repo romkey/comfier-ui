@@ -10,4 +10,25 @@ class WorkflowAvailability < ApplicationRecord
   def ready? = status == 'ready'
   def needs_downloads? = status == 'needs_downloads'
   def blocked? = status == 'blocked'
+
+  def download_progress_label
+    return unless needs_downloads?
+
+    missing = Array(details['models']).size
+    total = details['required_model_count'].to_i
+    total = missing if total < missing
+    present = total - missing
+    return "#{present} of #{total} downloaded" if total.positive?
+
+    'Needs downloads'
+  end
+
+  def download_progress_title
+    return unless needs_downloads?
+
+    bytes = details['total_bytes']
+    return unless bytes
+
+    "#{ActiveSupport::NumberHelper.number_to_human_size(bytes.to_i, precision: 2)} still to download"
+  end
 end

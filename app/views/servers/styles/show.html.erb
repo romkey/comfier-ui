@@ -1,0 +1,7 @@
+<%# No src here (avoids self-fetch). Keep frame-refresh + src value for live updates after Re-scan. %>
+<%= turbo_frame_tag "server_styles_#{@backend.id}",
+                    data: { controller: 'frame-refresh',
+                            frame_refresh_src_value: server_styles_path(@backend) } do %>
+  <%= render 'servers/styles', backend: @backend, workflows: @workflows, availability: @availability,
+                                can_manage: @can_manage, rescan_requested: @rescan_requested %>
+<% end %>

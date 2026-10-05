@@ -13,22 +13,30 @@ class VideoPosterExtractor
     return false unless @generation.video? && @generation.succeeded?
     return true if @generation.output_poster.attached?
 
-    video = @generation.outputs.find { |output| output.content_type.to_s.start_with?('video/') }
+    video = primary_video_output
     return false unless video
 
     frame = extract_frame(video)
     return false if frame.blank?
 
+    save_poster_frame(frame)
+    true
+  end
+
+  private
+
+  def primary_video_output
+    @generation.outputs.find { |output| output.content_type.to_s.start_with?('video/') }
+  end
+
+  def save_poster_frame(frame)
     @generation.output_poster.attach(
       io: StringIO.new(frame),
       filename: 'poster.jpg',
       content_type: 'image/jpeg'
     )
-    @generation.touch
-    true
+    @generation.update!(updated_at: Time.current)
   end
-
-  private
 
   def extract_frame(attachment)
     return unless self.class.available?
@@ -38,11 +46,12 @@ class VideoPosterExtractor
         self.class.ffmpeg_path, '-hide_banner', '-loglevel', 'error', '-y',
         '-i', file.path, '-frames:v', '1', '-q:v', '2', '-f', 'image2pipe', '-'
       )
-      return stdout.b if status.success? && stdout.present?
+      stdout = stdout.b
+      return stdout if status.success? && !stdout.empty?
 
-      Rails.logger.warn(
-        "VideoPosterExtractor: ffmpeg failed for generation #{@generation.id}: #{stderr.to_s.lines.last&.strip}"
-      )
+      detail = stderr.to_s.dup.force_encoding(Encoding::UTF_8)
+      detail = detail.scrub.lines.last&.strip
+      Rails.logger.warn("VideoPosterExtractor: ffmpeg failed for generation #{@generation.id}: #{detail}")
       nil
     end
   end

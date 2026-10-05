@@ -30,6 +30,8 @@ Rails.application.routes.draw do
     get kind.path, to: 'studios#show', defaults: { kind: kind.key }, as: :"#{kind.key}_studio"
   end
 
+  get 'chat/notice', to: 'chat_conversations#notice_redirect', as: :chat_notice_link
+
   resources :chats, controller: 'chat_conversations', only: %i[index show create update destroy] do
     resources :messages, controller: 'chat_messages', only: :create do
       member do
@@ -65,7 +67,12 @@ Rails.application.routes.draw do
     resources :keys, only: %i[create destroy], controller: 'servers/keys' do
       post :rotate, on: :collection
     end
-    resources :downloads, only: %i[create destroy], controller: 'servers/downloads'
+    resources :downloads, only: %i[index create destroy], controller: 'servers/downloads' do
+      delete :clear, on: :collection
+    end
+    resource :styles, only: :show, controller: 'servers/styles' do
+      post :rescan
+    end
   end
 
   namespace :admin do

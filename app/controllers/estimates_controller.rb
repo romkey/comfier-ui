@@ -28,7 +28,15 @@ class EstimatesController < ApplicationController
 
   def usable_pinned_id
     pinned = Backend.find_by(id: params.dig(:generation, :pinned_backend_id).presence)
-    pinned.id if pinned && BackendPolicy.new(current_user).can_use?(pinned)
+    return unless pinned && generation_workflow
+
+    pinned.id if StudioServerPin.new(generation_workflow, current_user).pinnable?(pinned)
+  end
+
+  def generation_workflow
+    return @generation_workflow if defined?(@generation_workflow)
+
+    @generation_workflow = Workflow.enabled.find_by(id: params.dig(:generation, :workflow_id))
   end
 
   def summary(candidate)

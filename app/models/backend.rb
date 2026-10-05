@@ -74,6 +74,14 @@ class Backend < ApplicationRecord # rubocop:disable Metrics/ClassLength
     end
   end
 
+  # Custom node class names reported by the agent (inventory message and/or cached object_info).
+  def installed_node_types
+    names = Array(backend_inventory&.node_types_json).map(&:to_s)
+    info = backend_object_infos.first&.data
+    names.concat(info.keys.map(&:to_s)) if info.present?
+    names.uniq
+  end
+
   def speed_index = backend_speed&.speed_index || 1.0
 
   def online? = agent? ? Agent::Presence.online?(self) : last_check_ok != false
@@ -133,6 +141,26 @@ class Backend < ApplicationRecord # rubocop:disable Metrics/ClassLength
   end
 
   def can_download_models? = agent? ? model_downloads_enabled? : downloader_available? || manager_version.present?
+
+  # From the agent hello: 0 means no limit on concurrent downloads. Default 1 when unknown.
+  def agent_download_concurrency
+    val = system_json.dig('model_download', 'max_concurrent')
+    val.nil? ? 1 : val.to_i
+  end
+
+  def agent_use_hf_cli?
+    system_json.dig('model_download', 'use_hf_cli') != false
+  end
+
+  def downloadable_missing_models
+    workflows_for_server.flat_map { downloadable_models(it) }.uniq(&:path)
+  end
+
+  def workflows_for_server
+    scope = Workflow.enabled.ordered
+    ids = allowed_workflow_ids
+    ids.present? ? scope.where(id: ids) : scope
+  end
 
   # How this backend would fetch a file: :agent and :node need a download link, :manager needs an
   # exact catalog entry.

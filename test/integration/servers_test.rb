@@ -108,6 +108,40 @@ class ServersTest < ActionDispatch::IntegrationTest
     assert socket.last_of_type('config.pause')
   end
 
+  test 'owners can re-scan styles in place and the agent is asked to refresh inventory' do
+    backend = create_agent_backend!(owner: @alice)
+    bring_online_for!(backend, workflows(:sd_image))
+    socket = connect_agent!(backend)
+    sign_in_as @alice
+
+    post rescan_server_styles_path(backend), headers: { 'Turbo-Frame' => "server_styles_#{backend.id}" }
+
+    assert_response :success
+    assert_match 'Re-scanning', response.body
+    assert_select "turbo-frame#server_styles_#{backend.id}" do |frames|
+      assert_predicate frames, :one?
+      assert_nil frames.first['src']
+    end
+    assert socket.last_of_type('inventory.refresh')
+  end
+
+  test 'styles frame responses omit src but the server page frame keeps it for reload' do
+    backend = create_agent_backend!(owner: @alice)
+    sign_in_as @alice
+
+    get server_styles_path(backend), headers: { 'Turbo-Frame' => "server_styles_#{backend.id}" }
+
+    assert_response :success
+    assert_select "turbo-frame#server_styles_#{backend.id}" do |frames|
+      assert_predicate frames, :one?
+      assert_nil frames.first['src']
+    end
+
+    get server_path(backend)
+
+    assert_select "turbo-frame#server_styles_#{backend.id}[src=?]", server_styles_path(backend)
+  end
+
   test 'rotating shows a new key, revoking disconnects the agent' do
     backend = create_agent_backend!(owner: @alice)
     backend.issue_agent_key!
@@ -162,6 +196,21 @@ class ServersTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert response.parsed_body.key?('utilization')
+  end
+
+  test 'owners can clear finished downloads from the log' do
+    backend = create_agent_backend!(owner: @alice)
+    backend.model_downloads.create!(directory: 'checkpoints', name: 'done.safetensors', url: 'https://hf.test/done',
+                                    via: :agent, agent_state: 'completed', status: :succeeded)
+    backend.model_downloads.create!(directory: 'checkpoints', name: 'active.safetensors', url: 'https://hf.test/active',
+                                    via: :agent, agent_state: 'downloading', status: :running)
+    sign_in_as @alice
+
+    delete clear_server_downloads_path(backend)
+
+    assert_redirected_to server_path(backend)
+    assert_equal 1, backend.model_downloads.count
+    assert_equal 'downloading', backend.model_downloads.sole.agent_state
   end
 
   test 'download tokens are write-only' do

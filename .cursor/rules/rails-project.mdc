@@ -10,6 +10,7 @@ alwaysApply: true
 - **Auth:** OmniAuth with OpenID Connect (Authentik)
 - **Testing:** Minitest with fixtures, Capybara + Selenium for system tests
 - **Linting:** RuboCop with rubocop-rails plugin — run via `docker compose -f docker-compose.lint.yml run --rm rubocop` (build image with `docker compose -f docker-compose.lint.build.yml build rubocop` when needed)
+- **Before push:** RuboCop then full test suite — required; see `pre-push-verification.mdc`
 - **Local dev:** Use compose files: `docker-compose.dev.yml`, `docker-compose.test.yml`, `docker-compose.lint.yml` (see README)
 - **CI:** GitHub Actions builds and tests on push/PR to `main`; releases push to `ghcr.io` on version tags
 

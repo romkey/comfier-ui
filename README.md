@@ -17,6 +17,11 @@ made) and **Settings** (your preferences, plus backends and workflows for admins
 
 See [docs/USER_GUIDE.md](docs/USER_GUIDE.md) for how to use it.
 
+## AI disclosure
+
+This README was drafted with AI assistance and edited under human guidance. Treat it as a living document: if
+something looks wrong or out of date, open an issue or send a pull request.
+
 ## Requirements
 
 Everything runs in Docker; you only need Docker with Compose v2 on the host.
@@ -284,7 +289,13 @@ docker restart <comfyui-container>
 If ComfyUI runs with `--base-directory`, `custom_nodes` lives under that directory. Files go into the first path
 ComfyUI lists for each folder (normally `models/<folder>` under ComfyUI's base directory). For gated Hugging Face
 repos or CivitAI files, set `HF_TOKEN` and/or `CIVITAI_TOKEN` in ComfyUI's environment; each token is only sent to its
-own site. Use **Re-check** on the backend (or save it) so Comfier notices the node.
+own site. To route Hugging Face downloads through a caching proxy or mirror (same idea as `huggingface_hub`'s
+`HF_ENDPOINT`), set `HF_ENDPOINT` on the ComfyUI machine, for example `https://cache.lan` or `https://cache.lan/hf`.
+The Comfier downloader node and Comfier Agent rewrite `huggingface.co` / `hf.co` links to that base URL and still send
+the Hugging Face token as `Authorization: Bearer …` so the proxy can identify users and fetch gated files upstream.
+Optional `HF_PROXY_TOKEN` is sent in `X-Proxy-Token` (or `HF_PROXY_TOKEN_HEADER`) when the cache expects its own
+credential. CDN redirects drop both tokens so nothing leaks to signed URLs. Use **Re-check** on the backend (or save
+it) so Comfier notices the node.
 
 **ComfyUI-Manager 4 (fallback).** When the node isn't installed, Comfier asks Manager instead, which only downloads
 files that are in Manager's own model catalog, at exactly the folder and file name the workflow uses. Comfier reads the

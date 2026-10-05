@@ -14,7 +14,9 @@ module Admin
     end
 
     def download_method(backend)
-      if backend.downloader_available? then 'Comfier downloader node'
+      if backend.agent?
+        backend.agent_use_hf_cli? ? 'Hugging Face CLI (HTTP fallback)' : 'HTTP download'
+      elsif backend.downloader_available? then 'Comfier downloader node'
       elsif backend.manager_version.present? then "ComfyUI-Manager #{backend.manager_version} (catalog models only)"
       end
     end

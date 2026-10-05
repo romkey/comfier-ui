@@ -90,8 +90,8 @@ module ServersHelper
     case record.status
     when 'ready' then tag.span(class: 'status-dot status-success', title: 'Ready')
     when 'needs_downloads'
-      size = record.details['total_bytes']
-      tag.span("Needs #{size ? human_bytes(size) : 'downloads'}", class: 'badge text-bg-warning-subtle fw-medium')
+      tag.span(record.download_progress_label, class: 'badge text-bg-warning-subtle fw-medium',
+                                               title: record.download_progress_title)
     else
       tag.span('Blocked', class: 'badge text-bg-danger-subtle fw-medium',
                           title: Array(record.details['reasons']).join("\n"))

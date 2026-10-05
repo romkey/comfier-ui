@@ -68,9 +68,16 @@ Environment variables override `comfier_agent.json`.
 | `COMFIER_HEARTBEAT_SECONDS` | `10` | How often to send status. |
 | `COMFIER_INVENTORY_POLL_SECONDS` | `60` | How often to check for added or removed models. |
 | `COMFIER_INPUT_DIR`, `COMFIER_OUTPUT_DIR`, `COMFIER_MODELS_DIR` | ComfyUI's | Override ComfyUI's folders when the agent runs outside ComfyUI. |
+| `HF_ENDPOINT` | — | Caching proxy or mirror base URL; rewrites `huggingface.co` / `hf.co` download links (like `huggingface_hub`). |
+| `HF_TOKEN` | — | Used when Comfier did not send an `Authorization` header for a Hugging Face URL. |
+| `HF_PROXY_TOKEN` | — | Optional token for the cache, sent on rewritten requests only. |
+| `HF_PROXY_TOKEN_HEADER` | `X-Proxy-Token` | Header name for `HF_PROXY_TOKEN`. |
+| `COMFIER_USE_HF_CLI` | `true` | Use the `hf` / `huggingface-cli` tool for Hub `/resolve/` links (falls back to HTTP). |
+| `COMFIER_MAX_CONCURRENT_DOWNLOADS` | `1` | Parallel model downloads (`0` = no limit). |
 
 `comfier_agent.json` also accepts `max_model_download_gb` (50), `min_free_disk_gb` (10), `max_concurrent_downloads`
-(1) and `allow_pickle_formats` (true). When free space on a job or model volume falls below `min_free_disk_gb`, the
+(1), `use_hf_cli` (true), and `allow_pickle_formats` (true). When free space on a job or model volume falls below
+`min_free_disk_gb`, the
 server stops taking jobs and Comfier shows which path is low.
 
 ## What it sends

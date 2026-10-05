@@ -30,13 +30,18 @@ class Handler(http.server.BaseHTTPRequestHandler):
     seen = []
 
     def do_GET(self):
-        Handler.seen.append((self.headers["Host"].split(":")[0], self.path, self.headers.get("Authorization")))
+        Handler.seen.append({
+            "host": self.headers["Host"].split(":")[0],
+            "path": self.path,
+            "authorization": self.headers.get("Authorization"),
+            "proxy": self.headers.get("X-Proxy-Token"),
+        })
         port = self.server.server_address[1]
         if self.path == "/redirect":
             self.send_response(302)
             self.send_header("Location", f"http://localhost:{port}/file")
             self.end_headers()
-        elif self.path == "/file":
+        elif self.path == "/file" or self.path.endswith(".safetensors"):
             self.send_response(200)
             self.send_header("Content-Length", str(len(PAYLOAD)))
             self.end_headers()
@@ -126,7 +131,10 @@ class DownloaderTest(unittest.TestCase):
             self.download("/redirect", "gated.safetensors")
 
         self.assertEqual(
-            [("127.0.0.1", "/redirect", "Bearer secret"), ("localhost", "/file", None)],
+            [
+                {"host": "127.0.0.1", "path": "/redirect", "authorization": "Bearer secret", "proxy": None},
+                {"host": "localhost", "path": "/file", "authorization": None, "proxy": None},
+            ],
             Handler.seen,
         )
 
@@ -154,6 +162,55 @@ class DownloaderTest(unittest.TestCase):
             self.assertEqual("hf", comfier_downloader.token_for("huggingface.co"))
             self.assertEqual("hf", comfier_downloader.token_for("cdn.huggingface.co"))
             self.assertIsNone(comfier_downloader.token_for("nothuggingface.co"))
+
+    def test_hf_endpoint_rewrites_hub_urls(self):
+        hf_url = "https://huggingface.co/org/repo/resolve/main/model.safetensors"
+        with mock.patch.dict(os.environ, {"HF_ENDPOINT": self.base, "HF_TOKEN": "hf-secret"}):
+            self.node.download(hf_url, "checkpoints", "hf-rewrite.safetensors")
+
+        self.assertEqual(
+            [{"host": "127.0.0.1", "path": "/org/repo/resolve/main/model.safetensors",
+              "authorization": "Bearer hf-secret", "proxy": None}],
+            Handler.seen,
+        )
+
+    def test_hf_endpoint_rewrite_rules(self):
+        with mock.patch.dict(os.environ, {"HF_ENDPOINT": "https://cache.lan/hf"}):
+            url, rewritten = comfier_downloader._rewrite_hf_endpoint(
+                "https://huggingface.co/x/y/resolve/main/a.safetensors"
+            )
+            self.assertTrue(rewritten)
+            self.assertEqual("https://cache.lan/hf/x/y/resolve/main/a.safetensors", url)
+        url, rewritten = comfier_downloader._rewrite_hf_endpoint("https://cdn-lfs.huggingface.co/x/y")
+        self.assertFalse(rewritten)
+
+    def test_hf_endpoint_dataset_url(self):
+        hf_url = "https://huggingface.co/datasets/ds/resolve/v1/a.safetensors"
+        with mock.patch.dict(os.environ, {"HF_ENDPOINT": self.base}):
+            self.node.download(hf_url, "checkpoints", "ds.safetensors")
+        self.assertEqual("/datasets/ds/resolve/v1/a.safetensors", Handler.seen[0]["path"])
+
+    def test_hf_endpoint_sends_proxy_token(self):
+        hf_url = "https://huggingface.co/org/repo/resolve/main/model.safetensors"
+        with mock.patch.dict(os.environ, {"HF_ENDPOINT": self.base, "HF_PROXY_TOKEN": "proxy-key"}):
+            self.node.download(hf_url, "checkpoints", "hf-proxy.safetensors")
+        self.assertEqual("proxy-key", Handler.seen[0]["proxy"])
+
+    def test_hf_endpoint_redirect_drops_proxy_token(self):
+        hf_url = "https://huggingface.co/redirect"
+        with mock.patch.dict(os.environ, {
+            "HF_ENDPOINT": self.base,
+            "HF_TOKEN": "hf-secret",
+            "HF_PROXY_TOKEN": "proxy-key",
+        }):
+            self.node.download(hf_url, "checkpoints", "hf-redirect.safetensors")
+
+        self.assertEqual("/redirect", Handler.seen[0]["path"])
+        self.assertEqual("Bearer hf-secret", Handler.seen[0]["authorization"])
+        self.assertEqual("proxy-key", Handler.seen[0]["proxy"])
+        self.assertEqual("/file", Handler.seen[1]["path"])
+        self.assertIsNone(Handler.seen[1]["authorization"])
+        self.assertIsNone(Handler.seen[1]["proxy"])
 
 
 if __name__ == "__main__":

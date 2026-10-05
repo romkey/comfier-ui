@@ -1,0 +1,3 @@
+<%= turbo_frame_tag "server_downloads_#{@backend.id}" do %>
+  <%= render 'servers/downloads', backend: @backend, downloads: @downloads, can_manage: @can_manage %>
+<% end %>

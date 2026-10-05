@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import hashlib
 import json
 import logging
@@ -17,6 +18,22 @@ from urllib.parse import urlparse
 import aiohttp
 
 from comfier_agent.config import AgentConfig
+from comfier_agent.hf_cli import (
+    HfCliCancelled,
+    HfCliError,
+    HfCliUnavailable,
+    parse_hf_resolve_url,
+)
+from comfier_agent.hf_cli import (
+    download_file as hf_cli_download,
+)
+from comfier_agent.hf_endpoint import (
+    ensure_hf_authorization,
+    hf_endpoint_host_allowed,
+    host_matches_allowlist,
+    proxy_headers,
+    rewrite_url,
+)
 from comfier_agent.protocol import compact
 from comfier_agent.resources import _paths_for_disk_check
 from comfier_agent.transfer import CHUNK, MAX_REDIRECTS, REDIRECT_STATUSES, redirect_target, same_host
@@ -60,6 +77,7 @@ class ModelDownloadManager:
         self.rescan_inventory = rescan_inventory
         self.active: dict[str, DownloadState] = {}
         self.paths_in_progress: dict[str, str] = {}
+        self._wait_queue: list[dict[str, Any]] = []
         self._terminal_buffer: list[dict] = []
         self._progress_last: dict[str, float] = {}
 
@@ -86,14 +104,34 @@ class ModelDownloadManager:
         ]
 
     async def handle(self, msg: dict[str, Any]) -> None:
-        if len(self.active) >= self.config.max_concurrent_downloads:
-            await self._failed(msg["download_id"], "invalid", "too many concurrent downloads")
+        if not self._can_start_download():
+            self._wait_queue.append(msg)
             return
+        self._start(msg)
+
+    def _concurrency_limit(self) -> int | None:
+        limit = self.config.max_concurrent_downloads
+        return None if limit <= 0 else limit
+
+    def _can_start_download(self) -> bool:
+        limit = self._concurrency_limit()
+        return limit is None or len(self.active) < limit
+
+    def _start(self, msg: dict[str, Any]) -> None:
         task = asyncio.create_task(self._run(msg))
         self.active[msg["download_id"]] = DownloadState(download_id=msg["download_id"], task=task)
 
+    def _drain_wait_queue(self) -> None:
+        while self._wait_queue and self._can_start_download():
+            self._start(self._wait_queue.pop(0))
+
     async def cancel(self, download_id: str) -> None:
         """Stop a download; the running task reports the cancel once it has cleaned up."""
+        before = len(self._wait_queue)
+        self._wait_queue = [m for m in self._wait_queue if m.get("download_id") != download_id]
+        if len(self._wait_queue) < before:
+            await self._cancelled(download_id)
+            return
         state = self.active.get(download_id)
         if state and state.task and not state.task.done() and state.task is not asyncio.current_task():
             state.cancel = True
@@ -132,9 +170,30 @@ class ModelDownloadManager:
             os.makedirs(os.path.dirname(final_path), exist_ok=True)
             resume = os.path.getsize(part) if os.path.exists(part) else 0
             headers = dict(msg.get("headers") or {})
-            url = msg["url"]
-            if self._is_frontend_url(url):
+            original_url = msg["url"]
+            if self._is_frontend_url(original_url):
                 headers["Authorization"] = f"Bearer {self.config.api_key}"
+            ensure_hf_authorization(headers, original_url)
+
+            if self.config.use_hf_cli and parse_hf_resolve_url(original_url) and not resume:
+                try:
+                    await self._download_via_hf_cli(download_id, msg, final_path, part, headers, original_url)
+                    return
+                except HfCliUnavailable as exc:
+                    LOG.info("HF CLI unavailable (%s); using HTTP", exc)
+                except HfCliCancelled:
+                    if os.path.exists(part):
+                        os.remove(part)
+                    await self._cancelled(download_id)
+                    return
+                except HfCliError as exc:
+                    await self._failed(download_id, "network", str(exc))
+                    return
+
+            url = original_url
+            url, via_proxy = rewrite_url(url, self.config.hf_endpoint)
+            if via_proxy:
+                headers.update(proxy_headers(self.config))
 
             sha = hashlib.sha256() if not resume else None
             bytes_total = msg.get("bytes")
@@ -250,6 +309,67 @@ class ModelDownloadManager:
         finally:
             self.active.pop(download_id, None)
             self.paths_in_progress.pop(download_id, None)
+            self._drain_wait_queue()
+
+    async def _download_via_hf_cli(
+        self,
+        download_id: str,
+        msg: dict[str, Any],
+        final_path: str,
+        part: str,
+        headers: dict[str, str],
+        original_url: str,
+    ) -> None:
+        def cancel_check() -> bool:
+            state = self.active.get(download_id)
+            return bool(state and state.cancel)
+
+        async def progress_loop() -> None:
+            while not cancel_check():
+                if os.path.isfile(part):
+                    done = os.path.getsize(part)
+                    await self._progress(download_id, done, msg.get("bytes"), 0, time.time())
+                elif os.path.isfile(final_path):
+                    done = os.path.getsize(final_path)
+                    await self._progress(download_id, done, msg.get("bytes") or done, 0, time.time())
+                await asyncio.sleep(1.0)
+
+        progress_task = asyncio.create_task(progress_loop())
+        try:
+            size = await hf_cli_download(
+                self.config,
+                url=original_url,
+                dest_path=part,
+                headers=headers,
+                cancel_check=cancel_check,
+            )
+        finally:
+            progress_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await progress_task
+
+        if msg.get("sha256"):
+            digest = await asyncio.to_thread(_file_sha256, part)
+            if digest.lower() != msg["sha256"].lower():
+                os.remove(part)
+                await self._failed(download_id, "hash_mismatch", digest)
+                return
+        else:
+            digest = await asyncio.to_thread(_file_sha256, part)
+
+        if msg["filename"].lower().endswith(".safetensors") and not _safetensors_ok(part):
+            os.remove(part)
+            await self._failed(download_id, "invalid", "not a valid safetensors file (check access token)")
+            return
+
+        bytes_total = msg.get("bytes")
+        if bytes_total is not None and size != bytes_total:
+            os.remove(part)
+            await self._failed(download_id, "size_mismatch", f"{size} vs {bytes_total}")
+            return
+
+        os.replace(part, final_path)
+        await self._complete(download_id, msg["folder"], msg["filename"], size, digest, False)
 
     async def _validate(self, msg: dict[str, Any]) -> tuple[str, str] | None:
         if not self.config.allow_model_downloads:
@@ -312,7 +432,10 @@ class ModelDownloadManager:
                 return scheme in ("https", "http")
             return scheme == "https"
         host = (urlparse(url).hostname or "").lower()
-        return any(host == h or host.endswith("." + h) for h in self.config.model_download_hosts)
+        allowed = self.config.model_download_hosts
+        if host_matches_allowlist(host, allowed):
+            return True
+        return hf_endpoint_host_allowed(host, allowed, self.config.hf_endpoint)
 
     def _is_frontend_url(self, url: str) -> bool:
         a = urlparse(url)

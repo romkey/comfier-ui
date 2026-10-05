@@ -4,6 +4,8 @@ require 'test_helper'
 
 module Agent
   class DownloadsTest < ActiveSupport::TestCase
+    include ActiveJob::TestHelper
+
     setup do
       @alice = users(:alice)
       @workflow = workflows(:sd_image)
@@ -34,7 +36,9 @@ module Agent
       assert_equal 'waiting_models', gen.agent_state
       assert_equal 'sent', download.agent_state
 
-      download_event('model.download.progress', state: 'downloading', bytes_done: 1.gigabyte, speed_bps: 50_000_000)
+      assert_enqueued_jobs(2, only: Turbo::Streams::BroadcastStreamJob) do
+        download_event('model.download.progress', state: 'downloading', bytes_done: 1.gigabyte, speed_bps: 50_000_000)
+      end
 
       assert_equal 1.gigabyte, download.bytes_done
 
@@ -43,6 +47,13 @@ module Agent
       assert_equal 'queued', gen.reload.agent_state
       assert BackendModel.exists?(backend: @backend, filename: 'v1-5-pruned-emaonly-fp16.safetensors')
       assert_equal 'completed', download.agent_state
+    end
+
+    test 'completing a download enqueues availability recompute' do
+      submit
+      assert_enqueued_with(job: RecomputeAvailabilityJob, args: [{ backend_id: @backend.id }]) do
+        download_event('model.download.completed', sha256: 'c' * 64, bytes: 2.gigabytes)
+      end
     end
 
     test 'two jobs needing the same file share one download' do

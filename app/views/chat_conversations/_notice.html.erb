@@ -2,7 +2,8 @@
 <% if settings.chat_notice? %>
   <div class="status-panel status-attention mb-3 text-13">
     <% if settings.chat_notice_url.present? %>
-      <%= link_to settings.chat_notice_text, settings.chat_notice_url, class: 'link-body-emphasis' %>
+      <%= link_to settings.chat_notice_text, chat_notice_link_path, class: 'link-body-emphasis',
+                  data: { turbo: false } %>
     <% else %>
       <%= settings.chat_notice_text %>
     <% end %>

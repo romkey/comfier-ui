@@ -182,12 +182,13 @@
     </p>
   <% end %>
 
-  <% servers = BackendPolicy.new(current_user).runnable_backends.includes(:owner_user).to_a %>
-  <% if servers.any? %>
+  <% server_pin = StudioServerPin.new(workflow, current_user) %>
+  <% if server_pin.choices.any? %>
     <div class="mb-3" data-controller="estimate" data-estimate-url-value="<%= estimate_path %>">
-      <% if servers.many? %>
+      <% if server_pin.show_picker? %>
         <%= f.label :pinned_backend_id, 'Run on', class: 'form-label text-13' %>
-        <%= f.select :pinned_backend_id, servers.map { [it.owned_by?(current_user) ? "#{it.name} (yours)" : it.name, it.id] },
+        <%= f.select :pinned_backend_id,
+                     server_pin.choices.map { |choice| [choice.label, choice.backend.id, choice.html_options] },
                      { include_blank: 'Auto (fastest)' },
                      class: 'form-select form-select-sm', data: { action: 'estimate#refresh' } %>
       <% end %>

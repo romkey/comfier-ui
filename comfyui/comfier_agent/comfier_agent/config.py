@@ -117,7 +117,11 @@ class AgentConfig:
     max_model_download_gb: float = 50.0
     min_free_disk_gb: float = 10.0
     max_concurrent_downloads: int = 1
+    use_hf_cli: bool = True
     allow_pickle_formats: bool = True
+    hf_endpoint: str | None = None
+    hf_proxy_token: str | None = None
+    hf_proxy_token_header: str = "X-Proxy-Token"
     agent_version: str = __version__
     config_path: Path | None = None
 
@@ -170,6 +174,7 @@ def _merge_file(data: dict[str, Any], cfg: AgentConfig) -> None:
         "max_model_download_gb": "max_model_download_gb",
         "min_free_disk_gb": "min_free_disk_gb",
         "max_concurrent_downloads": "max_concurrent_downloads",
+        "use_hf_cli": "use_hf_cli",
         "allow_pickle_formats": "allow_pickle_formats",
     }
     for key, attr in mapping.items():
@@ -215,6 +220,8 @@ def load_config(*, sidecar: bool = False, overrides: dict[str, Any] | None = Non
     cfg.allow_insecure = _env_bool("COMFIER_ALLOW_INSECURE", cfg.allow_insecure)
     cfg.keep_outputs = _env_bool("COMFIER_KEEP_OUTPUTS", cfg.keep_outputs)
     cfg.allow_model_downloads = _env_bool("COMFIER_ALLOW_MODEL_DOWNLOADS", cfg.allow_model_downloads)
+    cfg.use_hf_cli = _env_bool("COMFIER_USE_HF_CLI", cfg.use_hf_cli)
+    cfg.max_concurrent_downloads = _env_int("COMFIER_MAX_CONCURRENT_DOWNLOADS", cfg.max_concurrent_downloads)
     if os.environ.get("COMFIER_INPUT_DIR"):
         cfg.comfyui_input_dir = os.environ["COMFIER_INPUT_DIR"]
     if os.environ.get("COMFIER_OUTPUT_DIR"):
@@ -228,6 +235,12 @@ def load_config(*, sidecar: bool = False, overrides: dict[str, Any] | None = Non
     cfg.inventory_poll_seconds = _env_int("COMFIER_INVENTORY_POLL_SECONDS", cfg.inventory_poll_seconds)
     cfg.max_download_mb = _env_int("COMFIER_MAX_DOWNLOAD_MB", cfg.max_download_mb)
     cfg.upload_retry_s = _env_int("COMFIER_UPLOAD_RETRY_SECONDS", cfg.upload_retry_s)
+    if os.environ.get("HF_ENDPOINT"):
+        cfg.hf_endpoint = os.environ["HF_ENDPOINT"].strip()
+    if os.environ.get("HF_PROXY_TOKEN"):
+        cfg.hf_proxy_token = os.environ["HF_PROXY_TOKEN"].strip()
+    if os.environ.get("HF_PROXY_TOKEN_HEADER"):
+        cfg.hf_proxy_token_header = os.environ["HF_PROXY_TOKEN_HEADER"].strip()
 
     if sidecar and not cfg.comfyui_url:
         cfg.comfyui_url = detect_comfyui_url()

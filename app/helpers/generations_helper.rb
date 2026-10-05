@@ -1,4 +1,4 @@
-module GenerationsHelper
+module GenerationsHelper # rubocop:disable Metrics/ModuleLength
   include AgentProgressHelper
 
   STATUS_BADGES = {
@@ -58,30 +58,10 @@ module GenerationsHelper
 
   def result_media_preview(generation)
     output = primary_result_output(generation)
-    if generation.succeeded? && output&.content_type.to_s.start_with?('video/') && generation.output_poster.attached?
-      tag.div(class: 'result-video-poster') do
-        safe_join([
-          image_tag(video_poster_url(generation), alt: '', class: 'output-media', loading: 'lazy'),
-          tag.span(class: 'result-play', aria: { hidden: true }) { tag.i(class: 'bi bi-play-fill') }
-        ])
-      end
-    elsif output
-      output_preview(output, poster_url: video_poster_url(generation))
-    elsif generation.in_progress?
-      tag.div(class: 'result-placeholder') do
-        tag.div(class: 'spinner-border spinner-border-sm text-secondary', role: 'status') do
-          tag.span('Generating', class: 'visually-hidden')
-        end
-      end
-    elsif generation.cancelled?
-      tag.div(class: 'result-placeholder text-secondary') do
-        tag.i(class: 'bi bi-slash-circle fs-4', aria: { hidden: true })
-      end
-    else
-      tag.div(class: 'result-placeholder text-secondary') do
-        tag.i(class: 'bi bi-exclamation-octagon fs-4', aria: { hidden: true })
-      end
-    end
+    return video_poster_preview(generation) if video_result_with_poster?(generation, output)
+    return output_preview(output, poster_url: video_poster_url(generation)) if output
+
+    result_placeholder_preview(generation)
   end
 
   def public_output_preview(generation, attachment, index, controls: false)
@@ -113,6 +93,37 @@ module GenerationsHelper
     tag.div(class: 'output-file') do
       safe_join([tag.i(class: 'bi bi-box fs-2 text-secondary', aria: { hidden: true }),
                  tag.span(attachment.filename.to_s, class: 'text-12 text-secondary text-truncate mw-100')])
+    end
+  end
+
+  def video_result_with_poster?(generation, output)
+    generation.succeeded? && output&.content_type.to_s.start_with?('video/') && generation.output_poster.attached?
+  end
+
+  def video_poster_preview(generation)
+    tag.div(class: 'result-video-poster') do
+      safe_join([
+                  image_tag(video_poster_url(generation), alt: '', class: 'output-media', loading: 'lazy'),
+                  tag.span(class: 'result-play', aria: { hidden: true }) { tag.i(class: 'bi bi-play-fill') }
+                ])
+    end
+  end
+
+  def result_placeholder_preview(generation)
+    if generation.in_progress?
+      tag.div(class: 'result-placeholder') do
+        tag.div(class: 'spinner-border spinner-border-sm text-secondary', role: 'status') do
+          tag.span('Generating', class: 'visually-hidden')
+        end
+      end
+    elsif generation.cancelled?
+      tag.div(class: 'result-placeholder text-secondary') do
+        tag.i(class: 'bi bi-slash-circle fs-4', aria: { hidden: true })
+      end
+    else
+      tag.div(class: 'result-placeholder text-secondary') do
+        tag.i(class: 'bi bi-exclamation-octagon fs-4', aria: { hidden: true })
+      end
     end
   end
 

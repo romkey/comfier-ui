@@ -5,6 +5,46 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+- **Servers**: Styles **Re-scan** preserves the “Re-scanning…” state until fresh inventory arrives, live frame
+  reloads no longer show “Content missing”, and style availability recomputes on every agent inventory message even
+  when the model list hash is unchanged.
+- **Servers**: Targeted Turbo Frame refresh restores `src` and forces a frame reload so styles and downloads stay
+  current after lazy load strips the frame URL; all `frame-refresh` controllers now block Turbo's default targeted
+  refresh so sibling frames cannot leave a `src`-less frame showing "Content missing" after Re-scan.
+- **Servers**: Style availability treats cached ComfyUI `object_info` as authoritative for installed custom nodes,
+  syncs node types when it arrives, and reads required nodes from the live workflow graph.
+
+## [v0.12.8] - 2026-10-05
+
+### Added
+- **Servers**: **Re-scan** on an agent server’s Styles table asks Comfier Agent to refresh inventory and updates
+  availability in place (no full page reload).
+
+## [v0.12.7] - 2026-10-03
+
+### Added
+- **Servers**: Styles that need downloads show how many models are already on the server (for example, 2 of 5
+  downloaded). Owners can clear finished entries from the server download log.
+
+## [v0.12.6] - 2026-10-03
+
+### Fixed
+- **Comfier Agent**: Ruff lint fixes in the model download manager (CI on `main`).
+
+## [v0.12.5] - 2026-10-03
+
+### Added
+- **Comfier Agent**: Hugging Face Hub downloads default to the `hf` CLI (with HTTP fallback), honoring
+  `HF_ENDPOINT` and the Hub token. The Comfier panel configures CLI use and download concurrency (0 = unlimited).
+- **Servers**: **Download all** queues every missing installable model across styles on an agent server.
+
+## [v0.12.3] - 2026-10-02
+
+### Added
+- **Model downloads**: Comfier Agent and the Comfier downloader node honor `HF_ENDPOINT` on the ComfyUI machine,
+  rewriting Hugging Face Hub URLs through a caching proxy while forwarding `HF_TOKEN` (and optional `HF_PROXY_TOKEN`).
+
 ## [v0.9.2] - 2026-09-28
 
 ### Fixed
