@@ -118,8 +118,16 @@ class ServersTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_match 'Re-scanning', response.body
-    assert_select "turbo-frame#server_styles_#{backend.id}[src=?]", server_styles_path(backend)
+    assert_select "turbo-frame#server_styles_#{backend.id}" do |frames|
+      assert frames.one?
+      assert_nil frames.first['src']
+    end
     assert socket.last_of_type('inventory.refresh')
+
+    get server_styles_path(backend), headers: { 'Turbo-Frame' => "server_styles_#{backend.id}" }
+
+    assert_response :success
+    assert_select "turbo-frame#server_styles_#{backend.id}[src=?]", server_styles_path(backend)
   end
 
   test 'rotating shows a new key, revoking disconnects the agent' do
