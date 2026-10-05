@@ -37,8 +37,8 @@ class ChatConversationsController < ApplicationController
   end
 
   def notice_redirect
-    url = AppSetting.current.chat_notice_url.to_s
-    unless url.match?(AppSetting::CHAT_NOTICE_URL_FORMAT)
+    url = AppSetting.current.allowed_chat_notice_redirect_url
+    unless url
       redirect_to chats_path, alert: 'Notice link is not available.', status: :see_other
       return
     end
