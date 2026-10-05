@@ -62,12 +62,14 @@
     <% end %>
 
     <%= turbo_frame_tag "server_downloads_#{@backend.id}", src: server_downloads_path(@backend),
-                        data: { controller: 'frame-refresh' } do %>
+                        data: { controller: 'frame-refresh',
+                                frame_refresh_src_value: server_downloads_path(@backend) } do %>
       <%= render 'servers/downloads', backend: @backend, downloads: @downloads, can_manage: @can_manage %>
     <% end %>
 
     <%= turbo_frame_tag "server_styles_#{@backend.id}", src: server_styles_path(@backend),
-                        data: { controller: 'frame-refresh' } do %>
+                        data: { controller: 'frame-refresh',
+                                frame_refresh_src_value: server_styles_path(@backend) } do %>
       <%= render 'servers/styles', backend: @backend, workflows: @workflows, availability: @availability,
                                    can_manage: @can_manage %>
     <% end %>

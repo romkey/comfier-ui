@@ -1,8 +1,10 @@
 import { Controller } from "@hotwired/stimulus"
+import { Turbo } from "@hotwired/turbo-rails"
 
-// Reloads just this frame when a refresh broadcast arrives, instead of refreshing the whole page
-// (which would throw away anything being typed into forms elsewhere on it).
+// Reloads one Turbo Frame when a targeted refresh stream arrives, without morphing the whole page.
 export default class extends Controller {
+  static values = { src: String }
+
   connect() {
     document.addEventListener("turbo:before-stream-render", this.intercept)
   }
@@ -12,9 +14,19 @@ export default class extends Controller {
   }
 
   intercept = (event) => {
-    if (event.target.getAttribute("action") !== "refresh") return
+    const stream = event.target
+    if (stream.getAttribute("action") !== "refresh") return
+
+    const target = stream.getAttribute("target")
+    if (target && target !== this.element.id) return
 
     event.preventDefault()
-    this.element.reload()
+
+    const url = this.element.getAttribute("src") || (this.hasSrcValue ? this.srcValue : null)
+    if (url) {
+      Turbo.visit(url, { frame: this.element.id })
+    } else {
+      this.element.reload()
+    }
   }
 }

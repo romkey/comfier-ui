@@ -9,6 +9,8 @@ All notable changes to this project are documented here. The format follows
 - **Servers**: Styles **Re-scan** preserves the “Re-scanning…” state until fresh inventory arrives, live frame
   reloads no longer show “Content missing”, and style availability recomputes on every agent inventory message even
   when the model list hash is unchanged.
+- **Servers**: Targeted Turbo Frame refresh uses the styles URL (via `Turbo.visit`) so lazy-loaded frames still
+  update after they lose their `src` attribute.
 
 ## [v0.12.8] - 2026-10-05
 
