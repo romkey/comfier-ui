@@ -13,6 +13,17 @@ class AppSettingChatTest < ActiveSupport::TestCase
     assert_not settings.valid?
   end
 
+  test 'allowed_chat_notice_redirect_url accepts https and rejects invalid values' do
+    settings = app_settings(:default)
+    settings.chat_notice_url = 'https://chat.example.com/path'
+
+    assert_equal 'https://chat.example.com/path', settings.allowed_chat_notice_redirect_url
+
+    settings.chat_notice_url = 'javascript:alert(1)'
+
+    assert_nil settings.allowed_chat_notice_redirect_url
+  end
+
   test 'chat_notice? is true when text is present' do
     settings = app_settings(:default)
     settings.chat_notice_text = 'Use the main chat bot'

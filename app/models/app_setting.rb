@@ -16,6 +16,18 @@ class AppSetting < ApplicationRecord
     chat_notice_text.present?
   end
 
+  def allowed_chat_notice_redirect_url
+    url = chat_notice_url.to_s
+    return if url.blank? || !url.match?(CHAT_NOTICE_URL_FORMAT)
+
+    uri = URI.parse(url)
+    return unless uri.is_a?(URI::HTTP) && uri.host.present? && uri.userinfo.blank?
+
+    uri.to_s
+  rescue URI::InvalidURIError
+    nil
+  end
+
   def self.current
     first || create!(email_notification_attachment_max_mb: default_email_notification_attachment_max_mb,
                      slack_notification_attachment_max_mb: default_slack_notification_attachment_max_mb)

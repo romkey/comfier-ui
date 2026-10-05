@@ -70,7 +70,9 @@ class FileServer:
 
     async def redirect(self, request):
         self.requests.append({"path": request.path, "headers": dict(request.headers)})
-        raise web.HTTPFound(self.url(f"/file/{request.match_info['name']}", host="localhost"))
+        if request.match_info["name"] != "model.safetensors":
+            return web.Response(status=404)
+        raise web.HTTPFound(self.url("/file/model.safetensors", host="localhost"))
 
 
 @pytest.fixture

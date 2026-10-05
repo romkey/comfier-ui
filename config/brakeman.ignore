@@ -1,0 +1,9 @@
+{
+  "ignored_warnings": [
+    {
+      "warning_type": "Redirect",
+      "fingerprint": "ac735e4168c8287dc270c4400aca5fa136c3ca2e95fe79ec32a2186b60846b26",
+      "note": "Chat notice URL is admin-only and normalized in AppSetting#allowed_chat_notice_redirect_url before redirect."
+    }
+  ]
+}
