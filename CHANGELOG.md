@@ -5,6 +5,10 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+- **Servers**: Styles **Re-scan** keeps the Turbo Frame reload URL so live updates no longer show “Content missing”,
+  and style availability recomputes when the agent reports inventory even if the model list hash is unchanged.
+
 ## [v0.12.8] - 2026-10-05
 
 ### Added

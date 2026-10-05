@@ -85,10 +85,8 @@ module Agent
       changed = inventory.nil? || inventory.inventory_hash != message['hash']
       InventoryStore.store!(@backend, message) if changed
       request_object_info(message['object_info_hash'])
-      return unless changed
-
       RecomputeAvailabilityJob.perform_later(backend_id: @backend.id)
-      Presence.publish!(@backend)
+      Presence.publish!(@backend) if changed
     end
 
     def request_object_info(hash)
