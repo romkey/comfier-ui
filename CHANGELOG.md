@@ -5,6 +5,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [v0.12.8] - 2026-10-05
+
+### Added
+- **Servers**: **Re-scan** on an agent server’s Styles table asks Comfier Agent to refresh inventory and updates
+  availability in place (no full page reload).
+
 ## [v0.12.7] - 2026-10-03
 
 ### Added

@@ -68,7 +68,9 @@ Rails.application.routes.draw do
     resources :downloads, only: %i[index create destroy], controller: 'servers/downloads' do
       delete :clear, on: :collection
     end
-    resource :styles, only: :show, controller: 'servers/styles'
+    resource :styles, only: :show, controller: 'servers/styles' do
+      post :rescan
+    end
   end
 
   namespace :admin do

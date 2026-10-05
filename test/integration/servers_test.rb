@@ -108,6 +108,22 @@ class ServersTest < ActionDispatch::IntegrationTest
     assert socket.last_of_type('config.pause')
   end
 
+  test 'owners can re-scan styles in place and the agent is asked to refresh inventory' do
+    backend = create_agent_backend!(owner: @alice)
+    bring_online_for!(backend, workflows(:sd_image))
+    socket = connect_agent!(backend)
+    sign_in_as @alice
+
+    assert_enqueued_jobs 1, only: RecomputeAvailabilityJob do
+      post rescan_server_styles_path(backend), headers: { 'Turbo-Frame' => "server_styles_#{backend.id}" }
+    end
+
+    assert_response :success
+    assert_match 'Re-scanning', response.body
+    assert_select "turbo-frame#server_styles_#{backend.id}"
+    assert socket.last_of_type('inventory.refresh')
+  end
+
   test 'rotating shows a new key, revoking disconnects the agent' do
     backend = create_agent_backend!(owner: @alice)
     backend.issue_agent_key!
