@@ -1,4 +1,6 @@
-<%= turbo_frame_tag "server_styles_#{@backend.id}" do %>
+<%# Omit src while re-scanning: otherwise Turbo eagerly reloads this frame with stale availability. %>
+<%= turbo_frame_tag "server_styles_#{@backend.id}",
+                    **(@rescan_requested ? {} : { src: server_styles_path(@backend) }) do %>
   <%= render 'servers/styles', backend: @backend, workflows: @workflows, availability: @availability,
                                 can_manage: @can_manage, rescan_requested: @rescan_requested %>
 <% end %>

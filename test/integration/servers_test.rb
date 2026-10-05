@@ -114,14 +114,20 @@ class ServersTest < ActionDispatch::IntegrationTest
     socket = connect_agent!(backend)
     sign_in_as @alice
 
-    assert_enqueued_jobs 1, only: RecomputeAvailabilityJob do
-      post rescan_server_styles_path(backend), headers: { 'Turbo-Frame' => "server_styles_#{backend.id}" }
-    end
+    post rescan_server_styles_path(backend), headers: { 'Turbo-Frame' => "server_styles_#{backend.id}" }
 
     assert_response :success
     assert_match 'Re-scanning', response.body
-    assert_select "turbo-frame#server_styles_#{backend.id}"
+    assert_select "turbo-frame#server_styles_#{backend.id}" do |frames|
+      assert_predicate frames, :one?
+      assert_nil frames.first['src']
+    end
     assert socket.last_of_type('inventory.refresh')
+
+    get server_styles_path(backend), headers: { 'Turbo-Frame' => "server_styles_#{backend.id}" }
+
+    assert_response :success
+    assert_select "turbo-frame#server_styles_#{backend.id}[src=?]", server_styles_path(backend)
   end
 
   test 'rotating shows a new key, revoking disconnects the agent' do

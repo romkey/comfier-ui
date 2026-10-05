@@ -12,8 +12,6 @@ module Servers
 
     def rescan
       @backend.refresh_inventory!
-      Agent::Availability.recompute_for_backend!(@backend)
-      RecomputeAvailabilityJob.set(wait: 5.seconds).perform_later(backend_id: @backend.id)
       @rescan_requested = true
       load_styles
       render :show, layout: false
