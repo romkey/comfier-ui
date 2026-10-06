@@ -6,6 +6,9 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Fixed
+- **Servers**: The Styles table no longer goes blank when the agent reports back after **Re-scan**. Turbo had left
+  the frame's `src` pointing at the POST-only `rescan` URL, so the live reload hit a 404; `frame-refresh` now reloads
+  from its declared URL.
 - **Servers**: Styles **Re-scan** preserves the “Re-scanning…” state until fresh inventory arrives, live frame
   reloads no longer show “Content missing”, and style availability recomputes on every agent inventory message even
   when the model list hash is unchanged.

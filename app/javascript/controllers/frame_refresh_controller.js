@@ -28,7 +28,9 @@ export default class extends Controller {
   }
 
   refreshFrame() {
-    const baseUrl = this.element.getAttribute("src") || (this.hasSrcValue ? this.srcValue : null)
+    // Prefer the declared src value: after a form submits inside the frame (e.g. Re-scan), Turbo sets
+    // the frame's `src` to the POST URL, and reloading that with GET hits no route.
+    const baseUrl = (this.hasSrcValue && this.srcValue) || this.element.getAttribute("src")
     if (!baseUrl) {
       this.element.reload()
       return
