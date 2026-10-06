@@ -119,16 +119,12 @@ class ServersController < ApplicationController # rubocop:disable Metrics/ClassL
   end
 
   def policy_attributes
-    %w[visibility owner_priority max_queued_per_other_user allowed_workflow_ids auto_download_policy]
+    %w[visibility owner_priority max_queued_per_other_user auto_download_policy]
   end
 
   def server_params
-    permitted = params.expect(backend: [:name, :description, :visibility, :owner_priority, :max_queued_per_other_user,
-                                        :auto_download_policy, { allowed_workflow_ids: [] }])
-    if permitted.key?(:allowed_workflow_ids)
-      permitted[:allowed_workflow_ids] = permitted[:allowed_workflow_ids].compact_blank.map(&:to_i)
-    end
-    permitted
+    params.expect(backend: %i[name description visibility owner_priority max_queued_per_other_user
+                              auto_download_policy])
   end
 
   def share_emails

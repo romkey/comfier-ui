@@ -1,0 +1,10 @@
+<% settings = AppSetting.current %>
+<% if current_user.sees_motd?(settings) %>
+  <div id="motd" class="motd-banner text-13" role="status" data-turbo-temporary>
+    <i class="bi bi-megaphone flex-shrink-0" aria-hidden="true"></i>
+    <div class="motd-text flex-grow-1"><%= settings.motd_text %></div>
+    <%= button_to motd_dismissal_path, params: { digest: settings.motd_digest },
+                  class: 'btn-close btn-close-sm', aria: { label: 'Dismiss message' },
+                  form: { class: 'flex-shrink-0' } do %><% end %>
+  </div>
+<% end %>

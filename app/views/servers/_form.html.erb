@@ -44,13 +44,7 @@
       <%= f.label :max_queued_per_other_user, 'Most waiting jobs per other person', class: 'form-label' %>
       <%= f.number_field :max_queued_per_other_user, min: 0, max: 1000, class: 'form-control form-control-sm' %>
     </div>
-    <div class="mb-3">
-      <%= f.label :allowed_workflow_ids, 'Styles it runs', class: 'form-label' %>
-      <%= f.collection_select :allowed_workflow_ids, Workflow.enabled.ordered, :id, :name,
-                              { include_hidden: true, selected: backend.allowed_workflow_ids },
-                              multiple: true, size: 5, class: 'form-select form-select-sm' %>
-      <div class="form-text text-12">Select none to run every style.</div>
-    </div>
+    <p class="form-text text-12 mb-3">Turn individual styles on or off from the Styles table on the server page.</p>
 
     <div class="h-section-label mt-4">Model downloads</div>
     <div class="mb-3">

@@ -6,6 +6,7 @@
 
   <body>
     <%= turbo_stream_from :queue if signed_in? %>
+    <%= render 'layouts/motd' if signed_in? %>
     <nav class="navbar navbar-expand-md border-bottom app-navbar">
       <div class="container-fluid">
         <%= link_to root_path, class: 'navbar-brand fw-medium' do %>

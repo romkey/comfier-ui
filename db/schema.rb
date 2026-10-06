@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_01_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_120100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -67,6 +67,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_120000) do
     t.string "chat_notice_url"
     t.datetime "created_at", null: false
     t.decimal "email_notification_attachment_max_mb", precision: 8, scale: 3, default: "0.488", null: false
+    t.text "motd_text"
     t.text "placeholder_prompt"
     t.integer "report_auto_hide_threshold", default: 3, null: false
     t.integer "session_epoch", default: 0, null: false
@@ -167,7 +168,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_120000) do
 
   create_table "backends", force: :cascade do |t|
     t.string "agent_version"
-    t.jsonb "allowed_workflow_ids"
     t.text "auth_token"
     t.string "auto_download_policy", default: "owner_jobs", null: false
     t.string "base_url"
@@ -178,6 +178,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_120000) do
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
     t.string "description"
+    t.jsonb "disabled_workflow_ids", default: [], null: false
     t.boolean "downloader_available", default: false, null: false
     t.boolean "enabled", default: true, null: false
     t.string "gpu_name"
@@ -510,6 +511,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_120000) do
     t.string "default_aspect_ratio", default: "1:1", null: false
     t.text "default_negative_prompt"
     t.boolean "delete_uploads_after_run", default: false, null: false
+    t.string "dismissed_motd_digest"
     t.citext "email"
     t.datetime "last_signed_in_at"
     t.string "name"

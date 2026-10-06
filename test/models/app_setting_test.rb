@@ -28,4 +28,38 @@ class AppSettingTest < ActiveSupport::TestCase
     assert_in_delta 0.5, AppSetting.current.email_notification_attachment_max_mb
     assert_equal 512.kilobytes, AppSetting.email_notification_attachment_max_bytes
   end
+
+  test 'motd digest changes with the text and is nil without a message' do
+    settings = AppSetting.current
+
+    assert_nil settings.motd_digest
+
+    settings.update!(motd_text: 'One')
+    first = settings.motd_digest
+    settings.update!(motd_text: 'Two')
+
+    assert_not_equal first, settings.motd_digest
+    settings.update!(motd_text: 'One')
+
+    assert_equal first, settings.motd_digest
+  end
+
+  test 'users see the motd until they dismiss that exact text' do
+    settings = AppSetting.current
+    user = users(:alice)
+
+    assert_not user.sees_motd?(settings)
+
+    settings.update!(motd_text: 'Hello')
+
+    assert user.sees_motd?(settings)
+
+    user.update!(dismissed_motd_digest: settings.motd_digest)
+
+    assert_not user.sees_motd?(settings)
+
+    settings.update!(motd_text: 'Hello again')
+
+    assert user.sees_motd?(settings)
+  end
 end

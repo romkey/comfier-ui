@@ -5,6 +5,17 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- **Message of the day**: Admins set a banner under Settings → Message of the day. It shows at the top of every
+  page for signed-in users, who can dismiss it; changing the text shows it to everyone again.
+- **Servers**: Owners and admins turn individual styles on or off per server from the server page's Styles table.
+  Turned-off styles can't be picked for that server in the studio, jobs don't route there, and jobs for that style
+  still waiting on the server move elsewhere (pinned ones fail with the reason).
+
+### Changed
+- **Servers**: The "Styles it runs" allowlist in server settings is replaced by the per-style toggles. Existing
+  allowlists are converted to the equivalent turned-off styles, and styles added later now run everywhere by default.
+
 ### Fixed
 - **Servers**: Styles **Re-scan** preserves the “Re-scanning…” state until fresh inventory arrives, live frame
   reloads no longer show “Content missing”, and style availability recomputes on every agent inventory message even

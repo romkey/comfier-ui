@@ -11,6 +11,16 @@ class AppSetting < ApplicationRecord
   validates :chat_notice_url, format: { with: CHAT_NOTICE_URL_FORMAT, allow_blank: true }
   validates :chat_default_model, length: { maximum: 255 }, allow_blank: true
   validates :session_epoch, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+  validates :motd_text, length: { maximum: 1000 }
+
+  normalizes :motd_text, with: ->(text) { text.to_s.strip.presence }
+
+  def motd? = motd_text.present?
+
+  # Identifies the current message, so dismissing it hides only this text and edits show again.
+  def motd_digest
+    Digest::SHA256.hexdigest(motd_text.to_s)[0, 16] if motd?
+  end
 
   def chat_notice?
     chat_notice_text.present?

@@ -46,4 +46,14 @@ class StudioServerPinTest < ActiveSupport::TestCase
     assert pin.pinnable?(@ready)
     assert_not pin.pinnable?(@missing)
   end
+
+  test 'servers with the style turned off cannot be picked' do
+    @ready.set_workflow_enabled!(@workflow, false)
+    pin = StudioServerPin.new(@workflow, @user)
+    choice = pin.choices.find { it.backend.id == @ready.id }
+
+    assert_not_predicate choice, :selectable
+    assert_includes choice.label, "doesn't run this style"
+    assert_not pin.pinnable?(@ready.reload)
+  end
 end

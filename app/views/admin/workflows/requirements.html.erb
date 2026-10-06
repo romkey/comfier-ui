@@ -53,19 +53,25 @@
       <tbody>
         <% @servers.each do |server| %>
           <% record = @availability[server.id] %>
+          <% off = server.workflow_disabled?(@workflow) %>
           <tr>
             <td class="w-status">
-              <% if record&.needs_downloads? %>
+              <% if !off && record&.needs_downloads? %>
                 <%= check_box_tag 'backend_ids[]', server.id, true, id: "prepare_#{server.id}", class: 'form-check-input',
                                                                     aria: { label: "Prepare #{server.name}" } %>
               <% end %>
             </td>
             <td><%= link_to server.name, server_path(server), class: 'text-body' %></td>
-            <td><%= availability_cell(record) %></td>
-            <td class="text-12 text-secondary">
-              <%= Array(record&.details&.dig('reasons')).join('; ') %>
-              <% Array(record&.details&.dig('hints')).each do |hint| %><div class="text-warning"><%= hint %></div><% end %>
-            </td>
+            <% if off %>
+              <td><span class="badge text-bg-secondary fw-medium">Off</span></td>
+              <td class="text-12 text-secondary">Turned off on this server.</td>
+            <% else %>
+              <td><%= availability_cell(record) %></td>
+              <td class="text-12 text-secondary">
+                <%= Array(record&.details&.dig('reasons')).join('; ') %>
+                <% Array(record&.details&.dig('hints')).each do |hint| %><div class="text-warning"><%= hint %></div><% end %>
+              </td>
+            <% end %>
           </tr>
         <% end %>
       </tbody>

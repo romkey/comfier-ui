@@ -94,7 +94,7 @@ module Admin
 
     # Queues every missing model on the chosen servers.
     def prepare_servers
-      servers = Backend.agent.kept.where(id: Array(params[:backend_ids]))
+      servers = Backend.agent.kept.where(id: Array(params[:backend_ids])).select { it.allows_workflow?(@workflow) }
       queued = servers.sum do |backend|
         models = Agent::Availability.compute(@workflow, backend).models
         Agent::DownloadPlanner.manual!(backend, models, user: current_user).size

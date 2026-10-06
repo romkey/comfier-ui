@@ -11,6 +11,7 @@ Rails.application.routes.draw do
 
   get 'privacy', to: 'privacy#show', as: :privacy
   post 'privacy/accept', to: 'privacy#accept', as: :accept_privacy
+  resource :motd_dismissal, only: :create
   get 'welcome/sharing', to: 'onboarding#sharing', as: :welcome_sharing
   patch 'welcome/sharing', to: 'onboarding#update_sharing'
 
@@ -70,7 +71,7 @@ Rails.application.routes.draw do
     resources :downloads, only: %i[index create destroy], controller: 'servers/downloads' do
       delete :clear, on: :collection
     end
-    resource :styles, only: :show, controller: 'servers/styles' do
+    resource :styles, only: %i[show update], controller: 'servers/styles' do
       post :rescan
     end
   end
@@ -90,6 +91,7 @@ Rails.application.routes.draw do
     get 'servers/accuracy', to: 'server_overview#accuracy', as: :server_accuracy
     resources :source_credentials, only: %i[index create destroy], path: 'tokens'
     resource :privacy_notice, only: %i[edit update]
+    resource :motd, only: %i[edit update]
     resource :app_setting, only: %i[edit update]
     resources :reports, only: %i[index show update] do
       member do

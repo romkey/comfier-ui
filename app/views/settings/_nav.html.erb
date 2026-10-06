@@ -47,6 +47,7 @@
     <%= settings_nav_item 'Workflow assistant', edit_admin_assistant_setting_path, icon: 'bi-magic' %>
     <%= settings_nav_item 'Chat', edit_admin_chat_setting_path, icon: 'bi-chat-dots' %>
     <%= settings_nav_item 'Privacy notice', edit_admin_privacy_notice_path, icon: 'bi-shield-check' %>
+    <%= settings_nav_item 'Message of the day', edit_admin_motd_path, icon: 'bi-megaphone' %>
     <%= link_to '/admin/sidekiq', class: 'settings-nav-item', data: { turbo: false } do %>
       <i class="bi bi-activity" aria-hidden="true"></i><span class="flex-grow-1">Job queue</span>
       <i class="bi bi-box-arrow-up-right text-11" aria-hidden="true"></i>
