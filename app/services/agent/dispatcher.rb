@@ -90,19 +90,15 @@ module Agent
         'filename' => input.filename, 'bytes' => input.bytes }.compact
     end
 
-    # A time limit set on the workflow wins. Otherwise 3 × p90 when the estimate is meaningful
-    # (≥ 5 minutes), else the default for the job's kind. A hard 5-minute floor used to kill slow first
-    # runs on new servers with low p90 estimates. The estimate is capped at four hours, or at the kind's
-    # limit when an admin has raised it past that.
+    # A time limit set on the workflow wins. Otherwise the limit for the job's kind (Settings → Time
+    # limits), which 3 × p90 can stretch for styles that usually run long, up to four hours or the
+    # kind's limit if that's higher. The estimate never shortens the limit an admin set.
     def timeout_s(job)
       default = job.agent_timeout_s
       return default if job.workflow&.default_timeout_s.present?
-      return default unless job.predicted_p90_ms.to_i.positive?
 
-      computed = (3 * job.predicted_p90_ms / 1000.0).round
-      return default if computed < 300
-
-      computed.clamp(300, [P90_TIMEOUT_CAP_S, default].max)
+      computed = (3 * job.predicted_p90_ms.to_i / 1000.0).round
+      computed.clamp(default, [P90_TIMEOUT_CAP_S, default].max)
     end
 
     def base_url = Dispatcher.base_url

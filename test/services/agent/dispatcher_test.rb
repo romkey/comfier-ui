@@ -118,19 +118,20 @@ module Agent
       assert_nil OpenRequest.get(@backend.id)
     end
 
-    test 'the timeout is three times p90 within limits' do
-      gen = queued_job(predicted_p90_ms: 200_000)
+    test 'three times p90 stretches the limit for styles that run long' do
+      gen = queued_job(predicted_p90_ms: 30 * 60 * 1000)
       agent_request(@backend)
 
-      assert_equal 600, @socket.last_of_type('job.assign')['timeout_s']
+      assert_equal 90 * 60, @socket.last_of_type('job.assign')['timeout_s']
       assert_equal 'dispatched', gen.reload.agent_state
     end
 
-    test 'low p90 estimates use the default for the kind, not a five-minute floor' do
-      gen = queued_job(predicted_p90_ms: 4_000)
+    test 'a p90 estimate never shortens the limit for the kind' do
+      @workflow.update_columns(kind: 'video') # rubocop:disable Rails/SkipsModelValidations
+      gen = queued_job(predicted_p90_ms: 20 * 60 * 1000)
       agent_request(@backend)
 
-      assert_equal 20 * 60, @socket.last_of_type('job.assign')['timeout_s']
+      assert_equal 240 * 60, @socket.last_of_type('job.assign')['timeout_s']
       assert_equal 'dispatched', gen.reload.agent_state
     end
 
