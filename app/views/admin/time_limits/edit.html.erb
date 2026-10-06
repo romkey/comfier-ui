@@ -1,0 +1,28 @@
+<% content_for :title, 'Time limits' %>
+
+<h1 class="h-page-title mb-3">Time limits</h1>
+<p class="text-13 text-secondary mb-3">
+  How long one run may take before it's stopped. A style can set its own limit on its workflow page, and styles
+  with enough history use three times their usual run time instead.
+</p>
+
+<%= form_with model: @settings, url: admin_time_limits_path, method: :patch, class: 'settings-form-wide' do |f| %>
+  <% if @settings.errors.any? %>
+    <div class="alert alert-danger py-2 text-13"><%= @settings.errors.full_messages.to_sentence %></div>
+  <% end %>
+
+  <div class="row g-3 mb-3">
+    <% GenerationKind.all.each do |kind| %>
+      <% attr = AppSetting::TIMEOUT_ATTRS.fetch(kind.key) %>
+      <div class="col-sm-3">
+        <%= f.label attr, kind.label, class: 'form-label' %>
+        <div class="input-group input-group-sm">
+          <%= f.number_field attr, min: 1, max: 1440, step: 1, required: true, class: 'form-control num' %>
+          <span class="input-group-text">min</span>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <%= f.submit 'Save', class: 'btn btn-primary btn-sm' %>
+<% end %>
