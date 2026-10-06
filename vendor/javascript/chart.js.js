@@ -1,12 +1,11599 @@
-// chart.js@4.5.1 downloaded from https://ga.jspm.io/npm:chart.js@4.5.1/dist/chart.js
+/*!
+ * Chart.js v4.5.1
+ * https://www.chartjs.org
+ * (c) 2025 Chart.js Contributors
+ * Released under the MIT License
+ */
+import { r as requestAnimFrame, a as resolve, e as effects, c as color, i as isObject, d as defaults, b as isArray, v as valueOrDefault, u as unlistenArrayEvents, l as listenArrayEvents, f as resolveObjectKey, g as isNumberFinite, h as defined, s as sign, j as createContext, k as isNullOrUndef, _ as _arrayUnique, t as toRadians, m as toPercentage, n as toDimension, T as TAU, o as formatNumber, p as _angleBetween, H as HALF_PI, P as PI, q as _getStartAndCountOfVisiblePoints, w as _scaleRangesChanged, x as isNumber, y as _parseObjectDataRadialScale, z as getRelativePosition, A as _rlookupByKey, B as _lookupByKey, C as _isPointInArea, D as getAngleFromPoint, E as toPadding, F as each, G as getMaximumSize, I as _getParentNode, J as readUsedSize, K as supportsEventListenerOptions, L as throttled, M as _isDomSupported, N as _factorize, O as finiteOrDefault, Q as callback, R as _addGrace, S as _limitValue, U as toDegrees, V as _measureText, W as _int16Range, X as _alignPixel, Y as clipArea, Z as renderText, $ as unclipArea, a0 as toFont, a1 as _toLeftRightCenter, a2 as _alignStartEnd, a3 as overrides, a4 as merge, a5 as _capitalize, a6 as descriptors, a7 as isFunction, a8 as _attachContext, a9 as _createResolver, aa as _descriptors, ab as mergeIf, ac as uid, ad as debounce, ae as retinaScale, af as clearCanvas, ag as setsEqual, ah as getDatasetClipArea, ai as _elementsEqual, aj as _isClickEvent, ak as _isBetween, al as _normalizeAngle, am as _readValueToProps, an as _updateBezierControlPoints, ao as _computeSegments, ap as _boundSegments, aq as _steppedInterpolation, ar as _bezierInterpolation, as as _pointInLine, at as _steppedLineTo, au as _bezierCurveTo, av as drawPoint, aw as addRoundedRectPath, ax as toTRBL, ay as toTRBLCorners, az as _boundSegment, aA as getRtlAdapter, aB as overrideTextDirection, aC as _textX, aD as restoreTextDirection, aE as drawPointLegend, aF as distanceBetweenPoints, aG as noop, aH as _setMinAndMaxByKey, aI as niceNum, aJ as almostWhole, aK as almostEquals, aL as _decimalPlaces, aM as Ticks, aN as log10, aO as _longestText, aP as _filterBetween, aQ as _lookup } from './chunks/helpers.dataset.js';
+import '@kurkle/color';
 
-import{r as t,c as e,a as s,e as i,i as n,d as o,b as a,f as r,s as l,g as c,v as h,u as d,l as u,h as f,j as g,_ as p,k as m,m as x,n as b,H as _,P as y,t as v,o as M,p as w,q as k,w as S,x as D,y as P,z as C,A,B as L,C as E,D as T,E as O,F as R,G as I,I as z,J as F,K as V,L as B,M as N,N as W,O as H,Q as j,R as $,S as U,U as Y,V as X,W as G,X as K,Y as J,Z as q,$ as Z,a0 as Q,a1 as tt,a2 as et,a3 as st,a4 as it,a5 as nt,a6 as ot,a7 as at,a8 as rt,a9 as lt,aa as ct,ab as ht,ac as dt,ad as ut,ae as ft,af as gt,ag as pt,ah as mt,ai as xt,aj as bt,ak as _t,al as yt,am as vt,an as Mt,ao as wt,ap as kt,aq as St,ar as Dt,as as Pt,at as Ct,au as At,av as Lt,aw as Et,ax as Tt,ay as Ot,az as Rt,aA as It,aB as zt,aC as Ft,aD as Vt,aE as Bt,aF as Nt,aG as Wt,aH as Ht,aI as jt,aJ as $t,aK as Ut,aL as Yt,aM as Xt,T as Gt,aN as Kt,aO as Jt,aP as qt,aQ as Zt}from"../_/MwoWUuIu.js";import"@kurkle/color";class Animator{constructor(){this._request=null;this._charts=new Map;this._running=false;this._lastDate=void 0}_notify(t,e,s,i){const n=e.listeners[i];const o=e.duration;n.forEach((i=>i({chart:t,initial:e.initial,numSteps:o,currentStep:Math.min(s-e.start,o)})))}_refresh(){if(!this._request){this._running=true;this._request=t.call(window,(()=>{this._update();this._request=null;this._running&&this._refresh()}))}}_update(t=Date.now()){let e=0;this._charts.forEach(((s,i)=>{if(!s.running||!s.items.length)return;const n=s.items;let o=n.length-1;let a=false;let r;for(;o>=0;--o){r=n[o];if(r._active){r._total>s.duration&&(s.duration=r._total);r.tick(t);a=true}else{n[o]=n[n.length-1];n.pop()}}if(a){i.draw();this._notify(i,s,t,"progress")}if(!n.length){s.running=false;this._notify(i,s,t,"complete");s.initial=false}e+=n.length}));this._lastDate=t;e===0&&(this._running=false)}_getAnims(t){const e=this._charts;let s=e.get(t);if(!s){s={running:false,initial:true,items:[],listeners:{complete:[],progress:[]}};e.set(t,s)}return s}listen(t,e,s){this._getAnims(t).listeners[e].push(s)}add(t,e){e&&e.length&&this._getAnims(t).items.push(...e)}has(t){return this._getAnims(t).items.length>0}start(t){const e=this._charts.get(t);if(e){e.running=true;e.start=Date.now();e.duration=e.items.reduce(((t,e)=>Math.max(t,e._duration)),0);this._refresh()}}running(t){if(!this._running)return false;const e=this._charts.get(t);return!!(e&&e.running&&e.items.length)}stop(t){const e=this._charts.get(t);if(!e||!e.items.length)return;const s=e.items;let i=s.length-1;for(;i>=0;--i)s[i].cancel();e.items=[];this._notify(t,e,Date.now(),"complete")}remove(t){return this._charts.delete(t)}}var Qt=new Animator;const te="transparent";const ee={boolean(t,e,s){return s>.5?e:t},color(t,s,i){const n=e(t||te);const o=n.valid&&e(s||te);return o&&o.valid?o.mix(n,i).hexString():s},number(t,e,s){return t+(e-t)*s}};class Animation{constructor(t,e,n,o){const a=e[n];o=s([t.to,o,a,t.from]);const r=s([t.from,a,o]);this._active=true;this._fn=t.fn||ee[t.type||typeof r];this._easing=i[t.easing]||i.linear;this._start=Math.floor(Date.now()+(t.delay||0));this._duration=this._total=Math.floor(t.duration);this._loop=!!t.loop;this._target=e;this._prop=n;this._from=r;this._to=o;this._promises=void 0}active(){return this._active}update(t,e,i){if(this._active){this._notify(false);const n=this._target[this._prop];const o=i-this._start;const a=this._duration-o;this._start=i;this._duration=Math.floor(Math.max(a,t.duration));this._total+=o;this._loop=!!t.loop;this._to=s([t.to,e,n,t.from]);this._from=s([t.from,n,e])}}cancel(){if(this._active){this.tick(Date.now());this._active=false;this._notify(false)}}tick(t){const e=t-this._start;const s=this._duration;const i=this._prop;const n=this._from;const o=this._loop;const a=this._to;let r;this._active=n!==a&&(o||e<s);if(this._active)if(e<0)this._target[i]=n;else{r=e/s%2;r=o&&r>1?2-r:r;r=this._easing(Math.min(1,Math.max(0,r)));this._target[i]=this._fn(n,a,r)}else{this._target[i]=a;this._notify(true)}}wait(){const t=this._promises||(this._promises=[]);return new Promise(((e,s)=>{t.push({res:e,rej:s})}))}_notify(t){const e=t?"res":"rej";const s=this._promises||[];for(let t=0;t<s.length;t++)s[t][e]()}}class Animations{constructor(t,e){this._chart=t;this._properties=new Map;this.configure(e)}configure(t){if(!n(t))return;const e=Object.keys(o.animation);const s=this._properties;Object.getOwnPropertyNames(t).forEach((i=>{const o=t[i];if(!n(o))return;const r={};for(const t of e)r[t]=o[t];(a(o.properties)&&o.properties||[i]).forEach((t=>{t!==i&&s.has(t)||s.set(t,r)}))}))}_animateOptions(t,e){const s=e.options;const i=ie(t,s);if(!i)return[];const n=this._createAnimations(i,s);s.$shared&&se(t.options.$animations,s).then((()=>{t.options=s}),(()=>{}));return n}_createAnimations(t,e){const s=this._properties;const i=[];const n=t.$animations||(t.$animations={});const o=Object.keys(e);const a=Date.now();let r;for(r=o.length-1;r>=0;--r){const l=o[r];if(l.charAt(0)==="$")continue;if(l==="options"){i.push(...this._animateOptions(t,e));continue}const c=e[l];let h=n[l];const d=s.get(l);if(h){if(d&&h.active()){h.update(d,c,a);continue}h.cancel()}if(d&&d.duration){n[l]=h=new Animation(d,t,l,c);i.push(h)}else t[l]=c}return i}update(t,e){if(this._properties.size===0){Object.assign(t,e);return}const s=this._createAnimations(t,e);if(s.length){Qt.add(this._chart,s);return true}}}function se(t,e){const s=[];const i=Object.keys(e);for(let e=0;e<i.length;e++){const n=t[i[e]];n&&n.active()&&s.push(n.wait())}return Promise.all(s)}function ie(t,e){if(!e)return;let s=t.options;if(s){s.$shared&&(t.options=s=Object.assign({},s,{$shared:false,$animations:{}}));return s}t.options=e}function ne(t,e){const s=t&&t.options||{};const i=s.reverse;const n=s.min===void 0?e:0;const o=s.max===void 0?e:0;return{start:i?o:n,end:i?n:o}}function oe(t,e,s){if(s===false)return false;const i=ne(t,s);const n=ne(e,s);return{top:n.end,right:i.end,bottom:n.start,left:i.start}}function ae(t){let e,s,i,o;if(n(t)){e=t.top;s=t.right;i=t.bottom;o=t.left}else e=s=i=o=t;return{top:e,right:s,bottom:i,left:o,disabled:t===false}}function re(t,e){const s=[];const i=t._getSortedDatasetMetas(e);let n,o;for(n=0,o=i.length;n<o;++n)s.push(i[n].index);return s}function le(t,e,s,i={}){const n=t.keys;const o=i.mode==="single";let a,c,h,d;if(e===null)return;let u=false;for(a=0,c=n.length;a<c;++a){h=+n[a];if(h===s){u=true;if(i.all)continue;break}d=t.values[h];r(d)&&(o||e===0||l(e)===l(d))&&(e+=d)}return u||i.all?e:0}function ce(t,e){const{iScale:s,vScale:i}=e;const n=s.axis==="x"?"x":"y";const o=i.axis==="x"?"x":"y";const a=Object.keys(t);const r=new Array(a.length);let l,c,h;for(l=0,c=a.length;l<c;++l){h=a[l];r[l]={[n]:h,[o]:t[h]}}return r}function he(t,e){const s=t&&t.options.stacked;return s||s===void 0&&e.stack!==void 0}function de(t,e,s){return`${t.id}.${e.id}.${s.stack||s.type}`}function ue(t){const{min:e,max:s,minDefined:i,maxDefined:n}=t.getUserBounds();return{min:i?e:Number.NEGATIVE_INFINITY,max:n?s:Number.POSITIVE_INFINITY}}function fe(t,e,s){const i=t[e]||(t[e]={});return i[s]||(i[s]={})}function ge(t,e,s,i){for(const n of e.getMatchingVisibleMetas(i).reverse()){const e=t[n.index];if(s&&e>0||!s&&e<0)return n.index}return null}function pe(t,e){const{chart:s,_cachedMeta:i}=t;const n=s._stacks||(s._stacks={});const{iScale:o,vScale:a,index:r}=i;const l=o.axis;const c=a.axis;const h=de(o,a,i);const d=e.length;let u;for(let t=0;t<d;++t){const s=e[t];const{[l]:o,[c]:d}=s;const f=s._stacks||(s._stacks={});u=f[c]=fe(n,h,o);u[r]=d;u._top=ge(u,a,true,i.type);u._bottom=ge(u,a,false,i.type);const g=u._visualValues||(u._visualValues={});g[r]=d}}function me(t,e){const s=t.scales;return Object.keys(s).filter((t=>s[t].axis===e)).shift()}function xe(t,e){return c(t,{active:false,dataset:void 0,datasetIndex:e,index:e,mode:"default",type:"dataset"})}function be(t,e,s){return c(t,{active:false,dataIndex:e,parsed:void 0,raw:void 0,element:s,index:e,mode:"default",type:"data"})}function _e(t,e){const s=t.controller.index;const i=t.vScale&&t.vScale.axis;if(i){e=e||t._parsed;for(const t of e){const e=t._stacks;if(!e||e[i]===void 0||e[i][s]===void 0)return;delete e[i][s];e[i]._visualValues!==void 0&&e[i]._visualValues[s]!==void 0&&delete e[i]._visualValues[s]}}}const ye=t=>t==="reset"||t==="none";const ve=(t,e)=>e?t:Object.assign({},t);const Me=(t,e,s)=>t&&!e.hidden&&e._stacked&&{keys:re(s,true),values:null};class DatasetController{static defaults={};static datasetElementType=null;static dataElementType=null;constructor(t,e){this.chart=t;this._ctx=t.ctx;this.index=e;this._cachedDataOpts={};this._cachedMeta=this.getMeta();this._type=this._cachedMeta.type;this.options=void 0;this._parsing=false;this._data=void 0;this._objectData=void 0;this._sharedOptions=void 0;this._drawStart=void 0;this._drawCount=void 0;this.enableOptionSharing=false;this.supportsDecimation=false;this.$context=void 0;this._syncList=[];this.datasetElementType=new.target.datasetElementType;this.dataElementType=new.target.dataElementType;this.initialize()}initialize(){const t=this._cachedMeta;this.configure();this.linkScales();t._stacked=he(t.vScale,t);this.addElements();this.options.fill&&!this.chart.isPluginEnabled("filler")&&console.warn("Tried to use the 'fill' option without the 'Filler' plugin enabled. Please import and register the 'Filler' plugin and make sure it is not disabled in the options")}updateIndex(t){this.index!==t&&_e(this._cachedMeta);this.index=t}linkScales(){const t=this.chart;const e=this._cachedMeta;const s=this.getDataset();const i=(t,e,s,i)=>t==="x"?e:t==="r"?i:s;const n=e.xAxisID=h(s.xAxisID,me(t,"x"));const o=e.yAxisID=h(s.yAxisID,me(t,"y"));const a=e.rAxisID=h(s.rAxisID,me(t,"r"));const r=e.indexAxis;const l=e.iAxisID=i(r,n,o,a);const c=e.vAxisID=i(r,o,n,a);e.xScale=this.getScaleForId(n);e.yScale=this.getScaleForId(o);e.rScale=this.getScaleForId(a);e.iScale=this.getScaleForId(l);e.vScale=this.getScaleForId(c)}getDataset(){return this.chart.data.datasets[this.index]}getMeta(){return this.chart.getDatasetMeta(this.index)}getScaleForId(t){return this.chart.scales[t]}_getOtherScale(t){const e=this._cachedMeta;return t===e.iScale?e.vScale:e.iScale}reset(){this._update("reset")}_destroy(){const t=this._cachedMeta;this._data&&d(this._data,this);t._stacked&&_e(t)}_dataCheck(){const t=this.getDataset();const e=t.data||(t.data=[]);const s=this._data;if(n(e)){const t=this._cachedMeta;this._data=ce(e,t)}else if(s!==e){if(s){d(s,this);const t=this._cachedMeta;_e(t);t._parsed=[]}e&&Object.isExtensible(e)&&u(e,this);this._syncList=[];this._data=e}}addElements(){const t=this._cachedMeta;this._dataCheck();this.datasetElementType&&(t.dataset=new this.datasetElementType)}buildOrUpdateElements(t){const e=this._cachedMeta;const s=this.getDataset();let i=false;this._dataCheck();const n=e._stacked;e._stacked=he(e.vScale,e);if(e.stack!==s.stack){i=true;_e(e);e.stack=s.stack}this._resyncElements(t);if(i||n!==e._stacked){pe(this,e._parsed);e._stacked=he(e.vScale,e)}}configure(){const t=this.chart.config;const e=t.datasetScopeKeys(this._type);const s=t.getOptionScopes(this.getDataset(),e,true);this.options=t.createResolver(s,this.getContext());this._parsing=this.options.parsing;this._cachedDataOpts={}}parse(t,e){const{_cachedMeta:s,_data:i}=this;const{iScale:o,_stacked:r}=s;const l=o.axis;let c=t===0&&e===i.length||s._sorted;let h=t>0&&s._parsed[t-1];let d,u,f;if(this._parsing===false){s._parsed=i;s._sorted=true;f=i}else{f=a(i[t])?this.parseArrayData(s,i,t,e):n(i[t])?this.parseObjectData(s,i,t,e):this.parsePrimitiveData(s,i,t,e);const o=()=>u[l]===null||h&&u[l]<h[l];for(d=0;d<e;++d){s._parsed[d+t]=u=f[d];if(c){o()&&(c=false);h=u}}s._sorted=c}r&&pe(this,f)}parsePrimitiveData(t,e,s,i){const{iScale:n,vScale:o}=t;const a=n.axis;const r=o.axis;const l=n.getLabels();const c=n===o;const h=new Array(i);let d,u,f;for(d=0,u=i;d<u;++d){f=d+s;h[d]={[a]:c||n.parse(l[f],f),[r]:o.parse(e[f],f)}}return h}parseArrayData(t,e,s,i){const{xScale:n,yScale:o}=t;const a=new Array(i);let r,l,c,h;for(r=0,l=i;r<l;++r){c=r+s;h=e[c];a[r]={x:n.parse(h[0],c),y:o.parse(h[1],c)}}return a}parseObjectData(t,e,s,i){const{xScale:n,yScale:o}=t;const{xAxisKey:a="x",yAxisKey:r="y"}=this._parsing;const l=new Array(i);let c,h,d,u;for(c=0,h=i;c<h;++c){d=c+s;u=e[d];l[c]={x:n.parse(f(u,a),d),y:o.parse(f(u,r),d)}}return l}getParsed(t){return this._cachedMeta._parsed[t]}getDataElement(t){return this._cachedMeta.data[t]}applyStack(t,e,s){const i=this.chart;const n=this._cachedMeta;const o=e[t.axis];const a={keys:re(i,true),values:e._stacks[t.axis]._visualValues};return le(a,o,n.index,{mode:s})}updateRangeFromParsed(t,e,s,i){const n=s[e.axis];let o=n===null?NaN:n;const a=i&&s._stacks[e.axis];if(i&&a){i.values=a;o=le(i,n,this._cachedMeta.index)}t.min=Math.min(t.min,o);t.max=Math.max(t.max,o)}getMinMax(t,e){const s=this._cachedMeta;const i=s._parsed;const n=s._sorted&&t===s.iScale;const o=i.length;const a=this._getOtherScale(t);const l=Me(e,s,this.chart);const c={min:Number.POSITIVE_INFINITY,max:Number.NEGATIVE_INFINITY};const{min:h,max:d}=ue(a);let u,f;function g(){f=i[u];const e=f[a.axis];return!r(f[t.axis])||h>e||d<e}for(u=0;u<o;++u)if(!g()){this.updateRangeFromParsed(c,t,f,l);if(n)break}if(n)for(u=o-1;u>=0;--u)if(!g()){this.updateRangeFromParsed(c,t,f,l);break}return c}getAllParsedValues(t){const e=this._cachedMeta._parsed;const s=[];let i,n,o;for(i=0,n=e.length;i<n;++i){o=e[i][t.axis];r(o)&&s.push(o)}return s}getMaxOverflow(){return false}getLabelAndValue(t){const e=this._cachedMeta;const s=e.iScale;const i=e.vScale;const n=this.getParsed(t);return{label:s?""+s.getLabelForValue(n[s.axis]):"",value:i?""+i.getLabelForValue(n[i.axis]):""}}_update(t){const e=this._cachedMeta;this.update(t||"default");e._clip=ae(h(this.options.clip,oe(e.xScale,e.yScale,this.getMaxOverflow())))}update(t){}draw(){const t=this._ctx;const e=this.chart;const s=this._cachedMeta;const i=s.data||[];const n=e.chartArea;const o=[];const a=this._drawStart||0;const r=this._drawCount||i.length-a;const l=this.options.drawActiveElementsOnTop;let c;s.dataset&&s.dataset.draw(t,n,a,r);for(c=a;c<a+r;++c){const e=i[c];e.hidden||(e.active&&l?o.push(e):e.draw(t,n))}for(c=0;c<o.length;++c)o[c].draw(t,n)}getStyle(t,e){const s=e?"active":"default";return t===void 0&&this._cachedMeta.dataset?this.resolveDatasetElementOptions(s):this.resolveDataElementOptions(t||0,s)}getContext(t,e,s){const i=this.getDataset();let n;if(t>=0&&t<this._cachedMeta.data.length){const e=this._cachedMeta.data[t];n=e.$context||(e.$context=be(this.getContext(),t,e));n.parsed=this.getParsed(t);n.raw=i.data[t];n.index=n.dataIndex=t}else{n=this.$context||(this.$context=xe(this.chart.getContext(),this.index));n.dataset=i;n.index=n.datasetIndex=this.index}n.active=!!e;n.mode=s;return n}resolveDatasetElementOptions(t){return this._resolveElementOptions(this.datasetElementType.id,t)}resolveDataElementOptions(t,e){return this._resolveElementOptions(this.dataElementType.id,e,t)}_resolveElementOptions(t,e="default",s){const i=e==="active";const n=this._cachedDataOpts;const a=t+"-"+e;const r=n[a];const l=this.enableOptionSharing&&g(s);if(r)return ve(r,l);const c=this.chart.config;const h=c.datasetElementScopeKeys(this._type,t);const d=i?[`${t}Hover`,"hover",t,""]:[t,""];const u=c.getOptionScopes(this.getDataset(),h);const f=Object.keys(o.elements[t]);const p=()=>this.getContext(s,i,e);const m=c.resolveNamedOptions(u,f,p,d);if(m.$shared){m.$shared=l;n[a]=Object.freeze(ve(m,l))}return m}_resolveAnimations(t,e,s){const i=this.chart;const n=this._cachedDataOpts;const o=`animation-${e}`;const a=n[o];if(a)return a;let r;if(i.options.animation!==false){const i=this.chart.config;const n=i.datasetAnimationScopeKeys(this._type,e);const o=i.getOptionScopes(this.getDataset(),n);r=i.createResolver(o,this.getContext(t,s,e))}const l=new Animations(i,r&&r.animations);r&&r._cacheable&&(n[o]=Object.freeze(l));return l}getSharedOptions(t){if(t.$shared)return this._sharedOptions||(this._sharedOptions=Object.assign({},t))}includeOptions(t,e){return!e||ye(t)||this.chart._animationsDisabled}_getSharedOptions(t,e){const s=this.resolveDataElementOptions(t,e);const i=this._sharedOptions;const n=this.getSharedOptions(s);const o=this.includeOptions(e,n)||n!==i;this.updateSharedOptions(n,e,s);return{sharedOptions:n,includeOptions:o}}updateElement(t,e,s,i){ye(i)?Object.assign(t,s):this._resolveAnimations(e,i).update(t,s)}updateSharedOptions(t,e,s){t&&!ye(e)&&this._resolveAnimations(void 0,e).update(t,s)}_setStyle(t,e,s,i){t.active=i;const n=this.getStyle(e,i);this._resolveAnimations(e,s,i).update(t,{options:!i&&this.getSharedOptions(n)||n})}removeHoverStyle(t,e,s){this._setStyle(t,s,"active",false)}setHoverStyle(t,e,s){this._setStyle(t,s,"active",true)}_removeDatasetHoverStyle(){const t=this._cachedMeta.dataset;t&&this._setStyle(t,void 0,"active",false)}_setDatasetHoverStyle(){const t=this._cachedMeta.dataset;t&&this._setStyle(t,void 0,"active",true)}_resyncElements(t){const e=this._data;const s=this._cachedMeta.data;for(const[t,e,s]of this._syncList)this[t](e,s);this._syncList=[];const i=s.length;const n=e.length;const o=Math.min(n,i);o&&this.parse(0,o);n>i?this._insertElements(i,n-i,t):n<i&&this._removeElements(n,i-n)}_insertElements(t,e,s=true){const i=this._cachedMeta;const n=i.data;const o=t+e;let a;const r=t=>{t.length+=e;for(a=t.length-1;a>=o;a--)t[a]=t[a-e]};r(n);for(a=t;a<o;++a)n[a]=new this.dataElementType;this._parsing&&r(i._parsed);this.parse(t,e);s&&this.updateElements(n,t,e,"reset")}updateElements(t,e,s,i){}_removeElements(t,e){const s=this._cachedMeta;if(this._parsing){const i=s._parsed.splice(t,e);s._stacked&&_e(s,i)}s.data.splice(t,e)}_sync(t){if(this._parsing)this._syncList.push(t);else{const[e,s,i]=t;this[e](s,i)}this.chart._dataChanges.push([this.index,...t])}_onDataPush(){const t=arguments.length;this._sync(["_insertElements",this.getDataset().data.length-t,t])}_onDataPop(){this._sync(["_removeElements",this._cachedMeta.data.length-1,1])}_onDataShift(){this._sync(["_removeElements",0,1])}_onDataSplice(t,e){e&&this._sync(["_removeElements",t,e]);const s=arguments.length-2;s&&this._sync(["_insertElements",t,s])}_onDataUnshift(){this._sync(["_insertElements",0,arguments.length])}}function we(t,e){if(!t._cache.$bar){const s=t.getMatchingVisibleMetas(e);let i=[];for(let e=0,n=s.length;e<n;e++)i=i.concat(s[e].controller.getAllParsedValues(t));t._cache.$bar=p(i.sort(((t,e)=>t-e)))}return t._cache.$bar}function ke(t){const e=t.iScale;const s=we(e,t.type);let i=e._length;let n,o,a,r;const l=()=>{if(a!==32767&&a!==-32768){g(r)&&(i=Math.min(i,Math.abs(a-r)||i));r=a}};for(n=0,o=s.length;n<o;++n){a=e.getPixelForValue(s[n]);l()}r=void 0;for(n=0,o=e.ticks.length;n<o;++n){a=e.getPixelForTick(n);l()}return i}function Se(t,e,s,i){const n=s.barThickness;let o,a;if(m(n)){o=e.min*s.categoryPercentage;a=s.barPercentage}else{o=n*i;a=1}return{chunk:o/i,ratio:a,start:e.pixels[t]-o/2}}function De(t,e,s,i){const n=e.pixels;const o=n[t];let a=t>0?n[t-1]:null;let r=t<n.length-1?n[t+1]:null;const l=s.categoryPercentage;a===null&&(a=o-(r===null?e.end-e.start:r-o));r===null&&(r=o+o-a);const c=o-(o-Math.min(a,r))/2*l;const h=Math.abs(r-a)/2*l;return{chunk:h/i,ratio:s.barPercentage,start:c}}function Pe(t,e,s,i){const n=s.parse(t[0],i);const o=s.parse(t[1],i);const a=Math.min(n,o);const r=Math.max(n,o);let l=a;let c=r;if(Math.abs(a)>Math.abs(r)){l=r;c=a}e[s.axis]=c;e._custom={barStart:l,barEnd:c,start:n,end:o,min:a,max:r}}function Ce(t,e,s,i){a(t)?Pe(t,e,s,i):e[s.axis]=s.parse(t,i);return e}function Ae(t,e,s,i){const n=t.iScale;const o=t.vScale;const a=n.getLabels();const r=n===o;const l=[];let c,h,d,u;for(c=s,h=s+i;c<h;++c){u=e[c];d={};d[n.axis]=r||n.parse(a[c],c);l.push(Ce(u,d,o,c))}return l}function Le(t){return t&&t.barStart!==void 0&&t.barEnd!==void 0}function Ee(t,e,s){return t!==0?l(t):(e.isHorizontal()?1:-1)*(e.min>=s?1:-1)}function Te(t){let e,s,i,n,o;if(t.horizontal){e=t.base>t.x;s="left";i="right"}else{e=t.base<t.y;s="bottom";i="top"}if(e){n="end";o="start"}else{n="start";o="end"}return{start:s,end:i,reverse:e,top:n,bottom:o}}function Oe(t,e,s,i){let n=e.borderSkipped;const o={};if(!n){t.borderSkipped=o;return}if(n===true){t.borderSkipped={top:true,right:true,bottom:true,left:true};return}const{start:a,end:r,reverse:l,top:c,bottom:h}=Te(t);if(n==="middle"&&s){t.enableBorderRadius=true;if((s._top||0)===i)n=c;else if((s._bottom||0)===i)n=h;else{o[Re(h,a,r,l)]=true;n=c}}o[Re(n,a,r,l)]=true;t.borderSkipped=o}function Re(t,e,s,i){if(i){t=Ie(t,e,s);t=ze(t,s,e)}else t=ze(t,e,s);return t}function Ie(t,e,s){return t===e?s:t===s?e:t}function ze(t,e,s){return t==="start"?e:t==="end"?s:t}function Fe(t,{inflateAmount:e},s){t.inflateAmount=e==="auto"?s===1?.33:0:e}class BarController extends DatasetController{static id="bar";static defaults={datasetElementType:false,dataElementType:"bar",categoryPercentage:.8,barPercentage:.9,grouped:true,animations:{numbers:{type:"number",properties:["x","y","base","width","height"]}}};static overrides={scales:{_index_:{type:"category",offset:true,grid:{offset:true}},_value_:{type:"linear",beginAtZero:true}}};parsePrimitiveData(t,e,s,i){return Ae(t,e,s,i)}parseArrayData(t,e,s,i){return Ae(t,e,s,i)}parseObjectData(t,e,s,i){const{iScale:n,vScale:o}=t;const{xAxisKey:a="x",yAxisKey:r="y"}=this._parsing;const l=n.axis==="x"?a:r;const c=o.axis==="x"?a:r;const h=[];let d,u,g,p;for(d=s,u=s+i;d<u;++d){p=e[d];g={};g[n.axis]=n.parse(f(p,l),d);h.push(Ce(f(p,c),g,o,d))}return h}updateRangeFromParsed(t,e,s,i){super.updateRangeFromParsed(t,e,s,i);const n=s._custom;if(n&&e===this._cachedMeta.vScale){t.min=Math.min(t.min,n.min);t.max=Math.max(t.max,n.max)}}getMaxOverflow(){return 0}getLabelAndValue(t){const e=this._cachedMeta;const{iScale:s,vScale:i}=e;const n=this.getParsed(t);const o=n._custom;const a=Le(o)?"["+o.start+", "+o.end+"]":""+i.getLabelForValue(n[i.axis]);return{label:""+s.getLabelForValue(n[s.axis]),value:a}}initialize(){this.enableOptionSharing=true;super.initialize();const t=this._cachedMeta;t.stack=this.getDataset().stack}update(t){const e=this._cachedMeta;this.updateElements(e.data,0,e.data.length,t)}updateElements(t,e,s,i){const n=i==="reset";const{index:o,_cachedMeta:{vScale:a}}=this;const r=a.getBasePixel();const l=a.isHorizontal();const c=this._getRuler();const{sharedOptions:h,includeOptions:d}=this._getSharedOptions(e,i);for(let u=e;u<e+s;u++){const e=this.getParsed(u);const s=n||m(e[a.axis])?{base:r,head:r}:this._calculateBarValuePixels(u);const f=this._calculateBarIndexPixels(u,c);const g=(e._stacks||{})[a.axis];const p={horizontal:l,base:s.base,enableBorderRadius:!g||Le(e._custom)||o===g._top||o===g._bottom,x:l?s.head:f.center,y:l?f.center:s.head,height:l?f.size:Math.abs(s.size),width:l?Math.abs(s.size):f.size};d&&(p.options=h||this.resolveDataElementOptions(u,t[u].active?"active":i));const x=p.options||t[u].options;Oe(p,x,g,o);Fe(p,x,c.ratio);this.updateElement(t[u],u,p,i)}}_getStacks(t,e){const{iScale:s}=this._cachedMeta;const i=s.getMatchingVisibleMetas(this._type).filter((t=>t.controller.options.grouped));const n=s.options.stacked;const o=[];const a=this._cachedMeta.controller.getParsed(e);const r=a&&a[s.axis];const l=t=>{const e=t._parsed.find((t=>t[s.axis]===r));const i=e&&e[t.vScale.axis];if(m(i)||isNaN(i))return true};for(const s of i)if(e===void 0||!l(s)){(n===false||o.indexOf(s.stack)===-1||n===void 0&&s.stack===void 0)&&o.push(s.stack);if(s.index===t)break}o.length||o.push(void 0);return o}_getStackCount(t){return this._getStacks(void 0,t).length}_getAxisCount(){return this._getAxis().length}getFirstScaleIdForIndexAxis(){const t=this.chart.scales;const e=this.chart.options.indexAxis;return Object.keys(t).filter((s=>t[s].axis===e)).shift()}_getAxis(){const t={};const e=this.getFirstScaleIdForIndexAxis();for(const s of this.chart.data.datasets)t[h(this.chart.options.indexAxis==="x"?s.xAxisID:s.yAxisID,e)]=true;return Object.keys(t)}_getStackIndex(t,e,s){const i=this._getStacks(t,s);const n=e!==void 0?i.indexOf(e):-1;return n===-1?i.length-1:n}_getRuler(){const t=this.options;const e=this._cachedMeta;const s=e.iScale;const i=[];let n,o;for(n=0,o=e.data.length;n<o;++n)i.push(s.getPixelForValue(this.getParsed(n)[s.axis],n));const a=t.barThickness;const r=a||ke(e);return{min:r,pixels:i,start:s._startPixel,end:s._endPixel,stackCount:this._getStackCount(),scale:s,grouped:t.grouped,ratio:a?1:t.categoryPercentage*t.barPercentage}}_calculateBarValuePixels(t){const{_cachedMeta:{vScale:e,_stacked:s,index:i},options:{base:n,minBarLength:o}}=this;const a=n||0;const r=this.getParsed(t);const c=r._custom;const h=Le(c);let d=r[e.axis];let u=0;let f=s?this.applyStack(e,r,s):d;let g,p;if(f!==d){u=f-d;f=d}if(h){d=c.barStart;f=c.barEnd-c.barStart;d!==0&&l(d)!==l(c.barEnd)&&(u=0);u+=d}const x=m(n)||h?u:n;let b=e.getPixelForValue(x);g=this.chart.getDataVisibility(t)?e.getPixelForValue(u+f):b;p=g-b;if(Math.abs(p)<o){p=Ee(p,e,a)*o;d===a&&(b-=p/2);const t=e.getPixelForDecimal(0);const n=e.getPixelForDecimal(1);const l=Math.min(t,n);const c=Math.max(t,n);b=Math.max(Math.min(b,c),l);g=b+p;s&&!h&&(r._stacks[e.axis]._visualValues[i]=e.getValueForPixel(g)-e.getValueForPixel(b))}if(b===e.getPixelForValue(a)){const t=l(p)*e.getLineWidthForValue(a)/2;b+=t;p-=t}return{size:p,base:b,head:g,center:g+p/2}}_calculateBarIndexPixels(t,e){const s=e.scale;const i=this.options;const n=i.skipNull;const o=h(i.maxBarThickness,Infinity);let a,r;const l=this._getAxisCount();if(e.grouped){const s=n?this._getStackCount(t):e.stackCount;const c=i.barThickness==="flex"?De(t,e,i,s*l):Se(t,e,i,s*l);const d=this.chart.options.indexAxis==="x"?this.getDataset().xAxisID:this.getDataset().yAxisID;const u=this._getAxis().indexOf(h(d,this.getFirstScaleIdForIndexAxis()));const f=this._getStackIndex(this.index,this._cachedMeta.stack,n?t:void 0)+u;a=c.start+c.chunk*f+c.chunk/2;r=Math.min(o,c.chunk*c.ratio)}else{a=s.getPixelForValue(this.getParsed(t)[s.axis],t);r=Math.min(o,e.min*e.ratio)}return{base:a-r/2,head:a+r/2,center:a,size:r}}draw(){const t=this._cachedMeta;const e=t.vScale;const s=t.data;const i=s.length;let n=0;for(;n<i;++n)this.getParsed(n)[e.axis]===null||s[n].hidden||s[n].draw(this._ctx)}}class BubbleController extends DatasetController{static id="bubble";static defaults={datasetElementType:false,dataElementType:"point",animations:{numbers:{type:"number",properties:["x","y","borderWidth","radius"]}}};static overrides={scales:{x:{type:"linear"},y:{type:"linear"}}};initialize(){this.enableOptionSharing=true;super.initialize()}parsePrimitiveData(t,e,s,i){const n=super.parsePrimitiveData(t,e,s,i);for(let t=0;t<n.length;t++)n[t]._custom=this.resolveDataElementOptions(t+s).radius;return n}parseArrayData(t,e,s,i){const n=super.parseArrayData(t,e,s,i);for(let t=0;t<n.length;t++){const i=e[s+t];n[t]._custom=h(i[2],this.resolveDataElementOptions(t+s).radius)}return n}parseObjectData(t,e,s,i){const n=super.parseObjectData(t,e,s,i);for(let t=0;t<n.length;t++){const i=e[s+t];n[t]._custom=h(i&&i.r&&+i.r,this.resolveDataElementOptions(t+s).radius)}return n}getMaxOverflow(){const t=this._cachedMeta.data;let e=0;for(let s=t.length-1;s>=0;--s)e=Math.max(e,t[s].size(this.resolveDataElementOptions(s))/2);return e>0&&e}getLabelAndValue(t){const e=this._cachedMeta;const s=this.chart.data.labels||[];const{xScale:i,yScale:n}=e;const o=this.getParsed(t);const a=i.getLabelForValue(o.x);const r=n.getLabelForValue(o.y);const l=o._custom;return{label:s[t]||"",value:"("+a+", "+r+(l?", "+l:"")+")"}}update(t){const e=this._cachedMeta.data;this.updateElements(e,0,e.length,t)}updateElements(t,e,s,i){const n=i==="reset";const{iScale:o,vScale:a}=this._cachedMeta;const{sharedOptions:r,includeOptions:l}=this._getSharedOptions(e,i);const c=o.axis;const h=a.axis;for(let d=e;d<e+s;d++){const e=t[d];const s=!n&&this.getParsed(d);const u={};const f=u[c]=n?o.getPixelForDecimal(.5):o.getPixelForValue(s[c]);const g=u[h]=n?a.getBasePixel():a.getPixelForValue(s[h]);u.skip=isNaN(f)||isNaN(g);if(l){u.options=r||this.resolveDataElementOptions(d,e.active?"active":i);n&&(u.options.radius=0)}this.updateElement(e,d,u,i)}}resolveDataElementOptions(t,e){const s=this.getParsed(t);let i=super.resolveDataElementOptions(t,e);i.$shared&&(i=Object.assign({},i,{$shared:false}));const n=i.radius;e!=="active"&&(i.radius=0);i.radius+=h(s&&s._custom,n);return i}}function Ve(t,e,s){let i=1;let n=1;let o=0;let a=0;if(e<x){const r=t;const l=r+e;const c=Math.cos(r);const h=Math.sin(r);const d=Math.cos(l);const u=Math.sin(l);const f=(t,e,i)=>b(t,r,l,true)?1:Math.max(e,e*s,i,i*s);const g=(t,e,i)=>b(t,r,l,true)?-1:Math.min(e,e*s,i,i*s);const p=f(0,c,d);const m=f(_,h,u);const x=g(y,c,d);const v=g(y+_,h,u);i=(p-x)/2;n=(m-v)/2;o=-(p+x)/2;a=-(m+v)/2}return{ratioX:i,ratioY:n,offsetX:o,offsetY:a}}class DoughnutController extends DatasetController{static id="doughnut";static defaults={datasetElementType:false,dataElementType:"arc",animation:{animateRotate:true,animateScale:false},animations:{numbers:{type:"number",properties:["circumference","endAngle","innerRadius","outerRadius","startAngle","x","y","offset","borderWidth","spacing"]}},cutout:"50%",rotation:0,circumference:360,radius:"100%",spacing:0,indexAxis:"r"};static descriptors={_scriptable:t=>t!=="spacing",_indexable:t=>t!=="spacing"&&!t.startsWith("borderDash")&&!t.startsWith("hoverBorderDash")};static overrides={aspectRatio:1,plugins:{legend:{labels:{generateLabels(t){const e=t.data;const{labels:{pointStyle:s,textAlign:i,color:n,useBorderRadius:o,borderRadius:a}}=t.legend.options;return e.labels.length&&e.datasets.length?e.labels.map(((e,r)=>{const l=t.getDatasetMeta(0);const c=l.controller.getStyle(r);return{text:e,fillStyle:c.backgroundColor,fontColor:n,hidden:!t.getDataVisibility(r),lineDash:c.borderDash,lineDashOffset:c.borderDashOffset,lineJoin:c.borderJoinStyle,lineWidth:c.borderWidth,strokeStyle:c.borderColor,textAlign:i,pointStyle:s,borderRadius:o&&(a||c.borderRadius),index:r}})):[]}},onClick(t,e,s){s.chart.toggleDataVisibility(e.index);s.chart.update()}}}};constructor(t,e){super(t,e);this.enableOptionSharing=true;this.innerRadius=void 0;this.outerRadius=void 0;this.offsetX=void 0;this.offsetY=void 0}linkScales(){}parse(t,e){const s=this.getDataset().data;const i=this._cachedMeta;if(this._parsing===false)i._parsed=s;else{let o=t=>+s[t];if(n(s[t])){const{key:t="value"}=this._parsing;o=e=>+f(s[e],t)}let a,r;for(a=t,r=t+e;a<r;++a)i._parsed[a]=o(a)}}_getRotation(){return v(this.options.rotation-90)}_getCircumference(){return v(this.options.circumference)}_getRotationExtents(){let t=x;let e=-x;for(let s=0;s<this.chart.data.datasets.length;++s)if(this.chart.isDatasetVisible(s)&&this.chart.getDatasetMeta(s).type===this._type){const i=this.chart.getDatasetMeta(s).controller;const n=i._getRotation();const o=i._getCircumference();t=Math.min(t,n);e=Math.max(e,n+o)}return{rotation:t,circumference:e-t}}update(t){const e=this.chart;const{chartArea:s}=e;const i=this._cachedMeta;const n=i.data;const o=this.getMaxBorderWidth()+this.getMaxOffset(n)+this.options.spacing;const a=Math.max((Math.min(s.width,s.height)-o)/2,0);const r=Math.min(M(this.options.cutout,a),1);const l=this._getRingWeight(this.index);const{circumference:c,rotation:h}=this._getRotationExtents();const{ratioX:d,ratioY:u,offsetX:f,offsetY:g}=Ve(h,c,r);const p=(s.width-o)/d;const m=(s.height-o)/u;const x=Math.max(Math.min(p,m)/2,0);const b=w(this.options.radius,x);const _=Math.max(b*r,0);const y=(b-_)/this._getVisibleDatasetWeightTotal();this.offsetX=f*b;this.offsetY=g*b;i.total=this.calculateTotal();this.outerRadius=b-y*this._getRingWeightOffset(this.index);this.innerRadius=Math.max(this.outerRadius-y*l,0);this.updateElements(n,0,n.length,t)}_circumference(t,e){const s=this.options;const i=this._cachedMeta;const n=this._getCircumference();return e&&s.animation.animateRotate||!this.chart.getDataVisibility(t)||i._parsed[t]===null||i.data[t].hidden?0:this.calculateCircumference(i._parsed[t]*n/x)}updateElements(t,e,s,i){const n=i==="reset";const o=this.chart;const a=o.chartArea;const r=o.options;const l=r.animation;const c=(a.left+a.right)/2;const h=(a.top+a.bottom)/2;const d=n&&l.animateScale;const u=d?0:this.innerRadius;const f=d?0:this.outerRadius;const{sharedOptions:g,includeOptions:p}=this._getSharedOptions(e,i);let m=this._getRotation();let x;for(x=0;x<e;++x)m+=this._circumference(x,n);for(x=e;x<e+s;++x){const e=this._circumference(x,n);const s=t[x];const o={x:c+this.offsetX,y:h+this.offsetY,startAngle:m,endAngle:m+e,circumference:e,outerRadius:f,innerRadius:u};p&&(o.options=g||this.resolveDataElementOptions(x,s.active?"active":i));m+=e;this.updateElement(s,x,o,i)}}calculateTotal(){const t=this._cachedMeta;const e=t.data;let s=0;let i;for(i=0;i<e.length;i++){const n=t._parsed[i];n===null||isNaN(n)||!this.chart.getDataVisibility(i)||e[i].hidden||(s+=Math.abs(n))}return s}calculateCircumference(t){const e=this._cachedMeta.total;return e>0&&!isNaN(t)?x*(Math.abs(t)/e):0}getLabelAndValue(t){const e=this._cachedMeta;const s=this.chart;const i=s.data.labels||[];const n=k(e._parsed[t],s.options.locale);return{label:i[t]||"",value:n}}getMaxBorderWidth(t){let e=0;const s=this.chart;let i,n,o,a,r;if(!t)for(i=0,n=s.data.datasets.length;i<n;++i)if(s.isDatasetVisible(i)){o=s.getDatasetMeta(i);t=o.data;a=o.controller;break}if(!t)return 0;for(i=0,n=t.length;i<n;++i){r=a.resolveDataElementOptions(i);r.borderAlign!=="inner"&&(e=Math.max(e,r.borderWidth||0,r.hoverBorderWidth||0))}return e}getMaxOffset(t){let e=0;for(let s=0,i=t.length;s<i;++s){const t=this.resolveDataElementOptions(s);e=Math.max(e,t.offset||0,t.hoverOffset||0)}return e}_getRingWeightOffset(t){let e=0;for(let s=0;s<t;++s)this.chart.isDatasetVisible(s)&&(e+=this._getRingWeight(s));return e}_getRingWeight(t){return Math.max(h(this.chart.data.datasets[t].weight,1),0)}_getVisibleDatasetWeightTotal(){return this._getRingWeightOffset(this.chart.data.datasets.length)||1}}class LineController extends DatasetController{static id="line";static defaults={datasetElementType:"line",dataElementType:"point",showLine:true,spanGaps:false};static overrides={scales:{_index_:{type:"category"},_value_:{type:"linear"}}};initialize(){this.enableOptionSharing=true;this.supportsDecimation=true;super.initialize()}update(t){const e=this._cachedMeta;const{dataset:s,data:i=[],_dataset:n}=e;const o=this.chart._animationsDisabled;let{start:a,count:r}=S(e,i,o);this._drawStart=a;this._drawCount=r;if(D(e)){a=0;r=i.length}s._chart=this.chart;s._datasetIndex=this.index;s._decimated=!!n._decimated;s.points=i;const l=this.resolveDatasetElementOptions(t);this.options.showLine||(l.borderWidth=0);l.segment=this.options.segment;this.updateElement(s,void 0,{animated:!o,options:l},t);this.updateElements(i,a,r,t)}updateElements(t,e,s,i){const n=i==="reset";const{iScale:o,vScale:a,_stacked:r,_dataset:l}=this._cachedMeta;const{sharedOptions:c,includeOptions:h}=this._getSharedOptions(e,i);const d=o.axis;const u=a.axis;const{spanGaps:f,segment:g}=this.options;const p=P(f)?f:Number.POSITIVE_INFINITY;const x=this.chart._animationsDisabled||n||i==="none";const b=e+s;const _=t.length;let y=e>0&&this.getParsed(e-1);for(let s=0;s<_;++s){const f=t[s];const _=x?f:{};if(s<e||s>=b){_.skip=true;continue}const v=this.getParsed(s);const M=m(v[u]);const w=_[d]=o.getPixelForValue(v[d],s);const k=_[u]=n||M?a.getBasePixel():a.getPixelForValue(r?this.applyStack(a,v,r):v[u],s);_.skip=isNaN(w)||isNaN(k)||M;_.stop=s>0&&Math.abs(v[d]-y[d])>p;if(g){_.parsed=v;_.raw=l.data[s]}h&&(_.options=c||this.resolveDataElementOptions(s,f.active?"active":i));x||this.updateElement(f,s,_,i);y=v}}getMaxOverflow(){const t=this._cachedMeta;const e=t.dataset;const s=e.options&&e.options.borderWidth||0;const i=t.data||[];if(!i.length)return s;const n=i[0].size(this.resolveDataElementOptions(0));const o=i[i.length-1].size(this.resolveDataElementOptions(i.length-1));return Math.max(s,n,o)/2}draw(){const t=this._cachedMeta;t.dataset.updateControlPoints(this.chart.chartArea,t.iScale.axis);super.draw()}}class PolarAreaController extends DatasetController{static id="polarArea";static defaults={dataElementType:"arc",animation:{animateRotate:true,animateScale:true},animations:{numbers:{type:"number",properties:["x","y","startAngle","endAngle","innerRadius","outerRadius"]}},indexAxis:"r",startAngle:0};static overrides={aspectRatio:1,plugins:{legend:{labels:{generateLabels(t){const e=t.data;if(e.labels.length&&e.datasets.length){const{labels:{pointStyle:s,color:i}}=t.legend.options;return e.labels.map(((e,n)=>{const o=t.getDatasetMeta(0);const a=o.controller.getStyle(n);return{text:e,fillStyle:a.backgroundColor,strokeStyle:a.borderColor,fontColor:i,lineWidth:a.borderWidth,pointStyle:s,hidden:!t.getDataVisibility(n),index:n}}))}return[]}},onClick(t,e,s){s.chart.toggleDataVisibility(e.index);s.chart.update()}}},scales:{r:{type:"radialLinear",angleLines:{display:false},beginAtZero:true,grid:{circular:true},pointLabels:{display:false},startAngle:0}}};constructor(t,e){super(t,e);this.innerRadius=void 0;this.outerRadius=void 0}getLabelAndValue(t){const e=this._cachedMeta;const s=this.chart;const i=s.data.labels||[];const n=k(e._parsed[t].r,s.options.locale);return{label:i[t]||"",value:n}}parseObjectData(t,e,s,i){return C.bind(this)(t,e,s,i)}update(t){const e=this._cachedMeta.data;this._updateRadius();this.updateElements(e,0,e.length,t)}getMinMax(){const t=this._cachedMeta;const e={min:Number.POSITIVE_INFINITY,max:Number.NEGATIVE_INFINITY};t.data.forEach(((t,s)=>{const i=this.getParsed(s).r;if(!isNaN(i)&&this.chart.getDataVisibility(s)){i<e.min&&(e.min=i);i>e.max&&(e.max=i)}}));return e}_updateRadius(){const t=this.chart;const e=t.chartArea;const s=t.options;const i=Math.min(e.right-e.left,e.bottom-e.top);const n=Math.max(i/2,0);const o=Math.max(s.cutoutPercentage?n/100*s.cutoutPercentage:1,0);const a=(n-o)/t.getVisibleDatasetCount();this.outerRadius=n-a*this.index;this.innerRadius=this.outerRadius-a}updateElements(t,e,s,i){const n=i==="reset";const o=this.chart;const a=o.options;const r=a.animation;const l=this._cachedMeta.rScale;const c=l.xCenter;const h=l.yCenter;const d=l.getIndexAngle(0)-.5*y;let u=d;let f;const g=360/this.countVisibleElements();for(f=0;f<e;++f)u+=this._computeAngle(f,i,g);for(f=e;f<e+s;f++){const e=t[f];let s=u;let a=u+this._computeAngle(f,i,g);let p=o.getDataVisibility(f)?l.getDistanceFromCenterForValue(this.getParsed(f).r):0;u=a;if(n){r.animateScale&&(p=0);r.animateRotate&&(s=a=d)}const m={x:c,y:h,innerRadius:0,outerRadius:p,startAngle:s,endAngle:a,options:this.resolveDataElementOptions(f,e.active?"active":i)};this.updateElement(e,f,m,i)}}countVisibleElements(){const t=this._cachedMeta;let e=0;t.data.forEach(((t,s)=>{!isNaN(this.getParsed(s).r)&&this.chart.getDataVisibility(s)&&e++}));return e}_computeAngle(t,e,s){return this.chart.getDataVisibility(t)?v(this.resolveDataElementOptions(t,e).angle||s):0}}class PieController extends DoughnutController{static id="pie";static defaults={cutout:0,rotation:0,circumference:360,radius:"100%"}}class RadarController extends DatasetController{static id="radar";static defaults={datasetElementType:"line",dataElementType:"point",indexAxis:"r",showLine:true,elements:{line:{fill:"start"}}};static overrides={aspectRatio:1,scales:{r:{type:"radialLinear"}}};getLabelAndValue(t){const e=this._cachedMeta.vScale;const s=this.getParsed(t);return{label:e.getLabels()[t],value:""+e.getLabelForValue(s[e.axis])}}parseObjectData(t,e,s,i){return C.bind(this)(t,e,s,i)}update(t){const e=this._cachedMeta;const s=e.dataset;const i=e.data||[];const n=e.iScale.getLabels();s.points=i;if(t!=="resize"){const e=this.resolveDatasetElementOptions(t);this.options.showLine||(e.borderWidth=0);const o={_loop:true,_fullLoop:n.length===i.length,options:e};this.updateElement(s,void 0,o,t)}this.updateElements(i,0,i.length,t)}updateElements(t,e,s,i){const n=this._cachedMeta.rScale;const o=i==="reset";for(let a=e;a<e+s;a++){const e=t[a];const s=this.resolveDataElementOptions(a,e.active?"active":i);const r=n.getPointPositionForValue(a,this.getParsed(a).r);const l=o?n.xCenter:r.x;const c=o?n.yCenter:r.y;const h={x:l,y:c,angle:r.angle,skip:isNaN(l)||isNaN(c),options:s};this.updateElement(e,a,h,i)}}}class ScatterController extends DatasetController{static id="scatter";static defaults={datasetElementType:false,dataElementType:"point",showLine:false,fill:false};static overrides={interaction:{mode:"point"},scales:{x:{type:"linear"},y:{type:"linear"}}};getLabelAndValue(t){const e=this._cachedMeta;const s=this.chart.data.labels||[];const{xScale:i,yScale:n}=e;const o=this.getParsed(t);const a=i.getLabelForValue(o.x);const r=n.getLabelForValue(o.y);return{label:s[t]||"",value:"("+a+", "+r+")"}}update(t){const e=this._cachedMeta;const{data:s=[]}=e;const i=this.chart._animationsDisabled;let{start:n,count:o}=S(e,s,i);this._drawStart=n;this._drawCount=o;if(D(e)){n=0;o=s.length}if(this.options.showLine){this.datasetElementType||this.addElements();const{dataset:n,_dataset:o}=e;n._chart=this.chart;n._datasetIndex=this.index;n._decimated=!!o._decimated;n.points=s;const a=this.resolveDatasetElementOptions(t);a.segment=this.options.segment;this.updateElement(n,void 0,{animated:!i,options:a},t)}else if(this.datasetElementType){delete e.dataset;this.datasetElementType=false}this.updateElements(s,n,o,t)}addElements(){const{showLine:t}=this.options;!this.datasetElementType&&t&&(this.datasetElementType=this.chart.registry.getElement("line"));super.addElements()}updateElements(t,e,s,i){const n=i==="reset";const{iScale:o,vScale:a,_stacked:r,_dataset:l}=this._cachedMeta;const c=this.resolveDataElementOptions(e,i);const h=this.getSharedOptions(c);const d=this.includeOptions(i,h);const u=o.axis;const f=a.axis;const{spanGaps:g,segment:p}=this.options;const x=P(g)?g:Number.POSITIVE_INFINITY;const b=this.chart._animationsDisabled||n||i==="none";let _=e>0&&this.getParsed(e-1);for(let c=e;c<e+s;++c){const e=t[c];const s=this.getParsed(c);const g=b?e:{};const y=m(s[f]);const v=g[u]=o.getPixelForValue(s[u],c);const M=g[f]=n||y?a.getBasePixel():a.getPixelForValue(r?this.applyStack(a,s,r):s[f],c);g.skip=isNaN(v)||isNaN(M)||y;g.stop=c>0&&Math.abs(s[u]-_[u])>x;if(p){g.parsed=s;g.raw=l.data[c]}d&&(g.options=h||this.resolveDataElementOptions(c,e.active?"active":i));b||this.updateElement(e,c,g,i);_=s}this.updateSharedOptions(h,i,c)}getMaxOverflow(){const t=this._cachedMeta;const e=t.data||[];if(!this.options.showLine){let t=0;for(let s=e.length-1;s>=0;--s)t=Math.max(t,e[s].size(this.resolveDataElementOptions(s))/2);return t>0&&t}const s=t.dataset;const i=s.options&&s.options.borderWidth||0;if(!e.length)return i;const n=e[0].size(this.resolveDataElementOptions(0));const o=e[e.length-1].size(this.resolveDataElementOptions(e.length-1));return Math.max(i,n,o)/2}}var Be=Object.freeze({__proto__:null,BarController:BarController,BubbleController:BubbleController,DoughnutController:DoughnutController,LineController:LineController,PieController:PieController,PolarAreaController:PolarAreaController,RadarController:RadarController,ScatterController:ScatterController});function Ne(){throw new Error("This method is not implemented: Check that a complete date adapter is provided.")}class DateAdapterBase{static override(t){Object.assign(DateAdapterBase.prototype,t)}options;constructor(t){this.options=t||{}}init(){}formats(){return Ne()}parse(){return Ne()}format(){return Ne()}add(){return Ne()}diff(){return Ne()}startOf(){return Ne()}endOf(){return Ne()}}var We={_date:DateAdapterBase};function He(t,e,s,i){const{controller:n,data:o,_sorted:a}=t;const r=n._cachedMeta.iScale;const l=t.dataset&&t.dataset.options?t.dataset.options.spanGaps:null;if(r&&e===r.axis&&e!=="r"&&a&&o.length){const a=r._reversePixels?A:L;if(!i){const i=a(o,e,s);if(l){const{vScale:e}=n._cachedMeta;const{_parsed:s}=t;const o=s.slice(0,i.lo+1).reverse().findIndex((t=>!m(t[e.axis])));i.lo-=Math.max(0,o);const a=s.slice(i.hi).findIndex((t=>!m(t[e.axis])));i.hi+=Math.max(0,a)}return i}if(n._sharedOptions){const t=o[0];const i=typeof t.getRange==="function"&&t.getRange(e);if(i){const t=a(o,e,s-i);const n=a(o,e,s+i);return{lo:t.lo,hi:n.hi}}}}return{lo:0,hi:o.length-1}}function je(t,e,s,i,n){const o=t.getSortedVisibleDatasetMetas();const a=s[e];for(let t=0,s=o.length;t<s;++t){const{index:s,data:r}=o[t];const{lo:l,hi:c}=He(o[t],e,a,n);for(let t=l;t<=c;++t){const e=r[t];e.skip||i(e,s,t)}}}function $e(t){const e=t.indexOf("x")!==-1;const s=t.indexOf("y")!==-1;return function(t,i){const n=e?Math.abs(t.x-i.x):0;const o=s?Math.abs(t.y-i.y):0;return Math.sqrt(Math.pow(n,2)+Math.pow(o,2))}}function Ue(t,e,s,i,n){const o=[];if(!n&&!t.isPointInArea(e))return o;const a=function(s,a,r){(n||E(s,t.chartArea,0))&&s.inRange(e.x,e.y,i)&&o.push({element:s,datasetIndex:a,index:r})};je(t,s,e,a,true);return o}function Ye(t,e,s,i){let n=[];function o(t,s,o){const{startAngle:a,endAngle:r}=t.getProps(["startAngle","endAngle"],i);const{angle:l}=T(t,{x:e.x,y:e.y});b(l,a,r)&&n.push({element:t,datasetIndex:s,index:o})}je(t,s,e,o);return n}function Xe(t,e,s,i,n,o){let a=[];const r=$e(s);let l=Number.POSITIVE_INFINITY;function c(s,c,h){const d=s.inRange(e.x,e.y,n);if(i&&!d)return;const u=s.getCenterPoint(n);const f=!!o||t.isPointInArea(u);if(!f&&!d)return;const g=r(e,u);if(g<l){a=[{element:s,datasetIndex:c,index:h}];l=g}else g===l&&a.push({element:s,datasetIndex:c,index:h})}je(t,s,e,c);return a}function Ge(t,e,s,i,n,o){return o||t.isPointInArea(e)?s!=="r"||i?Xe(t,e,s,i,n,o):Ye(t,e,s,n):[]}function Ke(t,e,s,i,n){const o=[];const a=s==="x"?"inXRange":"inYRange";let r=false;je(t,s,e,((t,i,l)=>{if(t[a]&&t[a](e[s],n)){o.push({element:t,datasetIndex:i,index:l});r=r||t.inRange(e.x,e.y,n)}}));return i&&!r?[]:o}var Je={evaluateInteractionItems:je,modes:{index(t,e,s,i){const n=O(e,t);const o=s.axis||"x";const a=s.includeInvisible||false;const r=s.intersect?Ue(t,n,o,i,a):Ge(t,n,o,false,i,a);const l=[];if(!r.length)return[];t.getSortedVisibleDatasetMetas().forEach((t=>{const e=r[0].index;const s=t.data[e];s&&!s.skip&&l.push({element:s,datasetIndex:t.index,index:e})}));return l},dataset(t,e,s,i){const n=O(e,t);const o=s.axis||"xy";const a=s.includeInvisible||false;let r=s.intersect?Ue(t,n,o,i,a):Ge(t,n,o,false,i,a);if(r.length>0){const e=r[0].datasetIndex;const s=t.getDatasetMeta(e).data;r=[];for(let t=0;t<s.length;++t)r.push({element:s[t],datasetIndex:e,index:t})}return r},point(t,e,s,i){const n=O(e,t);const o=s.axis||"xy";const a=s.includeInvisible||false;return Ue(t,n,o,i,a)},nearest(t,e,s,i){const n=O(e,t);const o=s.axis||"xy";const a=s.includeInvisible||false;return Ge(t,n,o,s.intersect,i,a)},x(t,e,s,i){const n=O(e,t);return Ke(t,n,"x",s.intersect,i)},y(t,e,s,i){const n=O(e,t);return Ke(t,n,"y",s.intersect,i)}}};const qe=["left","top","right","bottom"];function Ze(t,e){return t.filter((t=>t.pos===e))}function Qe(t,e){return t.filter((t=>qe.indexOf(t.pos)===-1&&t.box.axis===e))}function ts(t,e){return t.sort(((t,s)=>{const i=e?s:t;const n=e?t:s;return i.weight===n.weight?i.index-n.index:i.weight-n.weight}))}function es(t){const e=[];let s,i,n,o,a,r;for(s=0,i=(t||[]).length;s<i;++s){n=t[s];({position:o,options:{stack:a,stackWeight:r=1}}=n);e.push({index:s,box:n,pos:o,horizontal:n.isHorizontal(),weight:n.weight,stack:a&&o+a,stackWeight:r})}return e}function ss(t){const e={};for(const s of t){const{stack:t,pos:i,stackWeight:n}=s;if(!t||!qe.includes(i))continue;const o=e[t]||(e[t]={count:0,placed:0,weight:0,size:0});o.count++;o.weight+=n}return e}function is(t,e){const s=ss(t);const{vBoxMaxWidth:i,hBoxMaxHeight:n}=e;let o,a,r;for(o=0,a=t.length;o<a;++o){r=t[o];const{fullSize:a}=r.box;const l=s[r.stack];const c=l&&r.stackWeight/l.weight;if(r.horizontal){r.width=c?c*i:a&&e.availableWidth;r.height=n}else{r.width=i;r.height=c?c*n:a&&e.availableHeight}}return s}function ns(t){const e=es(t);const s=ts(e.filter((t=>t.box.fullSize)),true);const i=ts(Ze(e,"left"),true);const n=ts(Ze(e,"right"));const o=ts(Ze(e,"top"),true);const a=ts(Ze(e,"bottom"));const r=Qe(e,"x");const l=Qe(e,"y");return{fullSize:s,leftAndTop:i.concat(o),rightAndBottom:n.concat(l).concat(a).concat(r),chartArea:Ze(e,"chartArea"),vertical:i.concat(n).concat(l),horizontal:o.concat(a).concat(r)}}function os(t,e,s,i){return Math.max(t[s],e[s])+Math.max(t[i],e[i])}function as(t,e){t.top=Math.max(t.top,e.top);t.left=Math.max(t.left,e.left);t.bottom=Math.max(t.bottom,e.bottom);t.right=Math.max(t.right,e.right)}function rs(t,e,s,i){const{pos:o,box:a}=s;const r=t.maxPadding;if(!n(o)){s.size&&(t[o]-=s.size);const e=i[s.stack]||{size:0,count:1};e.size=Math.max(e.size,s.horizontal?a.height:a.width);s.size=e.size/e.count;t[o]+=s.size}a.getPadding&&as(r,a.getPadding());const l=Math.max(0,e.outerWidth-os(r,t,"left","right"));const c=Math.max(0,e.outerHeight-os(r,t,"top","bottom"));const h=l!==t.w;const d=c!==t.h;t.w=l;t.h=c;return s.horizontal?{same:h,other:d}:{same:d,other:h}}function ls(t){const e=t.maxPadding;function s(s){const i=Math.max(e[s]-t[s],0);t[s]+=i;return i}t.y+=s("top");t.x+=s("left");s("right");s("bottom")}function cs(t,e){const s=e.maxPadding;function i(t){const i={left:0,top:0,right:0,bottom:0};t.forEach((t=>{i[t]=Math.max(e[t],s[t])}));return i}return i(t?["left","right"]:["top","bottom"])}function hs(t,e,s,i){const n=[];let o,a,r,l,c,h;for(o=0,a=t.length,c=0;o<a;++o){r=t[o];l=r.box;l.update(r.width||e.w,r.height||e.h,cs(r.horizontal,e));const{same:a,other:d}=rs(e,s,r,i);c|=a&&n.length;h=h||d;l.fullSize||n.push(r)}return c&&hs(n,e,s,i)||h}function ds(t,e,s,i,n){t.top=s;t.left=e;t.right=e+i;t.bottom=s+n;t.width=i;t.height=n}function us(t,e,s,i){const n=s.padding;let{x:o,y:a}=e;for(const r of t){const t=r.box;const l=i[r.stack]||{count:1,placed:0,weight:1};const c=r.stackWeight/l.weight||1;if(r.horizontal){const i=e.w*c;const o=l.size||t.height;g(l.start)&&(a=l.start);t.fullSize?ds(t,n.left,a,s.outerWidth-n.right-n.left,o):ds(t,e.left+l.placed,a,i,o);l.start=a;l.placed+=i;a=t.bottom}else{const i=e.h*c;const a=l.size||t.width;g(l.start)&&(o=l.start);t.fullSize?ds(t,o,n.top,a,s.outerHeight-n.bottom-n.top):ds(t,o,e.top+l.placed,a,i);l.start=o;l.placed+=i;o=t.right}}e.x=o;e.y=a}var fs={addBox(t,e){t.boxes||(t.boxes=[]);e.fullSize=e.fullSize||false;e.position=e.position||"top";e.weight=e.weight||0;e._layers=e._layers||function(){return[{z:0,draw(t){e.draw(t)}}]};t.boxes.push(e)},removeBox(t,e){const s=t.boxes?t.boxes.indexOf(e):-1;s!==-1&&t.boxes.splice(s,1)},configure(t,e,s){e.fullSize=s.fullSize;e.position=s.position;e.weight=s.weight},update(t,e,s,i){if(!t)return;const n=R(t.options.layout.padding);const o=Math.max(e-n.width,0);const a=Math.max(s-n.height,0);const r=ns(t.boxes);const l=r.vertical;const c=r.horizontal;I(t.boxes,(t=>{typeof t.beforeLayout==="function"&&t.beforeLayout()}));const h=l.reduce(((t,e)=>e.box.options&&e.box.options.display===false?t:t+1),0)||1;const d=Object.freeze({outerWidth:e,outerHeight:s,padding:n,availableWidth:o,availableHeight:a,vBoxMaxWidth:o/2/h,hBoxMaxHeight:a/2});const u=Object.assign({},n);as(u,R(i));const f=Object.assign({maxPadding:u,w:o,h:a,x:n.left,y:n.top},n);const g=is(l.concat(c),d);hs(r.fullSize,f,d,g);hs(l,f,d,g);hs(c,f,d,g)&&hs(l,f,d,g);ls(f);us(r.leftAndTop,f,d,g);f.x+=f.w;f.y+=f.h;us(r.rightAndBottom,f,d,g);t.chartArea={left:f.left,top:f.top,right:f.left+f.w,bottom:f.top+f.h,height:f.h,width:f.w};I(r.chartArea,(e=>{const s=e.box;Object.assign(s,t.chartArea);s.update(f.w,f.h,{left:0,top:0,right:0,bottom:0})}))}};class BasePlatform{acquireContext(t,e){}releaseContext(t){return false}addEventListener(t,e,s){}removeEventListener(t,e,s){}getDevicePixelRatio(){return 1}getMaximumSize(t,e,s,i){e=Math.max(0,e||t.width);s=s||t.height;return{width:e,height:Math.max(0,i?Math.floor(e/i):s)}}isAttached(t){return true}updateConfig(t){}}class BasicPlatform extends BasePlatform{acquireContext(t){return t&&t.getContext&&t.getContext("2d")||null}updateConfig(t){t.options.animation=false}}const gs="$chartjs";const ps={touchstart:"mousedown",touchmove:"mousemove",touchend:"mouseup",pointerenter:"mouseenter",pointerdown:"mousedown",pointermove:"mousemove",pointerup:"mouseup",pointerleave:"mouseout",pointerout:"mouseout"};const ms=t=>t===null||t==="";function xs(t,e){const s=t.style;const i=t.getAttribute("height");const n=t.getAttribute("width");t[gs]={initial:{height:i,width:n,style:{display:s.display,height:s.height,width:s.width}}};s.display=s.display||"block";s.boxSizing=s.boxSizing||"border-box";if(ms(n)){const e=z(t,"width");e!==void 0&&(t.width=e)}if(ms(i))if(t.style.height==="")t.height=t.width/(e||2);else{const e=z(t,"height");e!==void 0&&(t.height=e)}return t}const bs=!!F&&{passive:true};function _s(t,e,s){t&&t.addEventListener(e,s,bs)}function ys(t,e,s){t&&t.canvas&&t.canvas.removeEventListener(e,s,bs)}function vs(t,e){const s=ps[t.type]||t.type;const{x:i,y:n}=O(t,e);return{type:s,chart:e,native:t,x:i!==void 0?i:null,y:n!==void 0?n:null}}function Ms(t,e){for(const s of t)if(s===e||s.contains(e))return true}function ws(t,e,s){const i=t.canvas;const n=new MutationObserver((t=>{let e=false;for(const s of t){e=e||Ms(s.addedNodes,i);e=e&&!Ms(s.removedNodes,i)}e&&s()}));n.observe(document,{childList:true,subtree:true});return n}function ks(t,e,s){const i=t.canvas;const n=new MutationObserver((t=>{let e=false;for(const s of t){e=e||Ms(s.removedNodes,i);e=e&&!Ms(s.addedNodes,i)}e&&s()}));n.observe(document,{childList:true,subtree:true});return n}const Ss=new Map;let Ds=0;function Ps(){const t=window.devicePixelRatio;if(t!==Ds){Ds=t;Ss.forEach(((e,s)=>{s.currentDevicePixelRatio!==t&&e()}))}}function Cs(t,e){Ss.size||window.addEventListener("resize",Ps);Ss.set(t,e)}function As(t){Ss.delete(t);Ss.size||window.removeEventListener("resize",Ps)}function Ls(t,e,s){const i=t.canvas;const n=i&&V(i);if(!n)return;const o=B(((t,e)=>{const i=n.clientWidth;s(t,e);i<n.clientWidth&&s()}),window);const a=new ResizeObserver((t=>{const e=t[0];const s=e.contentRect.width;const i=e.contentRect.height;s===0&&i===0||o(s,i)}));a.observe(n);Cs(t,o);return a}function Es(t,e,s){s&&s.disconnect();e==="resize"&&As(t)}function Ts(t,e,s){const i=t.canvas;const n=B((e=>{t.ctx!==null&&s(vs(e,t))}),t);_s(i,e,n);return n}class DomPlatform extends BasePlatform{acquireContext(t,e){const s=t&&t.getContext&&t.getContext("2d");if(s&&s.canvas===t){xs(t,e);return s}return null}releaseContext(t){const e=t.canvas;if(!e[gs])return false;const s=e[gs].initial;["height","width"].forEach((t=>{const i=s[t];m(i)?e.removeAttribute(t):e.setAttribute(t,i)}));const i=s.style||{};Object.keys(i).forEach((t=>{e.style[t]=i[t]}));e.width=e.width;delete e[gs];return true}addEventListener(t,e,s){this.removeEventListener(t,e);const i=t.$proxies||(t.$proxies={});const n={attach:ws,detach:ks,resize:Ls};const o=n[e]||Ts;i[e]=o(t,e,s)}removeEventListener(t,e){const s=t.$proxies||(t.$proxies={});const i=s[e];if(!i)return;const n={attach:Es,detach:Es,resize:Es};const o=n[e]||ys;o(t,e,i);s[e]=void 0}getDevicePixelRatio(){return window.devicePixelRatio}getMaximumSize(t,e,s,i){return N(t,e,s,i)}isAttached(t){const e=t&&V(t);return!!(e&&e.isConnected)}}function Os(t){return!W()||typeof OffscreenCanvas!=="undefined"&&t instanceof OffscreenCanvas?BasicPlatform:DomPlatform}class Element{static defaults={};static defaultRoutes=void 0;x;y;active=false;options;$animations;tooltipPosition(t){const{x:e,y:s}=this.getProps(["x","y"],t);return{x:e,y:s}}hasValue(){return P(this.x)&&P(this.y)}getProps(t,e){const s=this.$animations;if(!e||!s)return this;const i={};t.forEach((t=>{i[t]=s[t]&&s[t].active()?s[t]._to:this[t]}));return i}}function Rs(t,e){const s=t.options.ticks;const i=Is(t);const n=Math.min(s.maxTicksLimit||i,i);const o=s.major.enabled?Fs(e):[];const a=o.length;const r=o[0];const l=o[a-1];const c=[];if(a>n){Vs(e,c,o,a/n);return c}const h=zs(o,e,n);if(a>0){let t,s;const i=a>1?Math.round((l-r)/(a-1)):null;Bs(e,c,h,m(i)?0:r-i,r);for(t=0,s=a-1;t<s;t++)Bs(e,c,h,o[t],o[t+1]);Bs(e,c,h,l,m(i)?e.length:l+i);return c}Bs(e,c,h);return c}function Is(t){const e=t.options.offset;const s=t._tickSize();const i=t._length/s+(e?0:1);const n=t._maxLength/s;return Math.floor(Math.min(i,n))}function zs(t,e,s){const i=Ns(t);const n=e.length/s;if(!i)return Math.max(n,1);const o=H(i);for(let t=0,e=o.length-1;t<e;t++){const e=o[t];if(e>n)return e}return Math.max(n,1)}function Fs(t){const e=[];let s,i;for(s=0,i=t.length;s<i;s++)t[s].major&&e.push(s);return e}function Vs(t,e,s,i){let n=0;let o=s[0];let a;i=Math.ceil(i);for(a=0;a<t.length;a++)if(a===o){e.push(t[a]);n++;o=s[n*i]}}function Bs(t,e,s,i,n){const o=h(i,0);const a=Math.min(h(n,t.length),t.length);let r=0;let l,c,d;s=Math.ceil(s);if(n){l=n-i;s=l/Math.floor(l/s)}d=o;while(d<0){r++;d=Math.round(o+r*s)}for(c=Math.max(o,0);c<a;c++)if(c===d){e.push(t[c]);r++;d=Math.round(o+r*s)}}function Ns(t){const e=t.length;let s,i;if(e<2)return false;for(i=t[0],s=1;s<e;++s)if(t[s]-t[s-1]!==i)return false;return i}const Ws=t=>t==="left"?"right":t==="right"?"left":t;const Hs=(t,e,s)=>e==="top"||e==="left"?t[e]+s:t[e]-s;const js=(t,e)=>Math.min(e||t,t);function $s(t,e){const s=[];const i=t.length/e;const n=t.length;let o=0;for(;o<n;o+=i)s.push(t[Math.floor(o)]);return s}function Us(t,e,s){const i=t.ticks.length;const n=Math.min(e,i-1);const o=t._startPixel;const a=t._endPixel;const r=1e-6;let l=t.getPixelForTick(n);let c;if(s){c=i===1?Math.max(l-o,a-l):e===0?(t.getPixelForTick(1)-l)/2:(l-t.getPixelForTick(n-1))/2;l+=n<e?c:-c;if(l<o-r||l>a+r)return}return l}function Ys(t,e){I(t,(t=>{const s=t.gc;const i=s.length/2;let n;if(i>e){for(n=0;n<i;++n)delete t.data[s[n]];s.splice(0,i)}}))}function Xs(t){return t.drawTicks?t.tickLength:0}function Gs(t,e){if(!t.display)return 0;const s=j(t.font,e);const i=R(t.padding);const n=a(t.text)?t.text.length:1;return n*s.lineHeight+i.height}function Ks(t,e){return c(t,{scale:e,type:"scale"})}function Js(t,e,s){return c(t,{tick:s,index:e,type:"tick"})}function qs(t,e,s){let i=$(t);(s&&e!=="right"||!s&&e==="right")&&(i=Ws(i));return i}function Zs(t,e,s,i){const{top:o,left:a,bottom:r,right:l,chart:c}=t;const{chartArea:h,scales:d}=c;let u=0;let f,g,p;const m=r-o;const x=l-a;if(t.isHorizontal()){g=U(i,a,l);if(n(s)){const t=Object.keys(s)[0];const i=s[t];p=d[t].getPixelForValue(i)+m-e}else p=s==="center"?(h.bottom+h.top)/2+m-e:Hs(t,s,e);f=l-a}else{if(n(s)){const t=Object.keys(s)[0];const i=s[t];g=d[t].getPixelForValue(i)-x+e}else g=s==="center"?(h.left+h.right)/2-x+e:Hs(t,s,e);p=U(i,r,o);u=s==="left"?-_:_}return{titleX:g,titleY:p,maxWidth:f,rotation:u}}class Scale extends Element{constructor(t){super();this.id=t.id;this.type=t.type;this.options=void 0;this.ctx=t.ctx;this.chart=t.chart;this.top=void 0;this.bottom=void 0;this.left=void 0;this.right=void 0;this.width=void 0;this.height=void 0;this._margins={left:0,right:0,top:0,bottom:0};this.maxWidth=void 0;this.maxHeight=void 0;this.paddingTop=void 0;this.paddingBottom=void 0;this.paddingLeft=void 0;this.paddingRight=void 0;this.axis=void 0;this.labelRotation=void 0;this.min=void 0;this.max=void 0;this._range=void 0;this.ticks=[];this._gridLineItems=null;this._labelItems=null;this._labelSizes=null;this._length=0;this._maxLength=0;this._longestTextCache={};this._startPixel=void 0;this._endPixel=void 0;this._reversePixels=false;this._userMax=void 0;this._userMin=void 0;this._suggestedMax=void 0;this._suggestedMin=void 0;this._ticksLength=0;this._borderValue=0;this._cache={};this._dataLimitsCached=false;this.$context=void 0}init(t){this.options=t.setContext(this.getContext());this.axis=t.axis;this._userMin=this.parse(t.min);this._userMax=this.parse(t.max);this._suggestedMin=this.parse(t.suggestedMin);this._suggestedMax=this.parse(t.suggestedMax)}parse(t,e){return t}getUserBounds(){let{_userMin:t,_userMax:e,_suggestedMin:s,_suggestedMax:i}=this;t=Y(t,Number.POSITIVE_INFINITY);e=Y(e,Number.NEGATIVE_INFINITY);s=Y(s,Number.POSITIVE_INFINITY);i=Y(i,Number.NEGATIVE_INFINITY);return{min:Y(t,s),max:Y(e,i),minDefined:r(t),maxDefined:r(e)}}getMinMax(t){let{min:e,max:s,minDefined:i,maxDefined:n}=this.getUserBounds();let o;if(i&&n)return{min:e,max:s};const a=this.getMatchingVisibleMetas();for(let r=0,l=a.length;r<l;++r){o=a[r].controller.getMinMax(this,t);i||(e=Math.min(e,o.min));n||(s=Math.max(s,o.max))}e=n&&e>s?s:e;s=i&&e>s?e:s;return{min:Y(e,Y(s,e)),max:Y(s,Y(e,s))}}getPadding(){return{left:this.paddingLeft||0,top:this.paddingTop||0,right:this.paddingRight||0,bottom:this.paddingBottom||0}}getTicks(){return this.ticks}getLabels(){const t=this.chart.data;return this.options.labels||(this.isHorizontal()?t.xLabels:t.yLabels)||t.labels||[]}getLabelItems(t=this.chart.chartArea){const e=this._labelItems||(this._labelItems=this._computeLabelItems(t));return e}beforeLayout(){this._cache={};this._dataLimitsCached=false}beforeUpdate(){X(this.options.beforeUpdate,[this])}update(t,e,s){const{beginAtZero:i,grace:n,ticks:o}=this.options;const a=o.sampleSize;this.beforeUpdate();this.maxWidth=t;this.maxHeight=e;this._margins=s=Object.assign({left:0,right:0,top:0,bottom:0},s);this.ticks=null;this._labelSizes=null;this._gridLineItems=null;this._labelItems=null;this.beforeSetDimensions();this.setDimensions();this.afterSetDimensions();this._maxLength=this.isHorizontal()?this.width+s.left+s.right:this.height+s.top+s.bottom;if(!this._dataLimitsCached){this.beforeDataLimits();this.determineDataLimits();this.afterDataLimits();this._range=G(this,n,i);this._dataLimitsCached=true}this.beforeBuildTicks();this.ticks=this.buildTicks()||[];this.afterBuildTicks();const r=a<this.ticks.length;this._convertTicksToLabels(r?$s(this.ticks,a):this.ticks);this.configure();this.beforeCalculateLabelRotation();this.calculateLabelRotation();this.afterCalculateLabelRotation();if(o.display&&(o.autoSkip||o.source==="auto")){this.ticks=Rs(this,this.ticks);this._labelSizes=null;this.afterAutoSkip()}r&&this._convertTicksToLabels(this.ticks);this.beforeFit();this.fit();this.afterFit();this.afterUpdate()}configure(){let t=this.options.reverse;let e,s;if(this.isHorizontal()){e=this.left;s=this.right}else{e=this.top;s=this.bottom;t=!t}this._startPixel=e;this._endPixel=s;this._reversePixels=t;this._length=s-e;this._alignToPixels=this.options.alignToPixels}afterUpdate(){X(this.options.afterUpdate,[this])}beforeSetDimensions(){X(this.options.beforeSetDimensions,[this])}setDimensions(){if(this.isHorizontal()){this.width=this.maxWidth;this.left=0;this.right=this.width}else{this.height=this.maxHeight;this.top=0;this.bottom=this.height}this.paddingLeft=0;this.paddingTop=0;this.paddingRight=0;this.paddingBottom=0}afterSetDimensions(){X(this.options.afterSetDimensions,[this])}_callHooks(t){this.chart.notifyPlugins(t,this.getContext());X(this.options[t],[this])}beforeDataLimits(){this._callHooks("beforeDataLimits")}determineDataLimits(){}afterDataLimits(){this._callHooks("afterDataLimits")}beforeBuildTicks(){this._callHooks("beforeBuildTicks")}buildTicks(){return[]}afterBuildTicks(){this._callHooks("afterBuildTicks")}beforeTickToLabelConversion(){X(this.options.beforeTickToLabelConversion,[this])}generateTickLabels(t){const e=this.options.ticks;let s,i,n;for(s=0,i=t.length;s<i;s++){n=t[s];n.label=X(e.callback,[n.value,s,t],this)}}afterTickToLabelConversion(){X(this.options.afterTickToLabelConversion,[this])}beforeCalculateLabelRotation(){X(this.options.beforeCalculateLabelRotation,[this])}calculateLabelRotation(){const t=this.options;const e=t.ticks;const s=js(this.ticks.length,t.ticks.maxTicksLimit);const i=e.minRotation||0;const n=e.maxRotation;let o=i;let a,r,l;if(!this._isVisible()||!e.display||i>=n||s<=1||!this.isHorizontal()){this.labelRotation=i;return}const c=this._getLabelSizes();const h=c.widest.width;const d=c.highest.height;const u=K(this.chart.width-h,0,this.maxWidth);a=t.offset?this.maxWidth/s:u/(s-1);if(h+6>a){a=u/(s-(t.offset?.5:1));r=this.maxHeight-Xs(t.grid)-e.padding-Gs(t.title,this.chart.options.font);l=Math.sqrt(h*h+d*d);o=J(Math.min(Math.asin(K((c.highest.height+6)/a,-1,1)),Math.asin(K(r/l,-1,1))-Math.asin(K(d/l,-1,1))));o=Math.max(i,Math.min(n,o))}this.labelRotation=o}afterCalculateLabelRotation(){X(this.options.afterCalculateLabelRotation,[this])}afterAutoSkip(){}beforeFit(){X(this.options.beforeFit,[this])}fit(){const t={width:0,height:0};const{chart:e,options:{ticks:s,title:i,grid:n}}=this;const o=this._isVisible();const a=this.isHorizontal();if(o){const o=Gs(i,e.options.font);if(a){t.width=this.maxWidth;t.height=Xs(n)+o}else{t.height=this.maxHeight;t.width=Xs(n)+o}if(s.display&&this.ticks.length){const{first:e,last:i,widest:n,highest:o}=this._getLabelSizes();const r=s.padding*2;const l=v(this.labelRotation);const c=Math.cos(l);const h=Math.sin(l);if(a){const e=s.mirror?0:h*n.width+c*o.height;t.height=Math.min(this.maxHeight,t.height+e+r)}else{const e=s.mirror?0:c*n.width+h*o.height;t.width=Math.min(this.maxWidth,t.width+e+r)}this._calculatePadding(e,i,h,c)}}this._handleMargins();if(a){this.width=this._length=e.width-this._margins.left-this._margins.right;this.height=t.height}else{this.width=t.width;this.height=this._length=e.height-this._margins.top-this._margins.bottom}}_calculatePadding(t,e,s,i){const{ticks:{align:n,padding:o},position:a}=this.options;const r=this.labelRotation!==0;const l=a!=="top"&&this.axis==="x";if(this.isHorizontal()){const a=this.getPixelForTick(0)-this.left;const c=this.right-this.getPixelForTick(this.ticks.length-1);let h=0;let d=0;if(r)if(l){h=i*t.width;d=s*e.height}else{h=s*t.height;d=i*e.width}else if(n==="start")d=e.width;else if(n==="end")h=t.width;else if(n!=="inner"){h=t.width/2;d=e.width/2}this.paddingLeft=Math.max((h-a+o)*this.width/(this.width-a),0);this.paddingRight=Math.max((d-c+o)*this.width/(this.width-c),0)}else{let s=e.height/2;let i=t.height/2;if(n==="start"){s=0;i=t.height}else if(n==="end"){s=e.height;i=0}this.paddingTop=s+o;this.paddingBottom=i+o}}_handleMargins(){if(this._margins){this._margins.left=Math.max(this.paddingLeft,this._margins.left);this._margins.top=Math.max(this.paddingTop,this._margins.top);this._margins.right=Math.max(this.paddingRight,this._margins.right);this._margins.bottom=Math.max(this.paddingBottom,this._margins.bottom)}}afterFit(){X(this.options.afterFit,[this])}isHorizontal(){const{axis:t,position:e}=this.options;return e==="top"||e==="bottom"||t==="x"}isFullSize(){return this.options.fullSize}_convertTicksToLabels(t){this.beforeTickToLabelConversion();this.generateTickLabels(t);let e,s;for(e=0,s=t.length;e<s;e++)if(m(t[e].label)){t.splice(e,1);s--;e--}this.afterTickToLabelConversion()}_getLabelSizes(){let t=this._labelSizes;if(!t){const e=this.options.ticks.sampleSize;let s=this.ticks;e<s.length&&(s=$s(s,e));this._labelSizes=t=this._computeLabelSizes(s,s.length,this.options.ticks.maxTicksLimit)}return t}_computeLabelSizes(t,e,s){const{ctx:i,_longestTextCache:n}=this;const o=[];const r=[];const l=Math.floor(e/js(e,s));let c=0;let h=0;let d,u,f,g,p,x,b,_,y,v,M;for(d=0;d<e;d+=l){g=t[d].label;p=this._resolveTickFontOptions(d);i.font=x=p.string;b=n[x]=n[x]||{data:{},gc:[]};_=p.lineHeight;y=v=0;if(m(g)||a(g)){if(a(g))for(u=0,f=g.length;u<f;++u){M=g[u];if(!m(M)&&!a(M)){y=q(i,b.data,b.gc,y,M);v+=_}}}else{y=q(i,b.data,b.gc,y,g);v=_}o.push(y);r.push(v);c=Math.max(y,c);h=Math.max(v,h)}Ys(n,e);const w=o.indexOf(c);const k=r.indexOf(h);const S=t=>({width:o[t]||0,height:r[t]||0});return{first:S(0),last:S(e-1),widest:S(w),highest:S(k),widths:o,heights:r}}getLabelForValue(t){return t}getPixelForValue(t,e){return NaN}getValueForPixel(t){}getPixelForTick(t){const e=this.ticks;return t<0||t>e.length-1?null:this.getPixelForValue(e[t].value)}getPixelForDecimal(t){this._reversePixels&&(t=1-t);const e=this._startPixel+t*this._length;return Z(this._alignToPixels?Q(this.chart,e,0):e)}getDecimalForPixel(t){const e=(t-this._startPixel)/this._length;return this._reversePixels?1-e:e}getBasePixel(){return this.getPixelForValue(this.getBaseValue())}getBaseValue(){const{min:t,max:e}=this;return t<0&&e<0?e:t>0&&e>0?t:0}getContext(t){const e=this.ticks||[];if(t>=0&&t<e.length){const s=e[t];return s.$context||(s.$context=Js(this.getContext(),t,s))}return this.$context||(this.$context=Ks(this.chart.getContext(),this))}_tickSize(){const t=this.options.ticks;const e=v(this.labelRotation);const s=Math.abs(Math.cos(e));const i=Math.abs(Math.sin(e));const n=this._getLabelSizes();const o=t.autoSkipPadding||0;const a=n?n.widest.width+o:0;const r=n?n.highest.height+o:0;return this.isHorizontal()?r*s>a*i?a/s:r/i:r*i<a*s?r/s:a/i}_isVisible(){const t=this.options.display;return t!=="auto"?!!t:this.getMatchingVisibleMetas().length>0}_computeGridLineItems(t){const e=this.axis;const s=this.chart;const i=this.options;const{grid:o,position:a,border:r}=i;const l=o.offset;const c=this.isHorizontal();const d=this.ticks;const u=d.length+(l?1:0);const f=Xs(o);const g=[];const p=r.setContext(this.getContext());const m=p.display?p.width:0;const x=m/2;const b=function(t){return Q(s,t,m)};let _,y,v,M;let w,k,S,D,P,C,A,L;if(a==="top"){_=b(this.bottom);k=this.bottom-f;D=_-x;C=b(t.top)+x;L=t.bottom}else if(a==="bottom"){_=b(this.top);C=t.top;L=b(t.bottom)-x;k=_+x;D=this.top+f}else if(a==="left"){_=b(this.right);w=this.right-f;S=_-x;P=b(t.left)+x;A=t.right}else if(a==="right"){_=b(this.left);P=t.left;A=b(t.right)-x;w=_+x;S=this.left+f}else if(e==="x"){if(a==="center")_=b((t.top+t.bottom)/2+.5);else if(n(a)){const t=Object.keys(a)[0];const e=a[t];_=b(this.chart.scales[t].getPixelForValue(e))}C=t.top;L=t.bottom;k=_+x;D=k+f}else if(e==="y"){if(a==="center")_=b((t.left+t.right)/2);else if(n(a)){const t=Object.keys(a)[0];const e=a[t];_=b(this.chart.scales[t].getPixelForValue(e))}w=_-x;S=w-f;P=t.left;A=t.right}const E=h(i.ticks.maxTicksLimit,u);const T=Math.max(1,Math.ceil(u/E));for(y=0;y<u;y+=T){const t=this.getContext(y);const e=o.setContext(t);const i=r.setContext(t);const n=e.lineWidth;const a=e.color;const h=i.dash||[];const d=i.dashOffset;const u=e.tickWidth;const f=e.tickColor;const p=e.tickBorderDash||[];const m=e.tickBorderDashOffset;v=Us(this,y,l);if(v!==void 0){M=Q(s,v,n);c?w=S=P=A=M:k=D=C=L=M;g.push({tx1:w,ty1:k,tx2:S,ty2:D,x1:P,y1:C,x2:A,y2:L,width:n,color:a,borderDash:h,borderDashOffset:d,tickWidth:u,tickColor:f,tickBorderDash:p,tickBorderDashOffset:m})}}this._ticksLength=u;this._borderValue=_;return g}_computeLabelItems(t){const e=this.axis;const s=this.options;const{position:i,ticks:o}=s;const r=this.isHorizontal();const l=this.ticks;const{align:c,crossAlign:h,padding:d,mirror:u}=o;const f=Xs(s.grid);const g=f+d;const p=u?-d:g;const m=-v(this.labelRotation);const x=[];let b,_,y,M,w,k,S,D,P,C,A,L;let E="middle";if(i==="top"){k=this.bottom-p;S=this._getXAxisLabelAlignment()}else if(i==="bottom"){k=this.top+p;S=this._getXAxisLabelAlignment()}else if(i==="left"){const t=this._getYAxisLabelAlignment(f);S=t.textAlign;w=t.x}else if(i==="right"){const t=this._getYAxisLabelAlignment(f);S=t.textAlign;w=t.x}else if(e==="x"){if(i==="center")k=(t.top+t.bottom)/2+g;else if(n(i)){const t=Object.keys(i)[0];const e=i[t];k=this.chart.scales[t].getPixelForValue(e)+g}S=this._getXAxisLabelAlignment()}else if(e==="y"){if(i==="center")w=(t.left+t.right)/2-g;else if(n(i)){const t=Object.keys(i)[0];const e=i[t];w=this.chart.scales[t].getPixelForValue(e)}S=this._getYAxisLabelAlignment(f).textAlign}e==="y"&&(c==="start"?E="top":c==="end"&&(E="bottom"));const T=this._getLabelSizes();for(b=0,_=l.length;b<_;++b){y=l[b];M=y.label;const t=o.setContext(this.getContext(b));D=this.getPixelForTick(b)+o.labelOffset;P=this._resolveTickFontOptions(b);C=P.lineHeight;A=a(M)?M.length:1;const e=A/2;const s=t.color;const n=t.textStrokeColor;const c=t.textStrokeWidth;let d=S;if(r){w=D;S==="inner"&&(d=b===_-1?this.options.reverse?"left":"right":b===0?this.options.reverse?"right":"left":"center");L=i==="top"?h==="near"||m!==0?-A*C+C/2:h==="center"?-T.highest.height/2-e*C+C:-T.highest.height+C/2:h==="near"||m!==0?C/2:h==="center"?T.highest.height/2-e*C:T.highest.height-A*C;u&&(L*=-1);m===0||t.showLabelBackdrop||(w+=C/2*Math.sin(m))}else{k=D;L=(1-A)*C/2}let f;if(t.showLabelBackdrop){const e=R(t.backdropPadding);const s=T.heights[b];const i=T.widths[b];let n=L-e.top;let o=0-e.left;switch(E){case"middle":n-=s/2;break;case"bottom":n-=s;break}switch(S){case"center":o-=i/2;break;case"right":o-=i;break;case"inner":b===_-1?o-=i:b>0&&(o-=i/2);break}f={left:o,top:n,width:i+e.width,height:s+e.height,color:t.backdropColor}}x.push({label:M,font:P,textOffset:L,options:{rotation:m,color:s,strokeColor:n,strokeWidth:c,textAlign:d,textBaseline:E,translation:[w,k],backdrop:f}})}return x}_getXAxisLabelAlignment(){const{position:t,ticks:e}=this.options;const s=-v(this.labelRotation);if(s)return t==="top"?"left":"right";let i="center";e.align==="start"?i="left":e.align==="end"?i="right":e.align==="inner"&&(i="inner");return i}_getYAxisLabelAlignment(t){const{position:e,ticks:{crossAlign:s,mirror:i,padding:n}}=this.options;const o=this._getLabelSizes();const a=t+n;const r=o.widest.width;let l;let c;if(e==="left")if(i){c=this.right+n;if(s==="near")l="left";else if(s==="center"){l="center";c+=r/2}else{l="right";c+=r}}else{c=this.right-a;if(s==="near")l="right";else if(s==="center"){l="center";c-=r/2}else{l="left";c=this.left}}else if(e==="right")if(i){c=this.left+n;if(s==="near")l="right";else if(s==="center"){l="center";c-=r/2}else{l="left";c-=r}}else{c=this.left+a;if(s==="near")l="left";else if(s==="center"){l="center";c+=r/2}else{l="right";c=this.right}}else l="right";return{textAlign:l,x:c}}_computeLabelArea(){if(this.options.ticks.mirror)return;const t=this.chart;const e=this.options.position;return e==="left"||e==="right"?{top:0,left:this.left,bottom:t.height,right:this.right}:e==="top"||e==="bottom"?{top:this.top,left:0,bottom:this.bottom,right:t.width}:void 0}drawBackground(){const{ctx:t,options:{backgroundColor:e},left:s,top:i,width:n,height:o}=this;if(e){t.save();t.fillStyle=e;t.fillRect(s,i,n,o);t.restore()}}getLineWidthForValue(t){const e=this.options.grid;if(!this._isVisible()||!e.display)return 0;const s=this.ticks;const i=s.findIndex((e=>e.value===t));if(i>=0){const t=e.setContext(this.getContext(i));return t.lineWidth}return 0}drawGrid(t){const e=this.options.grid;const s=this.ctx;const i=this._gridLineItems||(this._gridLineItems=this._computeGridLineItems(t));let n,o;const a=(t,e,i)=>{if(i.width&&i.color){s.save();s.lineWidth=i.width;s.strokeStyle=i.color;s.setLineDash(i.borderDash||[]);s.lineDashOffset=i.borderDashOffset;s.beginPath();s.moveTo(t.x,t.y);s.lineTo(e.x,e.y);s.stroke();s.restore()}};if(e.display)for(n=0,o=i.length;n<o;++n){const t=i[n];e.drawOnChartArea&&a({x:t.x1,y:t.y1},{x:t.x2,y:t.y2},t);e.drawTicks&&a({x:t.tx1,y:t.ty1},{x:t.tx2,y:t.ty2},{color:t.tickColor,width:t.tickWidth,borderDash:t.tickBorderDash,borderDashOffset:t.tickBorderDashOffset})}}drawBorder(){const{chart:t,ctx:e,options:{border:s,grid:i}}=this;const n=s.setContext(this.getContext());const o=s.display?n.width:0;if(!o)return;const a=i.setContext(this.getContext(0)).lineWidth;const r=this._borderValue;let l,c,h,d;if(this.isHorizontal()){l=Q(t,this.left,o)-o/2;c=Q(t,this.right,a)+a/2;h=d=r}else{h=Q(t,this.top,o)-o/2;d=Q(t,this.bottom,a)+a/2;l=c=r}e.save();e.lineWidth=n.width;e.strokeStyle=n.color;e.beginPath();e.moveTo(l,h);e.lineTo(c,d);e.stroke();e.restore()}drawLabels(t){const e=this.options.ticks;if(!e.display)return;const s=this.ctx;const i=this._computeLabelArea();i&&tt(s,i);const n=this.getLabelItems(t);for(const t of n){const e=t.options;const i=t.font;const n=t.label;const o=t.textOffset;et(s,n,0,o,i,e)}i&&st(s)}drawTitle(){const{ctx:t,options:{position:e,title:s,reverse:i}}=this;if(!s.display)return;const o=j(s.font);const r=R(s.padding);const l=s.align;let c=o.lineHeight/2;if(e==="bottom"||e==="center"||n(e)){c+=r.bottom;a(s.text)&&(c+=o.lineHeight*(s.text.length-1))}else c+=r.top;const{titleX:h,titleY:d,maxWidth:u,rotation:f}=Zs(this,c,e,l);et(t,s.text,0,0,o,{color:s.color,maxWidth:u,rotation:f,textAlign:qs(l,e,i),textBaseline:"middle",translation:[h,d]})}draw(t){if(this._isVisible()){this.drawBackground();this.drawGrid(t);this.drawBorder();this.drawTitle();this.drawLabels(t)}}_layers(){const t=this.options;const e=t.ticks&&t.ticks.z||0;const s=h(t.grid&&t.grid.z,-1);const i=h(t.border&&t.border.z,0);return this._isVisible()&&this.draw===Scale.prototype.draw?[{z:s,draw:t=>{this.drawBackground();this.drawGrid(t);this.drawTitle()}},{z:i,draw:()=>{this.drawBorder()}},{z:e,draw:t=>{this.drawLabels(t)}}]:[{z:e,draw:t=>{this.draw(t)}}]}getMatchingVisibleMetas(t){const e=this.chart.getSortedVisibleDatasetMetas();const s=this.axis+"AxisID";const i=[];let n,o;for(n=0,o=e.length;n<o;++n){const o=e[n];o[s]!==this.id||t&&o.type!==t||i.push(o)}return i}_resolveTickFontOptions(t){const e=this.options.ticks.setContext(this.getContext(t));return j(e.font)}_maxDigits(){const t=this._resolveTickFontOptions(0).lineHeight;return(this.isHorizontal()?this.width:this.height)/t}}class TypedRegistry{constructor(t,e,s){this.type=t;this.scope=e;this.override=s;this.items=Object.create(null)}isForType(t){return Object.prototype.isPrototypeOf.call(this.type.prototype,t.prototype)}register(t){const e=Object.getPrototypeOf(t);let s;ei(e)&&(s=this.register(e));const i=this.items;const n=t.id;const a=this.scope+"."+n;if(!n)throw new Error("class does not have id: "+t);if(n in i)return a;i[n]=t;Qs(t,a,s);this.override&&o.override(t.id,t.overrides);return a}get(t){return this.items[t]}unregister(t){const e=this.items;const s=t.id;const i=this.scope;s in e&&delete e[s];if(i&&s in o[i]){delete o[i][s];this.override&&delete it[s]}}}function Qs(t,e,s){const i=nt(Object.create(null),[s?o.get(s):{},o.get(e),t.defaults]);o.set(e,i);t.defaultRoutes&&ti(e,t.defaultRoutes);t.descriptors&&o.describe(e,t.descriptors)}function ti(t,e){Object.keys(e).forEach((s=>{const i=s.split(".");const n=i.pop();const a=[t].concat(i).join(".");const r=e[s].split(".");const l=r.pop();const c=r.join(".");o.route(a,n,c,l)}))}function ei(t){return"id"in t&&"defaults"in t}class Registry{constructor(){this.controllers=new TypedRegistry(DatasetController,"datasets",true);this.elements=new TypedRegistry(Element,"elements");this.plugins=new TypedRegistry(Object,"plugins");this.scales=new TypedRegistry(Scale,"scales");this._typedRegistries=[this.controllers,this.scales,this.elements]}add(...t){this._each("register",t)}remove(...t){this._each("unregister",t)}addControllers(...t){this._each("register",t,this.controllers)}addElements(...t){this._each("register",t,this.elements)}addPlugins(...t){this._each("register",t,this.plugins)}addScales(...t){this._each("register",t,this.scales)}getController(t){return this._get(t,this.controllers,"controller")}getElement(t){return this._get(t,this.elements,"element")}getPlugin(t){return this._get(t,this.plugins,"plugin")}getScale(t){return this._get(t,this.scales,"scale")}removeControllers(...t){this._each("unregister",t,this.controllers)}removeElements(...t){this._each("unregister",t,this.elements)}removePlugins(...t){this._each("unregister",t,this.plugins)}removeScales(...t){this._each("unregister",t,this.scales)}_each(t,e,s){[...e].forEach((e=>{const i=s||this._getRegistryForType(e);s||i.isForType(e)||i===this.plugins&&e.id?this._exec(t,i,e):I(e,(e=>{const i=s||this._getRegistryForType(e);this._exec(t,i,e)}))}))}_exec(t,e,s){const i=ot(t);X(s["before"+i],[],s);e[t](s);X(s["after"+i],[],s)}_getRegistryForType(t){for(let e=0;e<this._typedRegistries.length;e++){const s=this._typedRegistries[e];if(s.isForType(t))return s}return this.plugins}_get(t,e,s){const i=e.get(t);if(i===void 0)throw new Error('"'+t+'" is not a registered '+s+".");return i}}var si=new Registry;class PluginService{constructor(){this._init=void 0}notify(t,e,s,i){if(e==="beforeInit"){this._init=this._createDescriptors(t,true);this._notify(this._init,t,"install")}if(this._init===void 0)return;const n=i?this._descriptors(t).filter(i):this._descriptors(t);const o=this._notify(n,t,e,s);if(e==="afterDestroy"){this._notify(n,t,"stop");this._notify(this._init,t,"uninstall");this._init=void 0}return o}_notify(t,e,s,i){i=i||{};for(const n of t){const t=n.plugin;const o=t[s];const a=[e,i,n.options];if(X(o,a,t)===false&&i.cancelable)return false}return true}invalidate(){if(!m(this._cache)){this._oldCache=this._cache;this._cache=void 0}}_descriptors(t){if(this._cache)return this._cache;const e=this._cache=this._createDescriptors(t);this._notifyStateChanges(t);return e}_createDescriptors(t,e){const s=t&&t.config;const i=h(s.options&&s.options.plugins,{});const n=ii(s);return i!==false||e?oi(t,n,i,e):[]}_notifyStateChanges(t){const e=this._oldCache||[];const s=this._cache;const i=(t,e)=>t.filter((t=>!e.some((e=>t.plugin.id===e.plugin.id))));this._notify(i(e,s),t,"stop");this._notify(i(s,e),t,"start")}}function ii(t){const e={};const s=[];const i=Object.keys(si.plugins.items);for(let t=0;t<i.length;t++)s.push(si.getPlugin(i[t]));const n=t.plugins||[];for(let t=0;t<n.length;t++){const i=n[t];if(s.indexOf(i)===-1){s.push(i);e[i.id]=true}}return{plugins:s,localIds:e}}function ni(t,e){return e||t!==false?t===true?{}:t:null}function oi(t,{plugins:e,localIds:s},i,n){const o=[];const a=t.getContext();for(const r of e){const e=r.id;const l=ni(i[e],n);l!==null&&o.push({plugin:r,options:ai(t.config,{plugin:r,local:s[e]},l,a)})}return o}function ai(t,{plugin:e,local:s},i,n){const o=t.pluginScopeKeys(e);const a=t.getOptionScopes(i,o);s&&e.defaults&&a.push(e.defaults);return t.createResolver(a,n,[""],{scriptable:false,indexable:false,allKeys:true})}function ri(t,e){const s=o.datasets[t]||{};const i=(e.datasets||{})[t]||{};return i.indexAxis||e.indexAxis||s.indexAxis||"x"}function li(t,e){let s=t;t==="_index_"?s=e:t==="_value_"&&(s=e==="x"?"y":"x");return s}function ci(t,e){return t===e?"_index_":"_value_"}function hi(t){if(t==="x"||t==="y"||t==="r")return t}function di(t){return t==="top"||t==="bottom"?"x":t==="left"||t==="right"?"y":void 0}function ui(t,...e){if(hi(t))return t;for(const s of e){const e=s.axis||di(s.position)||t.length>1&&hi(t[0].toLowerCase());if(e)return e}throw new Error(`Cannot determine type of '${t}' axis. Please provide 'axis' or 'position' option.`)}function fi(t,e,s){if(s[e+"AxisID"]===t)return{axis:e}}function gi(t,e){if(e.data&&e.data.datasets){const s=e.data.datasets.filter((e=>e.xAxisID===t||e.yAxisID===t));if(s.length)return fi(t,"x",s[0])||fi(t,"y",s[0])}return{}}function pi(t,e){const s=it[t.type]||{scales:{}};const i=e.scales||{};const a=ri(t.type,e);const r=Object.create(null);Object.keys(i).forEach((e=>{const l=i[e];if(!n(l))return console.error(`Invalid scale configuration for scale: ${e}`);if(l._proxy)return console.warn(`Ignoring resolver passed as options for scale: ${e}`);const c=ui(e,l,gi(e,t),o.scales[l.type]);const h=ci(c,a);const d=s.scales||{};r[e]=at(Object.create(null),[{axis:c},l,d[c],d[h]])}));t.data.datasets.forEach((s=>{const n=s.type||t.type;const o=s.indexAxis||ri(n,e);const a=it[n]||{};const l=a.scales||{};Object.keys(l).forEach((t=>{const e=li(t,o);const n=s[e+"AxisID"]||e;r[n]=r[n]||Object.create(null);at(r[n],[{axis:e},i[n],l[t]])}))}));Object.keys(r).forEach((t=>{const e=r[t];at(e,[o.scales[e.type],o.scale])}));return r}function mi(t){const e=t.options||(t.options={});e.plugins=h(e.plugins,{});e.scales=pi(t,e)}function xi(t){t=t||{};t.datasets=t.datasets||[];t.labels=t.labels||[];return t}function bi(t){t=t||{};t.data=xi(t.data);mi(t);return t}const _i=new Map;const yi=new Set;function vi(t,e){let s=_i.get(t);if(!s){s=e();_i.set(t,s);yi.add(s)}return s}const Mi=(t,e,s)=>{const i=f(e,s);i!==void 0&&t.add(i)};class Config{constructor(t){this._config=bi(t);this._scopeCache=new Map;this._resolverCache=new Map}get platform(){return this._config.platform}get type(){return this._config.type}set type(t){this._config.type=t}get data(){return this._config.data}set data(t){this._config.data=xi(t)}get options(){return this._config.options}set options(t){this._config.options=t}get plugins(){return this._config.plugins}update(){const t=this._config;this.clearCache();mi(t)}clearCache(){this._scopeCache.clear();this._resolverCache.clear()}datasetScopeKeys(t){return vi(t,(()=>[[`datasets.${t}`,""]]))}datasetAnimationScopeKeys(t,e){return vi(`${t}.transition.${e}`,(()=>[[`datasets.${t}.transitions.${e}`,`transitions.${e}`],[`datasets.${t}`,""]]))}datasetElementScopeKeys(t,e){return vi(`${t}-${e}`,(()=>[[`datasets.${t}.elements.${e}`,`datasets.${t}`,`elements.${e}`,""]]))}pluginScopeKeys(t){const e=t.id;const s=this.type;return vi(`${s}-plugin-${e}`,(()=>[[`plugins.${e}`,...t.additionalOptionScopes||[]]]))}_cachedScopes(t,e){const s=this._scopeCache;let i=s.get(t);if(!i||e){i=new Map;s.set(t,i)}return i}getOptionScopes(t,e,s){const{options:i,type:n}=this;const a=this._cachedScopes(t,s);const r=a.get(e);if(r)return r;const l=new Set;e.forEach((e=>{if(t){l.add(t);e.forEach((e=>Mi(l,t,e)))}e.forEach((t=>Mi(l,i,t)));e.forEach((t=>Mi(l,it[n]||{},t)));e.forEach((t=>Mi(l,o,t)));e.forEach((t=>Mi(l,rt,t)))}));const c=Array.from(l);c.length===0&&c.push(Object.create(null));yi.has(e)&&a.set(e,c);return c}chartOptionScopes(){const{options:t,type:e}=this;return[t,it[e]||{},o.datasets[e]||{},{type:e},o,rt]}resolveNamedOptions(t,e,s,i=[""]){const n={$shared:true};const{resolver:o,subPrefixes:a}=wi(this._resolverCache,t,i);let r=o;if(Si(o,e)){n.$shared=false;s=lt(s)?s():s;const e=this.createResolver(t,s,a);r=ct(o,s,e)}for(const t of e)n[t]=r[t];return n}createResolver(t,e,s=[""],i){const{resolver:o}=wi(this._resolverCache,t,s);return n(e)?ct(o,e,void 0,i):o}}function wi(t,e,s){let i=t.get(e);if(!i){i=new Map;t.set(e,i)}const n=s.join();let o=i.get(n);if(!o){const t=ht(e,s);o={resolver:t,subPrefixes:s.filter((t=>!t.toLowerCase().includes("hover")))};i.set(n,o)}return o}const ki=t=>n(t)&&Object.getOwnPropertyNames(t).some((e=>lt(t[e])));function Si(t,e){const{isScriptable:s,isIndexable:i}=dt(t);for(const n of e){const e=s(n);const o=i(n);const r=(o||e)&&t[n];if(e&&(lt(r)||ki(r))||o&&a(r))return true}return false}var Di="4.5.1";const Pi=["top","bottom","left","right","chartArea"];function Ci(t,e){return t==="top"||t==="bottom"||Pi.indexOf(t)===-1&&e==="x"}function Ai(t,e){return function(s,i){return s[t]===i[t]?s[e]-i[e]:s[t]-i[t]}}function Li(t){const e=t.chart;const s=e.options.animation;e.notifyPlugins("afterRender");X(s&&s.onComplete,[t],e)}function Ei(t){const e=t.chart;const s=e.options.animation;X(s&&s.onProgress,[t],e)}function Ti(t){W()&&typeof t==="string"?t=document.getElementById(t):t&&t.length&&(t=t[0]);t&&t.canvas&&(t=t.canvas);return t}const Oi={};const Ri=t=>{const e=Ti(t);return Object.values(Oi).filter((t=>t.canvas===e)).pop()};function Ii(t,e,s){const i=Object.keys(t);for(const n of i){const i=+n;if(i>=e){const o=t[n];delete t[n];(s>0||i>e)&&(t[i+s]=o)}}}function zi(t,e,s,i){return s&&t.type!=="mouseout"?i?e:t:null}class Chart{static defaults=o;static instances=Oi;static overrides=it;static registry=si;static version=Di;static getChart=Ri;static register(...t){si.add(...t);Fi()}static unregister(...t){si.remove(...t);Fi()}constructor(t,e){const s=this.config=new Config(e);const i=Ti(t);const n=Ri(i);if(n)throw new Error("Canvas is already in use. Chart with ID '"+n.id+"' must be destroyed before the canvas with ID '"+n.canvas.id+"' can be reused.");const o=s.createResolver(s.chartOptionScopes(),this.getContext());this.platform=new(s.platform||Os(i));this.platform.updateConfig(s);const a=this.platform.acquireContext(i,o.aspectRatio);const r=a&&a.canvas;const l=r&&r.height;const c=r&&r.width;this.id=ut();this.ctx=a;this.canvas=r;this.width=c;this.height=l;this._options=o;this._aspectRatio=this.aspectRatio;this._layers=[];this._metasets=[];this._stacks=void 0;this.boxes=[];this.currentDevicePixelRatio=void 0;this.chartArea=void 0;this._active=[];this._lastEvent=void 0;this._listeners={};this._responsiveListeners=void 0;this._sortedMetasets=[];this.scales={};this._plugins=new PluginService;this.$proxies={};this._hiddenIndices={};this.attached=false;this._animationsDisabled=void 0;this.$context=void 0;this._doResize=ft((t=>this.update(t)),o.resizeDelay||0);this._dataChanges=[];Oi[this.id]=this;if(a&&r){Qt.listen(this,"complete",Li);Qt.listen(this,"progress",Ei);this._initialize();this.attached&&this.update()}else console.error("Failed to create chart: can't acquire context from the given item")}get aspectRatio(){const{options:{aspectRatio:t,maintainAspectRatio:e},width:s,height:i,_aspectRatio:n}=this;return m(t)?e&&n?n:i?s/i:null:t}get data(){return this.config.data}set data(t){this.config.data=t}get options(){return this._options}set options(t){this.config.options=t}get registry(){return si}_initialize(){this.notifyPlugins("beforeInit");this.options.responsive?this.resize():gt(this,this.options.devicePixelRatio);this.bindEvents();this.notifyPlugins("afterInit");return this}clear(){pt(this.canvas,this.ctx);return this}stop(){Qt.stop(this);return this}resize(t,e){Qt.running(this)?this._resizeBeforeDraw={width:t,height:e}:this._resize(t,e)}_resize(t,e){const s=this.options;const i=this.canvas;const n=s.maintainAspectRatio&&this.aspectRatio;const o=this.platform.getMaximumSize(i,t,e,n);const a=s.devicePixelRatio||this.platform.getDevicePixelRatio();const r=this.width?"resize":"attach";this.width=o.width;this.height=o.height;this._aspectRatio=this.aspectRatio;if(gt(this,a,true)){this.notifyPlugins("resize",{size:o});X(s.onResize,[this,o],this);this.attached&&this._doResize(r)&&this.render()}}ensureScalesHaveIDs(){const t=this.options;const e=t.scales||{};I(e,((t,e)=>{t.id=e}))}buildOrUpdateScales(){const t=this.options;const e=t.scales;const s=this.scales;const i=Object.keys(s).reduce(((t,e)=>{t[e]=false;return t}),{});let n=[];e&&(n=n.concat(Object.keys(e).map((t=>{const s=e[t];const i=ui(t,s);const n=i==="r";const o=i==="x";return{options:s,dposition:n?"chartArea":o?"bottom":"left",dtype:n?"radialLinear":o?"category":"linear"}}))));I(n,(e=>{const n=e.options;const o=n.id;const a=ui(o,n);const r=h(n.type,e.dtype);n.position!==void 0&&Ci(n.position,a)===Ci(e.dposition)||(n.position=e.dposition);i[o]=true;let l=null;if(o in s&&s[o].type===r)l=s[o];else{const t=si.getScale(r);l=new t({id:o,type:r,ctx:this.ctx,chart:this});s[l.id]=l}l.init(n,t)}));I(i,((t,e)=>{t||delete s[e]}));I(s,(t=>{fs.configure(this,t,t.options);fs.addBox(this,t)}))}_updateMetasets(){const t=this._metasets;const e=this.data.datasets.length;const s=t.length;t.sort(((t,e)=>t.index-e.index));if(s>e){for(let t=e;t<s;++t)this._destroyDatasetMeta(t);t.splice(e,s-e)}this._sortedMetasets=t.slice(0).sort(Ai("order","index"))}_removeUnreferencedMetasets(){const{_metasets:t,data:{datasets:e}}=this;t.length>e.length&&delete this._stacks;t.forEach(((t,s)=>{e.filter((e=>e===t._dataset)).length===0&&this._destroyDatasetMeta(s)}))}buildOrUpdateControllers(){const t=[];const e=this.data.datasets;let s,i;this._removeUnreferencedMetasets();for(s=0,i=e.length;s<i;s++){const i=e[s];let n=this.getDatasetMeta(s);const a=i.type||this.config.type;if(n.type&&n.type!==a){this._destroyDatasetMeta(s);n=this.getDatasetMeta(s)}n.type=a;n.indexAxis=i.indexAxis||ri(a,this.options);n.order=i.order||0;n.index=s;n.label=""+i.label;n.visible=this.isDatasetVisible(s);if(n.controller){n.controller.updateIndex(s);n.controller.linkScales()}else{const e=si.getController(a);const{datasetElementType:i,dataElementType:r}=o.datasets[a];Object.assign(e,{dataElementType:si.getElement(r),datasetElementType:i&&si.getElement(i)});n.controller=new e(this,s);t.push(n.controller)}}this._updateMetasets();return t}_resetElements(){I(this.data.datasets,((t,e)=>{this.getDatasetMeta(e).controller.reset()}),this)}reset(){this._resetElements();this.notifyPlugins("reset")}update(t){const e=this.config;e.update();const s=this._options=e.createResolver(e.chartOptionScopes(),this.getContext());const i=this._animationsDisabled=!s.animation;this._updateScales();this._checkEventBindings();this._updateHiddenIndices();this._plugins.invalidate();if(this.notifyPlugins("beforeUpdate",{mode:t,cancelable:true})===false)return;const n=this.buildOrUpdateControllers();this.notifyPlugins("beforeElementsUpdate");let o=0;for(let t=0,e=this.data.datasets.length;t<e;t++){const{controller:e}=this.getDatasetMeta(t);const s=!i&&n.indexOf(e)===-1;e.buildOrUpdateElements(s);o=Math.max(+e.getMaxOverflow(),o)}o=this._minPadding=s.layout.autoPadding?o:0;this._updateLayout(o);i||I(n,(t=>{t.reset()}));this._updateDatasets(t);this.notifyPlugins("afterUpdate",{mode:t});this._layers.sort(Ai("z","_idx"));const{_active:a,_lastEvent:r}=this;r?this._eventHandler(r,true):a.length&&this._updateHoverStyles(a,a,true);this.render()}_updateScales(){I(this.scales,(t=>{fs.removeBox(this,t)}));this.ensureScalesHaveIDs();this.buildOrUpdateScales()}_checkEventBindings(){const t=this.options;const e=new Set(Object.keys(this._listeners));const s=new Set(t.events);if(!mt(e,s)||!!this._responsiveListeners!==t.responsive){this.unbindEvents();this.bindEvents()}}_updateHiddenIndices(){const{_hiddenIndices:t}=this;const e=this._getUniformDataChanges()||[];for(const{method:s,start:i,count:n}of e){const e=s==="_removeElements"?-n:n;Ii(t,i,e)}}_getUniformDataChanges(){const t=this._dataChanges;if(!t||!t.length)return;this._dataChanges=[];const e=this.data.datasets.length;const s=e=>new Set(t.filter((t=>t[0]===e)).map(((t,e)=>e+","+t.splice(1).join(","))));const i=s(0);for(let t=1;t<e;t++)if(!mt(i,s(t)))return;return Array.from(i).map((t=>t.split(","))).map((t=>({method:t[1],start:+t[2],count:+t[3]})))}_updateLayout(t){if(this.notifyPlugins("beforeLayout",{cancelable:true})===false)return;fs.update(this,this.width,this.height,t);const e=this.chartArea;const s=e.width<=0||e.height<=0;this._layers=[];I(this.boxes,(t=>{if(!s||t.position!=="chartArea"){t.configure&&t.configure();this._layers.push(...t._layers())}}),this);this._layers.forEach(((t,e)=>{t._idx=e}));this.notifyPlugins("afterLayout")}_updateDatasets(t){if(this.notifyPlugins("beforeDatasetsUpdate",{mode:t,cancelable:true})!==false){for(let t=0,e=this.data.datasets.length;t<e;++t)this.getDatasetMeta(t).controller.configure();for(let e=0,s=this.data.datasets.length;e<s;++e)this._updateDataset(e,lt(t)?t({datasetIndex:e}):t);this.notifyPlugins("afterDatasetsUpdate",{mode:t})}}_updateDataset(t,e){const s=this.getDatasetMeta(t);const i={meta:s,index:t,mode:e,cancelable:true};if(this.notifyPlugins("beforeDatasetUpdate",i)!==false){s.controller._update(e);i.cancelable=false;this.notifyPlugins("afterDatasetUpdate",i)}}render(){if(this.notifyPlugins("beforeRender",{cancelable:true})!==false)if(Qt.has(this))this.attached&&!Qt.running(this)&&Qt.start(this);else{this.draw();Li({chart:this})}}draw(){let t;if(this._resizeBeforeDraw){const{width:t,height:e}=this._resizeBeforeDraw;this._resizeBeforeDraw=null;this._resize(t,e)}this.clear();if(this.width<=0||this.height<=0)return;if(this.notifyPlugins("beforeDraw",{cancelable:true})===false)return;const e=this._layers;for(t=0;t<e.length&&e[t].z<=0;++t)e[t].draw(this.chartArea);this._drawDatasets();for(;t<e.length;++t)e[t].draw(this.chartArea);this.notifyPlugins("afterDraw")}_getSortedDatasetMetas(t){const e=this._sortedMetasets;const s=[];let i,n;for(i=0,n=e.length;i<n;++i){const n=e[i];t&&!n.visible||s.push(n)}return s}getSortedVisibleDatasetMetas(){return this._getSortedDatasetMetas(true)}_drawDatasets(){if(this.notifyPlugins("beforeDatasetsDraw",{cancelable:true})===false)return;const t=this.getSortedVisibleDatasetMetas();for(let e=t.length-1;e>=0;--e)this._drawDataset(t[e]);this.notifyPlugins("afterDatasetsDraw")}_drawDataset(t){const e=this.ctx;const s={meta:t,index:t.index,cancelable:true};const i=xt(this,t);if(this.notifyPlugins("beforeDatasetDraw",s)!==false){i&&tt(e,i);t.controller.draw();i&&st(e);s.cancelable=false;this.notifyPlugins("afterDatasetDraw",s)}}isPointInArea(t){return E(t,this.chartArea,this._minPadding)}getElementsAtEventForMode(t,e,s,i){const n=Je.modes[e];return typeof n==="function"?n(this,t,s,i):[]}getDatasetMeta(t){const e=this.data.datasets[t];const s=this._metasets;let i=s.filter((t=>t&&t._dataset===e)).pop();if(!i){i={type:null,data:[],dataset:null,controller:null,hidden:null,xAxisID:null,yAxisID:null,order:e&&e.order||0,index:t,_dataset:e,_parsed:[],_sorted:false};s.push(i)}return i}getContext(){return this.$context||(this.$context=c(null,{chart:this,type:"chart"}))}getVisibleDatasetCount(){return this.getSortedVisibleDatasetMetas().length}isDatasetVisible(t){const e=this.data.datasets[t];if(!e)return false;const s=this.getDatasetMeta(t);return typeof s.hidden==="boolean"?!s.hidden:!e.hidden}setDatasetVisibility(t,e){const s=this.getDatasetMeta(t);s.hidden=!e}toggleDataVisibility(t){this._hiddenIndices[t]=!this._hiddenIndices[t]}getDataVisibility(t){return!this._hiddenIndices[t]}_updateVisibility(t,e,s){const i=s?"show":"hide";const n=this.getDatasetMeta(t);const o=n.controller._resolveAnimations(void 0,i);if(g(e)){n.data[e].hidden=!s;this.update()}else{this.setDatasetVisibility(t,s);o.update(n,{visible:s});this.update((e=>e.datasetIndex===t?i:void 0))}}hide(t,e){this._updateVisibility(t,e,false)}show(t,e){this._updateVisibility(t,e,true)}_destroyDatasetMeta(t){const e=this._metasets[t];e&&e.controller&&e.controller._destroy();delete this._metasets[t]}_stop(){let t,e;this.stop();Qt.remove(this);for(t=0,e=this.data.datasets.length;t<e;++t)this._destroyDatasetMeta(t)}destroy(){this.notifyPlugins("beforeDestroy");const{canvas:t,ctx:e}=this;this._stop();this.config.clearCache();if(t){this.unbindEvents();pt(t,e);this.platform.releaseContext(e);this.canvas=null;this.ctx=null}delete Oi[this.id];this.notifyPlugins("afterDestroy")}toBase64Image(...t){return this.canvas.toDataURL(...t)}bindEvents(){this.bindUserEvents();this.options.responsive?this.bindResponsiveEvents():this.attached=true}bindUserEvents(){const t=this._listeners;const e=this.platform;const s=(s,i)=>{e.addEventListener(this,s,i);t[s]=i};const i=(t,e,s)=>{t.offsetX=e;t.offsetY=s;this._eventHandler(t)};I(this.options.events,(t=>s(t,i)))}bindResponsiveEvents(){this._responsiveListeners||(this._responsiveListeners={});const t=this._responsiveListeners;const e=this.platform;const s=(s,i)=>{e.addEventListener(this,s,i);t[s]=i};const i=(s,i)=>{if(t[s]){e.removeEventListener(this,s,i);delete t[s]}};const n=(t,e)=>{this.canvas&&this.resize(t,e)};let o;const a=()=>{i("attach",a);this.attached=true;this.resize();s("resize",n);s("detach",o)};o=()=>{this.attached=false;i("resize",n);this._stop();this._resize(0,0);s("attach",a)};e.isAttached(this.canvas)?a():o()}unbindEvents(){I(this._listeners,((t,e)=>{this.platform.removeEventListener(this,e,t)}));this._listeners={};I(this._responsiveListeners,((t,e)=>{this.platform.removeEventListener(this,e,t)}));this._responsiveListeners=void 0}updateHoverStyle(t,e,s){const i=s?"set":"remove";let n,o,a,r;if(e==="dataset"){n=this.getDatasetMeta(t[0].datasetIndex);n.controller["_"+i+"DatasetHoverStyle"]()}for(a=0,r=t.length;a<r;++a){o=t[a];const e=o&&this.getDatasetMeta(o.datasetIndex).controller;e&&e[i+"HoverStyle"](o.element,o.datasetIndex,o.index)}}getActiveElements(){return this._active||[]}setActiveElements(t){const e=this._active||[];const s=t.map((({datasetIndex:t,index:e})=>{const s=this.getDatasetMeta(t);if(!s)throw new Error("No dataset found at index "+t);return{datasetIndex:t,element:s.data[e],index:e}}));const i=!bt(s,e);if(i){this._active=s;this._lastEvent=null;this._updateHoverStyles(s,e)}}notifyPlugins(t,e,s){return this._plugins.notify(this,t,e,s)}isPluginEnabled(t){return this._plugins._cache.filter((e=>e.plugin.id===t)).length===1}_updateHoverStyles(t,e,s){const i=this.options.hover;const n=(t,e)=>t.filter((t=>!e.some((e=>t.datasetIndex===e.datasetIndex&&t.index===e.index))));const o=n(e,t);const a=s?t:n(t,e);o.length&&this.updateHoverStyle(o,i.mode,false);a.length&&i.mode&&this.updateHoverStyle(a,i.mode,true)}_eventHandler(t,e){const s={event:t,replay:e,cancelable:true,inChartArea:this.isPointInArea(t)};const i=e=>(e.options.events||this.options.events).includes(t.native.type);if(this.notifyPlugins("beforeEvent",s,i)===false)return;const n=this._handleEvent(t,e,s.inChartArea);s.cancelable=false;this.notifyPlugins("afterEvent",s,i);(n||s.changed)&&this.render();return this}_handleEvent(t,e,s){const{_active:i=[],options:n}=this;const o=e;const a=this._getActiveElements(t,i,s,o);const r=_t(t);const l=zi(t,this._lastEvent,s,r);if(s){this._lastEvent=null;X(n.onHover,[t,a,this],this);r&&X(n.onClick,[t,a,this],this)}const c=!bt(a,i);if(c||e){this._active=a;this._updateHoverStyles(a,i,e)}this._lastEvent=l;return c}_getActiveElements(t,e,s,i){if(t.type==="mouseout")return[];if(!s)return e;const n=this.options.hover;return this.getElementsAtEventForMode(t,n.mode,n,i)}}function Fi(){return I(Chart.instances,(t=>t._plugins.invalidate()))}function Vi(t,e,s){const{startAngle:i,x:n,y:o,outerRadius:a,innerRadius:r,options:l}=e;const{borderWidth:c,borderJoinStyle:h}=l;const d=Math.min(c/a,yt(i-s));t.beginPath();t.arc(n,o,a-c/2,i+d/2,s-d/2);if(r>0){const e=Math.min(c/r,yt(i-s));t.arc(n,o,r+c/2,s-e/2,i+e/2,true)}else{const e=Math.min(c/2,a*yt(i-s));if(h==="round")t.arc(n,o,e,s-y/2,i+y/2,true);else if(h==="bevel"){const a=2*e*e;const r=-a*Math.cos(s+y/2)+n;const l=-a*Math.sin(s+y/2)+o;const c=a*Math.cos(i+y/2)+n;const h=a*Math.sin(i+y/2)+o;t.lineTo(r,l);t.lineTo(c,h)}}t.closePath();t.moveTo(0,0);t.rect(0,0,t.canvas.width,t.canvas.height);t.clip("evenodd")}function Bi(t,e,s){const{startAngle:i,pixelMargin:n,x:o,y:a,outerRadius:r,innerRadius:l}=e;let c=n/r;t.beginPath();t.arc(o,a,r,i-c,s+c);if(l>n){c=n/l;t.arc(o,a,l,s+c,i-c,true)}else t.arc(o,a,n,s+_,i-_);t.closePath();t.clip()}function Ni(t){return vt(t,["outerStart","outerEnd","innerStart","innerEnd"])}function Wi(t,e,s,i){const n=Ni(t.options.borderRadius);const o=(s-e)/2;const a=Math.min(o,i*e/2);const r=t=>{const e=(s-Math.min(o,t))*i/2;return K(t,0,Math.min(o,e))};return{outerStart:r(n.outerStart),outerEnd:r(n.outerEnd),innerStart:K(n.innerStart,0,a),innerEnd:K(n.innerEnd,0,a)}}function Hi(t,e,s,i){return{x:s+t*Math.cos(e),y:i+t*Math.sin(e)}}function ji(t,e,s,i,n,o){const{x:a,y:r,startAngle:l,pixelMargin:c,innerRadius:h}=e;const d=Math.max(e.outerRadius+i+s-c,0);const u=h>0?h+i+s+c:0;let f=0;const g=n-l;if(i){const t=h>0?h-i:0;const e=d>0?d-i:0;const s=(t+e)/2;const n=s!==0?g*s/(s+i):g;f=(g-n)/2}const p=Math.max(.001,g*d-s/y)/d;const m=(g-p)/2;const x=l+m+f;const b=n-m-f;const{outerStart:v,outerEnd:M,innerStart:w,innerEnd:k}=Wi(e,u,d,b-x);const S=d-v;const D=d-M;const P=x+v/S;const C=b-M/D;const A=u+w;const L=u+k;const E=x+w/A;const T=b-k/L;t.beginPath();if(o){const e=(P+C)/2;t.arc(a,r,d,P,e);t.arc(a,r,d,e,C);if(M>0){const e=Hi(D,C,a,r);t.arc(e.x,e.y,M,C,b+_)}const s=Hi(L,b,a,r);t.lineTo(s.x,s.y);if(k>0){const e=Hi(L,T,a,r);t.arc(e.x,e.y,k,b+_,T+Math.PI)}const i=(b-k/u+(x+w/u))/2;t.arc(a,r,u,b-k/u,i,true);t.arc(a,r,u,i,x+w/u,true);if(w>0){const e=Hi(A,E,a,r);t.arc(e.x,e.y,w,E+Math.PI,x-_)}const n=Hi(S,x,a,r);t.lineTo(n.x,n.y);if(v>0){const e=Hi(S,P,a,r);t.arc(e.x,e.y,v,x-_,P)}}else{t.moveTo(a,r);const e=Math.cos(P)*d+a;const s=Math.sin(P)*d+r;t.lineTo(e,s);const i=Math.cos(C)*d+a;const n=Math.sin(C)*d+r;t.lineTo(i,n)}t.closePath()}function $i(t,e,s,i,n){const{fullCircles:o,startAngle:a,circumference:r}=e;let l=e.endAngle;if(o){ji(t,e,s,i,l,n);for(let e=0;e<o;++e)t.fill();isNaN(r)||(l=a+(r%x||x))}ji(t,e,s,i,l,n);t.fill();return l}function Ui(t,e,s,i,n){const{fullCircles:o,startAngle:a,circumference:r,options:l}=e;const{borderWidth:c,borderJoinStyle:h,borderDash:d,borderDashOffset:u,borderRadius:f}=l;const g=l.borderAlign==="inner";if(!c)return;t.setLineDash(d||[]);t.lineDashOffset=u;if(g){t.lineWidth=c*2;t.lineJoin=h||"round"}else{t.lineWidth=c;t.lineJoin=h||"bevel"}let p=e.endAngle;if(o){ji(t,e,s,i,p,n);for(let e=0;e<o;++e)t.stroke();isNaN(r)||(p=a+(r%x||x))}g&&Bi(t,e,p);l.selfJoin&&p-a>=y&&f===0&&h!=="miter"&&Vi(t,e,p);if(!o){ji(t,e,s,i,p,n);t.stroke()}}class ArcElement extends Element{static id="arc";static defaults={borderAlign:"center",borderColor:"#fff",borderDash:[],borderDashOffset:0,borderJoinStyle:void 0,borderRadius:0,borderWidth:2,offset:0,spacing:0,angle:void 0,circular:true,selfJoin:false};static defaultRoutes={backgroundColor:"backgroundColor"};static descriptors={_scriptable:true,_indexable:t=>t!=="borderDash"};circumference;endAngle;fullCircles;innerRadius;outerRadius;pixelMargin;startAngle;constructor(t){super();this.options=void 0;this.circumference=void 0;this.startAngle=void 0;this.endAngle=void 0;this.innerRadius=void 0;this.outerRadius=void 0;this.pixelMargin=0;this.fullCircles=0;t&&Object.assign(this,t)}inRange(t,e,s){const i=this.getProps(["x","y"],s);const{angle:n,distance:o}=T(i,{x:t,y:e});const{startAngle:a,endAngle:r,innerRadius:l,outerRadius:c,circumference:d}=this.getProps(["startAngle","endAngle","innerRadius","outerRadius","circumference"],s);const u=(this.options.spacing+this.options.borderWidth)/2;const f=h(d,r-a);const g=b(n,a,r)&&a!==r;const p=f>=x||g;const m=Mt(o,l+u,c+u);return p&&m}getCenterPoint(t){const{x:e,y:s,startAngle:i,endAngle:n,innerRadius:o,outerRadius:a}=this.getProps(["x","y","startAngle","endAngle","innerRadius","outerRadius"],t);const{offset:r,spacing:l}=this.options;const c=(i+n)/2;const h=(o+a+l+r)/2;return{x:e+Math.cos(c)*h,y:s+Math.sin(c)*h}}tooltipPosition(t){return this.getCenterPoint(t)}draw(t){const{options:e,circumference:s}=this;const i=(e.offset||0)/4;const n=(e.spacing||0)/2;const o=e.circular;this.pixelMargin=e.borderAlign==="inner"?.33:0;this.fullCircles=s>x?Math.floor(s/x):0;if(s===0||this.innerRadius<0||this.outerRadius<0)return;t.save();const a=(this.startAngle+this.endAngle)/2;t.translate(Math.cos(a)*i,Math.sin(a)*i);const r=1-Math.sin(Math.min(y,s||0));const l=i*r;t.fillStyle=e.backgroundColor;t.strokeStyle=e.borderColor;$i(t,this,l,n,o);Ui(t,this,l,n,o);t.restore()}}function Yi(t,e,s=e){t.lineCap=h(s.borderCapStyle,e.borderCapStyle);t.setLineDash(h(s.borderDash,e.borderDash));t.lineDashOffset=h(s.borderDashOffset,e.borderDashOffset);t.lineJoin=h(s.borderJoinStyle,e.borderJoinStyle);t.lineWidth=h(s.borderWidth,e.borderWidth);t.strokeStyle=h(s.borderColor,e.borderColor)}function Xi(t,e,s){t.lineTo(s.x,s.y)}function Gi(t){return t.stepped?wt:t.tension||t.cubicInterpolationMode==="monotone"?kt:Xi}function Ki(t,e,s={}){const i=t.length;const{start:n=0,end:o=i-1}=s;const{start:a,end:r}=e;const l=Math.max(n,a);const c=Math.min(o,r);const h=n<a&&o<a||n>r&&o>r;return{count:i,start:l,loop:e.loop,ilen:c<l&&!h?i+c-l:c-l}}function Ji(t,e,s,i){const{points:n,options:o}=e;const{count:a,start:r,loop:l,ilen:c}=Ki(n,s,i);const h=Gi(o);let{move:d=true,reverse:u}=i||{};let f,g,p;for(f=0;f<=c;++f){g=n[(r+(u?c-f:f))%a];if(!g.skip){if(d){t.moveTo(g.x,g.y);d=false}else h(t,p,g,u,o.stepped);p=g}}if(l){g=n[(r+(u?c:0))%a];h(t,p,g,u,o.stepped)}return!!l}function qi(t,e,s,i){const n=e.points;const{count:o,start:a,ilen:r}=Ki(n,s,i);const{move:l=true,reverse:c}=i||{};let h=0;let d=0;let u,f,g,p,m,x;const b=t=>(a+(c?r-t:t))%o;const _=()=>{if(p!==m){t.lineTo(h,m);t.lineTo(h,p);t.lineTo(h,x)}};if(l){f=n[b(0)];t.moveTo(f.x,f.y)}for(u=0;u<=r;++u){f=n[b(u)];if(f.skip)continue;const e=f.x;const s=f.y;const i=e|0;if(i===g){s<p?p=s:s>m&&(m=s);h=(d*h+e)/++d}else{_();t.lineTo(e,s);g=i;d=0;p=m=s}x=s}_()}function Zi(t){const e=t.options;const s=e.borderDash&&e.borderDash.length;const i=!t._decimated&&!t._loop&&!e.tension&&e.cubicInterpolationMode!=="monotone"&&!e.stepped&&!s;return i?qi:Ji}function Qi(t){return t.stepped?St:t.tension||t.cubicInterpolationMode==="monotone"?Dt:Pt}function tn(t,e,s,i){let n=e._path;if(!n){n=e._path=new Path2D;e.path(n,s,i)&&n.closePath()}Yi(t,e.options);t.stroke(n)}function en(t,e,s,i){const{segments:n,options:o}=e;const a=Zi(e);for(const r of n){Yi(t,o,r.style);t.beginPath();a(t,e,r,{start:s,end:s+i-1})&&t.closePath();t.stroke()}}const sn=typeof Path2D==="function";function nn(t,e,s,i){sn&&!e.options.segment?tn(t,e,s,i):en(t,e,s,i)}class LineElement extends Element{static id="line";static defaults={borderCapStyle:"butt",borderDash:[],borderDashOffset:0,borderJoinStyle:"miter",borderWidth:3,capBezierPoints:true,cubicInterpolationMode:"default",fill:false,spanGaps:false,stepped:false,tension:0};static defaultRoutes={backgroundColor:"backgroundColor",borderColor:"borderColor"};static descriptors={_scriptable:true,_indexable:t=>t!=="borderDash"&&t!=="fill"};constructor(t){super();this.animated=true;this.options=void 0;this._chart=void 0;this._loop=void 0;this._fullLoop=void 0;this._path=void 0;this._points=void 0;this._segments=void 0;this._decimated=false;this._pointsUpdated=false;this._datasetIndex=void 0;t&&Object.assign(this,t)}updateControlPoints(t,e){const s=this.options;if((s.tension||s.cubicInterpolationMode==="monotone")&&!s.stepped&&!this._pointsUpdated){const i=s.spanGaps?this._loop:this._fullLoop;Ct(this._points,s,t,i,e);this._pointsUpdated=true}}set points(t){this._points=t;delete this._segments;delete this._path;this._pointsUpdated=false}get points(){return this._points}get segments(){return this._segments||(this._segments=At(this,this.options.segment))}first(){const t=this.segments;const e=this.points;return t.length&&e[t[0].start]}last(){const t=this.segments;const e=this.points;const s=t.length;return s&&e[t[s-1].end]}interpolate(t,e){const s=this.options;const i=t[e];const n=this.points;const o=Lt(this,{property:e,start:i,end:i});if(!o.length)return;const a=[];const r=Qi(s);let l,c;for(l=0,c=o.length;l<c;++l){const{start:c,end:h}=o[l];const d=n[c];const u=n[h];if(d===u){a.push(d);continue}const f=Math.abs((i-d[e])/(u[e]-d[e]));const g=r(d,u,f,s.stepped);g[e]=t[e];a.push(g)}return a.length===1?a[0]:a}pathSegment(t,e,s){const i=Zi(this);return i(t,this,e,s)}path(t,e,s){const i=this.segments;const n=Zi(this);let o=this._loop;e=e||0;s=s||this.points.length-e;for(const a of i)o&=n(t,this,a,{start:e,end:e+s-1});return!!o}draw(t,e,s,i){const n=this.options||{};const o=this.points||[];if(o.length&&n.borderWidth){t.save();nn(t,this,s,i);t.restore()}if(this.animated){this._pointsUpdated=false;this._path=void 0}}}function on(t,e,s,i){const n=t.options;const{[s]:o}=t.getProps([s],i);return Math.abs(e-o)<n.radius+n.hitRadius}class PointElement extends Element{static id="point";parsed;skip;stop;
-/**
-   * @type {any}
-   */
-static defaults={borderWidth:1,hitRadius:1,hoverBorderWidth:1,hoverRadius:4,pointStyle:"circle",radius:3,rotation:0};
-/**
-   * @type {any}
-   */
-static defaultRoutes={backgroundColor:"backgroundColor",borderColor:"borderColor"};constructor(t){super();this.options=void 0;this.parsed=void 0;this.skip=void 0;this.stop=void 0;t&&Object.assign(this,t)}inRange(t,e,s){const i=this.options;const{x:n,y:o}=this.getProps(["x","y"],s);return Math.pow(t-n,2)+Math.pow(e-o,2)<Math.pow(i.hitRadius+i.radius,2)}inXRange(t,e){return on(this,t,"x",e)}inYRange(t,e){return on(this,t,"y",e)}getCenterPoint(t){const{x:e,y:s}=this.getProps(["x","y"],t);return{x:e,y:s}}size(t){t=t||this.options||{};let e=t.radius||0;e=Math.max(e,e&&t.hoverRadius||0);const s=e&&t.borderWidth||0;return(e+s)*2}draw(t,e){const s=this.options;if(!(this.skip||s.radius<.1)&&E(this,e,this.size(s)/2)){t.strokeStyle=s.borderColor;t.lineWidth=s.borderWidth;t.fillStyle=s.backgroundColor;Et(t,s,this.x,this.y)}}getRange(){const t=this.options||{};return t.radius+t.hitRadius}}function an(t,e){const{x:s,y:i,base:n,width:o,height:a}=t.getProps(["x","y","base","width","height"],e);let r,l,c,h,d;if(t.horizontal){d=a/2;r=Math.min(s,n);l=Math.max(s,n);c=i-d;h=i+d}else{d=o/2;r=s-d;l=s+d;c=Math.min(i,n);h=Math.max(i,n)}return{left:r,top:c,right:l,bottom:h}}function rn(t,e,s,i){return t?0:K(e,s,i)}function ln(t,e,s){const i=t.options.borderWidth;const n=t.borderSkipped;const o=Tt(i);return{t:rn(n.top,o.top,0,s),r:rn(n.right,o.right,0,e),b:rn(n.bottom,o.bottom,0,s),l:rn(n.left,o.left,0,e)}}function cn(t,e,s){const{enableBorderRadius:i}=t.getProps(["enableBorderRadius"]);const o=t.options.borderRadius;const a=Ot(o);const r=Math.min(e,s);const l=t.borderSkipped;const c=i||n(o);return{topLeft:rn(!c||l.top||l.left,a.topLeft,0,r),topRight:rn(!c||l.top||l.right,a.topRight,0,r),bottomLeft:rn(!c||l.bottom||l.left,a.bottomLeft,0,r),bottomRight:rn(!c||l.bottom||l.right,a.bottomRight,0,r)}}function hn(t){const e=an(t);const s=e.right-e.left;const i=e.bottom-e.top;const n=ln(t,s/2,i/2);const o=cn(t,s/2,i/2);return{outer:{x:e.left,y:e.top,w:s,h:i,radius:o},inner:{x:e.left+n.l,y:e.top+n.t,w:s-n.l-n.r,h:i-n.t-n.b,radius:{topLeft:Math.max(0,o.topLeft-Math.max(n.t,n.l)),topRight:Math.max(0,o.topRight-Math.max(n.t,n.r)),bottomLeft:Math.max(0,o.bottomLeft-Math.max(n.b,n.l)),bottomRight:Math.max(0,o.bottomRight-Math.max(n.b,n.r))}}}}function dn(t,e,s,i){const n=e===null;const o=s===null;const a=n&&o;const r=t&&!a&&an(t,i);return r&&(n||Mt(e,r.left,r.right))&&(o||Mt(s,r.top,r.bottom))}function un(t){return t.topLeft||t.topRight||t.bottomLeft||t.bottomRight}function fn(t,e){t.rect(e.x,e.y,e.w,e.h)}function gn(t,e,s={}){const i=t.x!==s.x?-e:0;const n=t.y!==s.y?-e:0;const o=(t.x+t.w!==s.x+s.w?e:0)-i;const a=(t.y+t.h!==s.y+s.h?e:0)-n;return{x:t.x+i,y:t.y+n,w:t.w+o,h:t.h+a,radius:t.radius}}class BarElement extends Element{static id="bar";static defaults={borderSkipped:"start",borderWidth:0,borderRadius:0,inflateAmount:"auto",pointStyle:void 0};static defaultRoutes={backgroundColor:"backgroundColor",borderColor:"borderColor"};constructor(t){super();this.options=void 0;this.horizontal=void 0;this.base=void 0;this.width=void 0;this.height=void 0;this.inflateAmount=void 0;t&&Object.assign(this,t)}draw(t){const{inflateAmount:e,options:{borderColor:s,backgroundColor:i}}=this;const{inner:n,outer:o}=hn(this);const a=un(o.radius)?Rt:fn;t.save();if(o.w!==n.w||o.h!==n.h){t.beginPath();a(t,gn(o,e,n));t.clip();a(t,gn(n,-e,o));t.fillStyle=s;t.fill("evenodd")}t.beginPath();a(t,gn(n,e));t.fillStyle=i;t.fill();t.restore()}inRange(t,e,s){return dn(this,t,e,s)}inXRange(t,e){return dn(this,t,null,e)}inYRange(t,e){return dn(this,null,t,e)}getCenterPoint(t){const{x:e,y:s,base:i,horizontal:n}=this.getProps(["x","y","base","horizontal"],t);return{x:n?(e+i)/2:e,y:n?s:(s+i)/2}}getRange(t){return t==="x"?this.width/2:this.height/2}}var pn=Object.freeze({__proto__:null,ArcElement:ArcElement,BarElement:BarElement,LineElement:LineElement,PointElement:PointElement});const mn=["rgb(54, 162, 235)","rgb(255, 99, 132)","rgb(255, 159, 64)","rgb(255, 205, 86)","rgb(75, 192, 192)","rgb(153, 102, 255)","rgb(201, 203, 207)"];const xn=mn.map((t=>t.replace("rgb(","rgba(").replace(")",", 0.5)")));function bn(t){return mn[t%mn.length]}function _n(t){return xn[t%xn.length]}function yn(t,e){t.borderColor=bn(e);t.backgroundColor=_n(e);return++e}function vn(t,e){t.backgroundColor=t.data.map((()=>bn(e++)));return e}function Mn(t,e){t.backgroundColor=t.data.map((()=>_n(e++)));return e}function wn(t){let e=0;return(s,i)=>{const n=t.getDatasetMeta(i).controller;n instanceof DoughnutController?e=vn(s,e):n instanceof PolarAreaController?e=Mn(s,e):n&&(e=yn(s,e))}}function kn(t){let e;for(e in t)if(t[e].borderColor||t[e].backgroundColor)return true;return false}function Sn(t){return t&&(t.borderColor||t.backgroundColor)}function Dn(){return o.borderColor!=="rgba(0,0,0,0.1)"||o.backgroundColor!=="rgba(0,0,0,0.1)"}var Pn={id:"colors",defaults:{enabled:true,forceOverride:false},beforeLayout(t,e,s){if(!s.enabled)return;const{data:{datasets:i},options:n}=t.config;const{elements:o}=n;const a=kn(i)||Sn(n)||o&&kn(o)||Dn();if(!s.forceOverride&&a)return;const r=wn(t);i.forEach(r)}};function Cn(t,e,s,i,n){const o=n.samples||i;if(o>=s)return t.slice(e,e+s);const a=[];const r=(s-2)/(o-2);let l=0;const c=e+s-1;let h=e;let d,u,f,g,p;a[l++]=t[h];for(d=0;d<o-2;d++){let i=0;let n=0;let o;const c=Math.floor((d+1)*r)+1+e;const m=Math.min(Math.floor((d+2)*r)+1,s)+e;const x=m-c;for(o=c;o<m;o++){i+=t[o].x;n+=t[o].y}i/=x;n/=x;const b=Math.floor(d*r)+1+e;const _=Math.min(Math.floor((d+1)*r)+1,s)+e;const{x:y,y:v}=t[h];f=g=-1;for(o=b;o<_;o++){g=.5*Math.abs((y-i)*(t[o].y-v)-(y-t[o].x)*(n-v));if(g>f){f=g;u=t[o];p=o}}a[l++]=u;h=p}a[l++]=t[c];return a}function An(t,e,s,i){let n=0;let o=0;let a,r,l,c,h,d,u,f,g,p;const x=[];const b=e+s-1;const _=t[e].x;const y=t[b].x;const v=y-_;for(a=e;a<e+s;++a){r=t[a];l=(r.x-_)/v*i;c=r.y;const e=l|0;if(e===h){if(c<g){g=c;d=a}else if(c>p){p=c;u=a}n=(o*n+r.x)/++o}else{const s=a-1;if(!m(d)&&!m(u)){const e=Math.min(d,u);const i=Math.max(d,u);e!==f&&e!==s&&x.push({...t[e],x:n});i!==f&&i!==s&&x.push({...t[i],x:n})}a>0&&s!==f&&x.push(t[s]);x.push(r);h=e;o=0;g=p=c;d=u=f=a}}return x}function Ln(t){if(t._decimated){const e=t._data;delete t._decimated;delete t._data;Object.defineProperty(t,"data",{configurable:true,enumerable:true,writable:true,value:e})}}function En(t){t.data.datasets.forEach((t=>{Ln(t)}))}function Tn(t,e){const s=e.length;let i=0;let n;const{iScale:o}=t;const{min:a,max:r,minDefined:l,maxDefined:c}=o.getUserBounds();l&&(i=K(L(e,o.axis,a).lo,0,s-1));n=c?K(L(e,o.axis,r).hi+1,i,s)-i:s-i;return{start:i,count:n}}var On={id:"decimation",defaults:{algorithm:"min-max",enabled:false},beforeElementsUpdate:(t,e,i)=>{if(!i.enabled){En(t);return}const n=t.width;t.data.datasets.forEach(((e,o)=>{const{_data:a,indexAxis:r}=e;const l=t.getDatasetMeta(o);const c=a||e.data;if(s([r,t.options.indexAxis])==="y")return;if(!l.controller.supportsDecimation)return;const h=t.scales[l.xAxisID];if(h.type!=="linear"&&h.type!=="time")return;if(t.options.parsing)return;let{start:d,count:u}=Tn(l,c);const f=i.threshold||4*n;if(u<=f){Ln(e);return}if(m(a)){e._data=c;delete e.data;Object.defineProperty(e,"data",{configurable:true,enumerable:true,get:function(){return this._decimated},set:function(t){this._data=t}})}let g;switch(i.algorithm){case"lttb":g=Cn(c,d,u,n,i);break;case"min-max":g=An(c,d,u,n);break;default:throw new Error(`Unsupported decimation algorithm '${i.algorithm}'`)}e._decimated=g}))},destroy(t){En(t)}};function Rn(t,e,s){const i=t.segments;const n=t.points;const o=e.points;const a=[];for(const t of i){let{start:i,end:r}=t;r=Fn(i,r,n);const l=In(s,n[i],n[r],t.loop);if(!e.segments){a.push({source:t,target:l,start:n[i],end:n[r]});continue}const c=Lt(e,l);for(const e of c){const i=In(s,o[e.start],o[e.end],e.loop);const r=It(t,n,i);for(const t of r)a.push({source:t,target:e,start:{[s]:Vn(l,i,"start",Math.max)},end:{[s]:Vn(l,i,"end",Math.min)}})}}return a}function In(t,e,s,i){if(i)return;let n=e[t];let o=s[t];if(t==="angle"){n=yt(n);o=yt(o)}return{property:t,start:n,end:o}}function zn(t,e){const{x:s=null,y:i=null}=t||{};const n=e.points;const o=[];e.segments.forEach((({start:t,end:e})=>{e=Fn(t,e,n);const a=n[t];const r=n[e];if(i!==null){o.push({x:a.x,y:i});o.push({x:r.x,y:i})}else if(s!==null){o.push({x:s,y:a.y});o.push({x:s,y:r.y})}}));return o}function Fn(t,e,s){for(;e>t;e--){const t=s[e];if(!isNaN(t.x)&&!isNaN(t.y))break}return e}function Vn(t,e,s,i){return t&&e?i(t[s],e[s]):t?t[s]:e?e[s]:0}function Bn(t,e){let s=[];let i=false;if(a(t)){i=true;s=t}else s=zn(t,e);return s.length?new LineElement({points:s,options:{tension:0},_loop:i,_fullLoop:i}):null}function Nn(t){return t&&t.fill!==false}function Wn(t,e,s){const i=t[e];let n=i.fill;const o=[e];let a;if(!s)return n;while(n!==false&&o.indexOf(n)===-1){if(!r(n))return n;a=t[n];if(!a)return false;if(a.visible)return n;o.push(n);n=a.fill}return false}function Hn(t,e,s){const i=Yn(t);if(n(i))return!isNaN(i.value)&&i;let o=parseFloat(i);return r(o)&&Math.floor(o)===o?jn(i[0],e,o,s):["origin","start","end","stack","shape"].indexOf(i)>=0&&i}function jn(t,e,s,i){t!=="-"&&t!=="+"||(s=e+s);return!(s===e||s<0||s>=i)&&s}function $n(t,e){let s=null;t==="start"?s=e.bottom:t==="end"?s=e.top:n(t)?s=e.getPixelForValue(t.value):e.getBasePixel&&(s=e.getBasePixel());return s}function Un(t,e,s){let i;i=t==="start"?s:t==="end"?e.options.reverse?e.min:e.max:n(t)?t.value:e.getBaseValue();return i}function Yn(t){const e=t.options;const s=e.fill;let i=h(s&&s.target,s);i===void 0&&(i=!!e.backgroundColor);return i!==false&&i!==null&&(i===true?"origin":i)}function Xn(t){const{scale:e,index:s,line:i}=t;const n=[];const o=i.segments;const a=i.points;const r=Gn(e,s);r.push(Bn({x:null,y:e.bottom},i));for(let t=0;t<o.length;t++){const e=o[t];for(let t=e.start;t<=e.end;t++)Kn(n,a[t],r)}return new LineElement({points:n,options:{}})}function Gn(t,e){const s=[];const i=t.getMatchingVisibleMetas("line");for(let t=0;t<i.length;t++){const n=i[t];if(n.index===e)break;n.hidden||s.unshift(n.dataset)}return s}function Kn(t,e,s){const i=[];for(let n=0;n<s.length;n++){const o=s[n];const{first:a,last:r,point:l}=Jn(o,e,"x");if(!(!l||a&&r))if(a)i.unshift(l);else{t.push(l);if(!r)break}}t.push(...i)}function Jn(t,e,s){const i=t.interpolate(e,s);if(!i)return{};const n=i[s];const o=t.segments;const a=t.points;let r=false;let l=false;for(let t=0;t<o.length;t++){const e=o[t];const i=a[e.start][s];const c=a[e.end][s];if(Mt(n,i,c)){r=n===i;l=n===c;break}}return{first:r,last:l,point:i}}class simpleArc{constructor(t){this.x=t.x;this.y=t.y;this.radius=t.radius}pathSegment(t,e,s){const{x:i,y:n,radius:o}=this;e=e||{start:0,end:x};t.arc(i,n,o,e.end,e.start,true);return!s.bounds}interpolate(t){const{x:e,y:s,radius:i}=this;const n=t.angle;return{x:e+Math.cos(n)*i,y:s+Math.sin(n)*i,angle:n}}}function qn(t){const{chart:e,fill:s,line:i}=t;if(r(s))return Zn(e,s);if(s==="stack")return Xn(t);if(s==="shape")return true;const n=Qn(t);return n instanceof simpleArc?n:Bn(n,i)}function Zn(t,e){const s=t.getDatasetMeta(e);const i=s&&t.isDatasetVisible(e);return i?s.dataset:null}function Qn(t){const e=t.scale||{};return e.getPointPositionForValue?eo(t):to(t)}function to(t){const{scale:e={},fill:s}=t;const i=$n(s,e);if(r(i)){const t=e.isHorizontal();return{x:t?i:null,y:t?null:i}}return null}function eo(t){const{scale:e,fill:s}=t;const i=e.options;const n=e.getLabels().length;const o=i.reverse?e.max:e.min;const a=Un(s,e,o);const r=[];if(i.grid.circular){const t=e.getPointPositionForValue(0,o);return new simpleArc({x:t.x,y:t.y,radius:e.getDistanceFromCenterForValue(a)})}for(let t=0;t<n;++t)r.push(e.getPointPositionForValue(t,a));return r}function so(t,e,s){const i=qn(e);const{chart:n,index:o,line:a,scale:r,axis:l}=e;const c=a.options;const h=c.fill;const d=c.backgroundColor;const{above:u=d,below:f=d}=h||{};const g=n.getDatasetMeta(o);const p=xt(n,g);if(i&&a.points.length){tt(t,s);io(t,{line:a,target:i,above:u,below:f,area:s,scale:r,axis:l,clip:p});st(t)}}function io(t,e){const{line:s,target:i,above:n,below:o,area:a,scale:r,clip:l}=e;const c=s._loop?"angle":e.axis;t.save();let h=o;if(o!==n)if(c==="x"){no(t,i,a.top);ao(t,{line:s,target:i,color:n,scale:r,property:c,clip:l});t.restore();t.save();no(t,i,a.bottom)}else if(c==="y"){oo(t,i,a.left);ao(t,{line:s,target:i,color:o,scale:r,property:c,clip:l});t.restore();t.save();oo(t,i,a.right);h=n}ao(t,{line:s,target:i,color:h,scale:r,property:c,clip:l});t.restore()}function no(t,e,s){const{segments:i,points:n}=e;let o=true;let a=false;t.beginPath();for(const r of i){const{start:i,end:l}=r;const c=n[i];const h=n[Fn(i,l,n)];if(o){t.moveTo(c.x,c.y);o=false}else{t.lineTo(c.x,s);t.lineTo(c.x,c.y)}a=!!e.pathSegment(t,r,{move:a});a?t.closePath():t.lineTo(h.x,s)}t.lineTo(e.first().x,s);t.closePath();t.clip()}function oo(t,e,s){const{segments:i,points:n}=e;let o=true;let a=false;t.beginPath();for(const r of i){const{start:i,end:l}=r;const c=n[i];const h=n[Fn(i,l,n)];if(o){t.moveTo(c.x,c.y);o=false}else{t.lineTo(s,c.y);t.lineTo(c.x,c.y)}a=!!e.pathSegment(t,r,{move:a});a?t.closePath():t.lineTo(s,h.y)}t.lineTo(s,e.first().y);t.closePath();t.clip()}function ao(t,e){const{line:s,target:i,property:n,color:o,scale:a,clip:r}=e;const l=Rn(s,i,n);for(const{source:e,target:c,start:h,end:d}of l){const{style:{backgroundColor:l=o}={}}=e;const u=i!==true;t.save();t.fillStyle=l;ro(t,a,r,u&&In(n,h,d));t.beginPath();const f=!!s.pathSegment(t,e);let g;if(u){f?t.closePath():lo(t,i,d,n);const e=!!i.pathSegment(t,c,{move:f,reverse:true});g=f&&e;g||lo(t,i,h,n)}t.closePath();t.fill(g?"evenodd":"nonzero");t.restore()}}function ro(t,e,s,i){const n=e.chart.chartArea;const{property:o,start:a,end:r}=i||{};if(o==="x"||o==="y"){let e,i,l,c;if(o==="x"){e=a;i=n.top;l=r;c=n.bottom}else{e=n.left;i=a;l=n.right;c=r}t.beginPath();if(s){e=Math.max(e,s.left);l=Math.min(l,s.right);i=Math.max(i,s.top);c=Math.min(c,s.bottom)}t.rect(e,i,l-e,c-i);t.clip()}}function lo(t,e,s,i){const n=e.interpolate(s,i);n&&t.lineTo(n.x,n.y)}var co={id:"filler",afterDatasetsUpdate(t,e,s){const i=(t.data.datasets||[]).length;const n=[];let o,a,r,l;for(a=0;a<i;++a){o=t.getDatasetMeta(a);r=o.dataset;l=null;r&&r.options&&r instanceof LineElement&&(l={visible:t.isDatasetVisible(a),index:a,fill:Hn(r,a,i),chart:t,axis:o.controller.options.indexAxis,scale:o.vScale,line:r});o.$filler=l;n.push(l)}for(a=0;a<i;++a){l=n[a];l&&l.fill!==false&&(l.fill=Wn(n,a,s.propagate))}},beforeDraw(t,e,s){const i=s.drawTime==="beforeDraw";const n=t.getSortedVisibleDatasetMetas();const o=t.chartArea;for(let e=n.length-1;e>=0;--e){const s=n[e].$filler;if(s){s.line.updateControlPoints(o,s.axis);i&&s.fill&&so(t.ctx,s,o)}}},beforeDatasetsDraw(t,e,s){if(s.drawTime!=="beforeDatasetsDraw")return;const i=t.getSortedVisibleDatasetMetas();for(let e=i.length-1;e>=0;--e){const s=i[e].$filler;Nn(s)&&so(t.ctx,s,t.chartArea)}},beforeDatasetDraw(t,e,s){const i=e.meta.$filler;Nn(i)&&s.drawTime==="beforeDatasetDraw"&&so(t.ctx,i,t.chartArea)},defaults:{propagate:true,drawTime:"beforeDatasetDraw"}};const ho=(t,e)=>{let{boxHeight:s=e,boxWidth:i=e}=t;if(t.usePointStyle){s=Math.min(s,e);i=t.pointStyleWidth||Math.min(i,e)}return{boxWidth:i,boxHeight:s,itemHeight:Math.max(e,s)}};const uo=(t,e)=>t!==null&&e!==null&&t.datasetIndex===e.datasetIndex&&t.index===e.index;class Legend extends Element{constructor(t){super();this._added=false;this.legendHitBoxes=[];this._hoveredItem=null;this.doughnutMode=false;this.chart=t.chart;this.options=t.options;this.ctx=t.ctx;this.legendItems=void 0;this.columnSizes=void 0;this.lineWidths=void 0;this.maxHeight=void 0;this.maxWidth=void 0;this.top=void 0;this.bottom=void 0;this.left=void 0;this.right=void 0;this.height=void 0;this.width=void 0;this._margins=void 0;this.position=void 0;this.weight=void 0;this.fullSize=void 0}update(t,e,s){this.maxWidth=t;this.maxHeight=e;this._margins=s;this.setDimensions();this.buildLabels();this.fit()}setDimensions(){if(this.isHorizontal()){this.width=this.maxWidth;this.left=this._margins.left;this.right=this.width}else{this.height=this.maxHeight;this.top=this._margins.top;this.bottom=this.height}}buildLabels(){const t=this.options.labels||{};let e=X(t.generateLabels,[this.chart],this)||[];t.filter&&(e=e.filter((e=>t.filter(e,this.chart.data))));t.sort&&(e=e.sort(((e,s)=>t.sort(e,s,this.chart.data))));this.options.reverse&&e.reverse();this.legendItems=e}fit(){const{options:t,ctx:e}=this;if(!t.display){this.width=this.height=0;return}const s=t.labels;const i=j(s.font);const n=i.size;const o=this._computeTitleHeight();const{boxWidth:a,itemHeight:r}=ho(s,n);let l,c;e.font=i.string;if(this.isHorizontal()){l=this.maxWidth;c=this._fitRows(o,n,a,r)+10}else{c=this.maxHeight;l=this._fitCols(o,i,a,r)+10}this.width=Math.min(l,t.maxWidth||this.maxWidth);this.height=Math.min(c,t.maxHeight||this.maxHeight)}_fitRows(t,e,s,i){const{ctx:n,maxWidth:o,options:{labels:{padding:a}}}=this;const r=this.legendHitBoxes=[];const l=this.lineWidths=[0];const c=i+a;let h=t;n.textAlign="left";n.textBaseline="middle";let d=-1;let u=-c;this.legendItems.forEach(((t,f)=>{const g=s+e/2+n.measureText(t.text).width;if(f===0||l[l.length-1]+g+2*a>o){h+=c;l[l.length-(f>0?0:1)]=0;u+=c;d++}r[f]={left:0,top:u,row:d,width:g,height:i};l[l.length-1]+=g+a}));return h}_fitCols(t,e,s,i){const{ctx:n,maxHeight:o,options:{labels:{padding:a}}}=this;const r=this.legendHitBoxes=[];const l=this.columnSizes=[];const c=o-t;let h=a;let d=0;let u=0;let f=0;let g=0;this.legendItems.forEach(((t,o)=>{const{itemWidth:p,itemHeight:m}=fo(s,e,n,t,i);if(o>0&&u+m+2*a>c){h+=d+a;l.push({width:d,height:u});f+=d+a;g++;d=u=0}r[o]={left:f,top:u,col:g,width:p,height:m};d=Math.max(d,p);u+=m+a}));h+=d;l.push({width:d,height:u});return h}adjustHitBoxes(){if(!this.options.display)return;const t=this._computeTitleHeight();const{legendHitBoxes:e,options:{align:s,labels:{padding:i},rtl:n}}=this;const o=zt(n,this.left,this.width);if(this.isHorizontal()){let n=0;let a=U(s,this.left+i,this.right-this.lineWidths[n]);for(const r of e){if(n!==r.row){n=r.row;a=U(s,this.left+i,this.right-this.lineWidths[n])}r.top+=this.top+t+i;r.left=o.leftForLtr(o.x(a),r.width);a+=r.width+i}}else{let n=0;let a=U(s,this.top+t+i,this.bottom-this.columnSizes[n].height);for(const r of e){if(r.col!==n){n=r.col;a=U(s,this.top+t+i,this.bottom-this.columnSizes[n].height)}r.top=a;r.left+=this.left+i;r.left=o.leftForLtr(o.x(r.left),r.width);a+=r.height+i}}}isHorizontal(){return this.options.position==="top"||this.options.position==="bottom"}draw(){if(this.options.display){const t=this.ctx;tt(t,this);this._draw();st(t)}}_draw(){const{options:t,columnSizes:e,lineWidths:s,ctx:i}=this;const{align:n,labels:a}=t;const r=o.color;const l=zt(t.rtl,this.left,this.width);const c=j(a.font);const{padding:d}=a;const u=c.size;const f=u/2;let g;this.drawTitle();i.textAlign=l.textAlign("left");i.textBaseline="middle";i.lineWidth=.5;i.font=c.string;const{boxWidth:p,boxHeight:m,itemHeight:x}=ho(a,u);const b=function(t,e,s){if(isNaN(p)||p<=0||isNaN(m)||m<0)return;i.save();const n=h(s.lineWidth,1);i.fillStyle=h(s.fillStyle,r);i.lineCap=h(s.lineCap,"butt");i.lineDashOffset=h(s.lineDashOffset,0);i.lineJoin=h(s.lineJoin,"miter");i.lineWidth=n;i.strokeStyle=h(s.strokeStyle,r);i.setLineDash(h(s.lineDash,[]));if(a.usePointStyle){const o={radius:m*Math.SQRT2/2,pointStyle:s.pointStyle,rotation:s.rotation,borderWidth:n};const r=l.xPlus(t,p/2);const c=e+f;Ft(i,o,r,c,a.pointStyleWidth&&p)}else{const o=e+Math.max((u-m)/2,0);const a=l.leftForLtr(t,p);const r=Ot(s.borderRadius);i.beginPath();Object.values(r).some((t=>t!==0))?Rt(i,{x:a,y:o,w:p,h:m,radius:r}):i.rect(a,o,p,m);i.fill();n!==0&&i.stroke()}i.restore()};const _=function(t,e,s){et(i,s.text,t,e+x/2,c,{strikethrough:s.hidden,textAlign:l.textAlign(s.textAlign)})};const y=this.isHorizontal();const v=this._computeTitleHeight();g=y?{x:U(n,this.left+d,this.right-s[0]),y:this.top+d+v,line:0}:{x:this.left+d,y:U(n,this.top+v+d,this.bottom-e[0].height),line:0};Vt(this.ctx,t.textDirection);const M=x+d;this.legendItems.forEach(((o,r)=>{i.strokeStyle=o.fontColor;i.fillStyle=o.fontColor;const h=i.measureText(o.text).width;const u=l.textAlign(o.textAlign||(o.textAlign=a.textAlign));const m=p+f+h;let x=g.x;let w=g.y;l.setWidth(this.width);if(y){if(r>0&&x+m+d>this.right){w=g.y+=M;g.line++;x=g.x=U(n,this.left+d,this.right-s[g.line])}}else if(r>0&&w+M>this.bottom){x=g.x=x+e[g.line].width+d;g.line++;w=g.y=U(n,this.top+v+d,this.bottom-e[g.line].height)}const k=l.x(x);b(k,w,o);x=Bt(u,x+p+f,y?x+m:this.right,t.rtl);_(l.x(x),w,o);if(y)g.x+=m+d;else if(typeof o.text!=="string"){const t=c.lineHeight;g.y+=mo(o,t)+d}else g.y+=M}));Nt(this.ctx,t.textDirection)}drawTitle(){const t=this.options;const e=t.title;const s=j(e.font);const i=R(e.padding);if(!e.display)return;const n=zt(t.rtl,this.left,this.width);const o=this.ctx;const a=e.position;const r=s.size/2;const l=i.top+r;let c;let h=this.left;let d=this.width;if(this.isHorizontal()){d=Math.max(...this.lineWidths);c=this.top+l;h=U(t.align,h,this.right-d)}else{const e=this.columnSizes.reduce(((t,e)=>Math.max(t,e.height)),0);c=l+U(t.align,this.top,this.bottom-e-t.labels.padding-this._computeTitleHeight())}const u=U(a,h,h+d);o.textAlign=n.textAlign($(a));o.textBaseline="middle";o.strokeStyle=e.color;o.fillStyle=e.color;o.font=s.string;et(o,e.text,u,c,s)}_computeTitleHeight(){const t=this.options.title;const e=j(t.font);const s=R(t.padding);return t.display?e.lineHeight+s.height:0}_getLegendItemAt(t,e){let s,i,n;if(Mt(t,this.left,this.right)&&Mt(e,this.top,this.bottom)){n=this.legendHitBoxes;for(s=0;s<n.length;++s){i=n[s];if(Mt(t,i.left,i.left+i.width)&&Mt(e,i.top,i.top+i.height))return this.legendItems[s]}}return null}handleEvent(t){const e=this.options;if(!xo(t.type,e))return;const s=this._getLegendItemAt(t.x,t.y);if(t.type==="mousemove"||t.type==="mouseout"){const i=this._hoveredItem;const n=uo(i,s);i&&!n&&X(e.onLeave,[t,i,this],this);this._hoveredItem=s;s&&!n&&X(e.onHover,[t,s,this],this)}else s&&X(e.onClick,[t,s,this],this)}}function fo(t,e,s,i,n){const o=go(i,t,e,s);const a=po(n,i,e.lineHeight);return{itemWidth:o,itemHeight:a}}function go(t,e,s,i){let n=t.text;n&&typeof n!=="string"&&(n=n.reduce(((t,e)=>t.length>e.length?t:e)));return e+s.size/2+i.measureText(n).width}function po(t,e,s){let i=t;typeof e.text!=="string"&&(i=mo(e,s));return i}function mo(t,e){const s=t.text?t.text.length:0;return e*s}function xo(t,e){return!(t!=="mousemove"&&t!=="mouseout"||!e.onHover&&!e.onLeave)||!(!e.onClick||t!=="click"&&t!=="mouseup")}var bo={id:"legend",_element:Legend,start(t,e,s){const i=t.legend=new Legend({ctx:t.ctx,options:s,chart:t});fs.configure(t,i,s);fs.addBox(t,i)},stop(t){fs.removeBox(t,t.legend);delete t.legend},beforeUpdate(t,e,s){const i=t.legend;fs.configure(t,i,s);i.options=s},afterUpdate(t){const e=t.legend;e.buildLabels();e.adjustHitBoxes()},afterEvent(t,e){e.replay||t.legend.handleEvent(e.event)},defaults:{display:true,position:"top",align:"center",fullSize:true,reverse:false,weight:1e3,onClick(t,e,s){const i=e.datasetIndex;const n=s.chart;if(n.isDatasetVisible(i)){n.hide(i);e.hidden=true}else{n.show(i);e.hidden=false}},onHover:null,onLeave:null,labels:{color:t=>t.chart.options.color,boxWidth:40,padding:10,generateLabels(t){const e=t.data.datasets;const{labels:{usePointStyle:s,pointStyle:i,textAlign:n,color:o,useBorderRadius:a,borderRadius:r}}=t.legend.options;return t._getSortedDatasetMetas().map((t=>{const l=t.controller.getStyle(s?0:void 0);const c=R(l.borderWidth);return{text:e[t.index].label,fillStyle:l.backgroundColor,fontColor:o,hidden:!t.visible,lineCap:l.borderCapStyle,lineDash:l.borderDash,lineDashOffset:l.borderDashOffset,lineJoin:l.borderJoinStyle,lineWidth:(c.width+c.height)/4,strokeStyle:l.borderColor,pointStyle:i||l.pointStyle,rotation:l.rotation,textAlign:n||l.textAlign,borderRadius:a&&(r||l.borderRadius),datasetIndex:t.index}}),this)}},title:{color:t=>t.chart.options.color,display:false,position:"center",text:""}},descriptors:{_scriptable:t=>!t.startsWith("on"),labels:{_scriptable:t=>!["generateLabels","filter","sort"].includes(t)}}};class Title extends Element{constructor(t){super();this.chart=t.chart;this.options=t.options;this.ctx=t.ctx;this._padding=void 0;this.top=void 0;this.bottom=void 0;this.left=void 0;this.right=void 0;this.width=void 0;this.height=void 0;this.position=void 0;this.weight=void 0;this.fullSize=void 0}update(t,e){const s=this.options;this.left=0;this.top=0;if(!s.display){this.width=this.height=this.right=this.bottom=0;return}this.width=this.right=t;this.height=this.bottom=e;const i=a(s.text)?s.text.length:1;this._padding=R(s.padding);const n=i*j(s.font).lineHeight+this._padding.height;this.isHorizontal()?this.height=n:this.width=n}isHorizontal(){const t=this.options.position;return t==="top"||t==="bottom"}_drawArgs(t){const{top:e,left:s,bottom:i,right:n,options:o}=this;const a=o.align;let r=0;let l,c,h;if(this.isHorizontal()){c=U(a,s,n);h=e+t;l=n-s}else{if(o.position==="left"){c=s+t;h=U(a,i,e);r=y*-.5}else{c=n-t;h=U(a,e,i);r=y*.5}l=i-e}return{titleX:c,titleY:h,maxWidth:l,rotation:r}}draw(){const t=this.ctx;const e=this.options;if(!e.display)return;const s=j(e.font);const i=s.lineHeight;const n=i/2+this._padding.top;const{titleX:o,titleY:a,maxWidth:r,rotation:l}=this._drawArgs(n);et(t,e.text,0,0,s,{color:e.color,maxWidth:r,rotation:l,textAlign:$(e.align),textBaseline:"middle",translation:[o,a]})}}function _o(t,e){const s=new Title({ctx:t.ctx,options:e,chart:t});fs.configure(t,s,e);fs.addBox(t,s);t.titleBlock=s}var yo={id:"title",_element:Title,start(t,e,s){_o(t,s)},stop(t){const e=t.titleBlock;fs.removeBox(t,e);delete t.titleBlock},beforeUpdate(t,e,s){const i=t.titleBlock;fs.configure(t,i,s);i.options=s},defaults:{align:"center",display:false,font:{weight:"bold"},fullSize:true,padding:10,position:"top",text:"",weight:2e3},defaultRoutes:{color:"color"},descriptors:{_scriptable:true,_indexable:false}};const vo=new WeakMap;var Mo={id:"subtitle",start(t,e,s){const i=new Title({ctx:t.ctx,options:s,chart:t});fs.configure(t,i,s);fs.addBox(t,i);vo.set(t,i)},stop(t){fs.removeBox(t,vo.get(t));vo.delete(t)},beforeUpdate(t,e,s){const i=vo.get(t);fs.configure(t,i,s);i.options=s},defaults:{align:"center",display:false,font:{weight:"normal"},fullSize:true,padding:0,position:"top",text:"",weight:1500},defaultRoutes:{color:"color"},descriptors:{_scriptable:true,_indexable:false}};const wo={average(t){if(!t.length)return false;let e,s;let i=new Set;let n=0;let o=0;for(e=0,s=t.length;e<s;++e){const s=t[e].element;if(s&&s.hasValue()){const t=s.tooltipPosition();i.add(t.x);n+=t.y;++o}}if(o===0||i.size===0)return false;const a=[...i].reduce(((t,e)=>t+e))/i.size;return{x:a,y:n/o}},nearest(t,e){if(!t.length)return false;let s=e.x;let i=e.y;let n=Number.POSITIVE_INFINITY;let o,a,r;for(o=0,a=t.length;o<a;++o){const s=t[o].element;if(s&&s.hasValue()){const t=s.getCenterPoint();const i=Wt(e,t);if(i<n){n=i;r=s}}}if(r){const t=r.tooltipPosition();s=t.x;i=t.y}return{x:s,y:i}}};function ko(t,e){e&&(a(e)?Array.prototype.push.apply(t,e):t.push(e));return t}function So(t){return(typeof t==="string"||t instanceof String)&&t.indexOf("\n")>-1?t.split("\n"):t}function Do(t,e){const{element:s,datasetIndex:i,index:n}=e;const o=t.getDatasetMeta(i).controller;const{label:a,value:r}=o.getLabelAndValue(n);return{chart:t,label:a,parsed:o.getParsed(n),raw:t.data.datasets[i].data[n],formattedValue:r,dataset:o.getDataset(),dataIndex:n,datasetIndex:i,element:s}}function Po(t,e){const s=t.chart.ctx;const{body:i,footer:n,title:o}=t;const{boxWidth:a,boxHeight:r}=e;const l=j(e.bodyFont);const c=j(e.titleFont);const h=j(e.footerFont);const d=o.length;const u=n.length;const f=i.length;const g=R(e.padding);let p=g.height;let m=0;let x=i.reduce(((t,e)=>t+e.before.length+e.lines.length+e.after.length),0);x+=t.beforeBody.length+t.afterBody.length;d&&(p+=d*c.lineHeight+(d-1)*e.titleSpacing+e.titleMarginBottom);if(x){const t=e.displayColors?Math.max(r,l.lineHeight):l.lineHeight;p+=f*t+(x-f)*l.lineHeight+(x-1)*e.bodySpacing}u&&(p+=e.footerMarginTop+u*h.lineHeight+(u-1)*e.footerSpacing);let b=0;const _=function(t){m=Math.max(m,s.measureText(t).width+b)};s.save();s.font=c.string;I(t.title,_);s.font=l.string;I(t.beforeBody.concat(t.afterBody),_);b=e.displayColors?a+2+e.boxPadding:0;I(i,(t=>{I(t.before,_);I(t.lines,_);I(t.after,_)}));b=0;s.font=h.string;I(t.footer,_);s.restore();m+=g.width;return{width:m,height:p}}function Co(t,e){const{y:s,height:i}=e;return s<i/2?"top":s>t.height-i/2?"bottom":"center"}function Ao(t,e,s,i){const{x:n,width:o}=i;const a=s.caretSize+s.caretPadding;return t==="left"&&n+o+a>e.width||(t==="right"&&n-o-a<0||void 0)}function Lo(t,e,s,i){const{x:n,width:o}=s;const{width:a,chartArea:{left:r,right:l}}=t;let c="center";i==="center"?c=n<=(r+l)/2?"left":"right":n<=o/2?c="left":n>=a-o/2&&(c="right");Ao(c,t,e,s)&&(c="center");return c}function Eo(t,e,s){const i=s.yAlign||e.yAlign||Co(t,s);return{xAlign:s.xAlign||e.xAlign||Lo(t,e,s,i),yAlign:i}}function To(t,e){let{x:s,width:i}=t;e==="right"?s-=i:e==="center"&&(s-=i/2);return s}function Oo(t,e,s){let{y:i,height:n}=t;e==="top"?i+=s:i-=e==="bottom"?n+s:n/2;return i}function Ro(t,e,s,i){const{caretSize:n,caretPadding:o,cornerRadius:a}=t;const{xAlign:r,yAlign:l}=s;const c=n+o;const{topLeft:h,topRight:d,bottomLeft:u,bottomRight:f}=Ot(a);let g=To(e,r);const p=Oo(e,l,c);l==="center"?r==="left"?g+=c:r==="right"&&(g-=c):r==="left"?g-=Math.max(h,u)+n:r==="right"&&(g+=Math.max(d,f)+n);return{x:K(g,0,i.width-e.width),y:K(p,0,i.height-e.height)}}function Io(t,e,s){const i=R(s.padding);return e==="center"?t.x+t.width/2:e==="right"?t.x+t.width-i.right:t.x+i.left}function zo(t){return ko([],So(t))}function Fo(t,e,s){return c(t,{tooltip:e,tooltipItems:s,type:"tooltip"})}function Vo(t,e){const s=e&&e.dataset&&e.dataset.tooltip&&e.dataset.tooltip.callbacks;return s?t.override(s):t}const Bo={beforeTitle:Ht,title(t){if(t.length>0){const e=t[0];const s=e.chart.data.labels;const i=s?s.length:0;if(this&&this.options&&this.options.mode==="dataset")return e.dataset.label||"";if(e.label)return e.label;if(i>0&&e.dataIndex<i)return s[e.dataIndex]}return""},afterTitle:Ht,beforeBody:Ht,beforeLabel:Ht,label(t){if(this&&this.options&&this.options.mode==="dataset")return t.label+": "+t.formattedValue||t.formattedValue;let e=t.dataset.label||"";e&&(e+=": ");const s=t.formattedValue;m(s)||(e+=s);return e},labelColor(t){const e=t.chart.getDatasetMeta(t.datasetIndex);const s=e.controller.getStyle(t.dataIndex);return{borderColor:s.borderColor,backgroundColor:s.backgroundColor,borderWidth:s.borderWidth,borderDash:s.borderDash,borderDashOffset:s.borderDashOffset,borderRadius:0}},labelTextColor(){return this.options.bodyColor},labelPointStyle(t){const e=t.chart.getDatasetMeta(t.datasetIndex);const s=e.controller.getStyle(t.dataIndex);return{pointStyle:s.pointStyle,rotation:s.rotation}},afterLabel:Ht,afterBody:Ht,beforeFooter:Ht,footer:Ht,afterFooter:Ht};function No(t,e,s,i){const n=t[e].call(s,i);return typeof n==="undefined"?Bo[e].call(s,i):n}class Tooltip extends Element{static positioners=wo;constructor(t){super();this.opacity=0;this._active=[];this._eventPosition=void 0;this._size=void 0;this._cachedAnimations=void 0;this._tooltipItems=[];this.$animations=void 0;this.$context=void 0;this.chart=t.chart;this.options=t.options;this.dataPoints=void 0;this.title=void 0;this.beforeBody=void 0;this.body=void 0;this.afterBody=void 0;this.footer=void 0;this.xAlign=void 0;this.yAlign=void 0;this.x=void 0;this.y=void 0;this.height=void 0;this.width=void 0;this.caretX=void 0;this.caretY=void 0;this.labelColors=void 0;this.labelPointStyles=void 0;this.labelTextColors=void 0}initialize(t){this.options=t;this._cachedAnimations=void 0;this.$context=void 0}_resolveAnimations(){const t=this._cachedAnimations;if(t)return t;const e=this.chart;const s=this.options.setContext(this.getContext());const i=s.enabled&&e.options.animation&&s.animations;const n=new Animations(this.chart,i);i._cacheable&&(this._cachedAnimations=Object.freeze(n));return n}getContext(){return this.$context||(this.$context=Fo(this.chart.getContext(),this,this._tooltipItems))}getTitle(t,e){const{callbacks:s}=e;const i=No(s,"beforeTitle",this,t);const n=No(s,"title",this,t);const o=No(s,"afterTitle",this,t);let a=[];a=ko(a,So(i));a=ko(a,So(n));a=ko(a,So(o));return a}getBeforeBody(t,e){return zo(No(e.callbacks,"beforeBody",this,t))}getBody(t,e){const{callbacks:s}=e;const i=[];I(t,(t=>{const e={before:[],lines:[],after:[]};const n=Vo(s,t);ko(e.before,So(No(n,"beforeLabel",this,t)));ko(e.lines,No(n,"label",this,t));ko(e.after,So(No(n,"afterLabel",this,t)));i.push(e)}));return i}getAfterBody(t,e){return zo(No(e.callbacks,"afterBody",this,t))}getFooter(t,e){const{callbacks:s}=e;const i=No(s,"beforeFooter",this,t);const n=No(s,"footer",this,t);const o=No(s,"afterFooter",this,t);let a=[];a=ko(a,So(i));a=ko(a,So(n));a=ko(a,So(o));return a}_createItems(t){const e=this._active;const s=this.chart.data;const i=[];const n=[];const o=[];let a=[];let r,l;for(r=0,l=e.length;r<l;++r)a.push(Do(this.chart,e[r]));t.filter&&(a=a.filter(((e,i,n)=>t.filter(e,i,n,s))));t.itemSort&&(a=a.sort(((e,i)=>t.itemSort(e,i,s))));I(a,(e=>{const s=Vo(t.callbacks,e);i.push(No(s,"labelColor",this,e));n.push(No(s,"labelPointStyle",this,e));o.push(No(s,"labelTextColor",this,e))}));this.labelColors=i;this.labelPointStyles=n;this.labelTextColors=o;this.dataPoints=a;return a}update(t,e){const s=this.options.setContext(this.getContext());const i=this._active;let n;let o=[];if(i.length){const t=wo[s.position].call(this,i,this._eventPosition);o=this._createItems(s);this.title=this.getTitle(o,s);this.beforeBody=this.getBeforeBody(o,s);this.body=this.getBody(o,s);this.afterBody=this.getAfterBody(o,s);this.footer=this.getFooter(o,s);const e=this._size=Po(this,s);const a=Object.assign({},t,e);const r=Eo(this.chart,s,a);const l=Ro(s,a,r,this.chart);this.xAlign=r.xAlign;this.yAlign=r.yAlign;n={opacity:1,x:l.x,y:l.y,width:e.width,height:e.height,caretX:t.x,caretY:t.y}}else this.opacity!==0&&(n={opacity:0});this._tooltipItems=o;this.$context=void 0;n&&this._resolveAnimations().update(this,n);t&&s.external&&s.external.call(this,{chart:this.chart,tooltip:this,replay:e})}drawCaret(t,e,s,i){const n=this.getCaretPosition(t,s,i);e.lineTo(n.x1,n.y1);e.lineTo(n.x2,n.y2);e.lineTo(n.x3,n.y3)}getCaretPosition(t,e,s){const{xAlign:i,yAlign:n}=this;const{caretSize:o,cornerRadius:a}=s;const{topLeft:r,topRight:l,bottomLeft:c,bottomRight:h}=Ot(a);const{x:d,y:u}=t;const{width:f,height:g}=e;let p,m,x,b,_,y;if(n==="center"){_=u+g/2;if(i==="left"){p=d;m=p-o;b=_+o;y=_-o}else{p=d+f;m=p+o;b=_-o;y=_+o}x=p}else{m=i==="left"?d+Math.max(r,c)+o:i==="right"?d+f-Math.max(l,h)-o:this.caretX;if(n==="top"){b=u;_=b-o;p=m-o;x=m+o}else{b=u+g;_=b+o;p=m+o;x=m-o}y=b}return{x1:p,x2:m,x3:x,y1:b,y2:_,y3:y}}drawTitle(t,e,s){const i=this.title;const n=i.length;let o,a,r;if(n){const l=zt(s.rtl,this.x,this.width);t.x=Io(this,s.titleAlign,s);e.textAlign=l.textAlign(s.titleAlign);e.textBaseline="middle";o=j(s.titleFont);a=s.titleSpacing;e.fillStyle=s.titleColor;e.font=o.string;for(r=0;r<n;++r){e.fillText(i[r],l.x(t.x),t.y+o.lineHeight/2);t.y+=o.lineHeight+a;r+1===n&&(t.y+=s.titleMarginBottom-a)}}}_drawColorBox(t,e,s,i,o){const a=this.labelColors[s];const r=this.labelPointStyles[s];const{boxHeight:l,boxWidth:c}=o;const h=j(o.bodyFont);const d=Io(this,"left",o);const u=i.x(d);const f=l<h.lineHeight?(h.lineHeight-l)/2:0;const g=e.y+f;if(o.usePointStyle){const e={radius:Math.min(c,l)/2,pointStyle:r.pointStyle,rotation:r.rotation,borderWidth:1};const s=i.leftForLtr(u,c)+c/2;const n=g+l/2;t.strokeStyle=o.multiKeyBackground;t.fillStyle=o.multiKeyBackground;Et(t,e,s,n);t.strokeStyle=a.borderColor;t.fillStyle=a.backgroundColor;Et(t,e,s,n)}else{t.lineWidth=n(a.borderWidth)?Math.max(...Object.values(a.borderWidth)):a.borderWidth||1;t.strokeStyle=a.borderColor;t.setLineDash(a.borderDash||[]);t.lineDashOffset=a.borderDashOffset||0;const e=i.leftForLtr(u,c);const s=i.leftForLtr(i.xPlus(u,1),c-2);const r=Ot(a.borderRadius);if(Object.values(r).some((t=>t!==0))){t.beginPath();t.fillStyle=o.multiKeyBackground;Rt(t,{x:e,y:g,w:c,h:l,radius:r});t.fill();t.stroke();t.fillStyle=a.backgroundColor;t.beginPath();Rt(t,{x:s,y:g+1,w:c-2,h:l-2,radius:r});t.fill()}else{t.fillStyle=o.multiKeyBackground;t.fillRect(e,g,c,l);t.strokeRect(e,g,c,l);t.fillStyle=a.backgroundColor;t.fillRect(s,g+1,c-2,l-2)}}t.fillStyle=this.labelTextColors[s]}drawBody(t,e,s){const{body:i}=this;const{bodySpacing:n,bodyAlign:o,displayColors:a,boxHeight:r,boxWidth:l,boxPadding:c}=s;const h=j(s.bodyFont);let d=h.lineHeight;let u=0;const f=zt(s.rtl,this.x,this.width);const g=function(s){e.fillText(s,f.x(t.x+u),t.y+d/2);t.y+=d+n};const p=f.textAlign(o);let m,x,b,_,y,v,M;e.textAlign=o;e.textBaseline="middle";e.font=h.string;t.x=Io(this,p,s);e.fillStyle=s.bodyColor;I(this.beforeBody,g);u=a&&p!=="right"?o==="center"?l/2+c:l+2+c:0;for(_=0,v=i.length;_<v;++_){m=i[_];x=this.labelTextColors[_];e.fillStyle=x;I(m.before,g);b=m.lines;if(a&&b.length){this._drawColorBox(e,t,_,f,s);d=Math.max(h.lineHeight,r)}for(y=0,M=b.length;y<M;++y){g(b[y]);d=h.lineHeight}I(m.after,g)}u=0;d=h.lineHeight;I(this.afterBody,g);t.y-=n}drawFooter(t,e,s){const i=this.footer;const n=i.length;let o,a;if(n){const r=zt(s.rtl,this.x,this.width);t.x=Io(this,s.footerAlign,s);t.y+=s.footerMarginTop;e.textAlign=r.textAlign(s.footerAlign);e.textBaseline="middle";o=j(s.footerFont);e.fillStyle=s.footerColor;e.font=o.string;for(a=0;a<n;++a){e.fillText(i[a],r.x(t.x),t.y+o.lineHeight/2);t.y+=o.lineHeight+s.footerSpacing}}}drawBackground(t,e,s,i){const{xAlign:n,yAlign:o}=this;const{x:a,y:r}=t;const{width:l,height:c}=s;const{topLeft:h,topRight:d,bottomLeft:u,bottomRight:f}=Ot(i.cornerRadius);e.fillStyle=i.backgroundColor;e.strokeStyle=i.borderColor;e.lineWidth=i.borderWidth;e.beginPath();e.moveTo(a+h,r);o==="top"&&this.drawCaret(t,e,s,i);e.lineTo(a+l-d,r);e.quadraticCurveTo(a+l,r,a+l,r+d);o==="center"&&n==="right"&&this.drawCaret(t,e,s,i);e.lineTo(a+l,r+c-f);e.quadraticCurveTo(a+l,r+c,a+l-f,r+c);o==="bottom"&&this.drawCaret(t,e,s,i);e.lineTo(a+u,r+c);e.quadraticCurveTo(a,r+c,a,r+c-u);o==="center"&&n==="left"&&this.drawCaret(t,e,s,i);e.lineTo(a,r+h);e.quadraticCurveTo(a,r,a+h,r);e.closePath();e.fill();i.borderWidth>0&&e.stroke()}_updateAnimationTarget(t){const e=this.chart;const s=this.$animations;const i=s&&s.x;const n=s&&s.y;if(i||n){const s=wo[t.position].call(this,this._active,this._eventPosition);if(!s)return;const o=this._size=Po(this,t);const a=Object.assign({},s,this._size);const r=Eo(e,t,a);const l=Ro(t,a,r,e);if(i._to!==l.x||n._to!==l.y){this.xAlign=r.xAlign;this.yAlign=r.yAlign;this.width=o.width;this.height=o.height;this.caretX=s.x;this.caretY=s.y;this._resolveAnimations().update(this,l)}}}_willRender(){return!!this.opacity}draw(t){const e=this.options.setContext(this.getContext());let s=this.opacity;if(!s)return;this._updateAnimationTarget(e);const i={width:this.width,height:this.height};const n={x:this.x,y:this.y};s=Math.abs(s)<.001?0:s;const o=R(e.padding);const a=this.title.length||this.beforeBody.length||this.body.length||this.afterBody.length||this.footer.length;if(e.enabled&&a){t.save();t.globalAlpha=s;this.drawBackground(n,t,i,e);Vt(t,e.textDirection);n.y+=o.top;this.drawTitle(n,t,e);this.drawBody(n,t,e);this.drawFooter(n,t,e);Nt(t,e.textDirection);t.restore()}}getActiveElements(){return this._active||[]}setActiveElements(t,e){const s=this._active;const i=t.map((({datasetIndex:t,index:e})=>{const s=this.chart.getDatasetMeta(t);if(!s)throw new Error("Cannot find a dataset at index "+t);return{datasetIndex:t,element:s.data[e],index:e}}));const n=!bt(s,i);const o=this._positionChanged(i,e);if(n||o){this._active=i;this._eventPosition=e;this._ignoreReplayEvents=true;this.update(true)}}handleEvent(t,e,s=true){if(e&&this._ignoreReplayEvents)return false;this._ignoreReplayEvents=false;const i=this.options;const n=this._active||[];const o=this._getActiveElements(t,n,e,s);const a=this._positionChanged(o,t);const r=e||!bt(o,n)||a;if(r){this._active=o;if(i.enabled||i.external){this._eventPosition={x:t.x,y:t.y};this.update(true,e)}}return r}_getActiveElements(t,e,s,i){const n=this.options;if(t.type==="mouseout")return[];if(!i)return e.filter((t=>this.chart.data.datasets[t.datasetIndex]&&this.chart.getDatasetMeta(t.datasetIndex).controller.getParsed(t.index)!==void 0));const o=this.chart.getElementsAtEventForMode(t,n.mode,n,s);n.reverse&&o.reverse();return o}_positionChanged(t,e){const{caretX:s,caretY:i,options:n}=this;const o=wo[n.position].call(this,t,e);return o!==false&&(s!==o.x||i!==o.y)}}var Wo={id:"tooltip",_element:Tooltip,positioners:wo,afterInit(t,e,s){s&&(t.tooltip=new Tooltip({chart:t,options:s}))},beforeUpdate(t,e,s){t.tooltip&&t.tooltip.initialize(s)},reset(t,e,s){t.tooltip&&t.tooltip.initialize(s)},afterDraw(t){const e=t.tooltip;if(e&&e._willRender()){const s={tooltip:e};if(t.notifyPlugins("beforeTooltipDraw",{...s,cancelable:true})===false)return;e.draw(t.ctx);t.notifyPlugins("afterTooltipDraw",s)}},afterEvent(t,e){if(t.tooltip){const s=e.replay;t.tooltip.handleEvent(e.event,s,e.inChartArea)&&(e.changed=true)}},defaults:{enabled:true,external:null,position:"average",backgroundColor:"rgba(0,0,0,0.8)",titleColor:"#fff",titleFont:{weight:"bold"},titleSpacing:2,titleMarginBottom:6,titleAlign:"left",bodyColor:"#fff",bodySpacing:2,bodyFont:{},bodyAlign:"left",footerColor:"#fff",footerSpacing:2,footerMarginTop:6,footerFont:{weight:"bold"},footerAlign:"left",padding:6,caretPadding:2,caretSize:5,cornerRadius:6,boxHeight:(t,e)=>e.bodyFont.size,boxWidth:(t,e)=>e.bodyFont.size,multiKeyBackground:"#fff",displayColors:true,boxPadding:0,borderColor:"rgba(0,0,0,0)",borderWidth:0,animation:{duration:400,easing:"easeOutQuart"},animations:{numbers:{type:"number",properties:["x","y","width","height","caretX","caretY"]},opacity:{easing:"linear",duration:200}},callbacks:Bo},defaultRoutes:{bodyFont:"font",footerFont:"font",titleFont:"font"},descriptors:{_scriptable:t=>t!=="filter"&&t!=="itemSort"&&t!=="external",_indexable:false,callbacks:{_scriptable:false,_indexable:false},animation:{_fallback:false},animations:{_fallback:"animation"}},additionalOptionScopes:["interaction"]};var Ho=Object.freeze({__proto__:null,Colors:Pn,Decimation:On,Filler:co,Legend:bo,SubTitle:Mo,Title:yo,Tooltip:Wo});const jo=(t,e,s,i)=>{if(typeof e==="string"){s=t.push(e)-1;i.unshift({index:s,label:e})}else isNaN(e)&&(s=null);return s};function $o(t,e,s,i){const n=t.indexOf(e);if(n===-1)return jo(t,e,s,i);const o=t.lastIndexOf(e);return n!==o?s:n}const Uo=(t,e)=>t===null?null:K(Math.round(t),0,e);function Yo(t){const e=this.getLabels();return t>=0&&t<e.length?e[t]:t}class CategoryScale extends Scale{static id="category";static defaults={ticks:{callback:Yo}};constructor(t){super(t);this._startValue=void 0;this._valueRange=0;this._addedLabels=[]}init(t){const e=this._addedLabels;if(e.length){const t=this.getLabels();for(const{index:s,label:i}of e)t[s]===i&&t.splice(s,1);this._addedLabels=[]}super.init(t)}parse(t,e){if(m(t))return null;const s=this.getLabels();e=isFinite(e)&&s[e]===t?e:$o(s,t,h(e,t),this._addedLabels);return Uo(e,s.length-1)}determineDataLimits(){const{minDefined:t,maxDefined:e}=this.getUserBounds();let{min:s,max:i}=this.getMinMax(true);if(this.options.bounds==="ticks"){t||(s=0);e||(i=this.getLabels().length-1)}this.min=s;this.max=i}buildTicks(){const t=this.min;const e=this.max;const s=this.options.offset;const i=[];let n=this.getLabels();n=t===0&&e===n.length-1?n:n.slice(t,e+1);this._valueRange=Math.max(n.length-(s?0:1),1);this._startValue=this.min-(s?.5:0);for(let s=t;s<=e;s++)i.push({value:s});return i}getLabelForValue(t){return Yo.call(this,t)}configure(){super.configure();this.isHorizontal()||(this._reversePixels=!this._reversePixels)}getPixelForValue(t){typeof t!=="number"&&(t=this.parse(t));return t===null?NaN:this.getPixelForDecimal((t-this._startValue)/this._valueRange)}getPixelForTick(t){const e=this.ticks;return t<0||t>e.length-1?null:this.getPixelForValue(e[t].value)}getValueForPixel(t){return Math.round(this._startValue+this.getDecimalForPixel(t)*this._valueRange)}getBasePixel(){return this.bottom}}function Xo(t,e){const s=[];const i=1e-14;const{bounds:n,step:o,min:a,max:r,precision:l,count:c,maxTicks:h,maxDigits:d,includeBounds:u}=t;const f=o||1;const g=h-1;const{min:p,max:x}=e;const b=!m(a);const _=!m(r);const y=!m(c);const v=(x-p)/(d+1);let M=jt((x-p)/g/f)*f;let w,k,S,D;if(M<i&&!b&&!_)return[{value:p},{value:x}];D=Math.ceil(x/M)-Math.floor(p/M);D>g&&(M=jt(D*M/g/f)*f);if(!m(l)){w=Math.pow(10,l);M=Math.ceil(M*w)/w}if(n==="ticks"){k=Math.floor(p/M)*M;S=Math.ceil(x/M)*M}else{k=p;S=x}if(b&&_&&o&&$t((r-a)/o,M/1e3)){D=Math.round(Math.min((r-a)/M,h));M=(r-a)/D;k=a;S=r}else if(y){k=b?a:k;S=_?r:S;D=c-1;M=(S-k)/D}else{D=(S-k)/M;D=Ut(D,Math.round(D),M/1e3)?Math.round(D):Math.ceil(D)}const P=Math.max(Yt(M),Yt(k));w=Math.pow(10,m(l)?P:l);k=Math.round(k*w)/w;S=Math.round(S*w)/w;let C=0;if(b)if(u&&k!==a){s.push({value:a});k<a&&C++;Ut(Math.round((k+C*M)*w)/w,a,Go(a,v,t))&&C++}else k<a&&C++;for(;C<D;++C){const t=Math.round((k+C*M)*w)/w;if(_&&t>r)break;s.push({value:t})}_&&u&&S!==r?s.length&&Ut(s[s.length-1].value,r,Go(r,v,t))?s[s.length-1].value=r:s.push({value:r}):_&&S!==r||s.push({value:S});return s}function Go(t,e,{horizontal:s,minRotation:i}){const n=v(i);const o=(s?Math.sin(n):Math.cos(n))||.001;const a=.75*e*(""+t).length;return Math.min(e/o,a)}class LinearScaleBase extends Scale{constructor(t){super(t);this.start=void 0;this.end=void 0;this._startValue=void 0;this._endValue=void 0;this._valueRange=0}parse(t,e){return m(t)||(typeof t==="number"||t instanceof Number)&&!isFinite(+t)?null:+t}handleTickRangeOptions(){const{beginAtZero:t}=this.options;const{minDefined:e,maxDefined:s}=this.getUserBounds();let{min:i,max:n}=this;const o=t=>i=e?i:t;const a=t=>n=s?n:t;if(t){const t=l(i);const e=l(n);t<0&&e<0?a(0):t>0&&e>0&&o(0)}if(i===n){let e=n===0?1:Math.abs(n*.05);a(n+e);t||o(i-e)}this.min=i;this.max=n}getTickLimit(){const t=this.options.ticks;let{maxTicksLimit:e,stepSize:s}=t;let i;if(s){i=Math.ceil(this.max/s)-Math.floor(this.min/s)+1;if(i>1e3){console.warn(`scales.${this.id}.ticks.stepSize: ${s} would result generating up to ${i} ticks. Limiting to 1000.`);i=1e3}}else{i=this.computeTickLimit();e=e||11}e&&(i=Math.min(e,i));return i}computeTickLimit(){return Number.POSITIVE_INFINITY}buildTicks(){const t=this.options;const e=t.ticks;let s=this.getTickLimit();s=Math.max(2,s);const i={maxTicks:s,bounds:t.bounds,min:t.min,max:t.max,precision:e.precision,step:e.stepSize,count:e.count,maxDigits:this._maxDigits(),horizontal:this.isHorizontal(),minRotation:e.minRotation||0,includeBounds:e.includeBounds!==false};const n=this._range||this;const o=Xo(i,n);t.bounds==="ticks"&&Xt(o,this,"value");if(t.reverse){o.reverse();this.start=this.max;this.end=this.min}else{this.start=this.min;this.end=this.max}return o}configure(){const t=this.ticks;let e=this.min;let s=this.max;super.configure();if(this.options.offset&&t.length){const i=(s-e)/Math.max(t.length-1,1)/2;e-=i;s+=i}this._startValue=e;this._endValue=s;this._valueRange=s-e}getLabelForValue(t){return k(t,this.chart.options.locale,this.options.ticks.format)}}class LinearScale extends LinearScaleBase{static id="linear";static defaults={ticks:{callback:Gt.formatters.numeric}};determineDataLimits(){const{min:t,max:e}=this.getMinMax(true);this.min=r(t)?t:0;this.max=r(e)?e:1;this.handleTickRangeOptions()}computeTickLimit(){const t=this.isHorizontal();const e=t?this.width:this.height;const s=v(this.options.ticks.minRotation);const i=(t?Math.sin(s):Math.cos(s))||.001;const n=this._resolveTickFontOptions(0);return Math.ceil(e/Math.min(40,n.lineHeight/i))}getPixelForValue(t){return t===null?NaN:this.getPixelForDecimal((t-this._startValue)/this._valueRange)}getValueForPixel(t){return this._startValue+this.getDecimalForPixel(t)*this._valueRange}}const Ko=t=>Math.floor(Kt(t));const Jo=(t,e)=>Math.pow(10,Ko(t)+e);function qo(t){const e=t/Math.pow(10,Ko(t));return e===1}function Zo(t,e,s){const i=Math.pow(10,s);const n=Math.floor(t/i);const o=Math.ceil(e/i);return o-n}function Qo(t,e){const s=e-t;let i=Ko(s);while(Zo(t,e,i)>10)i++;while(Zo(t,e,i)<10)i--;return Math.min(i,Ko(t))}function ta(t,{min:e,max:s}){e=Y(t.min,e);const i=[];const n=Ko(e);let o=Qo(e,s);let a=o<0?Math.pow(10,Math.abs(o)):1;const r=Math.pow(10,o);const l=n>o?Math.pow(10,n):0;const c=Math.round((e-l)*a)/a;const h=Math.floor((e-l)/r/10)*r*10;let d=Math.floor((c-h)/Math.pow(10,o));let u=Y(t.min,Math.round((l+h+d*Math.pow(10,o))*a)/a);while(u<s){i.push({value:u,major:qo(u),significand:d});d>=10?d=d<15?15:20:d++;if(d>=20){o++;d=2;a=o>=0?1:a}u=Math.round((l+h+d*Math.pow(10,o))*a)/a}const f=Y(t.max,u);i.push({value:f,major:qo(f),significand:d});return i}class LogarithmicScale extends Scale{static id="logarithmic";static defaults={ticks:{callback:Gt.formatters.logarithmic,major:{enabled:true}}};constructor(t){super(t);this.start=void 0;this.end=void 0;this._startValue=void 0;this._valueRange=0}parse(t,e){const s=LinearScaleBase.prototype.parse.apply(this,[t,e]);if(s!==0)return r(s)&&s>0?s:null;this._zero=true}determineDataLimits(){const{min:t,max:e}=this.getMinMax(true);this.min=r(t)?Math.max(0,t):null;this.max=r(e)?Math.max(0,e):null;this.options.beginAtZero&&(this._zero=true);this._zero&&this.min!==this._suggestedMin&&!r(this._userMin)&&(this.min=t===Jo(this.min,0)?Jo(this.min,-1):Jo(this.min,0));this.handleTickRangeOptions()}handleTickRangeOptions(){const{minDefined:t,maxDefined:e}=this.getUserBounds();let s=this.min;let i=this.max;const n=e=>s=t?s:e;const o=t=>i=e?i:t;if(s===i)if(s<=0){n(1);o(10)}else{n(Jo(s,-1));o(Jo(i,1))}s<=0&&n(Jo(i,-1));i<=0&&o(Jo(s,1));this.min=s;this.max=i}buildTicks(){const t=this.options;const e={min:this._userMin,max:this._userMax};const s=ta(e,this);t.bounds==="ticks"&&Xt(s,this,"value");if(t.reverse){s.reverse();this.start=this.max;this.end=this.min}else{this.start=this.min;this.end=this.max}return s}getLabelForValue(t){return t===void 0?"0":k(t,this.chart.options.locale,this.options.ticks.format)}configure(){const t=this.min;super.configure();this._startValue=Kt(t);this._valueRange=Kt(this.max)-Kt(t)}getPixelForValue(t){t!==void 0&&t!==0||(t=this.min);return t===null||isNaN(t)?NaN:this.getPixelForDecimal(t===this.min?0:(Kt(t)-this._startValue)/this._valueRange)}getValueForPixel(t){const e=this.getDecimalForPixel(t);return Math.pow(10,this._startValue+e*this._valueRange)}}function ea(t){const e=t.ticks;if(e.display&&t.display){const t=R(e.backdropPadding);return h(e.font&&e.font.size,o.font.size)+t.height}return 0}function sa(t,e,s){s=a(s)?s:[s];return{w:Jt(t,e.string,s),h:s.length*e.lineHeight}}function ia(t,e,s,i,n){return t===i||t===n?{start:e-s/2,end:e+s/2}:t<i||t>n?{start:e-s,end:e}:{start:e,end:e+s}}function na(t){const e={l:t.left+t._padding.left,r:t.right-t._padding.right,t:t.top+t._padding.top,b:t.bottom-t._padding.bottom};const s=Object.assign({},e);const i=[];const n=[];const o=t._pointLabels.length;const a=t.options.pointLabels;const r=a.centerPointLabels?y/o:0;for(let l=0;l<o;l++){const o=a.setContext(t.getPointLabelContext(l));n[l]=o.padding;const c=t.getPointPosition(l,t.drawingArea+n[l],r);const h=j(o.font);const d=sa(t.ctx,h,t._pointLabels[l]);i[l]=d;const u=yt(t.getIndexAngle(l)+r);const f=Math.round(J(u));const g=ia(f,c.x,d.w,0,180);const p=ia(f,c.y,d.h,90,270);oa(s,e,u,g,p)}t.setCenterPoint(e.l-s.l,s.r-e.r,e.t-s.t,s.b-e.b);t._pointLabelItems=la(t,i,n)}function oa(t,e,s,i,n){const o=Math.abs(Math.sin(s));const a=Math.abs(Math.cos(s));let r=0;let l=0;if(i.start<e.l){r=(e.l-i.start)/o;t.l=Math.min(t.l,e.l-r)}else if(i.end>e.r){r=(i.end-e.r)/o;t.r=Math.max(t.r,e.r+r)}if(n.start<e.t){l=(e.t-n.start)/a;t.t=Math.min(t.t,e.t-l)}else if(n.end>e.b){l=(n.end-e.b)/a;t.b=Math.max(t.b,e.b+l)}}function aa(t,e,s){const i=t.drawingArea;const{extra:n,additionalAngle:o,padding:a,size:r}=s;const l=t.getPointPosition(e,i+n+a,o);const c=Math.round(J(yt(l.angle+_)));const h=da(l.y,r.h,c);const d=ca(c);const u=ha(l.x,r.w,d);return{visible:true,x:l.x,y:h,textAlign:d,left:u,top:h,right:u+r.w,bottom:h+r.h}}function ra(t,e){if(!e)return true;const{left:s,top:i,right:n,bottom:o}=t;const a=E({x:s,y:i},e)||E({x:s,y:o},e)||E({x:n,y:i},e)||E({x:n,y:o},e);return!a}function la(t,e,s){const i=[];const n=t._pointLabels.length;const o=t.options;const{centerPointLabels:a,display:r}=o.pointLabels;const l={extra:ea(o)/2,additionalAngle:a?y/n:0};let c;for(let o=0;o<n;o++){l.padding=s[o];l.size=e[o];const n=aa(t,o,l);i.push(n);if(r==="auto"){n.visible=ra(n,c);n.visible&&(c=n)}}return i}function ca(t){return t===0||t===180?"center":t<180?"left":"right"}function ha(t,e,s){s==="right"?t-=e:s==="center"&&(t-=e/2);return t}function da(t,e,s){s===90||s===270?t-=e/2:(s>270||s<90)&&(t-=e);return t}function ua(t,e,s){const{left:i,top:n,right:o,bottom:a}=s;const{backdropColor:r}=e;if(!m(r)){const s=Ot(e.borderRadius);const l=R(e.backdropPadding);t.fillStyle=r;const c=i-l.left;const h=n-l.top;const d=o-i+l.width;const u=a-n+l.height;if(Object.values(s).some((t=>t!==0))){t.beginPath();Rt(t,{x:c,y:h,w:d,h:u,radius:s});t.fill()}else t.fillRect(c,h,d,u)}}function fa(t,e){const{ctx:s,options:{pointLabels:i}}=t;for(let n=e-1;n>=0;n--){const e=t._pointLabelItems[n];if(!e.visible)continue;const o=i.setContext(t.getPointLabelContext(n));ua(s,o,e);const a=j(o.font);const{x:r,y:l,textAlign:c}=e;et(s,t._pointLabels[n],r,l+a.lineHeight/2,a,{color:o.color,textAlign:c,textBaseline:"middle"})}}function ga(t,e,s,i){const{ctx:n}=t;if(s)n.arc(t.xCenter,t.yCenter,e,0,x);else{let s=t.getPointPosition(0,e);n.moveTo(s.x,s.y);for(let o=1;o<i;o++){s=t.getPointPosition(o,e);n.lineTo(s.x,s.y)}}}function pa(t,e,s,i,n){const o=t.ctx;const a=e.circular;const{color:r,lineWidth:l}=e;if((a||i)&&r&&l&&!(s<0)){o.save();o.strokeStyle=r;o.lineWidth=l;o.setLineDash(n.dash||[]);o.lineDashOffset=n.dashOffset;o.beginPath();ga(t,s,a,i);o.closePath();o.stroke();o.restore()}}function ma(t,e,s){return c(t,{label:s,index:e,type:"pointLabel"})}class RadialLinearScale extends LinearScaleBase{static id="radialLinear";static defaults={display:true,animate:true,position:"chartArea",angleLines:{display:true,lineWidth:1,borderDash:[],borderDashOffset:0},grid:{circular:false},startAngle:0,ticks:{showLabelBackdrop:true,callback:Gt.formatters.numeric},pointLabels:{backdropColor:void 0,backdropPadding:2,display:true,font:{size:10},callback(t){return t},padding:5,centerPointLabels:false}};static defaultRoutes={"angleLines.color":"borderColor","pointLabels.color":"color","ticks.color":"color"};static descriptors={angleLines:{_fallback:"grid"}};constructor(t){super(t);this.xCenter=void 0;this.yCenter=void 0;this.drawingArea=void 0;this._pointLabels=[];this._pointLabelItems=[]}setDimensions(){const t=this._padding=R(ea(this.options)/2);const e=this.width=this.maxWidth-t.width;const s=this.height=this.maxHeight-t.height;this.xCenter=Math.floor(this.left+e/2+t.left);this.yCenter=Math.floor(this.top+s/2+t.top);this.drawingArea=Math.floor(Math.min(e,s)/2)}determineDataLimits(){const{min:t,max:e}=this.getMinMax(false);this.min=r(t)&&!isNaN(t)?t:0;this.max=r(e)&&!isNaN(e)?e:0;this.handleTickRangeOptions()}computeTickLimit(){return Math.ceil(this.drawingArea/ea(this.options))}generateTickLabels(t){LinearScaleBase.prototype.generateTickLabels.call(this,t);this._pointLabels=this.getLabels().map(((t,e)=>{const s=X(this.options.pointLabels.callback,[t,e],this);return s||s===0?s:""})).filter(((t,e)=>this.chart.getDataVisibility(e)))}fit(){const t=this.options;t.display&&t.pointLabels.display?na(this):this.setCenterPoint(0,0,0,0)}setCenterPoint(t,e,s,i){this.xCenter+=Math.floor((t-e)/2);this.yCenter+=Math.floor((s-i)/2);this.drawingArea-=Math.min(this.drawingArea/2,Math.max(t,e,s,i))}getIndexAngle(t){const e=x/(this._pointLabels.length||1);const s=this.options.startAngle||0;return yt(t*e+v(s))}getDistanceFromCenterForValue(t){if(m(t))return NaN;const e=this.drawingArea/(this.max-this.min);return this.options.reverse?(this.max-t)*e:(t-this.min)*e}getValueForDistanceFromCenter(t){if(m(t))return NaN;const e=t/(this.drawingArea/(this.max-this.min));return this.options.reverse?this.max-e:this.min+e}getPointLabelContext(t){const e=this._pointLabels||[];if(t>=0&&t<e.length){const s=e[t];return ma(this.getContext(),t,s)}}getPointPosition(t,e,s=0){const i=this.getIndexAngle(t)-_+s;return{x:Math.cos(i)*e+this.xCenter,y:Math.sin(i)*e+this.yCenter,angle:i}}getPointPositionForValue(t,e){return this.getPointPosition(t,this.getDistanceFromCenterForValue(e))}getBasePosition(t){return this.getPointPositionForValue(t||0,this.getBaseValue())}getPointLabelPosition(t){const{left:e,top:s,right:i,bottom:n}=this._pointLabelItems[t];return{left:e,top:s,right:i,bottom:n}}drawBackground(){const{backgroundColor:t,grid:{circular:e}}=this.options;if(t){const s=this.ctx;s.save();s.beginPath();ga(this,this.getDistanceFromCenterForValue(this._endValue),e,this._pointLabels.length);s.closePath();s.fillStyle=t;s.fill();s.restore()}}drawGrid(){const t=this.ctx;const e=this.options;const{angleLines:s,grid:i,border:n}=e;const o=this._pointLabels.length;let a,r,l;e.pointLabels.display&&fa(this,o);i.display&&this.ticks.forEach(((t,e)=>{if(e!==0||e===0&&this.min<0){r=this.getDistanceFromCenterForValue(t.value);const s=this.getContext(e);const a=i.setContext(s);const l=n.setContext(s);pa(this,a,r,o,l)}}));if(s.display){t.save();for(a=o-1;a>=0;a--){const i=s.setContext(this.getPointLabelContext(a));const{color:n,lineWidth:o}=i;if(o&&n){t.lineWidth=o;t.strokeStyle=n;t.setLineDash(i.borderDash);t.lineDashOffset=i.borderDashOffset;r=this.getDistanceFromCenterForValue(e.reverse?this.min:this.max);l=this.getPointPosition(a,r);t.beginPath();t.moveTo(this.xCenter,this.yCenter);t.lineTo(l.x,l.y);t.stroke()}}t.restore()}}drawBorder(){}drawLabels(){const t=this.ctx;const e=this.options;const s=e.ticks;if(!s.display)return;const i=this.getIndexAngle(0);let n,o;t.save();t.translate(this.xCenter,this.yCenter);t.rotate(i);t.textAlign="center";t.textBaseline="middle";this.ticks.forEach(((i,a)=>{if(a===0&&this.min>=0&&!e.reverse)return;const r=s.setContext(this.getContext(a));const l=j(r.font);n=this.getDistanceFromCenterForValue(this.ticks[a].value);if(r.showLabelBackdrop){t.font=l.string;o=t.measureText(i.label).width;t.fillStyle=r.backdropColor;const e=R(r.backdropPadding);t.fillRect(-o/2-e.left,-n-l.size/2-e.top,o+e.width,l.size+e.height)}et(t,i.label,0,-n,l,{color:r.color,strokeColor:r.textStrokeColor,strokeWidth:r.textStrokeWidth})}));t.restore()}drawTitle(){}}const xa={millisecond:{common:true,size:1,steps:1e3},second:{common:true,size:1e3,steps:60},minute:{common:true,size:6e4,steps:60},hour:{common:true,size:36e5,steps:24},day:{common:true,size:864e5,steps:30},week:{common:false,size:6048e5,steps:4},month:{common:true,size:2628e6,steps:12},quarter:{common:false,size:7884e6,steps:4},year:{common:true,size:3154e7}};const ba=Object.keys(xa);function _a(t,e){return t-e}function ya(t,e){if(m(e))return null;const s=t._adapter;const{parser:i,round:n,isoWeekday:o}=t._parseOpts;let a=e;typeof i==="function"&&(a=i(a));r(a)||(a=typeof i==="string"?s.parse(a,i):s.parse(a));if(a===null)return null;n&&(a=n!=="week"||!P(o)&&o!==true?s.startOf(a,n):s.startOf(a,"isoWeek",o));return+a}function va(t,e,s,i){const n=ba.length;for(let o=ba.indexOf(t);o<n-1;++o){const t=xa[ba[o]];const n=t.steps?t.steps:Number.MAX_SAFE_INTEGER;if(t.common&&Math.ceil((s-e)/(n*t.size))<=i)return ba[o]}return ba[n-1]}function Ma(t,e,s,i,n){for(let o=ba.length-1;o>=ba.indexOf(s);o--){const s=ba[o];if(xa[s].common&&t._adapter.diff(n,i,s)>=e-1)return s}return ba[s?ba.indexOf(s):0]}function wa(t){for(let e=ba.indexOf(t)+1,s=ba.length;e<s;++e)if(xa[ba[e]].common)return ba[e]}function ka(t,e,s){if(s){if(s.length){const{lo:i,hi:n}=qt(s,e);const o=s[i]>=e?s[i]:s[n];t[o]=true}}else t[e]=true}function Sa(t,e,s,i){const n=t._adapter;const o=+n.startOf(e[0].value,i);const a=e[e.length-1].value;let r,l;for(r=o;r<=a;r=+n.add(r,1,i)){l=s[r];l>=0&&(e[l].major=true)}return e}function Da(t,e,s){const i=[];const n={};const o=e.length;let a,r;for(a=0;a<o;++a){r=e[a];n[r]=a;i.push({value:r,major:false})}return o!==0&&s?Sa(t,i,n,s):i}class TimeScale extends Scale{static id="time";static defaults={bounds:"data",adapters:{},time:{parser:false,unit:false,round:false,isoWeekday:false,minUnit:"millisecond",displayFormats:{}},ticks:{source:"auto",callback:false,major:{enabled:false}}};constructor(t){super(t);this._cache={data:[],labels:[],all:[]};this._unit="day";this._majorUnit=void 0;this._offsets={};this._normalized=false;this._parseOpts=void 0}init(t,e={}){const s=t.time||(t.time={});const i=this._adapter=new We._date(t.adapters.date);i.init(e);at(s.displayFormats,i.formats());this._parseOpts={parser:s.parser,round:s.round,isoWeekday:s.isoWeekday};super.init(t);this._normalized=e.normalized}parse(t,e){return t===void 0?null:ya(this,t)}beforeLayout(){super.beforeLayout();this._cache={data:[],labels:[],all:[]}}determineDataLimits(){const t=this.options;const e=this._adapter;const s=t.time.unit||"day";let{min:i,max:n,minDefined:o,maxDefined:a}=this.getUserBounds();function l(t){o||isNaN(t.min)||(i=Math.min(i,t.min));a||isNaN(t.max)||(n=Math.max(n,t.max))}if(!o||!a){l(this._getLabelBounds());t.bounds==="ticks"&&t.ticks.source==="labels"||l(this.getMinMax(false))}i=r(i)&&!isNaN(i)?i:+e.startOf(Date.now(),s);n=r(n)&&!isNaN(n)?n:+e.endOf(Date.now(),s)+1;this.min=Math.min(i,n-1);this.max=Math.max(i+1,n)}_getLabelBounds(){const t=this.getLabelTimestamps();let e=Number.POSITIVE_INFINITY;let s=Number.NEGATIVE_INFINITY;if(t.length){e=t[0];s=t[t.length-1]}return{min:e,max:s}}buildTicks(){const t=this.options;const e=t.time;const s=t.ticks;const i=s.source==="labels"?this.getLabelTimestamps():this._generate();if(t.bounds==="ticks"&&i.length){this.min=this._userMin||i[0];this.max=this._userMax||i[i.length-1]}const n=this.min;const o=this.max;const a=Zt(i,n,o);this._unit=e.unit||(s.autoSkip?va(e.minUnit,this.min,this.max,this._getLabelCapacity(n)):Ma(this,a.length,e.minUnit,this.min,this.max));this._majorUnit=s.major.enabled&&this._unit!=="year"?wa(this._unit):void 0;this.initOffsets(i);t.reverse&&a.reverse();return Da(this,a,this._majorUnit)}afterAutoSkip(){this.options.offsetAfterAutoskip&&this.initOffsets(this.ticks.map((t=>+t.value)))}initOffsets(t=[]){let e=0;let s=0;let i,n;if(this.options.offset&&t.length){i=this.getDecimalForValue(t[0]);e=t.length===1?1-i:(this.getDecimalForValue(t[1])-i)/2;n=this.getDecimalForValue(t[t.length-1]);s=t.length===1?n:(n-this.getDecimalForValue(t[t.length-2]))/2}const o=t.length<3?.5:.25;e=K(e,0,o);s=K(s,0,o);this._offsets={start:e,end:s,factor:1/(e+1+s)}}_generate(){const t=this._adapter;const e=this.min;const s=this.max;const i=this.options;const n=i.time;const o=n.unit||va(n.minUnit,e,s,this._getLabelCapacity(e));const a=h(i.ticks.stepSize,1);const r=o==="week"&&n.isoWeekday;const l=P(r)||r===true;const c={};let d=e;let u,f;l&&(d=+t.startOf(d,"isoWeek",r));d=+t.startOf(d,l?"day":o);if(t.diff(s,e,o)>1e5*a)throw new Error(e+" and "+s+" are too far apart with stepSize of "+a+" "+o);const g=i.ticks.source==="data"&&this.getDataTimestamps();for(u=d,f=0;u<s;u=+t.add(u,a,o),f++)ka(c,u,g);u!==s&&i.bounds!=="ticks"&&f!==1||ka(c,u,g);return Object.keys(c).sort(_a).map((t=>+t))}getLabelForValue(t){const e=this._adapter;const s=this.options.time;return s.tooltipFormat?e.format(t,s.tooltipFormat):e.format(t,s.displayFormats.datetime)}format(t,e){const s=this.options;const i=s.time.displayFormats;const n=this._unit;const o=e||i[n];return this._adapter.format(t,o)}_tickFormatFunction(t,e,s,i){const n=this.options;const o=n.ticks.callback;if(o)return X(o,[t,e,s],this);const a=n.time.displayFormats;const r=this._unit;const l=this._majorUnit;const c=r&&a[r];const h=l&&a[l];const d=s[e];const u=l&&h&&d&&d.major;return this._adapter.format(t,i||(u?h:c))}generateTickLabels(t){let e,s,i;for(e=0,s=t.length;e<s;++e){i=t[e];i.label=this._tickFormatFunction(i.value,e,t)}}getDecimalForValue(t){return t===null?NaN:(t-this.min)/(this.max-this.min)}getPixelForValue(t){const e=this._offsets;const s=this.getDecimalForValue(t);return this.getPixelForDecimal((e.start+s)*e.factor)}getValueForPixel(t){const e=this._offsets;const s=this.getDecimalForPixel(t)/e.factor-e.end;return this.min+s*(this.max-this.min)}_getLabelSize(t){const e=this.options.ticks;const s=this.ctx.measureText(t).width;const i=v(this.isHorizontal()?e.maxRotation:e.minRotation);const n=Math.cos(i);const o=Math.sin(i);const a=this._resolveTickFontOptions(0).size;return{w:s*n+a*o,h:s*o+a*n}}_getLabelCapacity(t){const e=this.options.time;const s=e.displayFormats;const i=s[e.unit]||s.millisecond;const n=this._tickFormatFunction(t,0,Da(this,[t],this._majorUnit),i);const o=this._getLabelSize(n);const a=Math.floor(this.isHorizontal()?this.width/o.w:this.height/o.h)-1;return a>0?a:1}getDataTimestamps(){let t=this._cache.data||[];let e,s;if(t.length)return t;const i=this.getMatchingVisibleMetas();if(this._normalized&&i.length)return this._cache.data=i[0].controller.getAllParsedValues(this);for(e=0,s=i.length;e<s;++e)t=t.concat(i[e].controller.getAllParsedValues(this));return this._cache.data=this.normalize(t)}getLabelTimestamps(){const t=this._cache.labels||[];let e,s;if(t.length)return t;const i=this.getLabels();for(e=0,s=i.length;e<s;++e)t.push(ya(this,i[e]));return this._cache.labels=this._normalized?t:this.normalize(t)}normalize(t){return p(t.sort(_a))}}function Pa(t,e,s){let i=0;let n=t.length-1;let o,a,r,l;if(s){e>=t[i].pos&&e<=t[n].pos&&({lo:i,hi:n}=L(t,"pos",e));({pos:o,time:r}=t[i]);({pos:a,time:l}=t[n])}else{e>=t[i].time&&e<=t[n].time&&({lo:i,hi:n}=L(t,"time",e));({time:o,pos:r}=t[i]);({time:a,pos:l}=t[n])}const c=a-o;return c?r+(l-r)*(e-o)/c:r}class TimeSeriesScale extends TimeScale{static id="timeseries";static defaults=TimeScale.defaults;constructor(t){super(t);this._table=[];this._minPos=void 0;this._tableRange=void 0}initOffsets(){const t=this._getTimestampsForTable();const e=this._table=this.buildLookupTable(t);this._minPos=Pa(e,this.min);this._tableRange=Pa(e,this.max)-this._minPos;super.initOffsets(t)}buildLookupTable(t){const{min:e,max:s}=this;const i=[];const n=[];let o,a,r,l,c;for(o=0,a=t.length;o<a;++o){l=t[o];l>=e&&l<=s&&i.push(l)}if(i.length<2)return[{time:e,pos:0},{time:s,pos:1}];for(o=0,a=i.length;o<a;++o){c=i[o+1];r=i[o-1];l=i[o];Math.round((c+r)/2)!==l&&n.push({time:l,pos:o/(a-1)})}return n}_generate(){const t=this.min;const e=this.max;let s=super.getDataTimestamps();s.includes(t)&&s.length||s.splice(0,0,t);s.includes(e)&&s.length!==1||s.push(e);return s.sort(((t,e)=>t-e))}_getTimestampsForTable(){let t=this._cache.all||[];if(t.length)return t;const e=this.getDataTimestamps();const s=this.getLabelTimestamps();t=e.length&&s.length?this.normalize(e.concat(s)):e.length?e:s;t=this._cache.all=t;return t}getDecimalForValue(t){return(Pa(this._table,t)-this._minPos)/this._tableRange}getValueForPixel(t){const e=this._offsets;const s=this.getDecimalForPixel(t)/e.factor-e.end;return Pa(this._table,s*this._tableRange+this._minPos,true)}}var Ca=Object.freeze({__proto__:null,CategoryScale:CategoryScale,LinearScale:LinearScale,LogarithmicScale:LogarithmicScale,RadialLinearScale:RadialLinearScale,TimeScale:TimeScale,TimeSeriesScale:TimeSeriesScale});const Aa=[Be,pn,Ho,Ca];export{Animation,Animations,ArcElement,BarController,BarElement,BasePlatform,BasicPlatform,BubbleController,CategoryScale,Chart,Pn as Colors,DatasetController,On as Decimation,DomPlatform,DoughnutController,Element,co as Filler,Je as Interaction,bo as Legend,LineController,LineElement,LinearScale,LogarithmicScale,PieController,PointElement,PolarAreaController,RadarController,RadialLinearScale,Scale,ScatterController,Mo as SubTitle,Gt as Ticks,TimeScale,TimeSeriesScale,yo as Title,Wo as Tooltip,We as _adapters,Os as _detectPlatform,Qt as animator,Be as controllers,o as defaults,pn as elements,fs as layouts,Ho as plugins,Aa as registerables,si as registry,Ca as scales};
+class Animator {
+    constructor(){
+        this._request = null;
+        this._charts = new Map();
+        this._running = false;
+        this._lastDate = undefined;
+    }
+ _notify(chart, anims, date, type) {
+        const callbacks = anims.listeners[type];
+        const numSteps = anims.duration;
+        callbacks.forEach((fn)=>fn({
+                chart,
+                initial: anims.initial,
+                numSteps,
+                currentStep: Math.min(date - anims.start, numSteps)
+            }));
+    }
+ _refresh() {
+        if (this._request) {
+            return;
+        }
+        this._running = true;
+        this._request = requestAnimFrame.call(window, ()=>{
+            this._update();
+            this._request = null;
+            if (this._running) {
+                this._refresh();
+            }
+        });
+    }
+ _update(date = Date.now()) {
+        let remaining = 0;
+        this._charts.forEach((anims, chart)=>{
+            if (!anims.running || !anims.items.length) {
+                return;
+            }
+            const items = anims.items;
+            let i = items.length - 1;
+            let draw = false;
+            let item;
+            for(; i >= 0; --i){
+                item = items[i];
+                if (item._active) {
+                    if (item._total > anims.duration) {
+                        anims.duration = item._total;
+                    }
+                    item.tick(date);
+                    draw = true;
+                } else {
+                    items[i] = items[items.length - 1];
+                    items.pop();
+                }
+            }
+            if (draw) {
+                chart.draw();
+                this._notify(chart, anims, date, 'progress');
+            }
+            if (!items.length) {
+                anims.running = false;
+                this._notify(chart, anims, date, 'complete');
+                anims.initial = false;
+            }
+            remaining += items.length;
+        });
+        this._lastDate = date;
+        if (remaining === 0) {
+            this._running = false;
+        }
+    }
+ _getAnims(chart) {
+        const charts = this._charts;
+        let anims = charts.get(chart);
+        if (!anims) {
+            anims = {
+                running: false,
+                initial: true,
+                items: [],
+                listeners: {
+                    complete: [],
+                    progress: []
+                }
+            };
+            charts.set(chart, anims);
+        }
+        return anims;
+    }
+ listen(chart, event, cb) {
+        this._getAnims(chart).listeners[event].push(cb);
+    }
+ add(chart, items) {
+        if (!items || !items.length) {
+            return;
+        }
+        this._getAnims(chart).items.push(...items);
+    }
+ has(chart) {
+        return this._getAnims(chart).items.length > 0;
+    }
+ start(chart) {
+        const anims = this._charts.get(chart);
+        if (!anims) {
+            return;
+        }
+        anims.running = true;
+        anims.start = Date.now();
+        anims.duration = anims.items.reduce((acc, cur)=>Math.max(acc, cur._duration), 0);
+        this._refresh();
+    }
+    running(chart) {
+        if (!this._running) {
+            return false;
+        }
+        const anims = this._charts.get(chart);
+        if (!anims || !anims.running || !anims.items.length) {
+            return false;
+        }
+        return true;
+    }
+ stop(chart) {
+        const anims = this._charts.get(chart);
+        if (!anims || !anims.items.length) {
+            return;
+        }
+        const items = anims.items;
+        let i = items.length - 1;
+        for(; i >= 0; --i){
+            items[i].cancel();
+        }
+        anims.items = [];
+        this._notify(chart, anims, Date.now(), 'complete');
+    }
+ remove(chart) {
+        return this._charts.delete(chart);
+    }
+}
+var animator = /* #__PURE__ */ new Animator();
 
+const transparent = 'transparent';
+const interpolators = {
+    boolean (from, to, factor) {
+        return factor > 0.5 ? to : from;
+    },
+ color (from, to, factor) {
+        const c0 = color(from || transparent);
+        const c1 = c0.valid && color(to || transparent);
+        return c1 && c1.valid ? c1.mix(c0, factor).hexString() : to;
+    },
+    number (from, to, factor) {
+        return from + (to - from) * factor;
+    }
+};
+class Animation {
+    constructor(cfg, target, prop, to){
+        const currentValue = target[prop];
+        to = resolve([
+            cfg.to,
+            to,
+            currentValue,
+            cfg.from
+        ]);
+        const from = resolve([
+            cfg.from,
+            currentValue,
+            to
+        ]);
+        this._active = true;
+        this._fn = cfg.fn || interpolators[cfg.type || typeof from];
+        this._easing = effects[cfg.easing] || effects.linear;
+        this._start = Math.floor(Date.now() + (cfg.delay || 0));
+        this._duration = this._total = Math.floor(cfg.duration);
+        this._loop = !!cfg.loop;
+        this._target = target;
+        this._prop = prop;
+        this._from = from;
+        this._to = to;
+        this._promises = undefined;
+    }
+    active() {
+        return this._active;
+    }
+    update(cfg, to, date) {
+        if (this._active) {
+            this._notify(false);
+            const currentValue = this._target[this._prop];
+            const elapsed = date - this._start;
+            const remain = this._duration - elapsed;
+            this._start = date;
+            this._duration = Math.floor(Math.max(remain, cfg.duration));
+            this._total += elapsed;
+            this._loop = !!cfg.loop;
+            this._to = resolve([
+                cfg.to,
+                to,
+                currentValue,
+                cfg.from
+            ]);
+            this._from = resolve([
+                cfg.from,
+                currentValue,
+                to
+            ]);
+        }
+    }
+    cancel() {
+        if (this._active) {
+            this.tick(Date.now());
+            this._active = false;
+            this._notify(false);
+        }
+    }
+    tick(date) {
+        const elapsed = date - this._start;
+        const duration = this._duration;
+        const prop = this._prop;
+        const from = this._from;
+        const loop = this._loop;
+        const to = this._to;
+        let factor;
+        this._active = from !== to && (loop || elapsed < duration);
+        if (!this._active) {
+            this._target[prop] = to;
+            this._notify(true);
+            return;
+        }
+        if (elapsed < 0) {
+            this._target[prop] = from;
+            return;
+        }
+        factor = elapsed / duration % 2;
+        factor = loop && factor > 1 ? 2 - factor : factor;
+        factor = this._easing(Math.min(1, Math.max(0, factor)));
+        this._target[prop] = this._fn(from, to, factor);
+    }
+    wait() {
+        const promises = this._promises || (this._promises = []);
+        return new Promise((res, rej)=>{
+            promises.push({
+                res,
+                rej
+            });
+        });
+    }
+    _notify(resolved) {
+        const method = resolved ? 'res' : 'rej';
+        const promises = this._promises || [];
+        for(let i = 0; i < promises.length; i++){
+            promises[i][method]();
+        }
+    }
+}
+
+class Animations {
+    constructor(chart, config){
+        this._chart = chart;
+        this._properties = new Map();
+        this.configure(config);
+    }
+    configure(config) {
+        if (!isObject(config)) {
+            return;
+        }
+        const animationOptions = Object.keys(defaults.animation);
+        const animatedProps = this._properties;
+        Object.getOwnPropertyNames(config).forEach((key)=>{
+            const cfg = config[key];
+            if (!isObject(cfg)) {
+                return;
+            }
+            const resolved = {};
+            for (const option of animationOptions){
+                resolved[option] = cfg[option];
+            }
+            (isArray(cfg.properties) && cfg.properties || [
+                key
+            ]).forEach((prop)=>{
+                if (prop === key || !animatedProps.has(prop)) {
+                    animatedProps.set(prop, resolved);
+                }
+            });
+        });
+    }
+ _animateOptions(target, values) {
+        const newOptions = values.options;
+        const options = resolveTargetOptions(target, newOptions);
+        if (!options) {
+            return [];
+        }
+        const animations = this._createAnimations(options, newOptions);
+        if (newOptions.$shared) {
+            awaitAll(target.options.$animations, newOptions).then(()=>{
+                target.options = newOptions;
+            }, ()=>{
+            });
+        }
+        return animations;
+    }
+ _createAnimations(target, values) {
+        const animatedProps = this._properties;
+        const animations = [];
+        const running = target.$animations || (target.$animations = {});
+        const props = Object.keys(values);
+        const date = Date.now();
+        let i;
+        for(i = props.length - 1; i >= 0; --i){
+            const prop = props[i];
+            if (prop.charAt(0) === '$') {
+                continue;
+            }
+            if (prop === 'options') {
+                animations.push(...this._animateOptions(target, values));
+                continue;
+            }
+            const value = values[prop];
+            let animation = running[prop];
+            const cfg = animatedProps.get(prop);
+            if (animation) {
+                if (cfg && animation.active()) {
+                    animation.update(cfg, value, date);
+                    continue;
+                } else {
+                    animation.cancel();
+                }
+            }
+            if (!cfg || !cfg.duration) {
+                target[prop] = value;
+                continue;
+            }
+            running[prop] = animation = new Animation(cfg, target, prop, value);
+            animations.push(animation);
+        }
+        return animations;
+    }
+ update(target, values) {
+        if (this._properties.size === 0) {
+            Object.assign(target, values);
+            return;
+        }
+        const animations = this._createAnimations(target, values);
+        if (animations.length) {
+            animator.add(this._chart, animations);
+            return true;
+        }
+    }
+}
+function awaitAll(animations, properties) {
+    const running = [];
+    const keys = Object.keys(properties);
+    for(let i = 0; i < keys.length; i++){
+        const anim = animations[keys[i]];
+        if (anim && anim.active()) {
+            running.push(anim.wait());
+        }
+    }
+    return Promise.all(running);
+}
+function resolveTargetOptions(target, newOptions) {
+    if (!newOptions) {
+        return;
+    }
+    let options = target.options;
+    if (!options) {
+        target.options = newOptions;
+        return;
+    }
+    if (options.$shared) {
+        target.options = options = Object.assign({}, options, {
+            $shared: false,
+            $animations: {}
+        });
+    }
+    return options;
+}
+
+function scaleClip(scale, allowedOverflow) {
+    const opts = scale && scale.options || {};
+    const reverse = opts.reverse;
+    const min = opts.min === undefined ? allowedOverflow : 0;
+    const max = opts.max === undefined ? allowedOverflow : 0;
+    return {
+        start: reverse ? max : min,
+        end: reverse ? min : max
+    };
+}
+function defaultClip(xScale, yScale, allowedOverflow) {
+    if (allowedOverflow === false) {
+        return false;
+    }
+    const x = scaleClip(xScale, allowedOverflow);
+    const y = scaleClip(yScale, allowedOverflow);
+    return {
+        top: y.end,
+        right: x.end,
+        bottom: y.start,
+        left: x.start
+    };
+}
+function toClip(value) {
+    let t, r, b, l;
+    if (isObject(value)) {
+        t = value.top;
+        r = value.right;
+        b = value.bottom;
+        l = value.left;
+    } else {
+        t = r = b = l = value;
+    }
+    return {
+        top: t,
+        right: r,
+        bottom: b,
+        left: l,
+        disabled: value === false
+    };
+}
+function getSortedDatasetIndices(chart, filterVisible) {
+    const keys = [];
+    const metasets = chart._getSortedDatasetMetas(filterVisible);
+    let i, ilen;
+    for(i = 0, ilen = metasets.length; i < ilen; ++i){
+        keys.push(metasets[i].index);
+    }
+    return keys;
+}
+function applyStack(stack, value, dsIndex, options = {}) {
+    const keys = stack.keys;
+    const singleMode = options.mode === 'single';
+    let i, ilen, datasetIndex, otherValue;
+    if (value === null) {
+        return;
+    }
+    let found = false;
+    for(i = 0, ilen = keys.length; i < ilen; ++i){
+        datasetIndex = +keys[i];
+        if (datasetIndex === dsIndex) {
+            found = true;
+            if (options.all) {
+                continue;
+            }
+            break;
+        }
+        otherValue = stack.values[datasetIndex];
+        if (isNumberFinite(otherValue) && (singleMode || value === 0 || sign(value) === sign(otherValue))) {
+            value += otherValue;
+        }
+    }
+    if (!found && !options.all) {
+        return 0;
+    }
+    return value;
+}
+function convertObjectDataToArray(data, meta) {
+    const { iScale , vScale  } = meta;
+    const iAxisKey = iScale.axis === 'x' ? 'x' : 'y';
+    const vAxisKey = vScale.axis === 'x' ? 'x' : 'y';
+    const keys = Object.keys(data);
+    const adata = new Array(keys.length);
+    let i, ilen, key;
+    for(i = 0, ilen = keys.length; i < ilen; ++i){
+        key = keys[i];
+        adata[i] = {
+            [iAxisKey]: key,
+            [vAxisKey]: data[key]
+        };
+    }
+    return adata;
+}
+function isStacked(scale, meta) {
+    const stacked = scale && scale.options.stacked;
+    return stacked || stacked === undefined && meta.stack !== undefined;
+}
+function getStackKey(indexScale, valueScale, meta) {
+    return `${indexScale.id}.${valueScale.id}.${meta.stack || meta.type}`;
+}
+function getUserBounds(scale) {
+    const { min , max , minDefined , maxDefined  } = scale.getUserBounds();
+    return {
+        min: minDefined ? min : Number.NEGATIVE_INFINITY,
+        max: maxDefined ? max : Number.POSITIVE_INFINITY
+    };
+}
+function getOrCreateStack(stacks, stackKey, indexValue) {
+    const subStack = stacks[stackKey] || (stacks[stackKey] = {});
+    return subStack[indexValue] || (subStack[indexValue] = {});
+}
+function getLastIndexInStack(stack, vScale, positive, type) {
+    for (const meta of vScale.getMatchingVisibleMetas(type).reverse()){
+        const value = stack[meta.index];
+        if (positive && value > 0 || !positive && value < 0) {
+            return meta.index;
+        }
+    }
+    return null;
+}
+function updateStacks(controller, parsed) {
+    const { chart , _cachedMeta: meta  } = controller;
+    const stacks = chart._stacks || (chart._stacks = {});
+    const { iScale , vScale , index: datasetIndex  } = meta;
+    const iAxis = iScale.axis;
+    const vAxis = vScale.axis;
+    const key = getStackKey(iScale, vScale, meta);
+    const ilen = parsed.length;
+    let stack;
+    for(let i = 0; i < ilen; ++i){
+        const item = parsed[i];
+        const { [iAxis]: index , [vAxis]: value  } = item;
+        const itemStacks = item._stacks || (item._stacks = {});
+        stack = itemStacks[vAxis] = getOrCreateStack(stacks, key, index);
+        stack[datasetIndex] = value;
+        stack._top = getLastIndexInStack(stack, vScale, true, meta.type);
+        stack._bottom = getLastIndexInStack(stack, vScale, false, meta.type);
+        const visualValues = stack._visualValues || (stack._visualValues = {});
+        visualValues[datasetIndex] = value;
+    }
+}
+function getFirstScaleId(chart, axis) {
+    const scales = chart.scales;
+    return Object.keys(scales).filter((key)=>scales[key].axis === axis).shift();
+}
+function createDatasetContext(parent, index) {
+    return createContext(parent, {
+        active: false,
+        dataset: undefined,
+        datasetIndex: index,
+        index,
+        mode: 'default',
+        type: 'dataset'
+    });
+}
+function createDataContext(parent, index, element) {
+    return createContext(parent, {
+        active: false,
+        dataIndex: index,
+        parsed: undefined,
+        raw: undefined,
+        element,
+        index,
+        mode: 'default',
+        type: 'data'
+    });
+}
+function clearStacks(meta, items) {
+    const datasetIndex = meta.controller.index;
+    const axis = meta.vScale && meta.vScale.axis;
+    if (!axis) {
+        return;
+    }
+    items = items || meta._parsed;
+    for (const parsed of items){
+        const stacks = parsed._stacks;
+        if (!stacks || stacks[axis] === undefined || stacks[axis][datasetIndex] === undefined) {
+            return;
+        }
+        delete stacks[axis][datasetIndex];
+        if (stacks[axis]._visualValues !== undefined && stacks[axis]._visualValues[datasetIndex] !== undefined) {
+            delete stacks[axis]._visualValues[datasetIndex];
+        }
+    }
+}
+const isDirectUpdateMode = (mode)=>mode === 'reset' || mode === 'none';
+const cloneIfNotShared = (cached, shared)=>shared ? cached : Object.assign({}, cached);
+const createStack = (canStack, meta, chart)=>canStack && !meta.hidden && meta._stacked && {
+        keys: getSortedDatasetIndices(chart, true),
+        values: null
+    };
+class DatasetController {
+ static defaults = {};
+ static datasetElementType = null;
+ static dataElementType = null;
+ constructor(chart, datasetIndex){
+        this.chart = chart;
+        this._ctx = chart.ctx;
+        this.index = datasetIndex;
+        this._cachedDataOpts = {};
+        this._cachedMeta = this.getMeta();
+        this._type = this._cachedMeta.type;
+        this.options = undefined;
+         this._parsing = false;
+        this._data = undefined;
+        this._objectData = undefined;
+        this._sharedOptions = undefined;
+        this._drawStart = undefined;
+        this._drawCount = undefined;
+        this.enableOptionSharing = false;
+        this.supportsDecimation = false;
+        this.$context = undefined;
+        this._syncList = [];
+        this.datasetElementType = new.target.datasetElementType;
+        this.dataElementType = new.target.dataElementType;
+        this.initialize();
+    }
+    initialize() {
+        const meta = this._cachedMeta;
+        this.configure();
+        this.linkScales();
+        meta._stacked = isStacked(meta.vScale, meta);
+        this.addElements();
+        if (this.options.fill && !this.chart.isPluginEnabled('filler')) {
+            console.warn("Tried to use the 'fill' option without the 'Filler' plugin enabled. Please import and register the 'Filler' plugin and make sure it is not disabled in the options");
+        }
+    }
+    updateIndex(datasetIndex) {
+        if (this.index !== datasetIndex) {
+            clearStacks(this._cachedMeta);
+        }
+        this.index = datasetIndex;
+    }
+    linkScales() {
+        const chart = this.chart;
+        const meta = this._cachedMeta;
+        const dataset = this.getDataset();
+        const chooseId = (axis, x, y, r)=>axis === 'x' ? x : axis === 'r' ? r : y;
+        const xid = meta.xAxisID = valueOrDefault(dataset.xAxisID, getFirstScaleId(chart, 'x'));
+        const yid = meta.yAxisID = valueOrDefault(dataset.yAxisID, getFirstScaleId(chart, 'y'));
+        const rid = meta.rAxisID = valueOrDefault(dataset.rAxisID, getFirstScaleId(chart, 'r'));
+        const indexAxis = meta.indexAxis;
+        const iid = meta.iAxisID = chooseId(indexAxis, xid, yid, rid);
+        const vid = meta.vAxisID = chooseId(indexAxis, yid, xid, rid);
+        meta.xScale = this.getScaleForId(xid);
+        meta.yScale = this.getScaleForId(yid);
+        meta.rScale = this.getScaleForId(rid);
+        meta.iScale = this.getScaleForId(iid);
+        meta.vScale = this.getScaleForId(vid);
+    }
+    getDataset() {
+        return this.chart.data.datasets[this.index];
+    }
+    getMeta() {
+        return this.chart.getDatasetMeta(this.index);
+    }
+ getScaleForId(scaleID) {
+        return this.chart.scales[scaleID];
+    }
+ _getOtherScale(scale) {
+        const meta = this._cachedMeta;
+        return scale === meta.iScale ? meta.vScale : meta.iScale;
+    }
+    reset() {
+        this._update('reset');
+    }
+ _destroy() {
+        const meta = this._cachedMeta;
+        if (this._data) {
+            unlistenArrayEvents(this._data, this);
+        }
+        if (meta._stacked) {
+            clearStacks(meta);
+        }
+    }
+ _dataCheck() {
+        const dataset = this.getDataset();
+        const data = dataset.data || (dataset.data = []);
+        const _data = this._data;
+        if (isObject(data)) {
+            const meta = this._cachedMeta;
+            this._data = convertObjectDataToArray(data, meta);
+        } else if (_data !== data) {
+            if (_data) {
+                unlistenArrayEvents(_data, this);
+                const meta = this._cachedMeta;
+                clearStacks(meta);
+                meta._parsed = [];
+            }
+            if (data && Object.isExtensible(data)) {
+                listenArrayEvents(data, this);
+            }
+            this._syncList = [];
+            this._data = data;
+        }
+    }
+    addElements() {
+        const meta = this._cachedMeta;
+        this._dataCheck();
+        if (this.datasetElementType) {
+            meta.dataset = new this.datasetElementType();
+        }
+    }
+    buildOrUpdateElements(resetNewElements) {
+        const meta = this._cachedMeta;
+        const dataset = this.getDataset();
+        let stackChanged = false;
+        this._dataCheck();
+        const oldStacked = meta._stacked;
+        meta._stacked = isStacked(meta.vScale, meta);
+        if (meta.stack !== dataset.stack) {
+            stackChanged = true;
+            clearStacks(meta);
+            meta.stack = dataset.stack;
+        }
+        this._resyncElements(resetNewElements);
+        if (stackChanged || oldStacked !== meta._stacked) {
+            updateStacks(this, meta._parsed);
+            meta._stacked = isStacked(meta.vScale, meta);
+        }
+    }
+ configure() {
+        const config = this.chart.config;
+        const scopeKeys = config.datasetScopeKeys(this._type);
+        const scopes = config.getOptionScopes(this.getDataset(), scopeKeys, true);
+        this.options = config.createResolver(scopes, this.getContext());
+        this._parsing = this.options.parsing;
+        this._cachedDataOpts = {};
+    }
+ parse(start, count) {
+        const { _cachedMeta: meta , _data: data  } = this;
+        const { iScale , _stacked  } = meta;
+        const iAxis = iScale.axis;
+        let sorted = start === 0 && count === data.length ? true : meta._sorted;
+        let prev = start > 0 && meta._parsed[start - 1];
+        let i, cur, parsed;
+        if (this._parsing === false) {
+            meta._parsed = data;
+            meta._sorted = true;
+            parsed = data;
+        } else {
+            if (isArray(data[start])) {
+                parsed = this.parseArrayData(meta, data, start, count);
+            } else if (isObject(data[start])) {
+                parsed = this.parseObjectData(meta, data, start, count);
+            } else {
+                parsed = this.parsePrimitiveData(meta, data, start, count);
+            }
+            const isNotInOrderComparedToPrev = ()=>cur[iAxis] === null || prev && cur[iAxis] < prev[iAxis];
+            for(i = 0; i < count; ++i){
+                meta._parsed[i + start] = cur = parsed[i];
+                if (sorted) {
+                    if (isNotInOrderComparedToPrev()) {
+                        sorted = false;
+                    }
+                    prev = cur;
+                }
+            }
+            meta._sorted = sorted;
+        }
+        if (_stacked) {
+            updateStacks(this, parsed);
+        }
+    }
+ parsePrimitiveData(meta, data, start, count) {
+        const { iScale , vScale  } = meta;
+        const iAxis = iScale.axis;
+        const vAxis = vScale.axis;
+        const labels = iScale.getLabels();
+        const singleScale = iScale === vScale;
+        const parsed = new Array(count);
+        let i, ilen, index;
+        for(i = 0, ilen = count; i < ilen; ++i){
+            index = i + start;
+            parsed[i] = {
+                [iAxis]: singleScale || iScale.parse(labels[index], index),
+                [vAxis]: vScale.parse(data[index], index)
+            };
+        }
+        return parsed;
+    }
+ parseArrayData(meta, data, start, count) {
+        const { xScale , yScale  } = meta;
+        const parsed = new Array(count);
+        let i, ilen, index, item;
+        for(i = 0, ilen = count; i < ilen; ++i){
+            index = i + start;
+            item = data[index];
+            parsed[i] = {
+                x: xScale.parse(item[0], index),
+                y: yScale.parse(item[1], index)
+            };
+        }
+        return parsed;
+    }
+ parseObjectData(meta, data, start, count) {
+        const { xScale , yScale  } = meta;
+        const { xAxisKey ='x' , yAxisKey ='y'  } = this._parsing;
+        const parsed = new Array(count);
+        let i, ilen, index, item;
+        for(i = 0, ilen = count; i < ilen; ++i){
+            index = i + start;
+            item = data[index];
+            parsed[i] = {
+                x: xScale.parse(resolveObjectKey(item, xAxisKey), index),
+                y: yScale.parse(resolveObjectKey(item, yAxisKey), index)
+            };
+        }
+        return parsed;
+    }
+ getParsed(index) {
+        return this._cachedMeta._parsed[index];
+    }
+ getDataElement(index) {
+        return this._cachedMeta.data[index];
+    }
+ applyStack(scale, parsed, mode) {
+        const chart = this.chart;
+        const meta = this._cachedMeta;
+        const value = parsed[scale.axis];
+        const stack = {
+            keys: getSortedDatasetIndices(chart, true),
+            values: parsed._stacks[scale.axis]._visualValues
+        };
+        return applyStack(stack, value, meta.index, {
+            mode
+        });
+    }
+ updateRangeFromParsed(range, scale, parsed, stack) {
+        const parsedValue = parsed[scale.axis];
+        let value = parsedValue === null ? NaN : parsedValue;
+        const values = stack && parsed._stacks[scale.axis];
+        if (stack && values) {
+            stack.values = values;
+            value = applyStack(stack, parsedValue, this._cachedMeta.index);
+        }
+        range.min = Math.min(range.min, value);
+        range.max = Math.max(range.max, value);
+    }
+ getMinMax(scale, canStack) {
+        const meta = this._cachedMeta;
+        const _parsed = meta._parsed;
+        const sorted = meta._sorted && scale === meta.iScale;
+        const ilen = _parsed.length;
+        const otherScale = this._getOtherScale(scale);
+        const stack = createStack(canStack, meta, this.chart);
+        const range = {
+            min: Number.POSITIVE_INFINITY,
+            max: Number.NEGATIVE_INFINITY
+        };
+        const { min: otherMin , max: otherMax  } = getUserBounds(otherScale);
+        let i, parsed;
+        function _skip() {
+            parsed = _parsed[i];
+            const otherValue = parsed[otherScale.axis];
+            return !isNumberFinite(parsed[scale.axis]) || otherMin > otherValue || otherMax < otherValue;
+        }
+        for(i = 0; i < ilen; ++i){
+            if (_skip()) {
+                continue;
+            }
+            this.updateRangeFromParsed(range, scale, parsed, stack);
+            if (sorted) {
+                break;
+            }
+        }
+        if (sorted) {
+            for(i = ilen - 1; i >= 0; --i){
+                if (_skip()) {
+                    continue;
+                }
+                this.updateRangeFromParsed(range, scale, parsed, stack);
+                break;
+            }
+        }
+        return range;
+    }
+    getAllParsedValues(scale) {
+        const parsed = this._cachedMeta._parsed;
+        const values = [];
+        let i, ilen, value;
+        for(i = 0, ilen = parsed.length; i < ilen; ++i){
+            value = parsed[i][scale.axis];
+            if (isNumberFinite(value)) {
+                values.push(value);
+            }
+        }
+        return values;
+    }
+ getMaxOverflow() {
+        return false;
+    }
+ getLabelAndValue(index) {
+        const meta = this._cachedMeta;
+        const iScale = meta.iScale;
+        const vScale = meta.vScale;
+        const parsed = this.getParsed(index);
+        return {
+            label: iScale ? '' + iScale.getLabelForValue(parsed[iScale.axis]) : '',
+            value: vScale ? '' + vScale.getLabelForValue(parsed[vScale.axis]) : ''
+        };
+    }
+ _update(mode) {
+        const meta = this._cachedMeta;
+        this.update(mode || 'default');
+        meta._clip = toClip(valueOrDefault(this.options.clip, defaultClip(meta.xScale, meta.yScale, this.getMaxOverflow())));
+    }
+ update(mode) {}
+    draw() {
+        const ctx = this._ctx;
+        const chart = this.chart;
+        const meta = this._cachedMeta;
+        const elements = meta.data || [];
+        const area = chart.chartArea;
+        const active = [];
+        const start = this._drawStart || 0;
+        const count = this._drawCount || elements.length - start;
+        const drawActiveElementsOnTop = this.options.drawActiveElementsOnTop;
+        let i;
+        if (meta.dataset) {
+            meta.dataset.draw(ctx, area, start, count);
+        }
+        for(i = start; i < start + count; ++i){
+            const element = elements[i];
+            if (element.hidden) {
+                continue;
+            }
+            if (element.active && drawActiveElementsOnTop) {
+                active.push(element);
+            } else {
+                element.draw(ctx, area);
+            }
+        }
+        for(i = 0; i < active.length; ++i){
+            active[i].draw(ctx, area);
+        }
+    }
+ getStyle(index, active) {
+        const mode = active ? 'active' : 'default';
+        return index === undefined && this._cachedMeta.dataset ? this.resolveDatasetElementOptions(mode) : this.resolveDataElementOptions(index || 0, mode);
+    }
+ getContext(index, active, mode) {
+        const dataset = this.getDataset();
+        let context;
+        if (index >= 0 && index < this._cachedMeta.data.length) {
+            const element = this._cachedMeta.data[index];
+            context = element.$context || (element.$context = createDataContext(this.getContext(), index, element));
+            context.parsed = this.getParsed(index);
+            context.raw = dataset.data[index];
+            context.index = context.dataIndex = index;
+        } else {
+            context = this.$context || (this.$context = createDatasetContext(this.chart.getContext(), this.index));
+            context.dataset = dataset;
+            context.index = context.datasetIndex = this.index;
+        }
+        context.active = !!active;
+        context.mode = mode;
+        return context;
+    }
+ resolveDatasetElementOptions(mode) {
+        return this._resolveElementOptions(this.datasetElementType.id, mode);
+    }
+ resolveDataElementOptions(index, mode) {
+        return this._resolveElementOptions(this.dataElementType.id, mode, index);
+    }
+ _resolveElementOptions(elementType, mode = 'default', index) {
+        const active = mode === 'active';
+        const cache = this._cachedDataOpts;
+        const cacheKey = elementType + '-' + mode;
+        const cached = cache[cacheKey];
+        const sharing = this.enableOptionSharing && defined(index);
+        if (cached) {
+            return cloneIfNotShared(cached, sharing);
+        }
+        const config = this.chart.config;
+        const scopeKeys = config.datasetElementScopeKeys(this._type, elementType);
+        const prefixes = active ? [
+            `${elementType}Hover`,
+            'hover',
+            elementType,
+            ''
+        ] : [
+            elementType,
+            ''
+        ];
+        const scopes = config.getOptionScopes(this.getDataset(), scopeKeys);
+        const names = Object.keys(defaults.elements[elementType]);
+        const context = ()=>this.getContext(index, active, mode);
+        const values = config.resolveNamedOptions(scopes, names, context, prefixes);
+        if (values.$shared) {
+            values.$shared = sharing;
+            cache[cacheKey] = Object.freeze(cloneIfNotShared(values, sharing));
+        }
+        return values;
+    }
+ _resolveAnimations(index, transition, active) {
+        const chart = this.chart;
+        const cache = this._cachedDataOpts;
+        const cacheKey = `animation-${transition}`;
+        const cached = cache[cacheKey];
+        if (cached) {
+            return cached;
+        }
+        let options;
+        if (chart.options.animation !== false) {
+            const config = this.chart.config;
+            const scopeKeys = config.datasetAnimationScopeKeys(this._type, transition);
+            const scopes = config.getOptionScopes(this.getDataset(), scopeKeys);
+            options = config.createResolver(scopes, this.getContext(index, active, transition));
+        }
+        const animations = new Animations(chart, options && options.animations);
+        if (options && options._cacheable) {
+            cache[cacheKey] = Object.freeze(animations);
+        }
+        return animations;
+    }
+ getSharedOptions(options) {
+        if (!options.$shared) {
+            return;
+        }
+        return this._sharedOptions || (this._sharedOptions = Object.assign({}, options));
+    }
+ includeOptions(mode, sharedOptions) {
+        return !sharedOptions || isDirectUpdateMode(mode) || this.chart._animationsDisabled;
+    }
+ _getSharedOptions(start, mode) {
+        const firstOpts = this.resolveDataElementOptions(start, mode);
+        const previouslySharedOptions = this._sharedOptions;
+        const sharedOptions = this.getSharedOptions(firstOpts);
+        const includeOptions = this.includeOptions(mode, sharedOptions) || sharedOptions !== previouslySharedOptions;
+        this.updateSharedOptions(sharedOptions, mode, firstOpts);
+        return {
+            sharedOptions,
+            includeOptions
+        };
+    }
+ updateElement(element, index, properties, mode) {
+        if (isDirectUpdateMode(mode)) {
+            Object.assign(element, properties);
+        } else {
+            this._resolveAnimations(index, mode).update(element, properties);
+        }
+    }
+ updateSharedOptions(sharedOptions, mode, newOptions) {
+        if (sharedOptions && !isDirectUpdateMode(mode)) {
+            this._resolveAnimations(undefined, mode).update(sharedOptions, newOptions);
+        }
+    }
+ _setStyle(element, index, mode, active) {
+        element.active = active;
+        const options = this.getStyle(index, active);
+        this._resolveAnimations(index, mode, active).update(element, {
+            options: !active && this.getSharedOptions(options) || options
+        });
+    }
+    removeHoverStyle(element, datasetIndex, index) {
+        this._setStyle(element, index, 'active', false);
+    }
+    setHoverStyle(element, datasetIndex, index) {
+        this._setStyle(element, index, 'active', true);
+    }
+ _removeDatasetHoverStyle() {
+        const element = this._cachedMeta.dataset;
+        if (element) {
+            this._setStyle(element, undefined, 'active', false);
+        }
+    }
+ _setDatasetHoverStyle() {
+        const element = this._cachedMeta.dataset;
+        if (element) {
+            this._setStyle(element, undefined, 'active', true);
+        }
+    }
+ _resyncElements(resetNewElements) {
+        const data = this._data;
+        const elements = this._cachedMeta.data;
+        for (const [method, arg1, arg2] of this._syncList){
+            this[method](arg1, arg2);
+        }
+        this._syncList = [];
+        const numMeta = elements.length;
+        const numData = data.length;
+        const count = Math.min(numData, numMeta);
+        if (count) {
+            this.parse(0, count);
+        }
+        if (numData > numMeta) {
+            this._insertElements(numMeta, numData - numMeta, resetNewElements);
+        } else if (numData < numMeta) {
+            this._removeElements(numData, numMeta - numData);
+        }
+    }
+ _insertElements(start, count, resetNewElements = true) {
+        const meta = this._cachedMeta;
+        const data = meta.data;
+        const end = start + count;
+        let i;
+        const move = (arr)=>{
+            arr.length += count;
+            for(i = arr.length - 1; i >= end; i--){
+                arr[i] = arr[i - count];
+            }
+        };
+        move(data);
+        for(i = start; i < end; ++i){
+            data[i] = new this.dataElementType();
+        }
+        if (this._parsing) {
+            move(meta._parsed);
+        }
+        this.parse(start, count);
+        if (resetNewElements) {
+            this.updateElements(data, start, count, 'reset');
+        }
+    }
+    updateElements(element, start, count, mode) {}
+ _removeElements(start, count) {
+        const meta = this._cachedMeta;
+        if (this._parsing) {
+            const removed = meta._parsed.splice(start, count);
+            if (meta._stacked) {
+                clearStacks(meta, removed);
+            }
+        }
+        meta.data.splice(start, count);
+    }
+ _sync(args) {
+        if (this._parsing) {
+            this._syncList.push(args);
+        } else {
+            const [method, arg1, arg2] = args;
+            this[method](arg1, arg2);
+        }
+        this.chart._dataChanges.push([
+            this.index,
+            ...args
+        ]);
+    }
+    _onDataPush() {
+        const count = arguments.length;
+        this._sync([
+            '_insertElements',
+            this.getDataset().data.length - count,
+            count
+        ]);
+    }
+    _onDataPop() {
+        this._sync([
+            '_removeElements',
+            this._cachedMeta.data.length - 1,
+            1
+        ]);
+    }
+    _onDataShift() {
+        this._sync([
+            '_removeElements',
+            0,
+            1
+        ]);
+    }
+    _onDataSplice(start, count) {
+        if (count) {
+            this._sync([
+                '_removeElements',
+                start,
+                count
+            ]);
+        }
+        const newCount = arguments.length - 2;
+        if (newCount) {
+            this._sync([
+                '_insertElements',
+                start,
+                newCount
+            ]);
+        }
+    }
+    _onDataUnshift() {
+        this._sync([
+            '_insertElements',
+            0,
+            arguments.length
+        ]);
+    }
+}
+
+function getAllScaleValues(scale, type) {
+    if (!scale._cache.$bar) {
+        const visibleMetas = scale.getMatchingVisibleMetas(type);
+        let values = [];
+        for(let i = 0, ilen = visibleMetas.length; i < ilen; i++){
+            values = values.concat(visibleMetas[i].controller.getAllParsedValues(scale));
+        }
+        scale._cache.$bar = _arrayUnique(values.sort((a, b)=>a - b));
+    }
+    return scale._cache.$bar;
+}
+ function computeMinSampleSize(meta) {
+    const scale = meta.iScale;
+    const values = getAllScaleValues(scale, meta.type);
+    let min = scale._length;
+    let i, ilen, curr, prev;
+    const updateMinAndPrev = ()=>{
+        if (curr === 32767 || curr === -32768) {
+            return;
+        }
+        if (defined(prev)) {
+            min = Math.min(min, Math.abs(curr - prev) || min);
+        }
+        prev = curr;
+    };
+    for(i = 0, ilen = values.length; i < ilen; ++i){
+        curr = scale.getPixelForValue(values[i]);
+        updateMinAndPrev();
+    }
+    prev = undefined;
+    for(i = 0, ilen = scale.ticks.length; i < ilen; ++i){
+        curr = scale.getPixelForTick(i);
+        updateMinAndPrev();
+    }
+    return min;
+}
+ function computeFitCategoryTraits(index, ruler, options, stackCount) {
+    const thickness = options.barThickness;
+    let size, ratio;
+    if (isNullOrUndef(thickness)) {
+        size = ruler.min * options.categoryPercentage;
+        ratio = options.barPercentage;
+    } else {
+        size = thickness * stackCount;
+        ratio = 1;
+    }
+    return {
+        chunk: size / stackCount,
+        ratio,
+        start: ruler.pixels[index] - size / 2
+    };
+}
+ function computeFlexCategoryTraits(index, ruler, options, stackCount) {
+    const pixels = ruler.pixels;
+    const curr = pixels[index];
+    let prev = index > 0 ? pixels[index - 1] : null;
+    let next = index < pixels.length - 1 ? pixels[index + 1] : null;
+    const percent = options.categoryPercentage;
+    if (prev === null) {
+        prev = curr - (next === null ? ruler.end - ruler.start : next - curr);
+    }
+    if (next === null) {
+        next = curr + curr - prev;
+    }
+    const start = curr - (curr - Math.min(prev, next)) / 2 * percent;
+    const size = Math.abs(next - prev) / 2 * percent;
+    return {
+        chunk: size / stackCount,
+        ratio: options.barPercentage,
+        start
+    };
+}
+function parseFloatBar(entry, item, vScale, i) {
+    const startValue = vScale.parse(entry[0], i);
+    const endValue = vScale.parse(entry[1], i);
+    const min = Math.min(startValue, endValue);
+    const max = Math.max(startValue, endValue);
+    let barStart = min;
+    let barEnd = max;
+    if (Math.abs(min) > Math.abs(max)) {
+        barStart = max;
+        barEnd = min;
+    }
+    item[vScale.axis] = barEnd;
+    item._custom = {
+        barStart,
+        barEnd,
+        start: startValue,
+        end: endValue,
+        min,
+        max
+    };
+}
+function parseValue(entry, item, vScale, i) {
+    if (isArray(entry)) {
+        parseFloatBar(entry, item, vScale, i);
+    } else {
+        item[vScale.axis] = vScale.parse(entry, i);
+    }
+    return item;
+}
+function parseArrayOrPrimitive(meta, data, start, count) {
+    const iScale = meta.iScale;
+    const vScale = meta.vScale;
+    const labels = iScale.getLabels();
+    const singleScale = iScale === vScale;
+    const parsed = [];
+    let i, ilen, item, entry;
+    for(i = start, ilen = start + count; i < ilen; ++i){
+        entry = data[i];
+        item = {};
+        item[iScale.axis] = singleScale || iScale.parse(labels[i], i);
+        parsed.push(parseValue(entry, item, vScale, i));
+    }
+    return parsed;
+}
+function isFloatBar(custom) {
+    return custom && custom.barStart !== undefined && custom.barEnd !== undefined;
+}
+function barSign(size, vScale, actualBase) {
+    if (size !== 0) {
+        return sign(size);
+    }
+    return (vScale.isHorizontal() ? 1 : -1) * (vScale.min >= actualBase ? 1 : -1);
+}
+function borderProps(properties) {
+    let reverse, start, end, top, bottom;
+    if (properties.horizontal) {
+        reverse = properties.base > properties.x;
+        start = 'left';
+        end = 'right';
+    } else {
+        reverse = properties.base < properties.y;
+        start = 'bottom';
+        end = 'top';
+    }
+    if (reverse) {
+        top = 'end';
+        bottom = 'start';
+    } else {
+        top = 'start';
+        bottom = 'end';
+    }
+    return {
+        start,
+        end,
+        reverse,
+        top,
+        bottom
+    };
+}
+function setBorderSkipped(properties, options, stack, index) {
+    let edge = options.borderSkipped;
+    const res = {};
+    if (!edge) {
+        properties.borderSkipped = res;
+        return;
+    }
+    if (edge === true) {
+        properties.borderSkipped = {
+            top: true,
+            right: true,
+            bottom: true,
+            left: true
+        };
+        return;
+    }
+    const { start , end , reverse , top , bottom  } = borderProps(properties);
+    if (edge === 'middle' && stack) {
+        properties.enableBorderRadius = true;
+        if ((stack._top || 0) === index) {
+            edge = top;
+        } else if ((stack._bottom || 0) === index) {
+            edge = bottom;
+        } else {
+            res[parseEdge(bottom, start, end, reverse)] = true;
+            edge = top;
+        }
+    }
+    res[parseEdge(edge, start, end, reverse)] = true;
+    properties.borderSkipped = res;
+}
+function parseEdge(edge, a, b, reverse) {
+    if (reverse) {
+        edge = swap(edge, a, b);
+        edge = startEnd(edge, b, a);
+    } else {
+        edge = startEnd(edge, a, b);
+    }
+    return edge;
+}
+function swap(orig, v1, v2) {
+    return orig === v1 ? v2 : orig === v2 ? v1 : orig;
+}
+function startEnd(v, start, end) {
+    return v === 'start' ? start : v === 'end' ? end : v;
+}
+function setInflateAmount(properties, { inflateAmount  }, ratio) {
+    properties.inflateAmount = inflateAmount === 'auto' ? ratio === 1 ? 0.33 : 0 : inflateAmount;
+}
+class BarController extends DatasetController {
+    static id = 'bar';
+ static defaults = {
+        datasetElementType: false,
+        dataElementType: 'bar',
+        categoryPercentage: 0.8,
+        barPercentage: 0.9,
+        grouped: true,
+        animations: {
+            numbers: {
+                type: 'number',
+                properties: [
+                    'x',
+                    'y',
+                    'base',
+                    'width',
+                    'height'
+                ]
+            }
+        }
+    };
+ static overrides = {
+        scales: {
+            _index_: {
+                type: 'category',
+                offset: true,
+                grid: {
+                    offset: true
+                }
+            },
+            _value_: {
+                type: 'linear',
+                beginAtZero: true
+            }
+        }
+    };
+ parsePrimitiveData(meta, data, start, count) {
+        return parseArrayOrPrimitive(meta, data, start, count);
+    }
+ parseArrayData(meta, data, start, count) {
+        return parseArrayOrPrimitive(meta, data, start, count);
+    }
+ parseObjectData(meta, data, start, count) {
+        const { iScale , vScale  } = meta;
+        const { xAxisKey ='x' , yAxisKey ='y'  } = this._parsing;
+        const iAxisKey = iScale.axis === 'x' ? xAxisKey : yAxisKey;
+        const vAxisKey = vScale.axis === 'x' ? xAxisKey : yAxisKey;
+        const parsed = [];
+        let i, ilen, item, obj;
+        for(i = start, ilen = start + count; i < ilen; ++i){
+            obj = data[i];
+            item = {};
+            item[iScale.axis] = iScale.parse(resolveObjectKey(obj, iAxisKey), i);
+            parsed.push(parseValue(resolveObjectKey(obj, vAxisKey), item, vScale, i));
+        }
+        return parsed;
+    }
+ updateRangeFromParsed(range, scale, parsed, stack) {
+        super.updateRangeFromParsed(range, scale, parsed, stack);
+        const custom = parsed._custom;
+        if (custom && scale === this._cachedMeta.vScale) {
+            range.min = Math.min(range.min, custom.min);
+            range.max = Math.max(range.max, custom.max);
+        }
+    }
+ getMaxOverflow() {
+        return 0;
+    }
+ getLabelAndValue(index) {
+        const meta = this._cachedMeta;
+        const { iScale , vScale  } = meta;
+        const parsed = this.getParsed(index);
+        const custom = parsed._custom;
+        const value = isFloatBar(custom) ? '[' + custom.start + ', ' + custom.end + ']' : '' + vScale.getLabelForValue(parsed[vScale.axis]);
+        return {
+            label: '' + iScale.getLabelForValue(parsed[iScale.axis]),
+            value
+        };
+    }
+    initialize() {
+        this.enableOptionSharing = true;
+        super.initialize();
+        const meta = this._cachedMeta;
+        meta.stack = this.getDataset().stack;
+    }
+    update(mode) {
+        const meta = this._cachedMeta;
+        this.updateElements(meta.data, 0, meta.data.length, mode);
+    }
+    updateElements(bars, start, count, mode) {
+        const reset = mode === 'reset';
+        const { index , _cachedMeta: { vScale  }  } = this;
+        const base = vScale.getBasePixel();
+        const horizontal = vScale.isHorizontal();
+        const ruler = this._getRuler();
+        const { sharedOptions , includeOptions  } = this._getSharedOptions(start, mode);
+        for(let i = start; i < start + count; i++){
+            const parsed = this.getParsed(i);
+            const vpixels = reset || isNullOrUndef(parsed[vScale.axis]) ? {
+                base,
+                head: base
+            } : this._calculateBarValuePixels(i);
+            const ipixels = this._calculateBarIndexPixels(i, ruler);
+            const stack = (parsed._stacks || {})[vScale.axis];
+            const properties = {
+                horizontal,
+                base: vpixels.base,
+                enableBorderRadius: !stack || isFloatBar(parsed._custom) || index === stack._top || index === stack._bottom,
+                x: horizontal ? vpixels.head : ipixels.center,
+                y: horizontal ? ipixels.center : vpixels.head,
+                height: horizontal ? ipixels.size : Math.abs(vpixels.size),
+                width: horizontal ? Math.abs(vpixels.size) : ipixels.size
+            };
+            if (includeOptions) {
+                properties.options = sharedOptions || this.resolveDataElementOptions(i, bars[i].active ? 'active' : mode);
+            }
+            const options = properties.options || bars[i].options;
+            setBorderSkipped(properties, options, stack, index);
+            setInflateAmount(properties, options, ruler.ratio);
+            this.updateElement(bars[i], i, properties, mode);
+        }
+    }
+ _getStacks(last, dataIndex) {
+        const { iScale  } = this._cachedMeta;
+        const metasets = iScale.getMatchingVisibleMetas(this._type).filter((meta)=>meta.controller.options.grouped);
+        const stacked = iScale.options.stacked;
+        const stacks = [];
+        const currentParsed = this._cachedMeta.controller.getParsed(dataIndex);
+        const iScaleValue = currentParsed && currentParsed[iScale.axis];
+        const skipNull = (meta)=>{
+            const parsed = meta._parsed.find((item)=>item[iScale.axis] === iScaleValue);
+            const val = parsed && parsed[meta.vScale.axis];
+            if (isNullOrUndef(val) || isNaN(val)) {
+                return true;
+            }
+        };
+        for (const meta of metasets){
+            if (dataIndex !== undefined && skipNull(meta)) {
+                continue;
+            }
+            if (stacked === false || stacks.indexOf(meta.stack) === -1 || stacked === undefined && meta.stack === undefined) {
+                stacks.push(meta.stack);
+            }
+            if (meta.index === last) {
+                break;
+            }
+        }
+        if (!stacks.length) {
+            stacks.push(undefined);
+        }
+        return stacks;
+    }
+ _getStackCount(index) {
+        return this._getStacks(undefined, index).length;
+    }
+    _getAxisCount() {
+        return this._getAxis().length;
+    }
+    getFirstScaleIdForIndexAxis() {
+        const scales = this.chart.scales;
+        const indexScaleId = this.chart.options.indexAxis;
+        return Object.keys(scales).filter((key)=>scales[key].axis === indexScaleId).shift();
+    }
+    _getAxis() {
+        const axis = {};
+        const firstScaleAxisId = this.getFirstScaleIdForIndexAxis();
+        for (const dataset of this.chart.data.datasets){
+            axis[valueOrDefault(this.chart.options.indexAxis === 'x' ? dataset.xAxisID : dataset.yAxisID, firstScaleAxisId)] = true;
+        }
+        return Object.keys(axis);
+    }
+ _getStackIndex(datasetIndex, name, dataIndex) {
+        const stacks = this._getStacks(datasetIndex, dataIndex);
+        const index = name !== undefined ? stacks.indexOf(name) : -1;
+        return index === -1 ? stacks.length - 1 : index;
+    }
+ _getRuler() {
+        const opts = this.options;
+        const meta = this._cachedMeta;
+        const iScale = meta.iScale;
+        const pixels = [];
+        let i, ilen;
+        for(i = 0, ilen = meta.data.length; i < ilen; ++i){
+            pixels.push(iScale.getPixelForValue(this.getParsed(i)[iScale.axis], i));
+        }
+        const barThickness = opts.barThickness;
+        const min = barThickness || computeMinSampleSize(meta);
+        return {
+            min,
+            pixels,
+            start: iScale._startPixel,
+            end: iScale._endPixel,
+            stackCount: this._getStackCount(),
+            scale: iScale,
+            grouped: opts.grouped,
+            ratio: barThickness ? 1 : opts.categoryPercentage * opts.barPercentage
+        };
+    }
+ _calculateBarValuePixels(index) {
+        const { _cachedMeta: { vScale , _stacked , index: datasetIndex  } , options: { base: baseValue , minBarLength  }  } = this;
+        const actualBase = baseValue || 0;
+        const parsed = this.getParsed(index);
+        const custom = parsed._custom;
+        const floating = isFloatBar(custom);
+        let value = parsed[vScale.axis];
+        let start = 0;
+        let length = _stacked ? this.applyStack(vScale, parsed, _stacked) : value;
+        let head, size;
+        if (length !== value) {
+            start = length - value;
+            length = value;
+        }
+        if (floating) {
+            value = custom.barStart;
+            length = custom.barEnd - custom.barStart;
+            if (value !== 0 && sign(value) !== sign(custom.barEnd)) {
+                start = 0;
+            }
+            start += value;
+        }
+        const startValue = !isNullOrUndef(baseValue) && !floating ? baseValue : start;
+        let base = vScale.getPixelForValue(startValue);
+        if (this.chart.getDataVisibility(index)) {
+            head = vScale.getPixelForValue(start + length);
+        } else {
+            head = base;
+        }
+        size = head - base;
+        if (Math.abs(size) < minBarLength) {
+            size = barSign(size, vScale, actualBase) * minBarLength;
+            if (value === actualBase) {
+                base -= size / 2;
+            }
+            const startPixel = vScale.getPixelForDecimal(0);
+            const endPixel = vScale.getPixelForDecimal(1);
+            const min = Math.min(startPixel, endPixel);
+            const max = Math.max(startPixel, endPixel);
+            base = Math.max(Math.min(base, max), min);
+            head = base + size;
+            if (_stacked && !floating) {
+                parsed._stacks[vScale.axis]._visualValues[datasetIndex] = vScale.getValueForPixel(head) - vScale.getValueForPixel(base);
+            }
+        }
+        if (base === vScale.getPixelForValue(actualBase)) {
+            const halfGrid = sign(size) * vScale.getLineWidthForValue(actualBase) / 2;
+            base += halfGrid;
+            size -= halfGrid;
+        }
+        return {
+            size,
+            base,
+            head,
+            center: head + size / 2
+        };
+    }
+ _calculateBarIndexPixels(index, ruler) {
+        const scale = ruler.scale;
+        const options = this.options;
+        const skipNull = options.skipNull;
+        const maxBarThickness = valueOrDefault(options.maxBarThickness, Infinity);
+        let center, size;
+        const axisCount = this._getAxisCount();
+        if (ruler.grouped) {
+            const stackCount = skipNull ? this._getStackCount(index) : ruler.stackCount;
+            const range = options.barThickness === 'flex' ? computeFlexCategoryTraits(index, ruler, options, stackCount * axisCount) : computeFitCategoryTraits(index, ruler, options, stackCount * axisCount);
+            const axisID = this.chart.options.indexAxis === 'x' ? this.getDataset().xAxisID : this.getDataset().yAxisID;
+            const axisNumber = this._getAxis().indexOf(valueOrDefault(axisID, this.getFirstScaleIdForIndexAxis()));
+            const stackIndex = this._getStackIndex(this.index, this._cachedMeta.stack, skipNull ? index : undefined) + axisNumber;
+            center = range.start + range.chunk * stackIndex + range.chunk / 2;
+            size = Math.min(maxBarThickness, range.chunk * range.ratio);
+        } else {
+            center = scale.getPixelForValue(this.getParsed(index)[scale.axis], index);
+            size = Math.min(maxBarThickness, ruler.min * ruler.ratio);
+        }
+        return {
+            base: center - size / 2,
+            head: center + size / 2,
+            center,
+            size
+        };
+    }
+    draw() {
+        const meta = this._cachedMeta;
+        const vScale = meta.vScale;
+        const rects = meta.data;
+        const ilen = rects.length;
+        let i = 0;
+        for(; i < ilen; ++i){
+            if (this.getParsed(i)[vScale.axis] !== null && !rects[i].hidden) {
+                rects[i].draw(this._ctx);
+            }
+        }
+    }
+}
+
+class BubbleController extends DatasetController {
+    static id = 'bubble';
+ static defaults = {
+        datasetElementType: false,
+        dataElementType: 'point',
+        animations: {
+            numbers: {
+                type: 'number',
+                properties: [
+                    'x',
+                    'y',
+                    'borderWidth',
+                    'radius'
+                ]
+            }
+        }
+    };
+ static overrides = {
+        scales: {
+            x: {
+                type: 'linear'
+            },
+            y: {
+                type: 'linear'
+            }
+        }
+    };
+    initialize() {
+        this.enableOptionSharing = true;
+        super.initialize();
+    }
+ parsePrimitiveData(meta, data, start, count) {
+        const parsed = super.parsePrimitiveData(meta, data, start, count);
+        for(let i = 0; i < parsed.length; i++){
+            parsed[i]._custom = this.resolveDataElementOptions(i + start).radius;
+        }
+        return parsed;
+    }
+ parseArrayData(meta, data, start, count) {
+        const parsed = super.parseArrayData(meta, data, start, count);
+        for(let i = 0; i < parsed.length; i++){
+            const item = data[start + i];
+            parsed[i]._custom = valueOrDefault(item[2], this.resolveDataElementOptions(i + start).radius);
+        }
+        return parsed;
+    }
+ parseObjectData(meta, data, start, count) {
+        const parsed = super.parseObjectData(meta, data, start, count);
+        for(let i = 0; i < parsed.length; i++){
+            const item = data[start + i];
+            parsed[i]._custom = valueOrDefault(item && item.r && +item.r, this.resolveDataElementOptions(i + start).radius);
+        }
+        return parsed;
+    }
+ getMaxOverflow() {
+        const data = this._cachedMeta.data;
+        let max = 0;
+        for(let i = data.length - 1; i >= 0; --i){
+            max = Math.max(max, data[i].size(this.resolveDataElementOptions(i)) / 2);
+        }
+        return max > 0 && max;
+    }
+ getLabelAndValue(index) {
+        const meta = this._cachedMeta;
+        const labels = this.chart.data.labels || [];
+        const { xScale , yScale  } = meta;
+        const parsed = this.getParsed(index);
+        const x = xScale.getLabelForValue(parsed.x);
+        const y = yScale.getLabelForValue(parsed.y);
+        const r = parsed._custom;
+        return {
+            label: labels[index] || '',
+            value: '(' + x + ', ' + y + (r ? ', ' + r : '') + ')'
+        };
+    }
+    update(mode) {
+        const points = this._cachedMeta.data;
+        this.updateElements(points, 0, points.length, mode);
+    }
+    updateElements(points, start, count, mode) {
+        const reset = mode === 'reset';
+        const { iScale , vScale  } = this._cachedMeta;
+        const { sharedOptions , includeOptions  } = this._getSharedOptions(start, mode);
+        const iAxis = iScale.axis;
+        const vAxis = vScale.axis;
+        for(let i = start; i < start + count; i++){
+            const point = points[i];
+            const parsed = !reset && this.getParsed(i);
+            const properties = {};
+            const iPixel = properties[iAxis] = reset ? iScale.getPixelForDecimal(0.5) : iScale.getPixelForValue(parsed[iAxis]);
+            const vPixel = properties[vAxis] = reset ? vScale.getBasePixel() : vScale.getPixelForValue(parsed[vAxis]);
+            properties.skip = isNaN(iPixel) || isNaN(vPixel);
+            if (includeOptions) {
+                properties.options = sharedOptions || this.resolveDataElementOptions(i, point.active ? 'active' : mode);
+                if (reset) {
+                    properties.options.radius = 0;
+                }
+            }
+            this.updateElement(point, i, properties, mode);
+        }
+    }
+ resolveDataElementOptions(index, mode) {
+        const parsed = this.getParsed(index);
+        let values = super.resolveDataElementOptions(index, mode);
+        if (values.$shared) {
+            values = Object.assign({}, values, {
+                $shared: false
+            });
+        }
+        const radius = values.radius;
+        if (mode !== 'active') {
+            values.radius = 0;
+        }
+        values.radius += valueOrDefault(parsed && parsed._custom, radius);
+        return values;
+    }
+}
+
+function getRatioAndOffset(rotation, circumference, cutout) {
+    let ratioX = 1;
+    let ratioY = 1;
+    let offsetX = 0;
+    let offsetY = 0;
+    if (circumference < TAU) {
+        const startAngle = rotation;
+        const endAngle = startAngle + circumference;
+        const startX = Math.cos(startAngle);
+        const startY = Math.sin(startAngle);
+        const endX = Math.cos(endAngle);
+        const endY = Math.sin(endAngle);
+        const calcMax = (angle, a, b)=>_angleBetween(angle, startAngle, endAngle, true) ? 1 : Math.max(a, a * cutout, b, b * cutout);
+        const calcMin = (angle, a, b)=>_angleBetween(angle, startAngle, endAngle, true) ? -1 : Math.min(a, a * cutout, b, b * cutout);
+        const maxX = calcMax(0, startX, endX);
+        const maxY = calcMax(HALF_PI, startY, endY);
+        const minX = calcMin(PI, startX, endX);
+        const minY = calcMin(PI + HALF_PI, startY, endY);
+        ratioX = (maxX - minX) / 2;
+        ratioY = (maxY - minY) / 2;
+        offsetX = -(maxX + minX) / 2;
+        offsetY = -(maxY + minY) / 2;
+    }
+    return {
+        ratioX,
+        ratioY,
+        offsetX,
+        offsetY
+    };
+}
+class DoughnutController extends DatasetController {
+    static id = 'doughnut';
+ static defaults = {
+        datasetElementType: false,
+        dataElementType: 'arc',
+        animation: {
+            animateRotate: true,
+            animateScale: false
+        },
+        animations: {
+            numbers: {
+                type: 'number',
+                properties: [
+                    'circumference',
+                    'endAngle',
+                    'innerRadius',
+                    'outerRadius',
+                    'startAngle',
+                    'x',
+                    'y',
+                    'offset',
+                    'borderWidth',
+                    'spacing'
+                ]
+            }
+        },
+        cutout: '50%',
+        rotation: 0,
+        circumference: 360,
+        radius: '100%',
+        spacing: 0,
+        indexAxis: 'r'
+    };
+    static descriptors = {
+        _scriptable: (name)=>name !== 'spacing',
+        _indexable: (name)=>name !== 'spacing' && !name.startsWith('borderDash') && !name.startsWith('hoverBorderDash')
+    };
+ static overrides = {
+        aspectRatio: 1,
+        plugins: {
+            legend: {
+                labels: {
+                    generateLabels (chart) {
+                        const data = chart.data;
+                        const { labels: { pointStyle , textAlign , color , useBorderRadius , borderRadius  }  } = chart.legend.options;
+                        if (data.labels.length && data.datasets.length) {
+                            return data.labels.map((label, i)=>{
+                                const meta = chart.getDatasetMeta(0);
+                                const style = meta.controller.getStyle(i);
+                                return {
+                                    text: label,
+                                    fillStyle: style.backgroundColor,
+                                    fontColor: color,
+                                    hidden: !chart.getDataVisibility(i),
+                                    lineDash: style.borderDash,
+                                    lineDashOffset: style.borderDashOffset,
+                                    lineJoin: style.borderJoinStyle,
+                                    lineWidth: style.borderWidth,
+                                    strokeStyle: style.borderColor,
+                                    textAlign: textAlign,
+                                    pointStyle: pointStyle,
+                                    borderRadius: useBorderRadius && (borderRadius || style.borderRadius),
+                                    index: i
+                                };
+                            });
+                        }
+                        return [];
+                    }
+                },
+                onClick (e, legendItem, legend) {
+                    legend.chart.toggleDataVisibility(legendItem.index);
+                    legend.chart.update();
+                }
+            }
+        }
+    };
+    constructor(chart, datasetIndex){
+        super(chart, datasetIndex);
+        this.enableOptionSharing = true;
+        this.innerRadius = undefined;
+        this.outerRadius = undefined;
+        this.offsetX = undefined;
+        this.offsetY = undefined;
+    }
+    linkScales() {}
+ parse(start, count) {
+        const data = this.getDataset().data;
+        const meta = this._cachedMeta;
+        if (this._parsing === false) {
+            meta._parsed = data;
+        } else {
+            let getter = (i)=>+data[i];
+            if (isObject(data[start])) {
+                const { key ='value'  } = this._parsing;
+                getter = (i)=>+resolveObjectKey(data[i], key);
+            }
+            let i, ilen;
+            for(i = start, ilen = start + count; i < ilen; ++i){
+                meta._parsed[i] = getter(i);
+            }
+        }
+    }
+ _getRotation() {
+        return toRadians(this.options.rotation - 90);
+    }
+ _getCircumference() {
+        return toRadians(this.options.circumference);
+    }
+ _getRotationExtents() {
+        let min = TAU;
+        let max = -TAU;
+        for(let i = 0; i < this.chart.data.datasets.length; ++i){
+            if (this.chart.isDatasetVisible(i) && this.chart.getDatasetMeta(i).type === this._type) {
+                const controller = this.chart.getDatasetMeta(i).controller;
+                const rotation = controller._getRotation();
+                const circumference = controller._getCircumference();
+                min = Math.min(min, rotation);
+                max = Math.max(max, rotation + circumference);
+            }
+        }
+        return {
+            rotation: min,
+            circumference: max - min
+        };
+    }
+ update(mode) {
+        const chart = this.chart;
+        const { chartArea  } = chart;
+        const meta = this._cachedMeta;
+        const arcs = meta.data;
+        const spacing = this.getMaxBorderWidth() + this.getMaxOffset(arcs) + this.options.spacing;
+        const maxSize = Math.max((Math.min(chartArea.width, chartArea.height) - spacing) / 2, 0);
+        const cutout = Math.min(toPercentage(this.options.cutout, maxSize), 1);
+        const chartWeight = this._getRingWeight(this.index);
+        const { circumference , rotation  } = this._getRotationExtents();
+        const { ratioX , ratioY , offsetX , offsetY  } = getRatioAndOffset(rotation, circumference, cutout);
+        const maxWidth = (chartArea.width - spacing) / ratioX;
+        const maxHeight = (chartArea.height - spacing) / ratioY;
+        const maxRadius = Math.max(Math.min(maxWidth, maxHeight) / 2, 0);
+        const outerRadius = toDimension(this.options.radius, maxRadius);
+        const innerRadius = Math.max(outerRadius * cutout, 0);
+        const radiusLength = (outerRadius - innerRadius) / this._getVisibleDatasetWeightTotal();
+        this.offsetX = offsetX * outerRadius;
+        this.offsetY = offsetY * outerRadius;
+        meta.total = this.calculateTotal();
+        this.outerRadius = outerRadius - radiusLength * this._getRingWeightOffset(this.index);
+        this.innerRadius = Math.max(this.outerRadius - radiusLength * chartWeight, 0);
+        this.updateElements(arcs, 0, arcs.length, mode);
+    }
+ _circumference(i, reset) {
+        const opts = this.options;
+        const meta = this._cachedMeta;
+        const circumference = this._getCircumference();
+        if (reset && opts.animation.animateRotate || !this.chart.getDataVisibility(i) || meta._parsed[i] === null || meta.data[i].hidden) {
+            return 0;
+        }
+        return this.calculateCircumference(meta._parsed[i] * circumference / TAU);
+    }
+    updateElements(arcs, start, count, mode) {
+        const reset = mode === 'reset';
+        const chart = this.chart;
+        const chartArea = chart.chartArea;
+        const opts = chart.options;
+        const animationOpts = opts.animation;
+        const centerX = (chartArea.left + chartArea.right) / 2;
+        const centerY = (chartArea.top + chartArea.bottom) / 2;
+        const animateScale = reset && animationOpts.animateScale;
+        const innerRadius = animateScale ? 0 : this.innerRadius;
+        const outerRadius = animateScale ? 0 : this.outerRadius;
+        const { sharedOptions , includeOptions  } = this._getSharedOptions(start, mode);
+        let startAngle = this._getRotation();
+        let i;
+        for(i = 0; i < start; ++i){
+            startAngle += this._circumference(i, reset);
+        }
+        for(i = start; i < start + count; ++i){
+            const circumference = this._circumference(i, reset);
+            const arc = arcs[i];
+            const properties = {
+                x: centerX + this.offsetX,
+                y: centerY + this.offsetY,
+                startAngle,
+                endAngle: startAngle + circumference,
+                circumference,
+                outerRadius,
+                innerRadius
+            };
+            if (includeOptions) {
+                properties.options = sharedOptions || this.resolveDataElementOptions(i, arc.active ? 'active' : mode);
+            }
+            startAngle += circumference;
+            this.updateElement(arc, i, properties, mode);
+        }
+    }
+    calculateTotal() {
+        const meta = this._cachedMeta;
+        const metaData = meta.data;
+        let total = 0;
+        let i;
+        for(i = 0; i < metaData.length; i++){
+            const value = meta._parsed[i];
+            if (value !== null && !isNaN(value) && this.chart.getDataVisibility(i) && !metaData[i].hidden) {
+                total += Math.abs(value);
+            }
+        }
+        return total;
+    }
+    calculateCircumference(value) {
+        const total = this._cachedMeta.total;
+        if (total > 0 && !isNaN(value)) {
+            return TAU * (Math.abs(value) / total);
+        }
+        return 0;
+    }
+    getLabelAndValue(index) {
+        const meta = this._cachedMeta;
+        const chart = this.chart;
+        const labels = chart.data.labels || [];
+        const value = formatNumber(meta._parsed[index], chart.options.locale);
+        return {
+            label: labels[index] || '',
+            value
+        };
+    }
+    getMaxBorderWidth(arcs) {
+        let max = 0;
+        const chart = this.chart;
+        let i, ilen, meta, controller, options;
+        if (!arcs) {
+            for(i = 0, ilen = chart.data.datasets.length; i < ilen; ++i){
+                if (chart.isDatasetVisible(i)) {
+                    meta = chart.getDatasetMeta(i);
+                    arcs = meta.data;
+                    controller = meta.controller;
+                    break;
+                }
+            }
+        }
+        if (!arcs) {
+            return 0;
+        }
+        for(i = 0, ilen = arcs.length; i < ilen; ++i){
+            options = controller.resolveDataElementOptions(i);
+            if (options.borderAlign !== 'inner') {
+                max = Math.max(max, options.borderWidth || 0, options.hoverBorderWidth || 0);
+            }
+        }
+        return max;
+    }
+    getMaxOffset(arcs) {
+        let max = 0;
+        for(let i = 0, ilen = arcs.length; i < ilen; ++i){
+            const options = this.resolveDataElementOptions(i);
+            max = Math.max(max, options.offset || 0, options.hoverOffset || 0);
+        }
+        return max;
+    }
+ _getRingWeightOffset(datasetIndex) {
+        let ringWeightOffset = 0;
+        for(let i = 0; i < datasetIndex; ++i){
+            if (this.chart.isDatasetVisible(i)) {
+                ringWeightOffset += this._getRingWeight(i);
+            }
+        }
+        return ringWeightOffset;
+    }
+ _getRingWeight(datasetIndex) {
+        return Math.max(valueOrDefault(this.chart.data.datasets[datasetIndex].weight, 1), 0);
+    }
+ _getVisibleDatasetWeightTotal() {
+        return this._getRingWeightOffset(this.chart.data.datasets.length) || 1;
+    }
+}
+
+class LineController extends DatasetController {
+    static id = 'line';
+ static defaults = {
+        datasetElementType: 'line',
+        dataElementType: 'point',
+        showLine: true,
+        spanGaps: false
+    };
+ static overrides = {
+        scales: {
+            _index_: {
+                type: 'category'
+            },
+            _value_: {
+                type: 'linear'
+            }
+        }
+    };
+    initialize() {
+        this.enableOptionSharing = true;
+        this.supportsDecimation = true;
+        super.initialize();
+    }
+    update(mode) {
+        const meta = this._cachedMeta;
+        const { dataset: line , data: points = [] , _dataset  } = meta;
+        const animationsDisabled = this.chart._animationsDisabled;
+        let { start , count  } = _getStartAndCountOfVisiblePoints(meta, points, animationsDisabled);
+        this._drawStart = start;
+        this._drawCount = count;
+        if (_scaleRangesChanged(meta)) {
+            start = 0;
+            count = points.length;
+        }
+        line._chart = this.chart;
+        line._datasetIndex = this.index;
+        line._decimated = !!_dataset._decimated;
+        line.points = points;
+        const options = this.resolveDatasetElementOptions(mode);
+        if (!this.options.showLine) {
+            options.borderWidth = 0;
+        }
+        options.segment = this.options.segment;
+        this.updateElement(line, undefined, {
+            animated: !animationsDisabled,
+            options
+        }, mode);
+        this.updateElements(points, start, count, mode);
+    }
+    updateElements(points, start, count, mode) {
+        const reset = mode === 'reset';
+        const { iScale , vScale , _stacked , _dataset  } = this._cachedMeta;
+        const { sharedOptions , includeOptions  } = this._getSharedOptions(start, mode);
+        const iAxis = iScale.axis;
+        const vAxis = vScale.axis;
+        const { spanGaps , segment  } = this.options;
+        const maxGapLength = isNumber(spanGaps) ? spanGaps : Number.POSITIVE_INFINITY;
+        const directUpdate = this.chart._animationsDisabled || reset || mode === 'none';
+        const end = start + count;
+        const pointsCount = points.length;
+        let prevParsed = start > 0 && this.getParsed(start - 1);
+        for(let i = 0; i < pointsCount; ++i){
+            const point = points[i];
+            const properties = directUpdate ? point : {};
+            if (i < start || i >= end) {
+                properties.skip = true;
+                continue;
+            }
+            const parsed = this.getParsed(i);
+            const nullData = isNullOrUndef(parsed[vAxis]);
+            const iPixel = properties[iAxis] = iScale.getPixelForValue(parsed[iAxis], i);
+            const vPixel = properties[vAxis] = reset || nullData ? vScale.getBasePixel() : vScale.getPixelForValue(_stacked ? this.applyStack(vScale, parsed, _stacked) : parsed[vAxis], i);
+            properties.skip = isNaN(iPixel) || isNaN(vPixel) || nullData;
+            properties.stop = i > 0 && Math.abs(parsed[iAxis] - prevParsed[iAxis]) > maxGapLength;
+            if (segment) {
+                properties.parsed = parsed;
+                properties.raw = _dataset.data[i];
+            }
+            if (includeOptions) {
+                properties.options = sharedOptions || this.resolveDataElementOptions(i, point.active ? 'active' : mode);
+            }
+            if (!directUpdate) {
+                this.updateElement(point, i, properties, mode);
+            }
+            prevParsed = parsed;
+        }
+    }
+ getMaxOverflow() {
+        const meta = this._cachedMeta;
+        const dataset = meta.dataset;
+        const border = dataset.options && dataset.options.borderWidth || 0;
+        const data = meta.data || [];
+        if (!data.length) {
+            return border;
+        }
+        const firstPoint = data[0].size(this.resolveDataElementOptions(0));
+        const lastPoint = data[data.length - 1].size(this.resolveDataElementOptions(data.length - 1));
+        return Math.max(border, firstPoint, lastPoint) / 2;
+    }
+    draw() {
+        const meta = this._cachedMeta;
+        meta.dataset.updateControlPoints(this.chart.chartArea, meta.iScale.axis);
+        super.draw();
+    }
+}
+
+class PolarAreaController extends DatasetController {
+    static id = 'polarArea';
+ static defaults = {
+        dataElementType: 'arc',
+        animation: {
+            animateRotate: true,
+            animateScale: true
+        },
+        animations: {
+            numbers: {
+                type: 'number',
+                properties: [
+                    'x',
+                    'y',
+                    'startAngle',
+                    'endAngle',
+                    'innerRadius',
+                    'outerRadius'
+                ]
+            }
+        },
+        indexAxis: 'r',
+        startAngle: 0
+    };
+ static overrides = {
+        aspectRatio: 1,
+        plugins: {
+            legend: {
+                labels: {
+                    generateLabels (chart) {
+                        const data = chart.data;
+                        if (data.labels.length && data.datasets.length) {
+                            const { labels: { pointStyle , color  }  } = chart.legend.options;
+                            return data.labels.map((label, i)=>{
+                                const meta = chart.getDatasetMeta(0);
+                                const style = meta.controller.getStyle(i);
+                                return {
+                                    text: label,
+                                    fillStyle: style.backgroundColor,
+                                    strokeStyle: style.borderColor,
+                                    fontColor: color,
+                                    lineWidth: style.borderWidth,
+                                    pointStyle: pointStyle,
+                                    hidden: !chart.getDataVisibility(i),
+                                    index: i
+                                };
+                            });
+                        }
+                        return [];
+                    }
+                },
+                onClick (e, legendItem, legend) {
+                    legend.chart.toggleDataVisibility(legendItem.index);
+                    legend.chart.update();
+                }
+            }
+        },
+        scales: {
+            r: {
+                type: 'radialLinear',
+                angleLines: {
+                    display: false
+                },
+                beginAtZero: true,
+                grid: {
+                    circular: true
+                },
+                pointLabels: {
+                    display: false
+                },
+                startAngle: 0
+            }
+        }
+    };
+    constructor(chart, datasetIndex){
+        super(chart, datasetIndex);
+        this.innerRadius = undefined;
+        this.outerRadius = undefined;
+    }
+    getLabelAndValue(index) {
+        const meta = this._cachedMeta;
+        const chart = this.chart;
+        const labels = chart.data.labels || [];
+        const value = formatNumber(meta._parsed[index].r, chart.options.locale);
+        return {
+            label: labels[index] || '',
+            value
+        };
+    }
+    parseObjectData(meta, data, start, count) {
+        return _parseObjectDataRadialScale.bind(this)(meta, data, start, count);
+    }
+    update(mode) {
+        const arcs = this._cachedMeta.data;
+        this._updateRadius();
+        this.updateElements(arcs, 0, arcs.length, mode);
+    }
+ getMinMax() {
+        const meta = this._cachedMeta;
+        const range = {
+            min: Number.POSITIVE_INFINITY,
+            max: Number.NEGATIVE_INFINITY
+        };
+        meta.data.forEach((element, index)=>{
+            const parsed = this.getParsed(index).r;
+            if (!isNaN(parsed) && this.chart.getDataVisibility(index)) {
+                if (parsed < range.min) {
+                    range.min = parsed;
+                }
+                if (parsed > range.max) {
+                    range.max = parsed;
+                }
+            }
+        });
+        return range;
+    }
+ _updateRadius() {
+        const chart = this.chart;
+        const chartArea = chart.chartArea;
+        const opts = chart.options;
+        const minSize = Math.min(chartArea.right - chartArea.left, chartArea.bottom - chartArea.top);
+        const outerRadius = Math.max(minSize / 2, 0);
+        const innerRadius = Math.max(opts.cutoutPercentage ? outerRadius / 100 * opts.cutoutPercentage : 1, 0);
+        const radiusLength = (outerRadius - innerRadius) / chart.getVisibleDatasetCount();
+        this.outerRadius = outerRadius - radiusLength * this.index;
+        this.innerRadius = this.outerRadius - radiusLength;
+    }
+    updateElements(arcs, start, count, mode) {
+        const reset = mode === 'reset';
+        const chart = this.chart;
+        const opts = chart.options;
+        const animationOpts = opts.animation;
+        const scale = this._cachedMeta.rScale;
+        const centerX = scale.xCenter;
+        const centerY = scale.yCenter;
+        const datasetStartAngle = scale.getIndexAngle(0) - 0.5 * PI;
+        let angle = datasetStartAngle;
+        let i;
+        const defaultAngle = 360 / this.countVisibleElements();
+        for(i = 0; i < start; ++i){
+            angle += this._computeAngle(i, mode, defaultAngle);
+        }
+        for(i = start; i < start + count; i++){
+            const arc = arcs[i];
+            let startAngle = angle;
+            let endAngle = angle + this._computeAngle(i, mode, defaultAngle);
+            let outerRadius = chart.getDataVisibility(i) ? scale.getDistanceFromCenterForValue(this.getParsed(i).r) : 0;
+            angle = endAngle;
+            if (reset) {
+                if (animationOpts.animateScale) {
+                    outerRadius = 0;
+                }
+                if (animationOpts.animateRotate) {
+                    startAngle = endAngle = datasetStartAngle;
+                }
+            }
+            const properties = {
+                x: centerX,
+                y: centerY,
+                innerRadius: 0,
+                outerRadius,
+                startAngle,
+                endAngle,
+                options: this.resolveDataElementOptions(i, arc.active ? 'active' : mode)
+            };
+            this.updateElement(arc, i, properties, mode);
+        }
+    }
+    countVisibleElements() {
+        const meta = this._cachedMeta;
+        let count = 0;
+        meta.data.forEach((element, index)=>{
+            if (!isNaN(this.getParsed(index).r) && this.chart.getDataVisibility(index)) {
+                count++;
+            }
+        });
+        return count;
+    }
+ _computeAngle(index, mode, defaultAngle) {
+        return this.chart.getDataVisibility(index) ? toRadians(this.resolveDataElementOptions(index, mode).angle || defaultAngle) : 0;
+    }
+}
+
+class PieController extends DoughnutController {
+    static id = 'pie';
+ static defaults = {
+        cutout: 0,
+        rotation: 0,
+        circumference: 360,
+        radius: '100%'
+    };
+}
+
+class RadarController extends DatasetController {
+    static id = 'radar';
+ static defaults = {
+        datasetElementType: 'line',
+        dataElementType: 'point',
+        indexAxis: 'r',
+        showLine: true,
+        elements: {
+            line: {
+                fill: 'start'
+            }
+        }
+    };
+ static overrides = {
+        aspectRatio: 1,
+        scales: {
+            r: {
+                type: 'radialLinear'
+            }
+        }
+    };
+ getLabelAndValue(index) {
+        const vScale = this._cachedMeta.vScale;
+        const parsed = this.getParsed(index);
+        return {
+            label: vScale.getLabels()[index],
+            value: '' + vScale.getLabelForValue(parsed[vScale.axis])
+        };
+    }
+    parseObjectData(meta, data, start, count) {
+        return _parseObjectDataRadialScale.bind(this)(meta, data, start, count);
+    }
+    update(mode) {
+        const meta = this._cachedMeta;
+        const line = meta.dataset;
+        const points = meta.data || [];
+        const labels = meta.iScale.getLabels();
+        line.points = points;
+        if (mode !== 'resize') {
+            const options = this.resolveDatasetElementOptions(mode);
+            if (!this.options.showLine) {
+                options.borderWidth = 0;
+            }
+            const properties = {
+                _loop: true,
+                _fullLoop: labels.length === points.length,
+                options
+            };
+            this.updateElement(line, undefined, properties, mode);
+        }
+        this.updateElements(points, 0, points.length, mode);
+    }
+    updateElements(points, start, count, mode) {
+        const scale = this._cachedMeta.rScale;
+        const reset = mode === 'reset';
+        for(let i = start; i < start + count; i++){
+            const point = points[i];
+            const options = this.resolveDataElementOptions(i, point.active ? 'active' : mode);
+            const pointPosition = scale.getPointPositionForValue(i, this.getParsed(i).r);
+            const x = reset ? scale.xCenter : pointPosition.x;
+            const y = reset ? scale.yCenter : pointPosition.y;
+            const properties = {
+                x,
+                y,
+                angle: pointPosition.angle,
+                skip: isNaN(x) || isNaN(y),
+                options
+            };
+            this.updateElement(point, i, properties, mode);
+        }
+    }
+}
+
+class ScatterController extends DatasetController {
+    static id = 'scatter';
+ static defaults = {
+        datasetElementType: false,
+        dataElementType: 'point',
+        showLine: false,
+        fill: false
+    };
+ static overrides = {
+        interaction: {
+            mode: 'point'
+        },
+        scales: {
+            x: {
+                type: 'linear'
+            },
+            y: {
+                type: 'linear'
+            }
+        }
+    };
+ getLabelAndValue(index) {
+        const meta = this._cachedMeta;
+        const labels = this.chart.data.labels || [];
+        const { xScale , yScale  } = meta;
+        const parsed = this.getParsed(index);
+        const x = xScale.getLabelForValue(parsed.x);
+        const y = yScale.getLabelForValue(parsed.y);
+        return {
+            label: labels[index] || '',
+            value: '(' + x + ', ' + y + ')'
+        };
+    }
+    update(mode) {
+        const meta = this._cachedMeta;
+        const { data: points = []  } = meta;
+        const animationsDisabled = this.chart._animationsDisabled;
+        let { start , count  } = _getStartAndCountOfVisiblePoints(meta, points, animationsDisabled);
+        this._drawStart = start;
+        this._drawCount = count;
+        if (_scaleRangesChanged(meta)) {
+            start = 0;
+            count = points.length;
+        }
+        if (this.options.showLine) {
+            if (!this.datasetElementType) {
+                this.addElements();
+            }
+            const { dataset: line , _dataset  } = meta;
+            line._chart = this.chart;
+            line._datasetIndex = this.index;
+            line._decimated = !!_dataset._decimated;
+            line.points = points;
+            const options = this.resolveDatasetElementOptions(mode);
+            options.segment = this.options.segment;
+            this.updateElement(line, undefined, {
+                animated: !animationsDisabled,
+                options
+            }, mode);
+        } else if (this.datasetElementType) {
+            delete meta.dataset;
+            this.datasetElementType = false;
+        }
+        this.updateElements(points, start, count, mode);
+    }
+    addElements() {
+        const { showLine  } = this.options;
+        if (!this.datasetElementType && showLine) {
+            this.datasetElementType = this.chart.registry.getElement('line');
+        }
+        super.addElements();
+    }
+    updateElements(points, start, count, mode) {
+        const reset = mode === 'reset';
+        const { iScale , vScale , _stacked , _dataset  } = this._cachedMeta;
+        const firstOpts = this.resolveDataElementOptions(start, mode);
+        const sharedOptions = this.getSharedOptions(firstOpts);
+        const includeOptions = this.includeOptions(mode, sharedOptions);
+        const iAxis = iScale.axis;
+        const vAxis = vScale.axis;
+        const { spanGaps , segment  } = this.options;
+        const maxGapLength = isNumber(spanGaps) ? spanGaps : Number.POSITIVE_INFINITY;
+        const directUpdate = this.chart._animationsDisabled || reset || mode === 'none';
+        let prevParsed = start > 0 && this.getParsed(start - 1);
+        for(let i = start; i < start + count; ++i){
+            const point = points[i];
+            const parsed = this.getParsed(i);
+            const properties = directUpdate ? point : {};
+            const nullData = isNullOrUndef(parsed[vAxis]);
+            const iPixel = properties[iAxis] = iScale.getPixelForValue(parsed[iAxis], i);
+            const vPixel = properties[vAxis] = reset || nullData ? vScale.getBasePixel() : vScale.getPixelForValue(_stacked ? this.applyStack(vScale, parsed, _stacked) : parsed[vAxis], i);
+            properties.skip = isNaN(iPixel) || isNaN(vPixel) || nullData;
+            properties.stop = i > 0 && Math.abs(parsed[iAxis] - prevParsed[iAxis]) > maxGapLength;
+            if (segment) {
+                properties.parsed = parsed;
+                properties.raw = _dataset.data[i];
+            }
+            if (includeOptions) {
+                properties.options = sharedOptions || this.resolveDataElementOptions(i, point.active ? 'active' : mode);
+            }
+            if (!directUpdate) {
+                this.updateElement(point, i, properties, mode);
+            }
+            prevParsed = parsed;
+        }
+        this.updateSharedOptions(sharedOptions, mode, firstOpts);
+    }
+ getMaxOverflow() {
+        const meta = this._cachedMeta;
+        const data = meta.data || [];
+        if (!this.options.showLine) {
+            let max = 0;
+            for(let i = data.length - 1; i >= 0; --i){
+                max = Math.max(max, data[i].size(this.resolveDataElementOptions(i)) / 2);
+            }
+            return max > 0 && max;
+        }
+        const dataset = meta.dataset;
+        const border = dataset.options && dataset.options.borderWidth || 0;
+        if (!data.length) {
+            return border;
+        }
+        const firstPoint = data[0].size(this.resolveDataElementOptions(0));
+        const lastPoint = data[data.length - 1].size(this.resolveDataElementOptions(data.length - 1));
+        return Math.max(border, firstPoint, lastPoint) / 2;
+    }
+}
+
+var controllers = /*#__PURE__*/Object.freeze({
+__proto__: null,
+BarController: BarController,
+BubbleController: BubbleController,
+DoughnutController: DoughnutController,
+LineController: LineController,
+PieController: PieController,
+PolarAreaController: PolarAreaController,
+RadarController: RadarController,
+ScatterController: ScatterController
+});
+
+/**
+ * @namespace Chart._adapters
+ * @since 2.8.0
+ * @private
+ */ function abstract() {
+    throw new Error('This method is not implemented: Check that a complete date adapter is provided.');
+}
+/**
+ * Date adapter (current used by the time scale)
+ * @namespace Chart._adapters._date
+ * @memberof Chart._adapters
+ * @private
+ */ class DateAdapterBase {
+    /**
+   * Override default date adapter methods.
+   * Accepts type parameter to define options type.
+   * @example
+   * Chart._adapters._date.override<{myAdapterOption: string}>({
+   *   init() {
+   *     console.log(this.options.myAdapterOption);
+   *   }
+   * })
+   */ static override(members) {
+        Object.assign(DateAdapterBase.prototype, members);
+    }
+    options;
+    constructor(options){
+        this.options = options || {};
+    }
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    init() {}
+    formats() {
+        return abstract();
+    }
+    parse() {
+        return abstract();
+    }
+    format() {
+        return abstract();
+    }
+    add() {
+        return abstract();
+    }
+    diff() {
+        return abstract();
+    }
+    startOf() {
+        return abstract();
+    }
+    endOf() {
+        return abstract();
+    }
+}
+var adapters = {
+    _date: DateAdapterBase
+};
+
+function binarySearch(metaset, axis, value, intersect) {
+    const { controller , data , _sorted  } = metaset;
+    const iScale = controller._cachedMeta.iScale;
+    const spanGaps = metaset.dataset ? metaset.dataset.options ? metaset.dataset.options.spanGaps : null : null;
+    if (iScale && axis === iScale.axis && axis !== 'r' && _sorted && data.length) {
+        const lookupMethod = iScale._reversePixels ? _rlookupByKey : _lookupByKey;
+        if (!intersect) {
+            const result = lookupMethod(data, axis, value);
+            if (spanGaps) {
+                const { vScale  } = controller._cachedMeta;
+                const { _parsed  } = metaset;
+                const distanceToDefinedLo = _parsed.slice(0, result.lo + 1).reverse().findIndex((point)=>!isNullOrUndef(point[vScale.axis]));
+                result.lo -= Math.max(0, distanceToDefinedLo);
+                const distanceToDefinedHi = _parsed.slice(result.hi).findIndex((point)=>!isNullOrUndef(point[vScale.axis]));
+                result.hi += Math.max(0, distanceToDefinedHi);
+            }
+            return result;
+        } else if (controller._sharedOptions) {
+            const el = data[0];
+            const range = typeof el.getRange === 'function' && el.getRange(axis);
+            if (range) {
+                const start = lookupMethod(data, axis, value - range);
+                const end = lookupMethod(data, axis, value + range);
+                return {
+                    lo: start.lo,
+                    hi: end.hi
+                };
+            }
+        }
+    }
+    return {
+        lo: 0,
+        hi: data.length - 1
+    };
+}
+ function evaluateInteractionItems(chart, axis, position, handler, intersect) {
+    const metasets = chart.getSortedVisibleDatasetMetas();
+    const value = position[axis];
+    for(let i = 0, ilen = metasets.length; i < ilen; ++i){
+        const { index , data  } = metasets[i];
+        const { lo , hi  } = binarySearch(metasets[i], axis, value, intersect);
+        for(let j = lo; j <= hi; ++j){
+            const element = data[j];
+            if (!element.skip) {
+                handler(element, index, j);
+            }
+        }
+    }
+}
+ function getDistanceMetricForAxis(axis) {
+    const useX = axis.indexOf('x') !== -1;
+    const useY = axis.indexOf('y') !== -1;
+    return function(pt1, pt2) {
+        const deltaX = useX ? Math.abs(pt1.x - pt2.x) : 0;
+        const deltaY = useY ? Math.abs(pt1.y - pt2.y) : 0;
+        return Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
+    };
+}
+ function getIntersectItems(chart, position, axis, useFinalPosition, includeInvisible) {
+    const items = [];
+    if (!includeInvisible && !chart.isPointInArea(position)) {
+        return items;
+    }
+    const evaluationFunc = function(element, datasetIndex, index) {
+        if (!includeInvisible && !_isPointInArea(element, chart.chartArea, 0)) {
+            return;
+        }
+        if (element.inRange(position.x, position.y, useFinalPosition)) {
+            items.push({
+                element,
+                datasetIndex,
+                index
+            });
+        }
+    };
+    evaluateInteractionItems(chart, axis, position, evaluationFunc, true);
+    return items;
+}
+ function getNearestRadialItems(chart, position, axis, useFinalPosition) {
+    let items = [];
+    function evaluationFunc(element, datasetIndex, index) {
+        const { startAngle , endAngle  } = element.getProps([
+            'startAngle',
+            'endAngle'
+        ], useFinalPosition);
+        const { angle  } = getAngleFromPoint(element, {
+            x: position.x,
+            y: position.y
+        });
+        if (_angleBetween(angle, startAngle, endAngle)) {
+            items.push({
+                element,
+                datasetIndex,
+                index
+            });
+        }
+    }
+    evaluateInteractionItems(chart, axis, position, evaluationFunc);
+    return items;
+}
+ function getNearestCartesianItems(chart, position, axis, intersect, useFinalPosition, includeInvisible) {
+    let items = [];
+    const distanceMetric = getDistanceMetricForAxis(axis);
+    let minDistance = Number.POSITIVE_INFINITY;
+    function evaluationFunc(element, datasetIndex, index) {
+        const inRange = element.inRange(position.x, position.y, useFinalPosition);
+        if (intersect && !inRange) {
+            return;
+        }
+        const center = element.getCenterPoint(useFinalPosition);
+        const pointInArea = !!includeInvisible || chart.isPointInArea(center);
+        if (!pointInArea && !inRange) {
+            return;
+        }
+        const distance = distanceMetric(position, center);
+        if (distance < minDistance) {
+            items = [
+                {
+                    element,
+                    datasetIndex,
+                    index
+                }
+            ];
+            minDistance = distance;
+        } else if (distance === minDistance) {
+            items.push({
+                element,
+                datasetIndex,
+                index
+            });
+        }
+    }
+    evaluateInteractionItems(chart, axis, position, evaluationFunc);
+    return items;
+}
+ function getNearestItems(chart, position, axis, intersect, useFinalPosition, includeInvisible) {
+    if (!includeInvisible && !chart.isPointInArea(position)) {
+        return [];
+    }
+    return axis === 'r' && !intersect ? getNearestRadialItems(chart, position, axis, useFinalPosition) : getNearestCartesianItems(chart, position, axis, intersect, useFinalPosition, includeInvisible);
+}
+ function getAxisItems(chart, position, axis, intersect, useFinalPosition) {
+    const items = [];
+    const rangeMethod = axis === 'x' ? 'inXRange' : 'inYRange';
+    let intersectsItem = false;
+    evaluateInteractionItems(chart, axis, position, (element, datasetIndex, index)=>{
+        if (element[rangeMethod] && element[rangeMethod](position[axis], useFinalPosition)) {
+            items.push({
+                element,
+                datasetIndex,
+                index
+            });
+            intersectsItem = intersectsItem || element.inRange(position.x, position.y, useFinalPosition);
+        }
+    });
+    if (intersect && !intersectsItem) {
+        return [];
+    }
+    return items;
+}
+ var Interaction = {
+    evaluateInteractionItems,
+    modes: {
+ index (chart, e, options, useFinalPosition) {
+            const position = getRelativePosition(e, chart);
+            const axis = options.axis || 'x';
+            const includeInvisible = options.includeInvisible || false;
+            const items = options.intersect ? getIntersectItems(chart, position, axis, useFinalPosition, includeInvisible) : getNearestItems(chart, position, axis, false, useFinalPosition, includeInvisible);
+            const elements = [];
+            if (!items.length) {
+                return [];
+            }
+            chart.getSortedVisibleDatasetMetas().forEach((meta)=>{
+                const index = items[0].index;
+                const element = meta.data[index];
+                if (element && !element.skip) {
+                    elements.push({
+                        element,
+                        datasetIndex: meta.index,
+                        index
+                    });
+                }
+            });
+            return elements;
+        },
+ dataset (chart, e, options, useFinalPosition) {
+            const position = getRelativePosition(e, chart);
+            const axis = options.axis || 'xy';
+            const includeInvisible = options.includeInvisible || false;
+            let items = options.intersect ? getIntersectItems(chart, position, axis, useFinalPosition, includeInvisible) : getNearestItems(chart, position, axis, false, useFinalPosition, includeInvisible);
+            if (items.length > 0) {
+                const datasetIndex = items[0].datasetIndex;
+                const data = chart.getDatasetMeta(datasetIndex).data;
+                items = [];
+                for(let i = 0; i < data.length; ++i){
+                    items.push({
+                        element: data[i],
+                        datasetIndex,
+                        index: i
+                    });
+                }
+            }
+            return items;
+        },
+ point (chart, e, options, useFinalPosition) {
+            const position = getRelativePosition(e, chart);
+            const axis = options.axis || 'xy';
+            const includeInvisible = options.includeInvisible || false;
+            return getIntersectItems(chart, position, axis, useFinalPosition, includeInvisible);
+        },
+ nearest (chart, e, options, useFinalPosition) {
+            const position = getRelativePosition(e, chart);
+            const axis = options.axis || 'xy';
+            const includeInvisible = options.includeInvisible || false;
+            return getNearestItems(chart, position, axis, options.intersect, useFinalPosition, includeInvisible);
+        },
+ x (chart, e, options, useFinalPosition) {
+            const position = getRelativePosition(e, chart);
+            return getAxisItems(chart, position, 'x', options.intersect, useFinalPosition);
+        },
+ y (chart, e, options, useFinalPosition) {
+            const position = getRelativePosition(e, chart);
+            return getAxisItems(chart, position, 'y', options.intersect, useFinalPosition);
+        }
+    }
+};
+
+const STATIC_POSITIONS = [
+    'left',
+    'top',
+    'right',
+    'bottom'
+];
+function filterByPosition(array, position) {
+    return array.filter((v)=>v.pos === position);
+}
+function filterDynamicPositionByAxis(array, axis) {
+    return array.filter((v)=>STATIC_POSITIONS.indexOf(v.pos) === -1 && v.box.axis === axis);
+}
+function sortByWeight(array, reverse) {
+    return array.sort((a, b)=>{
+        const v0 = reverse ? b : a;
+        const v1 = reverse ? a : b;
+        return v0.weight === v1.weight ? v0.index - v1.index : v0.weight - v1.weight;
+    });
+}
+function wrapBoxes(boxes) {
+    const layoutBoxes = [];
+    let i, ilen, box, pos, stack, stackWeight;
+    for(i = 0, ilen = (boxes || []).length; i < ilen; ++i){
+        box = boxes[i];
+        ({ position: pos , options: { stack , stackWeight =1  }  } = box);
+        layoutBoxes.push({
+            index: i,
+            box,
+            pos,
+            horizontal: box.isHorizontal(),
+            weight: box.weight,
+            stack: stack && pos + stack,
+            stackWeight
+        });
+    }
+    return layoutBoxes;
+}
+function buildStacks(layouts) {
+    const stacks = {};
+    for (const wrap of layouts){
+        const { stack , pos , stackWeight  } = wrap;
+        if (!stack || !STATIC_POSITIONS.includes(pos)) {
+            continue;
+        }
+        const _stack = stacks[stack] || (stacks[stack] = {
+            count: 0,
+            placed: 0,
+            weight: 0,
+            size: 0
+        });
+        _stack.count++;
+        _stack.weight += stackWeight;
+    }
+    return stacks;
+}
+ function setLayoutDims(layouts, params) {
+    const stacks = buildStacks(layouts);
+    const { vBoxMaxWidth , hBoxMaxHeight  } = params;
+    let i, ilen, layout;
+    for(i = 0, ilen = layouts.length; i < ilen; ++i){
+        layout = layouts[i];
+        const { fullSize  } = layout.box;
+        const stack = stacks[layout.stack];
+        const factor = stack && layout.stackWeight / stack.weight;
+        if (layout.horizontal) {
+            layout.width = factor ? factor * vBoxMaxWidth : fullSize && params.availableWidth;
+            layout.height = hBoxMaxHeight;
+        } else {
+            layout.width = vBoxMaxWidth;
+            layout.height = factor ? factor * hBoxMaxHeight : fullSize && params.availableHeight;
+        }
+    }
+    return stacks;
+}
+function buildLayoutBoxes(boxes) {
+    const layoutBoxes = wrapBoxes(boxes);
+    const fullSize = sortByWeight(layoutBoxes.filter((wrap)=>wrap.box.fullSize), true);
+    const left = sortByWeight(filterByPosition(layoutBoxes, 'left'), true);
+    const right = sortByWeight(filterByPosition(layoutBoxes, 'right'));
+    const top = sortByWeight(filterByPosition(layoutBoxes, 'top'), true);
+    const bottom = sortByWeight(filterByPosition(layoutBoxes, 'bottom'));
+    const centerHorizontal = filterDynamicPositionByAxis(layoutBoxes, 'x');
+    const centerVertical = filterDynamicPositionByAxis(layoutBoxes, 'y');
+    return {
+        fullSize,
+        leftAndTop: left.concat(top),
+        rightAndBottom: right.concat(centerVertical).concat(bottom).concat(centerHorizontal),
+        chartArea: filterByPosition(layoutBoxes, 'chartArea'),
+        vertical: left.concat(right).concat(centerVertical),
+        horizontal: top.concat(bottom).concat(centerHorizontal)
+    };
+}
+function getCombinedMax(maxPadding, chartArea, a, b) {
+    return Math.max(maxPadding[a], chartArea[a]) + Math.max(maxPadding[b], chartArea[b]);
+}
+function updateMaxPadding(maxPadding, boxPadding) {
+    maxPadding.top = Math.max(maxPadding.top, boxPadding.top);
+    maxPadding.left = Math.max(maxPadding.left, boxPadding.left);
+    maxPadding.bottom = Math.max(maxPadding.bottom, boxPadding.bottom);
+    maxPadding.right = Math.max(maxPadding.right, boxPadding.right);
+}
+function updateDims(chartArea, params, layout, stacks) {
+    const { pos , box  } = layout;
+    const maxPadding = chartArea.maxPadding;
+    if (!isObject(pos)) {
+        if (layout.size) {
+            chartArea[pos] -= layout.size;
+        }
+        const stack = stacks[layout.stack] || {
+            size: 0,
+            count: 1
+        };
+        stack.size = Math.max(stack.size, layout.horizontal ? box.height : box.width);
+        layout.size = stack.size / stack.count;
+        chartArea[pos] += layout.size;
+    }
+    if (box.getPadding) {
+        updateMaxPadding(maxPadding, box.getPadding());
+    }
+    const newWidth = Math.max(0, params.outerWidth - getCombinedMax(maxPadding, chartArea, 'left', 'right'));
+    const newHeight = Math.max(0, params.outerHeight - getCombinedMax(maxPadding, chartArea, 'top', 'bottom'));
+    const widthChanged = newWidth !== chartArea.w;
+    const heightChanged = newHeight !== chartArea.h;
+    chartArea.w = newWidth;
+    chartArea.h = newHeight;
+    return layout.horizontal ? {
+        same: widthChanged,
+        other: heightChanged
+    } : {
+        same: heightChanged,
+        other: widthChanged
+    };
+}
+function handleMaxPadding(chartArea) {
+    const maxPadding = chartArea.maxPadding;
+    function updatePos(pos) {
+        const change = Math.max(maxPadding[pos] - chartArea[pos], 0);
+        chartArea[pos] += change;
+        return change;
+    }
+    chartArea.y += updatePos('top');
+    chartArea.x += updatePos('left');
+    updatePos('right');
+    updatePos('bottom');
+}
+function getMargins(horizontal, chartArea) {
+    const maxPadding = chartArea.maxPadding;
+    function marginForPositions(positions) {
+        const margin = {
+            left: 0,
+            top: 0,
+            right: 0,
+            bottom: 0
+        };
+        positions.forEach((pos)=>{
+            margin[pos] = Math.max(chartArea[pos], maxPadding[pos]);
+        });
+        return margin;
+    }
+    return horizontal ? marginForPositions([
+        'left',
+        'right'
+    ]) : marginForPositions([
+        'top',
+        'bottom'
+    ]);
+}
+function fitBoxes(boxes, chartArea, params, stacks) {
+    const refitBoxes = [];
+    let i, ilen, layout, box, refit, changed;
+    for(i = 0, ilen = boxes.length, refit = 0; i < ilen; ++i){
+        layout = boxes[i];
+        box = layout.box;
+        box.update(layout.width || chartArea.w, layout.height || chartArea.h, getMargins(layout.horizontal, chartArea));
+        const { same , other  } = updateDims(chartArea, params, layout, stacks);
+        refit |= same && refitBoxes.length;
+        changed = changed || other;
+        if (!box.fullSize) {
+            refitBoxes.push(layout);
+        }
+    }
+    return refit && fitBoxes(refitBoxes, chartArea, params, stacks) || changed;
+}
+function setBoxDims(box, left, top, width, height) {
+    box.top = top;
+    box.left = left;
+    box.right = left + width;
+    box.bottom = top + height;
+    box.width = width;
+    box.height = height;
+}
+function placeBoxes(boxes, chartArea, params, stacks) {
+    const userPadding = params.padding;
+    let { x , y  } = chartArea;
+    for (const layout of boxes){
+        const box = layout.box;
+        const stack = stacks[layout.stack] || {
+            count: 1,
+            placed: 0,
+            weight: 1
+        };
+        const weight = layout.stackWeight / stack.weight || 1;
+        if (layout.horizontal) {
+            const width = chartArea.w * weight;
+            const height = stack.size || box.height;
+            if (defined(stack.start)) {
+                y = stack.start;
+            }
+            if (box.fullSize) {
+                setBoxDims(box, userPadding.left, y, params.outerWidth - userPadding.right - userPadding.left, height);
+            } else {
+                setBoxDims(box, chartArea.left + stack.placed, y, width, height);
+            }
+            stack.start = y;
+            stack.placed += width;
+            y = box.bottom;
+        } else {
+            const height = chartArea.h * weight;
+            const width = stack.size || box.width;
+            if (defined(stack.start)) {
+                x = stack.start;
+            }
+            if (box.fullSize) {
+                setBoxDims(box, x, userPadding.top, width, params.outerHeight - userPadding.bottom - userPadding.top);
+            } else {
+                setBoxDims(box, x, chartArea.top + stack.placed, width, height);
+            }
+            stack.start = x;
+            stack.placed += height;
+            x = box.right;
+        }
+    }
+    chartArea.x = x;
+    chartArea.y = y;
+}
+var layouts = {
+ addBox (chart, item) {
+        if (!chart.boxes) {
+            chart.boxes = [];
+        }
+        item.fullSize = item.fullSize || false;
+        item.position = item.position || 'top';
+        item.weight = item.weight || 0;
+        item._layers = item._layers || function() {
+            return [
+                {
+                    z: 0,
+                    draw (chartArea) {
+                        item.draw(chartArea);
+                    }
+                }
+            ];
+        };
+        chart.boxes.push(item);
+    },
+ removeBox (chart, layoutItem) {
+        const index = chart.boxes ? chart.boxes.indexOf(layoutItem) : -1;
+        if (index !== -1) {
+            chart.boxes.splice(index, 1);
+        }
+    },
+ configure (chart, item, options) {
+        item.fullSize = options.fullSize;
+        item.position = options.position;
+        item.weight = options.weight;
+    },
+ update (chart, width, height, minPadding) {
+        if (!chart) {
+            return;
+        }
+        const padding = toPadding(chart.options.layout.padding);
+        const availableWidth = Math.max(width - padding.width, 0);
+        const availableHeight = Math.max(height - padding.height, 0);
+        const boxes = buildLayoutBoxes(chart.boxes);
+        const verticalBoxes = boxes.vertical;
+        const horizontalBoxes = boxes.horizontal;
+        each(chart.boxes, (box)=>{
+            if (typeof box.beforeLayout === 'function') {
+                box.beforeLayout();
+            }
+        });
+        const visibleVerticalBoxCount = verticalBoxes.reduce((total, wrap)=>wrap.box.options && wrap.box.options.display === false ? total : total + 1, 0) || 1;
+        const params = Object.freeze({
+            outerWidth: width,
+            outerHeight: height,
+            padding,
+            availableWidth,
+            availableHeight,
+            vBoxMaxWidth: availableWidth / 2 / visibleVerticalBoxCount,
+            hBoxMaxHeight: availableHeight / 2
+        });
+        const maxPadding = Object.assign({}, padding);
+        updateMaxPadding(maxPadding, toPadding(minPadding));
+        const chartArea = Object.assign({
+            maxPadding,
+            w: availableWidth,
+            h: availableHeight,
+            x: padding.left,
+            y: padding.top
+        }, padding);
+        const stacks = setLayoutDims(verticalBoxes.concat(horizontalBoxes), params);
+        fitBoxes(boxes.fullSize, chartArea, params, stacks);
+        fitBoxes(verticalBoxes, chartArea, params, stacks);
+        if (fitBoxes(horizontalBoxes, chartArea, params, stacks)) {
+            fitBoxes(verticalBoxes, chartArea, params, stacks);
+        }
+        handleMaxPadding(chartArea);
+        placeBoxes(boxes.leftAndTop, chartArea, params, stacks);
+        chartArea.x += chartArea.w;
+        chartArea.y += chartArea.h;
+        placeBoxes(boxes.rightAndBottom, chartArea, params, stacks);
+        chart.chartArea = {
+            left: chartArea.left,
+            top: chartArea.top,
+            right: chartArea.left + chartArea.w,
+            bottom: chartArea.top + chartArea.h,
+            height: chartArea.h,
+            width: chartArea.w
+        };
+        each(boxes.chartArea, (layout)=>{
+            const box = layout.box;
+            Object.assign(box, chart.chartArea);
+            box.update(chartArea.w, chartArea.h, {
+                left: 0,
+                top: 0,
+                right: 0,
+                bottom: 0
+            });
+        });
+    }
+};
+
+class BasePlatform {
+ acquireContext(canvas, aspectRatio) {}
+ releaseContext(context) {
+        return false;
+    }
+ addEventListener(chart, type, listener) {}
+ removeEventListener(chart, type, listener) {}
+ getDevicePixelRatio() {
+        return 1;
+    }
+ getMaximumSize(element, width, height, aspectRatio) {
+        width = Math.max(0, width || element.width);
+        height = height || element.height;
+        return {
+            width,
+            height: Math.max(0, aspectRatio ? Math.floor(width / aspectRatio) : height)
+        };
+    }
+ isAttached(canvas) {
+        return true;
+    }
+ updateConfig(config) {
+    }
+}
+
+class BasicPlatform extends BasePlatform {
+    acquireContext(item) {
+        return item && item.getContext && item.getContext('2d') || null;
+    }
+    updateConfig(config) {
+        config.options.animation = false;
+    }
+}
+
+const EXPANDO_KEY = '$chartjs';
+ const EVENT_TYPES = {
+    touchstart: 'mousedown',
+    touchmove: 'mousemove',
+    touchend: 'mouseup',
+    pointerenter: 'mouseenter',
+    pointerdown: 'mousedown',
+    pointermove: 'mousemove',
+    pointerup: 'mouseup',
+    pointerleave: 'mouseout',
+    pointerout: 'mouseout'
+};
+const isNullOrEmpty = (value)=>value === null || value === '';
+ function initCanvas(canvas, aspectRatio) {
+    const style = canvas.style;
+    const renderHeight = canvas.getAttribute('height');
+    const renderWidth = canvas.getAttribute('width');
+    canvas[EXPANDO_KEY] = {
+        initial: {
+            height: renderHeight,
+            width: renderWidth,
+            style: {
+                display: style.display,
+                height: style.height,
+                width: style.width
+            }
+        }
+    };
+    style.display = style.display || 'block';
+    style.boxSizing = style.boxSizing || 'border-box';
+    if (isNullOrEmpty(renderWidth)) {
+        const displayWidth = readUsedSize(canvas, 'width');
+        if (displayWidth !== undefined) {
+            canvas.width = displayWidth;
+        }
+    }
+    if (isNullOrEmpty(renderHeight)) {
+        if (canvas.style.height === '') {
+            canvas.height = canvas.width / (aspectRatio || 2);
+        } else {
+            const displayHeight = readUsedSize(canvas, 'height');
+            if (displayHeight !== undefined) {
+                canvas.height = displayHeight;
+            }
+        }
+    }
+    return canvas;
+}
+const eventListenerOptions = supportsEventListenerOptions ? {
+    passive: true
+} : false;
+function addListener(node, type, listener) {
+    if (node) {
+        node.addEventListener(type, listener, eventListenerOptions);
+    }
+}
+function removeListener(chart, type, listener) {
+    if (chart && chart.canvas) {
+        chart.canvas.removeEventListener(type, listener, eventListenerOptions);
+    }
+}
+function fromNativeEvent(event, chart) {
+    const type = EVENT_TYPES[event.type] || event.type;
+    const { x , y  } = getRelativePosition(event, chart);
+    return {
+        type,
+        chart,
+        native: event,
+        x: x !== undefined ? x : null,
+        y: y !== undefined ? y : null
+    };
+}
+function nodeListContains(nodeList, canvas) {
+    for (const node of nodeList){
+        if (node === canvas || node.contains(canvas)) {
+            return true;
+        }
+    }
+}
+function createAttachObserver(chart, type, listener) {
+    const canvas = chart.canvas;
+    const observer = new MutationObserver((entries)=>{
+        let trigger = false;
+        for (const entry of entries){
+            trigger = trigger || nodeListContains(entry.addedNodes, canvas);
+            trigger = trigger && !nodeListContains(entry.removedNodes, canvas);
+        }
+        if (trigger) {
+            listener();
+        }
+    });
+    observer.observe(document, {
+        childList: true,
+        subtree: true
+    });
+    return observer;
+}
+function createDetachObserver(chart, type, listener) {
+    const canvas = chart.canvas;
+    const observer = new MutationObserver((entries)=>{
+        let trigger = false;
+        for (const entry of entries){
+            trigger = trigger || nodeListContains(entry.removedNodes, canvas);
+            trigger = trigger && !nodeListContains(entry.addedNodes, canvas);
+        }
+        if (trigger) {
+            listener();
+        }
+    });
+    observer.observe(document, {
+        childList: true,
+        subtree: true
+    });
+    return observer;
+}
+const drpListeningCharts = new Map();
+let oldDevicePixelRatio = 0;
+function onWindowResize() {
+    const dpr = window.devicePixelRatio;
+    if (dpr === oldDevicePixelRatio) {
+        return;
+    }
+    oldDevicePixelRatio = dpr;
+    drpListeningCharts.forEach((resize, chart)=>{
+        if (chart.currentDevicePixelRatio !== dpr) {
+            resize();
+        }
+    });
+}
+function listenDevicePixelRatioChanges(chart, resize) {
+    if (!drpListeningCharts.size) {
+        window.addEventListener('resize', onWindowResize);
+    }
+    drpListeningCharts.set(chart, resize);
+}
+function unlistenDevicePixelRatioChanges(chart) {
+    drpListeningCharts.delete(chart);
+    if (!drpListeningCharts.size) {
+        window.removeEventListener('resize', onWindowResize);
+    }
+}
+function createResizeObserver(chart, type, listener) {
+    const canvas = chart.canvas;
+    const container = canvas && _getParentNode(canvas);
+    if (!container) {
+        return;
+    }
+    const resize = throttled((width, height)=>{
+        const w = container.clientWidth;
+        listener(width, height);
+        if (w < container.clientWidth) {
+            listener();
+        }
+    }, window);
+    const observer = new ResizeObserver((entries)=>{
+        const entry = entries[0];
+        const width = entry.contentRect.width;
+        const height = entry.contentRect.height;
+        if (width === 0 && height === 0) {
+            return;
+        }
+        resize(width, height);
+    });
+    observer.observe(container);
+    listenDevicePixelRatioChanges(chart, resize);
+    return observer;
+}
+function releaseObserver(chart, type, observer) {
+    if (observer) {
+        observer.disconnect();
+    }
+    if (type === 'resize') {
+        unlistenDevicePixelRatioChanges(chart);
+    }
+}
+function createProxyAndListen(chart, type, listener) {
+    const canvas = chart.canvas;
+    const proxy = throttled((event)=>{
+        if (chart.ctx !== null) {
+            listener(fromNativeEvent(event, chart));
+        }
+    }, chart);
+    addListener(canvas, type, proxy);
+    return proxy;
+}
+ class DomPlatform extends BasePlatform {
+ acquireContext(canvas, aspectRatio) {
+        const context = canvas && canvas.getContext && canvas.getContext('2d');
+        if (context && context.canvas === canvas) {
+            initCanvas(canvas, aspectRatio);
+            return context;
+        }
+        return null;
+    }
+ releaseContext(context) {
+        const canvas = context.canvas;
+        if (!canvas[EXPANDO_KEY]) {
+            return false;
+        }
+        const initial = canvas[EXPANDO_KEY].initial;
+        [
+            'height',
+            'width'
+        ].forEach((prop)=>{
+            const value = initial[prop];
+            if (isNullOrUndef(value)) {
+                canvas.removeAttribute(prop);
+            } else {
+                canvas.setAttribute(prop, value);
+            }
+        });
+        const style = initial.style || {};
+        Object.keys(style).forEach((key)=>{
+            canvas.style[key] = style[key];
+        });
+        canvas.width = canvas.width;
+        delete canvas[EXPANDO_KEY];
+        return true;
+    }
+ addEventListener(chart, type, listener) {
+        this.removeEventListener(chart, type);
+        const proxies = chart.$proxies || (chart.$proxies = {});
+        const handlers = {
+            attach: createAttachObserver,
+            detach: createDetachObserver,
+            resize: createResizeObserver
+        };
+        const handler = handlers[type] || createProxyAndListen;
+        proxies[type] = handler(chart, type, listener);
+    }
+ removeEventListener(chart, type) {
+        const proxies = chart.$proxies || (chart.$proxies = {});
+        const proxy = proxies[type];
+        if (!proxy) {
+            return;
+        }
+        const handlers = {
+            attach: releaseObserver,
+            detach: releaseObserver,
+            resize: releaseObserver
+        };
+        const handler = handlers[type] || removeListener;
+        handler(chart, type, proxy);
+        proxies[type] = undefined;
+    }
+    getDevicePixelRatio() {
+        return window.devicePixelRatio;
+    }
+ getMaximumSize(canvas, width, height, aspectRatio) {
+        return getMaximumSize(canvas, width, height, aspectRatio);
+    }
+ isAttached(canvas) {
+        const container = canvas && _getParentNode(canvas);
+        return !!(container && container.isConnected);
+    }
+}
+
+function _detectPlatform(canvas) {
+    if (!_isDomSupported() || typeof OffscreenCanvas !== 'undefined' && canvas instanceof OffscreenCanvas) {
+        return BasicPlatform;
+    }
+    return DomPlatform;
+}
+
+class Element {
+    static defaults = {};
+    static defaultRoutes = undefined;
+    x;
+    y;
+    active = false;
+    options;
+    $animations;
+    tooltipPosition(useFinalPosition) {
+        const { x , y  } = this.getProps([
+            'x',
+            'y'
+        ], useFinalPosition);
+        return {
+            x,
+            y
+        };
+    }
+    hasValue() {
+        return isNumber(this.x) && isNumber(this.y);
+    }
+    getProps(props, final) {
+        const anims = this.$animations;
+        if (!final || !anims) {
+            // let's not create an object, if not needed
+            return this;
+        }
+        const ret = {};
+        props.forEach((prop)=>{
+            ret[prop] = anims[prop] && anims[prop].active() ? anims[prop]._to : this[prop];
+        });
+        return ret;
+    }
+}
+
+function autoSkip(scale, ticks) {
+    const tickOpts = scale.options.ticks;
+    const determinedMaxTicks = determineMaxTicks(scale);
+    const ticksLimit = Math.min(tickOpts.maxTicksLimit || determinedMaxTicks, determinedMaxTicks);
+    const majorIndices = tickOpts.major.enabled ? getMajorIndices(ticks) : [];
+    const numMajorIndices = majorIndices.length;
+    const first = majorIndices[0];
+    const last = majorIndices[numMajorIndices - 1];
+    const newTicks = [];
+    if (numMajorIndices > ticksLimit) {
+        skipMajors(ticks, newTicks, majorIndices, numMajorIndices / ticksLimit);
+        return newTicks;
+    }
+    const spacing = calculateSpacing(majorIndices, ticks, ticksLimit);
+    if (numMajorIndices > 0) {
+        let i, ilen;
+        const avgMajorSpacing = numMajorIndices > 1 ? Math.round((last - first) / (numMajorIndices - 1)) : null;
+        skip(ticks, newTicks, spacing, isNullOrUndef(avgMajorSpacing) ? 0 : first - avgMajorSpacing, first);
+        for(i = 0, ilen = numMajorIndices - 1; i < ilen; i++){
+            skip(ticks, newTicks, spacing, majorIndices[i], majorIndices[i + 1]);
+        }
+        skip(ticks, newTicks, spacing, last, isNullOrUndef(avgMajorSpacing) ? ticks.length : last + avgMajorSpacing);
+        return newTicks;
+    }
+    skip(ticks, newTicks, spacing);
+    return newTicks;
+}
+function determineMaxTicks(scale) {
+    const offset = scale.options.offset;
+    const tickLength = scale._tickSize();
+    const maxScale = scale._length / tickLength + (offset ? 0 : 1);
+    const maxChart = scale._maxLength / tickLength;
+    return Math.floor(Math.min(maxScale, maxChart));
+}
+ function calculateSpacing(majorIndices, ticks, ticksLimit) {
+    const evenMajorSpacing = getEvenSpacing(majorIndices);
+    const spacing = ticks.length / ticksLimit;
+    if (!evenMajorSpacing) {
+        return Math.max(spacing, 1);
+    }
+    const factors = _factorize(evenMajorSpacing);
+    for(let i = 0, ilen = factors.length - 1; i < ilen; i++){
+        const factor = factors[i];
+        if (factor > spacing) {
+            return factor;
+        }
+    }
+    return Math.max(spacing, 1);
+}
+ function getMajorIndices(ticks) {
+    const result = [];
+    let i, ilen;
+    for(i = 0, ilen = ticks.length; i < ilen; i++){
+        if (ticks[i].major) {
+            result.push(i);
+        }
+    }
+    return result;
+}
+ function skipMajors(ticks, newTicks, majorIndices, spacing) {
+    let count = 0;
+    let next = majorIndices[0];
+    let i;
+    spacing = Math.ceil(spacing);
+    for(i = 0; i < ticks.length; i++){
+        if (i === next) {
+            newTicks.push(ticks[i]);
+            count++;
+            next = majorIndices[count * spacing];
+        }
+    }
+}
+ function skip(ticks, newTicks, spacing, majorStart, majorEnd) {
+    const start = valueOrDefault(majorStart, 0);
+    const end = Math.min(valueOrDefault(majorEnd, ticks.length), ticks.length);
+    let count = 0;
+    let length, i, next;
+    spacing = Math.ceil(spacing);
+    if (majorEnd) {
+        length = majorEnd - majorStart;
+        spacing = length / Math.floor(length / spacing);
+    }
+    next = start;
+    while(next < 0){
+        count++;
+        next = Math.round(start + count * spacing);
+    }
+    for(i = Math.max(start, 0); i < end; i++){
+        if (i === next) {
+            newTicks.push(ticks[i]);
+            count++;
+            next = Math.round(start + count * spacing);
+        }
+    }
+}
+ function getEvenSpacing(arr) {
+    const len = arr.length;
+    let i, diff;
+    if (len < 2) {
+        return false;
+    }
+    for(diff = arr[0], i = 1; i < len; ++i){
+        if (arr[i] - arr[i - 1] !== diff) {
+            return false;
+        }
+    }
+    return diff;
+}
+
+const reverseAlign = (align)=>align === 'left' ? 'right' : align === 'right' ? 'left' : align;
+const offsetFromEdge = (scale, edge, offset)=>edge === 'top' || edge === 'left' ? scale[edge] + offset : scale[edge] - offset;
+const getTicksLimit = (ticksLength, maxTicksLimit)=>Math.min(maxTicksLimit || ticksLength, ticksLength);
+ function sample(arr, numItems) {
+    const result = [];
+    const increment = arr.length / numItems;
+    const len = arr.length;
+    let i = 0;
+    for(; i < len; i += increment){
+        result.push(arr[Math.floor(i)]);
+    }
+    return result;
+}
+ function getPixelForGridLine(scale, index, offsetGridLines) {
+    const length = scale.ticks.length;
+    const validIndex = Math.min(index, length - 1);
+    const start = scale._startPixel;
+    const end = scale._endPixel;
+    const epsilon = 1e-6;
+    let lineValue = scale.getPixelForTick(validIndex);
+    let offset;
+    if (offsetGridLines) {
+        if (length === 1) {
+            offset = Math.max(lineValue - start, end - lineValue);
+        } else if (index === 0) {
+            offset = (scale.getPixelForTick(1) - lineValue) / 2;
+        } else {
+            offset = (lineValue - scale.getPixelForTick(validIndex - 1)) / 2;
+        }
+        lineValue += validIndex < index ? offset : -offset;
+        if (lineValue < start - epsilon || lineValue > end + epsilon) {
+            return;
+        }
+    }
+    return lineValue;
+}
+ function garbageCollect(caches, length) {
+    each(caches, (cache)=>{
+        const gc = cache.gc;
+        const gcLen = gc.length / 2;
+        let i;
+        if (gcLen > length) {
+            for(i = 0; i < gcLen; ++i){
+                delete cache.data[gc[i]];
+            }
+            gc.splice(0, gcLen);
+        }
+    });
+}
+ function getTickMarkLength(options) {
+    return options.drawTicks ? options.tickLength : 0;
+}
+ function getTitleHeight(options, fallback) {
+    if (!options.display) {
+        return 0;
+    }
+    const font = toFont(options.font, fallback);
+    const padding = toPadding(options.padding);
+    const lines = isArray(options.text) ? options.text.length : 1;
+    return lines * font.lineHeight + padding.height;
+}
+function createScaleContext(parent, scale) {
+    return createContext(parent, {
+        scale,
+        type: 'scale'
+    });
+}
+function createTickContext(parent, index, tick) {
+    return createContext(parent, {
+        tick,
+        index,
+        type: 'tick'
+    });
+}
+function titleAlign(align, position, reverse) {
+     let ret = _toLeftRightCenter(align);
+    if (reverse && position !== 'right' || !reverse && position === 'right') {
+        ret = reverseAlign(ret);
+    }
+    return ret;
+}
+function titleArgs(scale, offset, position, align) {
+    const { top , left , bottom , right , chart  } = scale;
+    const { chartArea , scales  } = chart;
+    let rotation = 0;
+    let maxWidth, titleX, titleY;
+    const height = bottom - top;
+    const width = right - left;
+    if (scale.isHorizontal()) {
+        titleX = _alignStartEnd(align, left, right);
+        if (isObject(position)) {
+            const positionAxisID = Object.keys(position)[0];
+            const value = position[positionAxisID];
+            titleY = scales[positionAxisID].getPixelForValue(value) + height - offset;
+        } else if (position === 'center') {
+            titleY = (chartArea.bottom + chartArea.top) / 2 + height - offset;
+        } else {
+            titleY = offsetFromEdge(scale, position, offset);
+        }
+        maxWidth = right - left;
+    } else {
+        if (isObject(position)) {
+            const positionAxisID = Object.keys(position)[0];
+            const value = position[positionAxisID];
+            titleX = scales[positionAxisID].getPixelForValue(value) - width + offset;
+        } else if (position === 'center') {
+            titleX = (chartArea.left + chartArea.right) / 2 - width + offset;
+        } else {
+            titleX = offsetFromEdge(scale, position, offset);
+        }
+        titleY = _alignStartEnd(align, bottom, top);
+        rotation = position === 'left' ? -HALF_PI : HALF_PI;
+    }
+    return {
+        titleX,
+        titleY,
+        maxWidth,
+        rotation
+    };
+}
+class Scale extends Element {
+    constructor(cfg){
+        super();
+         this.id = cfg.id;
+         this.type = cfg.type;
+         this.options = undefined;
+         this.ctx = cfg.ctx;
+         this.chart = cfg.chart;
+         this.top = undefined;
+         this.bottom = undefined;
+         this.left = undefined;
+         this.right = undefined;
+         this.width = undefined;
+         this.height = undefined;
+        this._margins = {
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0
+        };
+         this.maxWidth = undefined;
+         this.maxHeight = undefined;
+         this.paddingTop = undefined;
+         this.paddingBottom = undefined;
+         this.paddingLeft = undefined;
+         this.paddingRight = undefined;
+         this.axis = undefined;
+         this.labelRotation = undefined;
+        this.min = undefined;
+        this.max = undefined;
+        this._range = undefined;
+         this.ticks = [];
+         this._gridLineItems = null;
+         this._labelItems = null;
+         this._labelSizes = null;
+        this._length = 0;
+        this._maxLength = 0;
+        this._longestTextCache = {};
+         this._startPixel = undefined;
+         this._endPixel = undefined;
+        this._reversePixels = false;
+        this._userMax = undefined;
+        this._userMin = undefined;
+        this._suggestedMax = undefined;
+        this._suggestedMin = undefined;
+        this._ticksLength = 0;
+        this._borderValue = 0;
+        this._cache = {};
+        this._dataLimitsCached = false;
+        this.$context = undefined;
+    }
+ init(options) {
+        this.options = options.setContext(this.getContext());
+        this.axis = options.axis;
+        this._userMin = this.parse(options.min);
+        this._userMax = this.parse(options.max);
+        this._suggestedMin = this.parse(options.suggestedMin);
+        this._suggestedMax = this.parse(options.suggestedMax);
+    }
+ parse(raw, index) {
+        return raw;
+    }
+ getUserBounds() {
+        let { _userMin , _userMax , _suggestedMin , _suggestedMax  } = this;
+        _userMin = finiteOrDefault(_userMin, Number.POSITIVE_INFINITY);
+        _userMax = finiteOrDefault(_userMax, Number.NEGATIVE_INFINITY);
+        _suggestedMin = finiteOrDefault(_suggestedMin, Number.POSITIVE_INFINITY);
+        _suggestedMax = finiteOrDefault(_suggestedMax, Number.NEGATIVE_INFINITY);
+        return {
+            min: finiteOrDefault(_userMin, _suggestedMin),
+            max: finiteOrDefault(_userMax, _suggestedMax),
+            minDefined: isNumberFinite(_userMin),
+            maxDefined: isNumberFinite(_userMax)
+        };
+    }
+ getMinMax(canStack) {
+        let { min , max , minDefined , maxDefined  } = this.getUserBounds();
+        let range;
+        if (minDefined && maxDefined) {
+            return {
+                min,
+                max
+            };
+        }
+        const metas = this.getMatchingVisibleMetas();
+        for(let i = 0, ilen = metas.length; i < ilen; ++i){
+            range = metas[i].controller.getMinMax(this, canStack);
+            if (!minDefined) {
+                min = Math.min(min, range.min);
+            }
+            if (!maxDefined) {
+                max = Math.max(max, range.max);
+            }
+        }
+        min = maxDefined && min > max ? max : min;
+        max = minDefined && min > max ? min : max;
+        return {
+            min: finiteOrDefault(min, finiteOrDefault(max, min)),
+            max: finiteOrDefault(max, finiteOrDefault(min, max))
+        };
+    }
+ getPadding() {
+        return {
+            left: this.paddingLeft || 0,
+            top: this.paddingTop || 0,
+            right: this.paddingRight || 0,
+            bottom: this.paddingBottom || 0
+        };
+    }
+ getTicks() {
+        return this.ticks;
+    }
+ getLabels() {
+        const data = this.chart.data;
+        return this.options.labels || (this.isHorizontal() ? data.xLabels : data.yLabels) || data.labels || [];
+    }
+ getLabelItems(chartArea = this.chart.chartArea) {
+        const items = this._labelItems || (this._labelItems = this._computeLabelItems(chartArea));
+        return items;
+    }
+    beforeLayout() {
+        this._cache = {};
+        this._dataLimitsCached = false;
+    }
+    beforeUpdate() {
+        callback(this.options.beforeUpdate, [
+            this
+        ]);
+    }
+ update(maxWidth, maxHeight, margins) {
+        const { beginAtZero , grace , ticks: tickOpts  } = this.options;
+        const sampleSize = tickOpts.sampleSize;
+        this.beforeUpdate();
+        this.maxWidth = maxWidth;
+        this.maxHeight = maxHeight;
+        this._margins = margins = Object.assign({
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0
+        }, margins);
+        this.ticks = null;
+        this._labelSizes = null;
+        this._gridLineItems = null;
+        this._labelItems = null;
+        this.beforeSetDimensions();
+        this.setDimensions();
+        this.afterSetDimensions();
+        this._maxLength = this.isHorizontal() ? this.width + margins.left + margins.right : this.height + margins.top + margins.bottom;
+        if (!this._dataLimitsCached) {
+            this.beforeDataLimits();
+            this.determineDataLimits();
+            this.afterDataLimits();
+            this._range = _addGrace(this, grace, beginAtZero);
+            this._dataLimitsCached = true;
+        }
+        this.beforeBuildTicks();
+        this.ticks = this.buildTicks() || [];
+        this.afterBuildTicks();
+        const samplingEnabled = sampleSize < this.ticks.length;
+        this._convertTicksToLabels(samplingEnabled ? sample(this.ticks, sampleSize) : this.ticks);
+        this.configure();
+        this.beforeCalculateLabelRotation();
+        this.calculateLabelRotation();
+        this.afterCalculateLabelRotation();
+        if (tickOpts.display && (tickOpts.autoSkip || tickOpts.source === 'auto')) {
+            this.ticks = autoSkip(this, this.ticks);
+            this._labelSizes = null;
+            this.afterAutoSkip();
+        }
+        if (samplingEnabled) {
+            this._convertTicksToLabels(this.ticks);
+        }
+        this.beforeFit();
+        this.fit();
+        this.afterFit();
+        this.afterUpdate();
+    }
+ configure() {
+        let reversePixels = this.options.reverse;
+        let startPixel, endPixel;
+        if (this.isHorizontal()) {
+            startPixel = this.left;
+            endPixel = this.right;
+        } else {
+            startPixel = this.top;
+            endPixel = this.bottom;
+            reversePixels = !reversePixels;
+        }
+        this._startPixel = startPixel;
+        this._endPixel = endPixel;
+        this._reversePixels = reversePixels;
+        this._length = endPixel - startPixel;
+        this._alignToPixels = this.options.alignToPixels;
+    }
+    afterUpdate() {
+        callback(this.options.afterUpdate, [
+            this
+        ]);
+    }
+    beforeSetDimensions() {
+        callback(this.options.beforeSetDimensions, [
+            this
+        ]);
+    }
+    setDimensions() {
+        if (this.isHorizontal()) {
+            this.width = this.maxWidth;
+            this.left = 0;
+            this.right = this.width;
+        } else {
+            this.height = this.maxHeight;
+            this.top = 0;
+            this.bottom = this.height;
+        }
+        this.paddingLeft = 0;
+        this.paddingTop = 0;
+        this.paddingRight = 0;
+        this.paddingBottom = 0;
+    }
+    afterSetDimensions() {
+        callback(this.options.afterSetDimensions, [
+            this
+        ]);
+    }
+    _callHooks(name) {
+        this.chart.notifyPlugins(name, this.getContext());
+        callback(this.options[name], [
+            this
+        ]);
+    }
+    beforeDataLimits() {
+        this._callHooks('beforeDataLimits');
+    }
+    determineDataLimits() {}
+    afterDataLimits() {
+        this._callHooks('afterDataLimits');
+    }
+    beforeBuildTicks() {
+        this._callHooks('beforeBuildTicks');
+    }
+ buildTicks() {
+        return [];
+    }
+    afterBuildTicks() {
+        this._callHooks('afterBuildTicks');
+    }
+    beforeTickToLabelConversion() {
+        callback(this.options.beforeTickToLabelConversion, [
+            this
+        ]);
+    }
+ generateTickLabels(ticks) {
+        const tickOpts = this.options.ticks;
+        let i, ilen, tick;
+        for(i = 0, ilen = ticks.length; i < ilen; i++){
+            tick = ticks[i];
+            tick.label = callback(tickOpts.callback, [
+                tick.value,
+                i,
+                ticks
+            ], this);
+        }
+    }
+    afterTickToLabelConversion() {
+        callback(this.options.afterTickToLabelConversion, [
+            this
+        ]);
+    }
+    beforeCalculateLabelRotation() {
+        callback(this.options.beforeCalculateLabelRotation, [
+            this
+        ]);
+    }
+    calculateLabelRotation() {
+        const options = this.options;
+        const tickOpts = options.ticks;
+        const numTicks = getTicksLimit(this.ticks.length, options.ticks.maxTicksLimit);
+        const minRotation = tickOpts.minRotation || 0;
+        const maxRotation = tickOpts.maxRotation;
+        let labelRotation = minRotation;
+        let tickWidth, maxHeight, maxLabelDiagonal;
+        if (!this._isVisible() || !tickOpts.display || minRotation >= maxRotation || numTicks <= 1 || !this.isHorizontal()) {
+            this.labelRotation = minRotation;
+            return;
+        }
+        const labelSizes = this._getLabelSizes();
+        const maxLabelWidth = labelSizes.widest.width;
+        const maxLabelHeight = labelSizes.highest.height;
+        const maxWidth = _limitValue(this.chart.width - maxLabelWidth, 0, this.maxWidth);
+        tickWidth = options.offset ? this.maxWidth / numTicks : maxWidth / (numTicks - 1);
+        if (maxLabelWidth + 6 > tickWidth) {
+            tickWidth = maxWidth / (numTicks - (options.offset ? 0.5 : 1));
+            maxHeight = this.maxHeight - getTickMarkLength(options.grid) - tickOpts.padding - getTitleHeight(options.title, this.chart.options.font);
+            maxLabelDiagonal = Math.sqrt(maxLabelWidth * maxLabelWidth + maxLabelHeight * maxLabelHeight);
+            labelRotation = toDegrees(Math.min(Math.asin(_limitValue((labelSizes.highest.height + 6) / tickWidth, -1, 1)), Math.asin(_limitValue(maxHeight / maxLabelDiagonal, -1, 1)) - Math.asin(_limitValue(maxLabelHeight / maxLabelDiagonal, -1, 1))));
+            labelRotation = Math.max(minRotation, Math.min(maxRotation, labelRotation));
+        }
+        this.labelRotation = labelRotation;
+    }
+    afterCalculateLabelRotation() {
+        callback(this.options.afterCalculateLabelRotation, [
+            this
+        ]);
+    }
+    afterAutoSkip() {}
+    beforeFit() {
+        callback(this.options.beforeFit, [
+            this
+        ]);
+    }
+    fit() {
+        const minSize = {
+            width: 0,
+            height: 0
+        };
+        const { chart , options: { ticks: tickOpts , title: titleOpts , grid: gridOpts  }  } = this;
+        const display = this._isVisible();
+        const isHorizontal = this.isHorizontal();
+        if (display) {
+            const titleHeight = getTitleHeight(titleOpts, chart.options.font);
+            if (isHorizontal) {
+                minSize.width = this.maxWidth;
+                minSize.height = getTickMarkLength(gridOpts) + titleHeight;
+            } else {
+                minSize.height = this.maxHeight;
+                minSize.width = getTickMarkLength(gridOpts) + titleHeight;
+            }
+            if (tickOpts.display && this.ticks.length) {
+                const { first , last , widest , highest  } = this._getLabelSizes();
+                const tickPadding = tickOpts.padding * 2;
+                const angleRadians = toRadians(this.labelRotation);
+                const cos = Math.cos(angleRadians);
+                const sin = Math.sin(angleRadians);
+                if (isHorizontal) {
+                    const labelHeight = tickOpts.mirror ? 0 : sin * widest.width + cos * highest.height;
+                    minSize.height = Math.min(this.maxHeight, minSize.height + labelHeight + tickPadding);
+                } else {
+                    const labelWidth = tickOpts.mirror ? 0 : cos * widest.width + sin * highest.height;
+                    minSize.width = Math.min(this.maxWidth, minSize.width + labelWidth + tickPadding);
+                }
+                this._calculatePadding(first, last, sin, cos);
+            }
+        }
+        this._handleMargins();
+        if (isHorizontal) {
+            this.width = this._length = chart.width - this._margins.left - this._margins.right;
+            this.height = minSize.height;
+        } else {
+            this.width = minSize.width;
+            this.height = this._length = chart.height - this._margins.top - this._margins.bottom;
+        }
+    }
+    _calculatePadding(first, last, sin, cos) {
+        const { ticks: { align , padding  } , position  } = this.options;
+        const isRotated = this.labelRotation !== 0;
+        const labelsBelowTicks = position !== 'top' && this.axis === 'x';
+        if (this.isHorizontal()) {
+            const offsetLeft = this.getPixelForTick(0) - this.left;
+            const offsetRight = this.right - this.getPixelForTick(this.ticks.length - 1);
+            let paddingLeft = 0;
+            let paddingRight = 0;
+            if (isRotated) {
+                if (labelsBelowTicks) {
+                    paddingLeft = cos * first.width;
+                    paddingRight = sin * last.height;
+                } else {
+                    paddingLeft = sin * first.height;
+                    paddingRight = cos * last.width;
+                }
+            } else if (align === 'start') {
+                paddingRight = last.width;
+            } else if (align === 'end') {
+                paddingLeft = first.width;
+            } else if (align !== 'inner') {
+                paddingLeft = first.width / 2;
+                paddingRight = last.width / 2;
+            }
+            this.paddingLeft = Math.max((paddingLeft - offsetLeft + padding) * this.width / (this.width - offsetLeft), 0);
+            this.paddingRight = Math.max((paddingRight - offsetRight + padding) * this.width / (this.width - offsetRight), 0);
+        } else {
+            let paddingTop = last.height / 2;
+            let paddingBottom = first.height / 2;
+            if (align === 'start') {
+                paddingTop = 0;
+                paddingBottom = first.height;
+            } else if (align === 'end') {
+                paddingTop = last.height;
+                paddingBottom = 0;
+            }
+            this.paddingTop = paddingTop + padding;
+            this.paddingBottom = paddingBottom + padding;
+        }
+    }
+ _handleMargins() {
+        if (this._margins) {
+            this._margins.left = Math.max(this.paddingLeft, this._margins.left);
+            this._margins.top = Math.max(this.paddingTop, this._margins.top);
+            this._margins.right = Math.max(this.paddingRight, this._margins.right);
+            this._margins.bottom = Math.max(this.paddingBottom, this._margins.bottom);
+        }
+    }
+    afterFit() {
+        callback(this.options.afterFit, [
+            this
+        ]);
+    }
+ isHorizontal() {
+        const { axis , position  } = this.options;
+        return position === 'top' || position === 'bottom' || axis === 'x';
+    }
+ isFullSize() {
+        return this.options.fullSize;
+    }
+ _convertTicksToLabels(ticks) {
+        this.beforeTickToLabelConversion();
+        this.generateTickLabels(ticks);
+        let i, ilen;
+        for(i = 0, ilen = ticks.length; i < ilen; i++){
+            if (isNullOrUndef(ticks[i].label)) {
+                ticks.splice(i, 1);
+                ilen--;
+                i--;
+            }
+        }
+        this.afterTickToLabelConversion();
+    }
+ _getLabelSizes() {
+        let labelSizes = this._labelSizes;
+        if (!labelSizes) {
+            const sampleSize = this.options.ticks.sampleSize;
+            let ticks = this.ticks;
+            if (sampleSize < ticks.length) {
+                ticks = sample(ticks, sampleSize);
+            }
+            this._labelSizes = labelSizes = this._computeLabelSizes(ticks, ticks.length, this.options.ticks.maxTicksLimit);
+        }
+        return labelSizes;
+    }
+ _computeLabelSizes(ticks, length, maxTicksLimit) {
+        const { ctx , _longestTextCache: caches  } = this;
+        const widths = [];
+        const heights = [];
+        const increment = Math.floor(length / getTicksLimit(length, maxTicksLimit));
+        let widestLabelSize = 0;
+        let highestLabelSize = 0;
+        let i, j, jlen, label, tickFont, fontString, cache, lineHeight, width, height, nestedLabel;
+        for(i = 0; i < length; i += increment){
+            label = ticks[i].label;
+            tickFont = this._resolveTickFontOptions(i);
+            ctx.font = fontString = tickFont.string;
+            cache = caches[fontString] = caches[fontString] || {
+                data: {},
+                gc: []
+            };
+            lineHeight = tickFont.lineHeight;
+            width = height = 0;
+            if (!isNullOrUndef(label) && !isArray(label)) {
+                width = _measureText(ctx, cache.data, cache.gc, width, label);
+                height = lineHeight;
+            } else if (isArray(label)) {
+                for(j = 0, jlen = label.length; j < jlen; ++j){
+                    nestedLabel =  label[j];
+                    if (!isNullOrUndef(nestedLabel) && !isArray(nestedLabel)) {
+                        width = _measureText(ctx, cache.data, cache.gc, width, nestedLabel);
+                        height += lineHeight;
+                    }
+                }
+            }
+            widths.push(width);
+            heights.push(height);
+            widestLabelSize = Math.max(width, widestLabelSize);
+            highestLabelSize = Math.max(height, highestLabelSize);
+        }
+        garbageCollect(caches, length);
+        const widest = widths.indexOf(widestLabelSize);
+        const highest = heights.indexOf(highestLabelSize);
+        const valueAt = (idx)=>({
+                width: widths[idx] || 0,
+                height: heights[idx] || 0
+            });
+        return {
+            first: valueAt(0),
+            last: valueAt(length - 1),
+            widest: valueAt(widest),
+            highest: valueAt(highest),
+            widths,
+            heights
+        };
+    }
+ getLabelForValue(value) {
+        return value;
+    }
+ getPixelForValue(value, index) {
+        return NaN;
+    }
+ getValueForPixel(pixel) {}
+ getPixelForTick(index) {
+        const ticks = this.ticks;
+        if (index < 0 || index > ticks.length - 1) {
+            return null;
+        }
+        return this.getPixelForValue(ticks[index].value);
+    }
+ getPixelForDecimal(decimal) {
+        if (this._reversePixels) {
+            decimal = 1 - decimal;
+        }
+        const pixel = this._startPixel + decimal * this._length;
+        return _int16Range(this._alignToPixels ? _alignPixel(this.chart, pixel, 0) : pixel);
+    }
+ getDecimalForPixel(pixel) {
+        const decimal = (pixel - this._startPixel) / this._length;
+        return this._reversePixels ? 1 - decimal : decimal;
+    }
+ getBasePixel() {
+        return this.getPixelForValue(this.getBaseValue());
+    }
+ getBaseValue() {
+        const { min , max  } = this;
+        return min < 0 && max < 0 ? max : min > 0 && max > 0 ? min : 0;
+    }
+ getContext(index) {
+        const ticks = this.ticks || [];
+        if (index >= 0 && index < ticks.length) {
+            const tick = ticks[index];
+            return tick.$context || (tick.$context = createTickContext(this.getContext(), index, tick));
+        }
+        return this.$context || (this.$context = createScaleContext(this.chart.getContext(), this));
+    }
+ _tickSize() {
+        const optionTicks = this.options.ticks;
+        const rot = toRadians(this.labelRotation);
+        const cos = Math.abs(Math.cos(rot));
+        const sin = Math.abs(Math.sin(rot));
+        const labelSizes = this._getLabelSizes();
+        const padding = optionTicks.autoSkipPadding || 0;
+        const w = labelSizes ? labelSizes.widest.width + padding : 0;
+        const h = labelSizes ? labelSizes.highest.height + padding : 0;
+        return this.isHorizontal() ? h * cos > w * sin ? w / cos : h / sin : h * sin < w * cos ? h / cos : w / sin;
+    }
+ _isVisible() {
+        const display = this.options.display;
+        if (display !== 'auto') {
+            return !!display;
+        }
+        return this.getMatchingVisibleMetas().length > 0;
+    }
+ _computeGridLineItems(chartArea) {
+        const axis = this.axis;
+        const chart = this.chart;
+        const options = this.options;
+        const { grid , position , border  } = options;
+        const offset = grid.offset;
+        const isHorizontal = this.isHorizontal();
+        const ticks = this.ticks;
+        const ticksLength = ticks.length + (offset ? 1 : 0);
+        const tl = getTickMarkLength(grid);
+        const items = [];
+        const borderOpts = border.setContext(this.getContext());
+        const axisWidth = borderOpts.display ? borderOpts.width : 0;
+        const axisHalfWidth = axisWidth / 2;
+        const alignBorderValue = function(pixel) {
+            return _alignPixel(chart, pixel, axisWidth);
+        };
+        let borderValue, i, lineValue, alignedLineValue;
+        let tx1, ty1, tx2, ty2, x1, y1, x2, y2;
+        if (position === 'top') {
+            borderValue = alignBorderValue(this.bottom);
+            ty1 = this.bottom - tl;
+            ty2 = borderValue - axisHalfWidth;
+            y1 = alignBorderValue(chartArea.top) + axisHalfWidth;
+            y2 = chartArea.bottom;
+        } else if (position === 'bottom') {
+            borderValue = alignBorderValue(this.top);
+            y1 = chartArea.top;
+            y2 = alignBorderValue(chartArea.bottom) - axisHalfWidth;
+            ty1 = borderValue + axisHalfWidth;
+            ty2 = this.top + tl;
+        } else if (position === 'left') {
+            borderValue = alignBorderValue(this.right);
+            tx1 = this.right - tl;
+            tx2 = borderValue - axisHalfWidth;
+            x1 = alignBorderValue(chartArea.left) + axisHalfWidth;
+            x2 = chartArea.right;
+        } else if (position === 'right') {
+            borderValue = alignBorderValue(this.left);
+            x1 = chartArea.left;
+            x2 = alignBorderValue(chartArea.right) - axisHalfWidth;
+            tx1 = borderValue + axisHalfWidth;
+            tx2 = this.left + tl;
+        } else if (axis === 'x') {
+            if (position === 'center') {
+                borderValue = alignBorderValue((chartArea.top + chartArea.bottom) / 2 + 0.5);
+            } else if (isObject(position)) {
+                const positionAxisID = Object.keys(position)[0];
+                const value = position[positionAxisID];
+                borderValue = alignBorderValue(this.chart.scales[positionAxisID].getPixelForValue(value));
+            }
+            y1 = chartArea.top;
+            y2 = chartArea.bottom;
+            ty1 = borderValue + axisHalfWidth;
+            ty2 = ty1 + tl;
+        } else if (axis === 'y') {
+            if (position === 'center') {
+                borderValue = alignBorderValue((chartArea.left + chartArea.right) / 2);
+            } else if (isObject(position)) {
+                const positionAxisID = Object.keys(position)[0];
+                const value = position[positionAxisID];
+                borderValue = alignBorderValue(this.chart.scales[positionAxisID].getPixelForValue(value));
+            }
+            tx1 = borderValue - axisHalfWidth;
+            tx2 = tx1 - tl;
+            x1 = chartArea.left;
+            x2 = chartArea.right;
+        }
+        const limit = valueOrDefault(options.ticks.maxTicksLimit, ticksLength);
+        const step = Math.max(1, Math.ceil(ticksLength / limit));
+        for(i = 0; i < ticksLength; i += step){
+            const context = this.getContext(i);
+            const optsAtIndex = grid.setContext(context);
+            const optsAtIndexBorder = border.setContext(context);
+            const lineWidth = optsAtIndex.lineWidth;
+            const lineColor = optsAtIndex.color;
+            const borderDash = optsAtIndexBorder.dash || [];
+            const borderDashOffset = optsAtIndexBorder.dashOffset;
+            const tickWidth = optsAtIndex.tickWidth;
+            const tickColor = optsAtIndex.tickColor;
+            const tickBorderDash = optsAtIndex.tickBorderDash || [];
+            const tickBorderDashOffset = optsAtIndex.tickBorderDashOffset;
+            lineValue = getPixelForGridLine(this, i, offset);
+            if (lineValue === undefined) {
+                continue;
+            }
+            alignedLineValue = _alignPixel(chart, lineValue, lineWidth);
+            if (isHorizontal) {
+                tx1 = tx2 = x1 = x2 = alignedLineValue;
+            } else {
+                ty1 = ty2 = y1 = y2 = alignedLineValue;
+            }
+            items.push({
+                tx1,
+                ty1,
+                tx2,
+                ty2,
+                x1,
+                y1,
+                x2,
+                y2,
+                width: lineWidth,
+                color: lineColor,
+                borderDash,
+                borderDashOffset,
+                tickWidth,
+                tickColor,
+                tickBorderDash,
+                tickBorderDashOffset
+            });
+        }
+        this._ticksLength = ticksLength;
+        this._borderValue = borderValue;
+        return items;
+    }
+ _computeLabelItems(chartArea) {
+        const axis = this.axis;
+        const options = this.options;
+        const { position , ticks: optionTicks  } = options;
+        const isHorizontal = this.isHorizontal();
+        const ticks = this.ticks;
+        const { align , crossAlign , padding , mirror  } = optionTicks;
+        const tl = getTickMarkLength(options.grid);
+        const tickAndPadding = tl + padding;
+        const hTickAndPadding = mirror ? -padding : tickAndPadding;
+        const rotation = -toRadians(this.labelRotation);
+        const items = [];
+        let i, ilen, tick, label, x, y, textAlign, pixel, font, lineHeight, lineCount, textOffset;
+        let textBaseline = 'middle';
+        if (position === 'top') {
+            y = this.bottom - hTickAndPadding;
+            textAlign = this._getXAxisLabelAlignment();
+        } else if (position === 'bottom') {
+            y = this.top + hTickAndPadding;
+            textAlign = this._getXAxisLabelAlignment();
+        } else if (position === 'left') {
+            const ret = this._getYAxisLabelAlignment(tl);
+            textAlign = ret.textAlign;
+            x = ret.x;
+        } else if (position === 'right') {
+            const ret = this._getYAxisLabelAlignment(tl);
+            textAlign = ret.textAlign;
+            x = ret.x;
+        } else if (axis === 'x') {
+            if (position === 'center') {
+                y = (chartArea.top + chartArea.bottom) / 2 + tickAndPadding;
+            } else if (isObject(position)) {
+                const positionAxisID = Object.keys(position)[0];
+                const value = position[positionAxisID];
+                y = this.chart.scales[positionAxisID].getPixelForValue(value) + tickAndPadding;
+            }
+            textAlign = this._getXAxisLabelAlignment();
+        } else if (axis === 'y') {
+            if (position === 'center') {
+                x = (chartArea.left + chartArea.right) / 2 - tickAndPadding;
+            } else if (isObject(position)) {
+                const positionAxisID = Object.keys(position)[0];
+                const value = position[positionAxisID];
+                x = this.chart.scales[positionAxisID].getPixelForValue(value);
+            }
+            textAlign = this._getYAxisLabelAlignment(tl).textAlign;
+        }
+        if (axis === 'y') {
+            if (align === 'start') {
+                textBaseline = 'top';
+            } else if (align === 'end') {
+                textBaseline = 'bottom';
+            }
+        }
+        const labelSizes = this._getLabelSizes();
+        for(i = 0, ilen = ticks.length; i < ilen; ++i){
+            tick = ticks[i];
+            label = tick.label;
+            const optsAtIndex = optionTicks.setContext(this.getContext(i));
+            pixel = this.getPixelForTick(i) + optionTicks.labelOffset;
+            font = this._resolveTickFontOptions(i);
+            lineHeight = font.lineHeight;
+            lineCount = isArray(label) ? label.length : 1;
+            const halfCount = lineCount / 2;
+            const color = optsAtIndex.color;
+            const strokeColor = optsAtIndex.textStrokeColor;
+            const strokeWidth = optsAtIndex.textStrokeWidth;
+            let tickTextAlign = textAlign;
+            if (isHorizontal) {
+                x = pixel;
+                if (textAlign === 'inner') {
+                    if (i === ilen - 1) {
+                        tickTextAlign = !this.options.reverse ? 'right' : 'left';
+                    } else if (i === 0) {
+                        tickTextAlign = !this.options.reverse ? 'left' : 'right';
+                    } else {
+                        tickTextAlign = 'center';
+                    }
+                }
+                if (position === 'top') {
+                    if (crossAlign === 'near' || rotation !== 0) {
+                        textOffset = -lineCount * lineHeight + lineHeight / 2;
+                    } else if (crossAlign === 'center') {
+                        textOffset = -labelSizes.highest.height / 2 - halfCount * lineHeight + lineHeight;
+                    } else {
+                        textOffset = -labelSizes.highest.height + lineHeight / 2;
+                    }
+                } else {
+                    if (crossAlign === 'near' || rotation !== 0) {
+                        textOffset = lineHeight / 2;
+                    } else if (crossAlign === 'center') {
+                        textOffset = labelSizes.highest.height / 2 - halfCount * lineHeight;
+                    } else {
+                        textOffset = labelSizes.highest.height - lineCount * lineHeight;
+                    }
+                }
+                if (mirror) {
+                    textOffset *= -1;
+                }
+                if (rotation !== 0 && !optsAtIndex.showLabelBackdrop) {
+                    x += lineHeight / 2 * Math.sin(rotation);
+                }
+            } else {
+                y = pixel;
+                textOffset = (1 - lineCount) * lineHeight / 2;
+            }
+            let backdrop;
+            if (optsAtIndex.showLabelBackdrop) {
+                const labelPadding = toPadding(optsAtIndex.backdropPadding);
+                const height = labelSizes.heights[i];
+                const width = labelSizes.widths[i];
+                let top = textOffset - labelPadding.top;
+                let left = 0 - labelPadding.left;
+                switch(textBaseline){
+                    case 'middle':
+                        top -= height / 2;
+                        break;
+                    case 'bottom':
+                        top -= height;
+                        break;
+                }
+                switch(textAlign){
+                    case 'center':
+                        left -= width / 2;
+                        break;
+                    case 'right':
+                        left -= width;
+                        break;
+                    case 'inner':
+                        if (i === ilen - 1) {
+                            left -= width;
+                        } else if (i > 0) {
+                            left -= width / 2;
+                        }
+                        break;
+                }
+                backdrop = {
+                    left,
+                    top,
+                    width: width + labelPadding.width,
+                    height: height + labelPadding.height,
+                    color: optsAtIndex.backdropColor
+                };
+            }
+            items.push({
+                label,
+                font,
+                textOffset,
+                options: {
+                    rotation,
+                    color,
+                    strokeColor,
+                    strokeWidth,
+                    textAlign: tickTextAlign,
+                    textBaseline,
+                    translation: [
+                        x,
+                        y
+                    ],
+                    backdrop
+                }
+            });
+        }
+        return items;
+    }
+    _getXAxisLabelAlignment() {
+        const { position , ticks  } = this.options;
+        const rotation = -toRadians(this.labelRotation);
+        if (rotation) {
+            return position === 'top' ? 'left' : 'right';
+        }
+        let align = 'center';
+        if (ticks.align === 'start') {
+            align = 'left';
+        } else if (ticks.align === 'end') {
+            align = 'right';
+        } else if (ticks.align === 'inner') {
+            align = 'inner';
+        }
+        return align;
+    }
+    _getYAxisLabelAlignment(tl) {
+        const { position , ticks: { crossAlign , mirror , padding  }  } = this.options;
+        const labelSizes = this._getLabelSizes();
+        const tickAndPadding = tl + padding;
+        const widest = labelSizes.widest.width;
+        let textAlign;
+        let x;
+        if (position === 'left') {
+            if (mirror) {
+                x = this.right + padding;
+                if (crossAlign === 'near') {
+                    textAlign = 'left';
+                } else if (crossAlign === 'center') {
+                    textAlign = 'center';
+                    x += widest / 2;
+                } else {
+                    textAlign = 'right';
+                    x += widest;
+                }
+            } else {
+                x = this.right - tickAndPadding;
+                if (crossAlign === 'near') {
+                    textAlign = 'right';
+                } else if (crossAlign === 'center') {
+                    textAlign = 'center';
+                    x -= widest / 2;
+                } else {
+                    textAlign = 'left';
+                    x = this.left;
+                }
+            }
+        } else if (position === 'right') {
+            if (mirror) {
+                x = this.left + padding;
+                if (crossAlign === 'near') {
+                    textAlign = 'right';
+                } else if (crossAlign === 'center') {
+                    textAlign = 'center';
+                    x -= widest / 2;
+                } else {
+                    textAlign = 'left';
+                    x -= widest;
+                }
+            } else {
+                x = this.left + tickAndPadding;
+                if (crossAlign === 'near') {
+                    textAlign = 'left';
+                } else if (crossAlign === 'center') {
+                    textAlign = 'center';
+                    x += widest / 2;
+                } else {
+                    textAlign = 'right';
+                    x = this.right;
+                }
+            }
+        } else {
+            textAlign = 'right';
+        }
+        return {
+            textAlign,
+            x
+        };
+    }
+ _computeLabelArea() {
+        if (this.options.ticks.mirror) {
+            return;
+        }
+        const chart = this.chart;
+        const position = this.options.position;
+        if (position === 'left' || position === 'right') {
+            return {
+                top: 0,
+                left: this.left,
+                bottom: chart.height,
+                right: this.right
+            };
+        }
+        if (position === 'top' || position === 'bottom') {
+            return {
+                top: this.top,
+                left: 0,
+                bottom: this.bottom,
+                right: chart.width
+            };
+        }
+    }
+ drawBackground() {
+        const { ctx , options: { backgroundColor  } , left , top , width , height  } = this;
+        if (backgroundColor) {
+            ctx.save();
+            ctx.fillStyle = backgroundColor;
+            ctx.fillRect(left, top, width, height);
+            ctx.restore();
+        }
+    }
+    getLineWidthForValue(value) {
+        const grid = this.options.grid;
+        if (!this._isVisible() || !grid.display) {
+            return 0;
+        }
+        const ticks = this.ticks;
+        const index = ticks.findIndex((t)=>t.value === value);
+        if (index >= 0) {
+            const opts = grid.setContext(this.getContext(index));
+            return opts.lineWidth;
+        }
+        return 0;
+    }
+ drawGrid(chartArea) {
+        const grid = this.options.grid;
+        const ctx = this.ctx;
+        const items = this._gridLineItems || (this._gridLineItems = this._computeGridLineItems(chartArea));
+        let i, ilen;
+        const drawLine = (p1, p2, style)=>{
+            if (!style.width || !style.color) {
+                return;
+            }
+            ctx.save();
+            ctx.lineWidth = style.width;
+            ctx.strokeStyle = style.color;
+            ctx.setLineDash(style.borderDash || []);
+            ctx.lineDashOffset = style.borderDashOffset;
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+            ctx.restore();
+        };
+        if (grid.display) {
+            for(i = 0, ilen = items.length; i < ilen; ++i){
+                const item = items[i];
+                if (grid.drawOnChartArea) {
+                    drawLine({
+                        x: item.x1,
+                        y: item.y1
+                    }, {
+                        x: item.x2,
+                        y: item.y2
+                    }, item);
+                }
+                if (grid.drawTicks) {
+                    drawLine({
+                        x: item.tx1,
+                        y: item.ty1
+                    }, {
+                        x: item.tx2,
+                        y: item.ty2
+                    }, {
+                        color: item.tickColor,
+                        width: item.tickWidth,
+                        borderDash: item.tickBorderDash,
+                        borderDashOffset: item.tickBorderDashOffset
+                    });
+                }
+            }
+        }
+    }
+ drawBorder() {
+        const { chart , ctx , options: { border , grid  }  } = this;
+        const borderOpts = border.setContext(this.getContext());
+        const axisWidth = border.display ? borderOpts.width : 0;
+        if (!axisWidth) {
+            return;
+        }
+        const lastLineWidth = grid.setContext(this.getContext(0)).lineWidth;
+        const borderValue = this._borderValue;
+        let x1, x2, y1, y2;
+        if (this.isHorizontal()) {
+            x1 = _alignPixel(chart, this.left, axisWidth) - axisWidth / 2;
+            x2 = _alignPixel(chart, this.right, lastLineWidth) + lastLineWidth / 2;
+            y1 = y2 = borderValue;
+        } else {
+            y1 = _alignPixel(chart, this.top, axisWidth) - axisWidth / 2;
+            y2 = _alignPixel(chart, this.bottom, lastLineWidth) + lastLineWidth / 2;
+            x1 = x2 = borderValue;
+        }
+        ctx.save();
+        ctx.lineWidth = borderOpts.width;
+        ctx.strokeStyle = borderOpts.color;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        ctx.restore();
+    }
+ drawLabels(chartArea) {
+        const optionTicks = this.options.ticks;
+        if (!optionTicks.display) {
+            return;
+        }
+        const ctx = this.ctx;
+        const area = this._computeLabelArea();
+        if (area) {
+            clipArea(ctx, area);
+        }
+        const items = this.getLabelItems(chartArea);
+        for (const item of items){
+            const renderTextOptions = item.options;
+            const tickFont = item.font;
+            const label = item.label;
+            const y = item.textOffset;
+            renderText(ctx, label, 0, y, tickFont, renderTextOptions);
+        }
+        if (area) {
+            unclipArea(ctx);
+        }
+    }
+ drawTitle() {
+        const { ctx , options: { position , title , reverse  }  } = this;
+        if (!title.display) {
+            return;
+        }
+        const font = toFont(title.font);
+        const padding = toPadding(title.padding);
+        const align = title.align;
+        let offset = font.lineHeight / 2;
+        if (position === 'bottom' || position === 'center' || isObject(position)) {
+            offset += padding.bottom;
+            if (isArray(title.text)) {
+                offset += font.lineHeight * (title.text.length - 1);
+            }
+        } else {
+            offset += padding.top;
+        }
+        const { titleX , titleY , maxWidth , rotation  } = titleArgs(this, offset, position, align);
+        renderText(ctx, title.text, 0, 0, font, {
+            color: title.color,
+            maxWidth,
+            rotation,
+            textAlign: titleAlign(align, position, reverse),
+            textBaseline: 'middle',
+            translation: [
+                titleX,
+                titleY
+            ]
+        });
+    }
+    draw(chartArea) {
+        if (!this._isVisible()) {
+            return;
+        }
+        this.drawBackground();
+        this.drawGrid(chartArea);
+        this.drawBorder();
+        this.drawTitle();
+        this.drawLabels(chartArea);
+    }
+ _layers() {
+        const opts = this.options;
+        const tz = opts.ticks && opts.ticks.z || 0;
+        const gz = valueOrDefault(opts.grid && opts.grid.z, -1);
+        const bz = valueOrDefault(opts.border && opts.border.z, 0);
+        if (!this._isVisible() || this.draw !== Scale.prototype.draw) {
+            return [
+                {
+                    z: tz,
+                    draw: (chartArea)=>{
+                        this.draw(chartArea);
+                    }
+                }
+            ];
+        }
+        return [
+            {
+                z: gz,
+                draw: (chartArea)=>{
+                    this.drawBackground();
+                    this.drawGrid(chartArea);
+                    this.drawTitle();
+                }
+            },
+            {
+                z: bz,
+                draw: ()=>{
+                    this.drawBorder();
+                }
+            },
+            {
+                z: tz,
+                draw: (chartArea)=>{
+                    this.drawLabels(chartArea);
+                }
+            }
+        ];
+    }
+ getMatchingVisibleMetas(type) {
+        const metas = this.chart.getSortedVisibleDatasetMetas();
+        const axisID = this.axis + 'AxisID';
+        const result = [];
+        let i, ilen;
+        for(i = 0, ilen = metas.length; i < ilen; ++i){
+            const meta = metas[i];
+            if (meta[axisID] === this.id && (!type || meta.type === type)) {
+                result.push(meta);
+            }
+        }
+        return result;
+    }
+ _resolveTickFontOptions(index) {
+        const opts = this.options.ticks.setContext(this.getContext(index));
+        return toFont(opts.font);
+    }
+ _maxDigits() {
+        const fontSize = this._resolveTickFontOptions(0).lineHeight;
+        return (this.isHorizontal() ? this.width : this.height) / fontSize;
+    }
+}
+
+class TypedRegistry {
+    constructor(type, scope, override){
+        this.type = type;
+        this.scope = scope;
+        this.override = override;
+        this.items = Object.create(null);
+    }
+    isForType(type) {
+        return Object.prototype.isPrototypeOf.call(this.type.prototype, type.prototype);
+    }
+ register(item) {
+        const proto = Object.getPrototypeOf(item);
+        let parentScope;
+        if (isIChartComponent(proto)) {
+            parentScope = this.register(proto);
+        }
+        const items = this.items;
+        const id = item.id;
+        const scope = this.scope + '.' + id;
+        if (!id) {
+            throw new Error('class does not have id: ' + item);
+        }
+        if (id in items) {
+            return scope;
+        }
+        items[id] = item;
+        registerDefaults(item, scope, parentScope);
+        if (this.override) {
+            defaults.override(item.id, item.overrides);
+        }
+        return scope;
+    }
+ get(id) {
+        return this.items[id];
+    }
+ unregister(item) {
+        const items = this.items;
+        const id = item.id;
+        const scope = this.scope;
+        if (id in items) {
+            delete items[id];
+        }
+        if (scope && id in defaults[scope]) {
+            delete defaults[scope][id];
+            if (this.override) {
+                delete overrides[id];
+            }
+        }
+    }
+}
+function registerDefaults(item, scope, parentScope) {
+    const itemDefaults = merge(Object.create(null), [
+        parentScope ? defaults.get(parentScope) : {},
+        defaults.get(scope),
+        item.defaults
+    ]);
+    defaults.set(scope, itemDefaults);
+    if (item.defaultRoutes) {
+        routeDefaults(scope, item.defaultRoutes);
+    }
+    if (item.descriptors) {
+        defaults.describe(scope, item.descriptors);
+    }
+}
+function routeDefaults(scope, routes) {
+    Object.keys(routes).forEach((property)=>{
+        const propertyParts = property.split('.');
+        const sourceName = propertyParts.pop();
+        const sourceScope = [
+            scope
+        ].concat(propertyParts).join('.');
+        const parts = routes[property].split('.');
+        const targetName = parts.pop();
+        const targetScope = parts.join('.');
+        defaults.route(sourceScope, sourceName, targetScope, targetName);
+    });
+}
+function isIChartComponent(proto) {
+    return 'id' in proto && 'defaults' in proto;
+}
+
+class Registry {
+    constructor(){
+        this.controllers = new TypedRegistry(DatasetController, 'datasets', true);
+        this.elements = new TypedRegistry(Element, 'elements');
+        this.plugins = new TypedRegistry(Object, 'plugins');
+        this.scales = new TypedRegistry(Scale, 'scales');
+        this._typedRegistries = [
+            this.controllers,
+            this.scales,
+            this.elements
+        ];
+    }
+ add(...args) {
+        this._each('register', args);
+    }
+    remove(...args) {
+        this._each('unregister', args);
+    }
+ addControllers(...args) {
+        this._each('register', args, this.controllers);
+    }
+ addElements(...args) {
+        this._each('register', args, this.elements);
+    }
+ addPlugins(...args) {
+        this._each('register', args, this.plugins);
+    }
+ addScales(...args) {
+        this._each('register', args, this.scales);
+    }
+ getController(id) {
+        return this._get(id, this.controllers, 'controller');
+    }
+ getElement(id) {
+        return this._get(id, this.elements, 'element');
+    }
+ getPlugin(id) {
+        return this._get(id, this.plugins, 'plugin');
+    }
+ getScale(id) {
+        return this._get(id, this.scales, 'scale');
+    }
+ removeControllers(...args) {
+        this._each('unregister', args, this.controllers);
+    }
+ removeElements(...args) {
+        this._each('unregister', args, this.elements);
+    }
+ removePlugins(...args) {
+        this._each('unregister', args, this.plugins);
+    }
+ removeScales(...args) {
+        this._each('unregister', args, this.scales);
+    }
+ _each(method, args, typedRegistry) {
+        [
+            ...args
+        ].forEach((arg)=>{
+            const reg = typedRegistry || this._getRegistryForType(arg);
+            if (typedRegistry || reg.isForType(arg) || reg === this.plugins && arg.id) {
+                this._exec(method, reg, arg);
+            } else {
+                each(arg, (item)=>{
+                    const itemReg = typedRegistry || this._getRegistryForType(item);
+                    this._exec(method, itemReg, item);
+                });
+            }
+        });
+    }
+ _exec(method, registry, component) {
+        const camelMethod = _capitalize(method);
+        callback(component['before' + camelMethod], [], component);
+        registry[method](component);
+        callback(component['after' + camelMethod], [], component);
+    }
+ _getRegistryForType(type) {
+        for(let i = 0; i < this._typedRegistries.length; i++){
+            const reg = this._typedRegistries[i];
+            if (reg.isForType(type)) {
+                return reg;
+            }
+        }
+        return this.plugins;
+    }
+ _get(id, typedRegistry, type) {
+        const item = typedRegistry.get(id);
+        if (item === undefined) {
+            throw new Error('"' + id + '" is not a registered ' + type + '.');
+        }
+        return item;
+    }
+}
+var registry = /* #__PURE__ */ new Registry();
+
+class PluginService {
+    constructor(){
+        this._init = undefined;
+    }
+ notify(chart, hook, args, filter) {
+        if (hook === 'beforeInit') {
+            this._init = this._createDescriptors(chart, true);
+            this._notify(this._init, chart, 'install');
+        }
+        if (this._init === undefined) {
+            return;
+        }
+        const descriptors = filter ? this._descriptors(chart).filter(filter) : this._descriptors(chart);
+        const result = this._notify(descriptors, chart, hook, args);
+        if (hook === 'afterDestroy') {
+            this._notify(descriptors, chart, 'stop');
+            this._notify(this._init, chart, 'uninstall');
+            this._init = undefined;
+        }
+        return result;
+    }
+ _notify(descriptors, chart, hook, args) {
+        args = args || {};
+        for (const descriptor of descriptors){
+            const plugin = descriptor.plugin;
+            const method = plugin[hook];
+            const params = [
+                chart,
+                args,
+                descriptor.options
+            ];
+            if (callback(method, params, plugin) === false && args.cancelable) {
+                return false;
+            }
+        }
+        return true;
+    }
+    invalidate() {
+        if (!isNullOrUndef(this._cache)) {
+            this._oldCache = this._cache;
+            this._cache = undefined;
+        }
+    }
+ _descriptors(chart) {
+        if (this._cache) {
+            return this._cache;
+        }
+        const descriptors = this._cache = this._createDescriptors(chart);
+        this._notifyStateChanges(chart);
+        return descriptors;
+    }
+    _createDescriptors(chart, all) {
+        const config = chart && chart.config;
+        const options = valueOrDefault(config.options && config.options.plugins, {});
+        const plugins = allPlugins(config);
+        return options === false && !all ? [] : createDescriptors(chart, plugins, options, all);
+    }
+ _notifyStateChanges(chart) {
+        const previousDescriptors = this._oldCache || [];
+        const descriptors = this._cache;
+        const diff = (a, b)=>a.filter((x)=>!b.some((y)=>x.plugin.id === y.plugin.id));
+        this._notify(diff(previousDescriptors, descriptors), chart, 'stop');
+        this._notify(diff(descriptors, previousDescriptors), chart, 'start');
+    }
+}
+ function allPlugins(config) {
+    const localIds = {};
+    const plugins = [];
+    const keys = Object.keys(registry.plugins.items);
+    for(let i = 0; i < keys.length; i++){
+        plugins.push(registry.getPlugin(keys[i]));
+    }
+    const local = config.plugins || [];
+    for(let i = 0; i < local.length; i++){
+        const plugin = local[i];
+        if (plugins.indexOf(plugin) === -1) {
+            plugins.push(plugin);
+            localIds[plugin.id] = true;
+        }
+    }
+    return {
+        plugins,
+        localIds
+    };
+}
+function getOpts(options, all) {
+    if (!all && options === false) {
+        return null;
+    }
+    if (options === true) {
+        return {};
+    }
+    return options;
+}
+function createDescriptors(chart, { plugins , localIds  }, options, all) {
+    const result = [];
+    const context = chart.getContext();
+    for (const plugin of plugins){
+        const id = plugin.id;
+        const opts = getOpts(options[id], all);
+        if (opts === null) {
+            continue;
+        }
+        result.push({
+            plugin,
+            options: pluginOpts(chart.config, {
+                plugin,
+                local: localIds[id]
+            }, opts, context)
+        });
+    }
+    return result;
+}
+function pluginOpts(config, { plugin , local  }, opts, context) {
+    const keys = config.pluginScopeKeys(plugin);
+    const scopes = config.getOptionScopes(opts, keys);
+    if (local && plugin.defaults) {
+        scopes.push(plugin.defaults);
+    }
+    return config.createResolver(scopes, context, [
+        ''
+    ], {
+        scriptable: false,
+        indexable: false,
+        allKeys: true
+    });
+}
+
+function getIndexAxis(type, options) {
+    const datasetDefaults = defaults.datasets[type] || {};
+    const datasetOptions = (options.datasets || {})[type] || {};
+    return datasetOptions.indexAxis || options.indexAxis || datasetDefaults.indexAxis || 'x';
+}
+function getAxisFromDefaultScaleID(id, indexAxis) {
+    let axis = id;
+    if (id === '_index_') {
+        axis = indexAxis;
+    } else if (id === '_value_') {
+        axis = indexAxis === 'x' ? 'y' : 'x';
+    }
+    return axis;
+}
+function getDefaultScaleIDFromAxis(axis, indexAxis) {
+    return axis === indexAxis ? '_index_' : '_value_';
+}
+function idMatchesAxis(id) {
+    if (id === 'x' || id === 'y' || id === 'r') {
+        return id;
+    }
+}
+function axisFromPosition(position) {
+    if (position === 'top' || position === 'bottom') {
+        return 'x';
+    }
+    if (position === 'left' || position === 'right') {
+        return 'y';
+    }
+}
+function determineAxis(id, ...scaleOptions) {
+    if (idMatchesAxis(id)) {
+        return id;
+    }
+    for (const opts of scaleOptions){
+        const axis = opts.axis || axisFromPosition(opts.position) || id.length > 1 && idMatchesAxis(id[0].toLowerCase());
+        if (axis) {
+            return axis;
+        }
+    }
+    throw new Error(`Cannot determine type of '${id}' axis. Please provide 'axis' or 'position' option.`);
+}
+function getAxisFromDataset(id, axis, dataset) {
+    if (dataset[axis + 'AxisID'] === id) {
+        return {
+            axis
+        };
+    }
+}
+function retrieveAxisFromDatasets(id, config) {
+    if (config.data && config.data.datasets) {
+        const boundDs = config.data.datasets.filter((d)=>d.xAxisID === id || d.yAxisID === id);
+        if (boundDs.length) {
+            return getAxisFromDataset(id, 'x', boundDs[0]) || getAxisFromDataset(id, 'y', boundDs[0]);
+        }
+    }
+    return {};
+}
+function mergeScaleConfig(config, options) {
+    const chartDefaults = overrides[config.type] || {
+        scales: {}
+    };
+    const configScales = options.scales || {};
+    const chartIndexAxis = getIndexAxis(config.type, options);
+    const scales = Object.create(null);
+    Object.keys(configScales).forEach((id)=>{
+        const scaleConf = configScales[id];
+        if (!isObject(scaleConf)) {
+            return console.error(`Invalid scale configuration for scale: ${id}`);
+        }
+        if (scaleConf._proxy) {
+            return console.warn(`Ignoring resolver passed as options for scale: ${id}`);
+        }
+        const axis = determineAxis(id, scaleConf, retrieveAxisFromDatasets(id, config), defaults.scales[scaleConf.type]);
+        const defaultId = getDefaultScaleIDFromAxis(axis, chartIndexAxis);
+        const defaultScaleOptions = chartDefaults.scales || {};
+        scales[id] = mergeIf(Object.create(null), [
+            {
+                axis
+            },
+            scaleConf,
+            defaultScaleOptions[axis],
+            defaultScaleOptions[defaultId]
+        ]);
+    });
+    config.data.datasets.forEach((dataset)=>{
+        const type = dataset.type || config.type;
+        const indexAxis = dataset.indexAxis || getIndexAxis(type, options);
+        const datasetDefaults = overrides[type] || {};
+        const defaultScaleOptions = datasetDefaults.scales || {};
+        Object.keys(defaultScaleOptions).forEach((defaultID)=>{
+            const axis = getAxisFromDefaultScaleID(defaultID, indexAxis);
+            const id = dataset[axis + 'AxisID'] || axis;
+            scales[id] = scales[id] || Object.create(null);
+            mergeIf(scales[id], [
+                {
+                    axis
+                },
+                configScales[id],
+                defaultScaleOptions[defaultID]
+            ]);
+        });
+    });
+    Object.keys(scales).forEach((key)=>{
+        const scale = scales[key];
+        mergeIf(scale, [
+            defaults.scales[scale.type],
+            defaults.scale
+        ]);
+    });
+    return scales;
+}
+function initOptions(config) {
+    const options = config.options || (config.options = {});
+    options.plugins = valueOrDefault(options.plugins, {});
+    options.scales = mergeScaleConfig(config, options);
+}
+function initData(data) {
+    data = data || {};
+    data.datasets = data.datasets || [];
+    data.labels = data.labels || [];
+    return data;
+}
+function initConfig(config) {
+    config = config || {};
+    config.data = initData(config.data);
+    initOptions(config);
+    return config;
+}
+const keyCache = new Map();
+const keysCached = new Set();
+function cachedKeys(cacheKey, generate) {
+    let keys = keyCache.get(cacheKey);
+    if (!keys) {
+        keys = generate();
+        keyCache.set(cacheKey, keys);
+        keysCached.add(keys);
+    }
+    return keys;
+}
+const addIfFound = (set, obj, key)=>{
+    const opts = resolveObjectKey(obj, key);
+    if (opts !== undefined) {
+        set.add(opts);
+    }
+};
+class Config {
+    constructor(config){
+        this._config = initConfig(config);
+        this._scopeCache = new Map();
+        this._resolverCache = new Map();
+    }
+    get platform() {
+        return this._config.platform;
+    }
+    get type() {
+        return this._config.type;
+    }
+    set type(type) {
+        this._config.type = type;
+    }
+    get data() {
+        return this._config.data;
+    }
+    set data(data) {
+        this._config.data = initData(data);
+    }
+    get options() {
+        return this._config.options;
+    }
+    set options(options) {
+        this._config.options = options;
+    }
+    get plugins() {
+        return this._config.plugins;
+    }
+    update() {
+        const config = this._config;
+        this.clearCache();
+        initOptions(config);
+    }
+    clearCache() {
+        this._scopeCache.clear();
+        this._resolverCache.clear();
+    }
+ datasetScopeKeys(datasetType) {
+        return cachedKeys(datasetType, ()=>[
+                [
+                    `datasets.${datasetType}`,
+                    ''
+                ]
+            ]);
+    }
+ datasetAnimationScopeKeys(datasetType, transition) {
+        return cachedKeys(`${datasetType}.transition.${transition}`, ()=>[
+                [
+                    `datasets.${datasetType}.transitions.${transition}`,
+                    `transitions.${transition}`
+                ],
+                [
+                    `datasets.${datasetType}`,
+                    ''
+                ]
+            ]);
+    }
+ datasetElementScopeKeys(datasetType, elementType) {
+        return cachedKeys(`${datasetType}-${elementType}`, ()=>[
+                [
+                    `datasets.${datasetType}.elements.${elementType}`,
+                    `datasets.${datasetType}`,
+                    `elements.${elementType}`,
+                    ''
+                ]
+            ]);
+    }
+ pluginScopeKeys(plugin) {
+        const id = plugin.id;
+        const type = this.type;
+        return cachedKeys(`${type}-plugin-${id}`, ()=>[
+                [
+                    `plugins.${id}`,
+                    ...plugin.additionalOptionScopes || []
+                ]
+            ]);
+    }
+ _cachedScopes(mainScope, resetCache) {
+        const _scopeCache = this._scopeCache;
+        let cache = _scopeCache.get(mainScope);
+        if (!cache || resetCache) {
+            cache = new Map();
+            _scopeCache.set(mainScope, cache);
+        }
+        return cache;
+    }
+ getOptionScopes(mainScope, keyLists, resetCache) {
+        const { options , type  } = this;
+        const cache = this._cachedScopes(mainScope, resetCache);
+        const cached = cache.get(keyLists);
+        if (cached) {
+            return cached;
+        }
+        const scopes = new Set();
+        keyLists.forEach((keys)=>{
+            if (mainScope) {
+                scopes.add(mainScope);
+                keys.forEach((key)=>addIfFound(scopes, mainScope, key));
+            }
+            keys.forEach((key)=>addIfFound(scopes, options, key));
+            keys.forEach((key)=>addIfFound(scopes, overrides[type] || {}, key));
+            keys.forEach((key)=>addIfFound(scopes, defaults, key));
+            keys.forEach((key)=>addIfFound(scopes, descriptors, key));
+        });
+        const array = Array.from(scopes);
+        if (array.length === 0) {
+            array.push(Object.create(null));
+        }
+        if (keysCached.has(keyLists)) {
+            cache.set(keyLists, array);
+        }
+        return array;
+    }
+ chartOptionScopes() {
+        const { options , type  } = this;
+        return [
+            options,
+            overrides[type] || {},
+            defaults.datasets[type] || {},
+            {
+                type
+            },
+            defaults,
+            descriptors
+        ];
+    }
+ resolveNamedOptions(scopes, names, context, prefixes = [
+        ''
+    ]) {
+        const result = {
+            $shared: true
+        };
+        const { resolver , subPrefixes  } = getResolver(this._resolverCache, scopes, prefixes);
+        let options = resolver;
+        if (needContext(resolver, names)) {
+            result.$shared = false;
+            context = isFunction(context) ? context() : context;
+            const subResolver = this.createResolver(scopes, context, subPrefixes);
+            options = _attachContext(resolver, context, subResolver);
+        }
+        for (const prop of names){
+            result[prop] = options[prop];
+        }
+        return result;
+    }
+ createResolver(scopes, context, prefixes = [
+        ''
+    ], descriptorDefaults) {
+        const { resolver  } = getResolver(this._resolverCache, scopes, prefixes);
+        return isObject(context) ? _attachContext(resolver, context, undefined, descriptorDefaults) : resolver;
+    }
+}
+function getResolver(resolverCache, scopes, prefixes) {
+    let cache = resolverCache.get(scopes);
+    if (!cache) {
+        cache = new Map();
+        resolverCache.set(scopes, cache);
+    }
+    const cacheKey = prefixes.join();
+    let cached = cache.get(cacheKey);
+    if (!cached) {
+        const resolver = _createResolver(scopes, prefixes);
+        cached = {
+            resolver,
+            subPrefixes: prefixes.filter((p)=>!p.toLowerCase().includes('hover'))
+        };
+        cache.set(cacheKey, cached);
+    }
+    return cached;
+}
+const hasFunction = (value)=>isObject(value) && Object.getOwnPropertyNames(value).some((key)=>isFunction(value[key]));
+function needContext(proxy, names) {
+    const { isScriptable , isIndexable  } = _descriptors(proxy);
+    for (const prop of names){
+        const scriptable = isScriptable(prop);
+        const indexable = isIndexable(prop);
+        const value = (indexable || scriptable) && proxy[prop];
+        if (scriptable && (isFunction(value) || hasFunction(value)) || indexable && isArray(value)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+var version = "4.5.1";
+
+const KNOWN_POSITIONS = [
+    'top',
+    'bottom',
+    'left',
+    'right',
+    'chartArea'
+];
+function positionIsHorizontal(position, axis) {
+    return position === 'top' || position === 'bottom' || KNOWN_POSITIONS.indexOf(position) === -1 && axis === 'x';
+}
+function compare2Level(l1, l2) {
+    return function(a, b) {
+        return a[l1] === b[l1] ? a[l2] - b[l2] : a[l1] - b[l1];
+    };
+}
+function onAnimationsComplete(context) {
+    const chart = context.chart;
+    const animationOptions = chart.options.animation;
+    chart.notifyPlugins('afterRender');
+    callback(animationOptions && animationOptions.onComplete, [
+        context
+    ], chart);
+}
+function onAnimationProgress(context) {
+    const chart = context.chart;
+    const animationOptions = chart.options.animation;
+    callback(animationOptions && animationOptions.onProgress, [
+        context
+    ], chart);
+}
+ function getCanvas(item) {
+    if (_isDomSupported() && typeof item === 'string') {
+        item = document.getElementById(item);
+    } else if (item && item.length) {
+        item = item[0];
+    }
+    if (item && item.canvas) {
+        item = item.canvas;
+    }
+    return item;
+}
+const instances = {};
+const getChart = (key)=>{
+    const canvas = getCanvas(key);
+    return Object.values(instances).filter((c)=>c.canvas === canvas).pop();
+};
+function moveNumericKeys(obj, start, move) {
+    const keys = Object.keys(obj);
+    for (const key of keys){
+        const intKey = +key;
+        if (intKey >= start) {
+            const value = obj[key];
+            delete obj[key];
+            if (move > 0 || intKey > start) {
+                obj[intKey + move] = value;
+            }
+        }
+    }
+}
+ function determineLastEvent(e, lastEvent, inChartArea, isClick) {
+    if (!inChartArea || e.type === 'mouseout') {
+        return null;
+    }
+    if (isClick) {
+        return lastEvent;
+    }
+    return e;
+}
+class Chart {
+    static defaults = defaults;
+    static instances = instances;
+    static overrides = overrides;
+    static registry = registry;
+    static version = version;
+    static getChart = getChart;
+    static register(...items) {
+        registry.add(...items);
+        invalidatePlugins();
+    }
+    static unregister(...items) {
+        registry.remove(...items);
+        invalidatePlugins();
+    }
+    constructor(item, userConfig){
+        const config = this.config = new Config(userConfig);
+        const initialCanvas = getCanvas(item);
+        const existingChart = getChart(initialCanvas);
+        if (existingChart) {
+            throw new Error('Canvas is already in use. Chart with ID \'' + existingChart.id + '\'' + ' must be destroyed before the canvas with ID \'' + existingChart.canvas.id + '\' can be reused.');
+        }
+        const options = config.createResolver(config.chartOptionScopes(), this.getContext());
+        this.platform = new (config.platform || _detectPlatform(initialCanvas))();
+        this.platform.updateConfig(config);
+        const context = this.platform.acquireContext(initialCanvas, options.aspectRatio);
+        const canvas = context && context.canvas;
+        const height = canvas && canvas.height;
+        const width = canvas && canvas.width;
+        this.id = uid();
+        this.ctx = context;
+        this.canvas = canvas;
+        this.width = width;
+        this.height = height;
+        this._options = options;
+        this._aspectRatio = this.aspectRatio;
+        this._layers = [];
+        this._metasets = [];
+        this._stacks = undefined;
+        this.boxes = [];
+        this.currentDevicePixelRatio = undefined;
+        this.chartArea = undefined;
+        this._active = [];
+        this._lastEvent = undefined;
+        this._listeners = {};
+         this._responsiveListeners = undefined;
+        this._sortedMetasets = [];
+        this.scales = {};
+        this._plugins = new PluginService();
+        this.$proxies = {};
+        this._hiddenIndices = {};
+        this.attached = false;
+        this._animationsDisabled = undefined;
+        this.$context = undefined;
+        this._doResize = debounce((mode)=>this.update(mode), options.resizeDelay || 0);
+        this._dataChanges = [];
+        instances[this.id] = this;
+        if (!context || !canvas) {
+            console.error("Failed to create chart: can't acquire context from the given item");
+            return;
+        }
+        animator.listen(this, 'complete', onAnimationsComplete);
+        animator.listen(this, 'progress', onAnimationProgress);
+        this._initialize();
+        if (this.attached) {
+            this.update();
+        }
+    }
+    get aspectRatio() {
+        const { options: { aspectRatio , maintainAspectRatio  } , width , height , _aspectRatio  } = this;
+        if (!isNullOrUndef(aspectRatio)) {
+            return aspectRatio;
+        }
+        if (maintainAspectRatio && _aspectRatio) {
+            return _aspectRatio;
+        }
+        return height ? width / height : null;
+    }
+    get data() {
+        return this.config.data;
+    }
+    set data(data) {
+        this.config.data = data;
+    }
+    get options() {
+        return this._options;
+    }
+    set options(options) {
+        this.config.options = options;
+    }
+    get registry() {
+        return registry;
+    }
+ _initialize() {
+        this.notifyPlugins('beforeInit');
+        if (this.options.responsive) {
+            this.resize();
+        } else {
+            retinaScale(this, this.options.devicePixelRatio);
+        }
+        this.bindEvents();
+        this.notifyPlugins('afterInit');
+        return this;
+    }
+    clear() {
+        clearCanvas(this.canvas, this.ctx);
+        return this;
+    }
+    stop() {
+        animator.stop(this);
+        return this;
+    }
+ resize(width, height) {
+        if (!animator.running(this)) {
+            this._resize(width, height);
+        } else {
+            this._resizeBeforeDraw = {
+                width,
+                height
+            };
+        }
+    }
+    _resize(width, height) {
+        const options = this.options;
+        const canvas = this.canvas;
+        const aspectRatio = options.maintainAspectRatio && this.aspectRatio;
+        const newSize = this.platform.getMaximumSize(canvas, width, height, aspectRatio);
+        const newRatio = options.devicePixelRatio || this.platform.getDevicePixelRatio();
+        const mode = this.width ? 'resize' : 'attach';
+        this.width = newSize.width;
+        this.height = newSize.height;
+        this._aspectRatio = this.aspectRatio;
+        if (!retinaScale(this, newRatio, true)) {
+            return;
+        }
+        this.notifyPlugins('resize', {
+            size: newSize
+        });
+        callback(options.onResize, [
+            this,
+            newSize
+        ], this);
+        if (this.attached) {
+            if (this._doResize(mode)) {
+                this.render();
+            }
+        }
+    }
+    ensureScalesHaveIDs() {
+        const options = this.options;
+        const scalesOptions = options.scales || {};
+        each(scalesOptions, (axisOptions, axisID)=>{
+            axisOptions.id = axisID;
+        });
+    }
+ buildOrUpdateScales() {
+        const options = this.options;
+        const scaleOpts = options.scales;
+        const scales = this.scales;
+        const updated = Object.keys(scales).reduce((obj, id)=>{
+            obj[id] = false;
+            return obj;
+        }, {});
+        let items = [];
+        if (scaleOpts) {
+            items = items.concat(Object.keys(scaleOpts).map((id)=>{
+                const scaleOptions = scaleOpts[id];
+                const axis = determineAxis(id, scaleOptions);
+                const isRadial = axis === 'r';
+                const isHorizontal = axis === 'x';
+                return {
+                    options: scaleOptions,
+                    dposition: isRadial ? 'chartArea' : isHorizontal ? 'bottom' : 'left',
+                    dtype: isRadial ? 'radialLinear' : isHorizontal ? 'category' : 'linear'
+                };
+            }));
+        }
+        each(items, (item)=>{
+            const scaleOptions = item.options;
+            const id = scaleOptions.id;
+            const axis = determineAxis(id, scaleOptions);
+            const scaleType = valueOrDefault(scaleOptions.type, item.dtype);
+            if (scaleOptions.position === undefined || positionIsHorizontal(scaleOptions.position, axis) !== positionIsHorizontal(item.dposition)) {
+                scaleOptions.position = item.dposition;
+            }
+            updated[id] = true;
+            let scale = null;
+            if (id in scales && scales[id].type === scaleType) {
+                scale = scales[id];
+            } else {
+                const scaleClass = registry.getScale(scaleType);
+                scale = new scaleClass({
+                    id,
+                    type: scaleType,
+                    ctx: this.ctx,
+                    chart: this
+                });
+                scales[scale.id] = scale;
+            }
+            scale.init(scaleOptions, options);
+        });
+        each(updated, (hasUpdated, id)=>{
+            if (!hasUpdated) {
+                delete scales[id];
+            }
+        });
+        each(scales, (scale)=>{
+            layouts.configure(this, scale, scale.options);
+            layouts.addBox(this, scale);
+        });
+    }
+ _updateMetasets() {
+        const metasets = this._metasets;
+        const numData = this.data.datasets.length;
+        const numMeta = metasets.length;
+        metasets.sort((a, b)=>a.index - b.index);
+        if (numMeta > numData) {
+            for(let i = numData; i < numMeta; ++i){
+                this._destroyDatasetMeta(i);
+            }
+            metasets.splice(numData, numMeta - numData);
+        }
+        this._sortedMetasets = metasets.slice(0).sort(compare2Level('order', 'index'));
+    }
+ _removeUnreferencedMetasets() {
+        const { _metasets: metasets , data: { datasets  }  } = this;
+        if (metasets.length > datasets.length) {
+            delete this._stacks;
+        }
+        metasets.forEach((meta, index)=>{
+            if (datasets.filter((x)=>x === meta._dataset).length === 0) {
+                this._destroyDatasetMeta(index);
+            }
+        });
+    }
+    buildOrUpdateControllers() {
+        const newControllers = [];
+        const datasets = this.data.datasets;
+        let i, ilen;
+        this._removeUnreferencedMetasets();
+        for(i = 0, ilen = datasets.length; i < ilen; i++){
+            const dataset = datasets[i];
+            let meta = this.getDatasetMeta(i);
+            const type = dataset.type || this.config.type;
+            if (meta.type && meta.type !== type) {
+                this._destroyDatasetMeta(i);
+                meta = this.getDatasetMeta(i);
+            }
+            meta.type = type;
+            meta.indexAxis = dataset.indexAxis || getIndexAxis(type, this.options);
+            meta.order = dataset.order || 0;
+            meta.index = i;
+            meta.label = '' + dataset.label;
+            meta.visible = this.isDatasetVisible(i);
+            if (meta.controller) {
+                meta.controller.updateIndex(i);
+                meta.controller.linkScales();
+            } else {
+                const ControllerClass = registry.getController(type);
+                const { datasetElementType , dataElementType  } = defaults.datasets[type];
+                Object.assign(ControllerClass, {
+                    dataElementType: registry.getElement(dataElementType),
+                    datasetElementType: datasetElementType && registry.getElement(datasetElementType)
+                });
+                meta.controller = new ControllerClass(this, i);
+                newControllers.push(meta.controller);
+            }
+        }
+        this._updateMetasets();
+        return newControllers;
+    }
+ _resetElements() {
+        each(this.data.datasets, (dataset, datasetIndex)=>{
+            this.getDatasetMeta(datasetIndex).controller.reset();
+        }, this);
+    }
+ reset() {
+        this._resetElements();
+        this.notifyPlugins('reset');
+    }
+    update(mode) {
+        const config = this.config;
+        config.update();
+        const options = this._options = config.createResolver(config.chartOptionScopes(), this.getContext());
+        const animsDisabled = this._animationsDisabled = !options.animation;
+        this._updateScales();
+        this._checkEventBindings();
+        this._updateHiddenIndices();
+        this._plugins.invalidate();
+        if (this.notifyPlugins('beforeUpdate', {
+            mode,
+            cancelable: true
+        }) === false) {
+            return;
+        }
+        const newControllers = this.buildOrUpdateControllers();
+        this.notifyPlugins('beforeElementsUpdate');
+        let minPadding = 0;
+        for(let i = 0, ilen = this.data.datasets.length; i < ilen; i++){
+            const { controller  } = this.getDatasetMeta(i);
+            const reset = !animsDisabled && newControllers.indexOf(controller) === -1;
+            controller.buildOrUpdateElements(reset);
+            minPadding = Math.max(+controller.getMaxOverflow(), minPadding);
+        }
+        minPadding = this._minPadding = options.layout.autoPadding ? minPadding : 0;
+        this._updateLayout(minPadding);
+        if (!animsDisabled) {
+            each(newControllers, (controller)=>{
+                controller.reset();
+            });
+        }
+        this._updateDatasets(mode);
+        this.notifyPlugins('afterUpdate', {
+            mode
+        });
+        this._layers.sort(compare2Level('z', '_idx'));
+        const { _active , _lastEvent  } = this;
+        if (_lastEvent) {
+            this._eventHandler(_lastEvent, true);
+        } else if (_active.length) {
+            this._updateHoverStyles(_active, _active, true);
+        }
+        this.render();
+    }
+ _updateScales() {
+        each(this.scales, (scale)=>{
+            layouts.removeBox(this, scale);
+        });
+        this.ensureScalesHaveIDs();
+        this.buildOrUpdateScales();
+    }
+ _checkEventBindings() {
+        const options = this.options;
+        const existingEvents = new Set(Object.keys(this._listeners));
+        const newEvents = new Set(options.events);
+        if (!setsEqual(existingEvents, newEvents) || !!this._responsiveListeners !== options.responsive) {
+            this.unbindEvents();
+            this.bindEvents();
+        }
+    }
+ _updateHiddenIndices() {
+        const { _hiddenIndices  } = this;
+        const changes = this._getUniformDataChanges() || [];
+        for (const { method , start , count  } of changes){
+            const move = method === '_removeElements' ? -count : count;
+            moveNumericKeys(_hiddenIndices, start, move);
+        }
+    }
+ _getUniformDataChanges() {
+        const _dataChanges = this._dataChanges;
+        if (!_dataChanges || !_dataChanges.length) {
+            return;
+        }
+        this._dataChanges = [];
+        const datasetCount = this.data.datasets.length;
+        const makeSet = (idx)=>new Set(_dataChanges.filter((c)=>c[0] === idx).map((c, i)=>i + ',' + c.splice(1).join(',')));
+        const changeSet = makeSet(0);
+        for(let i = 1; i < datasetCount; i++){
+            if (!setsEqual(changeSet, makeSet(i))) {
+                return;
+            }
+        }
+        return Array.from(changeSet).map((c)=>c.split(',')).map((a)=>({
+                method: a[1],
+                start: +a[2],
+                count: +a[3]
+            }));
+    }
+ _updateLayout(minPadding) {
+        if (this.notifyPlugins('beforeLayout', {
+            cancelable: true
+        }) === false) {
+            return;
+        }
+        layouts.update(this, this.width, this.height, minPadding);
+        const area = this.chartArea;
+        const noArea = area.width <= 0 || area.height <= 0;
+        this._layers = [];
+        each(this.boxes, (box)=>{
+            if (noArea && box.position === 'chartArea') {
+                return;
+            }
+            if (box.configure) {
+                box.configure();
+            }
+            this._layers.push(...box._layers());
+        }, this);
+        this._layers.forEach((item, index)=>{
+            item._idx = index;
+        });
+        this.notifyPlugins('afterLayout');
+    }
+ _updateDatasets(mode) {
+        if (this.notifyPlugins('beforeDatasetsUpdate', {
+            mode,
+            cancelable: true
+        }) === false) {
+            return;
+        }
+        for(let i = 0, ilen = this.data.datasets.length; i < ilen; ++i){
+            this.getDatasetMeta(i).controller.configure();
+        }
+        for(let i = 0, ilen = this.data.datasets.length; i < ilen; ++i){
+            this._updateDataset(i, isFunction(mode) ? mode({
+                datasetIndex: i
+            }) : mode);
+        }
+        this.notifyPlugins('afterDatasetsUpdate', {
+            mode
+        });
+    }
+ _updateDataset(index, mode) {
+        const meta = this.getDatasetMeta(index);
+        const args = {
+            meta,
+            index,
+            mode,
+            cancelable: true
+        };
+        if (this.notifyPlugins('beforeDatasetUpdate', args) === false) {
+            return;
+        }
+        meta.controller._update(mode);
+        args.cancelable = false;
+        this.notifyPlugins('afterDatasetUpdate', args);
+    }
+    render() {
+        if (this.notifyPlugins('beforeRender', {
+            cancelable: true
+        }) === false) {
+            return;
+        }
+        if (animator.has(this)) {
+            if (this.attached && !animator.running(this)) {
+                animator.start(this);
+            }
+        } else {
+            this.draw();
+            onAnimationsComplete({
+                chart: this
+            });
+        }
+    }
+    draw() {
+        let i;
+        if (this._resizeBeforeDraw) {
+            const { width , height  } = this._resizeBeforeDraw;
+            this._resizeBeforeDraw = null;
+            this._resize(width, height);
+        }
+        this.clear();
+        if (this.width <= 0 || this.height <= 0) {
+            return;
+        }
+        if (this.notifyPlugins('beforeDraw', {
+            cancelable: true
+        }) === false) {
+            return;
+        }
+        const layers = this._layers;
+        for(i = 0; i < layers.length && layers[i].z <= 0; ++i){
+            layers[i].draw(this.chartArea);
+        }
+        this._drawDatasets();
+        for(; i < layers.length; ++i){
+            layers[i].draw(this.chartArea);
+        }
+        this.notifyPlugins('afterDraw');
+    }
+ _getSortedDatasetMetas(filterVisible) {
+        const metasets = this._sortedMetasets;
+        const result = [];
+        let i, ilen;
+        for(i = 0, ilen = metasets.length; i < ilen; ++i){
+            const meta = metasets[i];
+            if (!filterVisible || meta.visible) {
+                result.push(meta);
+            }
+        }
+        return result;
+    }
+ getSortedVisibleDatasetMetas() {
+        return this._getSortedDatasetMetas(true);
+    }
+ _drawDatasets() {
+        if (this.notifyPlugins('beforeDatasetsDraw', {
+            cancelable: true
+        }) === false) {
+            return;
+        }
+        const metasets = this.getSortedVisibleDatasetMetas();
+        for(let i = metasets.length - 1; i >= 0; --i){
+            this._drawDataset(metasets[i]);
+        }
+        this.notifyPlugins('afterDatasetsDraw');
+    }
+ _drawDataset(meta) {
+        const ctx = this.ctx;
+        const args = {
+            meta,
+            index: meta.index,
+            cancelable: true
+        };
+        const clip = getDatasetClipArea(this, meta);
+        if (this.notifyPlugins('beforeDatasetDraw', args) === false) {
+            return;
+        }
+        if (clip) {
+            clipArea(ctx, clip);
+        }
+        meta.controller.draw();
+        if (clip) {
+            unclipArea(ctx);
+        }
+        args.cancelable = false;
+        this.notifyPlugins('afterDatasetDraw', args);
+    }
+ isPointInArea(point) {
+        return _isPointInArea(point, this.chartArea, this._minPadding);
+    }
+    getElementsAtEventForMode(e, mode, options, useFinalPosition) {
+        const method = Interaction.modes[mode];
+        if (typeof method === 'function') {
+            return method(this, e, options, useFinalPosition);
+        }
+        return [];
+    }
+    getDatasetMeta(datasetIndex) {
+        const dataset = this.data.datasets[datasetIndex];
+        const metasets = this._metasets;
+        let meta = metasets.filter((x)=>x && x._dataset === dataset).pop();
+        if (!meta) {
+            meta = {
+                type: null,
+                data: [],
+                dataset: null,
+                controller: null,
+                hidden: null,
+                xAxisID: null,
+                yAxisID: null,
+                order: dataset && dataset.order || 0,
+                index: datasetIndex,
+                _dataset: dataset,
+                _parsed: [],
+                _sorted: false
+            };
+            metasets.push(meta);
+        }
+        return meta;
+    }
+    getContext() {
+        return this.$context || (this.$context = createContext(null, {
+            chart: this,
+            type: 'chart'
+        }));
+    }
+    getVisibleDatasetCount() {
+        return this.getSortedVisibleDatasetMetas().length;
+    }
+    isDatasetVisible(datasetIndex) {
+        const dataset = this.data.datasets[datasetIndex];
+        if (!dataset) {
+            return false;
+        }
+        const meta = this.getDatasetMeta(datasetIndex);
+        return typeof meta.hidden === 'boolean' ? !meta.hidden : !dataset.hidden;
+    }
+    setDatasetVisibility(datasetIndex, visible) {
+        const meta = this.getDatasetMeta(datasetIndex);
+        meta.hidden = !visible;
+    }
+    toggleDataVisibility(index) {
+        this._hiddenIndices[index] = !this._hiddenIndices[index];
+    }
+    getDataVisibility(index) {
+        return !this._hiddenIndices[index];
+    }
+ _updateVisibility(datasetIndex, dataIndex, visible) {
+        const mode = visible ? 'show' : 'hide';
+        const meta = this.getDatasetMeta(datasetIndex);
+        const anims = meta.controller._resolveAnimations(undefined, mode);
+        if (defined(dataIndex)) {
+            meta.data[dataIndex].hidden = !visible;
+            this.update();
+        } else {
+            this.setDatasetVisibility(datasetIndex, visible);
+            anims.update(meta, {
+                visible
+            });
+            this.update((ctx)=>ctx.datasetIndex === datasetIndex ? mode : undefined);
+        }
+    }
+    hide(datasetIndex, dataIndex) {
+        this._updateVisibility(datasetIndex, dataIndex, false);
+    }
+    show(datasetIndex, dataIndex) {
+        this._updateVisibility(datasetIndex, dataIndex, true);
+    }
+ _destroyDatasetMeta(datasetIndex) {
+        const meta = this._metasets[datasetIndex];
+        if (meta && meta.controller) {
+            meta.controller._destroy();
+        }
+        delete this._metasets[datasetIndex];
+    }
+    _stop() {
+        let i, ilen;
+        this.stop();
+        animator.remove(this);
+        for(i = 0, ilen = this.data.datasets.length; i < ilen; ++i){
+            this._destroyDatasetMeta(i);
+        }
+    }
+    destroy() {
+        this.notifyPlugins('beforeDestroy');
+        const { canvas , ctx  } = this;
+        this._stop();
+        this.config.clearCache();
+        if (canvas) {
+            this.unbindEvents();
+            clearCanvas(canvas, ctx);
+            this.platform.releaseContext(ctx);
+            this.canvas = null;
+            this.ctx = null;
+        }
+        delete instances[this.id];
+        this.notifyPlugins('afterDestroy');
+    }
+    toBase64Image(...args) {
+        return this.canvas.toDataURL(...args);
+    }
+ bindEvents() {
+        this.bindUserEvents();
+        if (this.options.responsive) {
+            this.bindResponsiveEvents();
+        } else {
+            this.attached = true;
+        }
+    }
+ bindUserEvents() {
+        const listeners = this._listeners;
+        const platform = this.platform;
+        const _add = (type, listener)=>{
+            platform.addEventListener(this, type, listener);
+            listeners[type] = listener;
+        };
+        const listener = (e, x, y)=>{
+            e.offsetX = x;
+            e.offsetY = y;
+            this._eventHandler(e);
+        };
+        each(this.options.events, (type)=>_add(type, listener));
+    }
+ bindResponsiveEvents() {
+        if (!this._responsiveListeners) {
+            this._responsiveListeners = {};
+        }
+        const listeners = this._responsiveListeners;
+        const platform = this.platform;
+        const _add = (type, listener)=>{
+            platform.addEventListener(this, type, listener);
+            listeners[type] = listener;
+        };
+        const _remove = (type, listener)=>{
+            if (listeners[type]) {
+                platform.removeEventListener(this, type, listener);
+                delete listeners[type];
+            }
+        };
+        const listener = (width, height)=>{
+            if (this.canvas) {
+                this.resize(width, height);
+            }
+        };
+        let detached;
+        const attached = ()=>{
+            _remove('attach', attached);
+            this.attached = true;
+            this.resize();
+            _add('resize', listener);
+            _add('detach', detached);
+        };
+        detached = ()=>{
+            this.attached = false;
+            _remove('resize', listener);
+            this._stop();
+            this._resize(0, 0);
+            _add('attach', attached);
+        };
+        if (platform.isAttached(this.canvas)) {
+            attached();
+        } else {
+            detached();
+        }
+    }
+ unbindEvents() {
+        each(this._listeners, (listener, type)=>{
+            this.platform.removeEventListener(this, type, listener);
+        });
+        this._listeners = {};
+        each(this._responsiveListeners, (listener, type)=>{
+            this.platform.removeEventListener(this, type, listener);
+        });
+        this._responsiveListeners = undefined;
+    }
+    updateHoverStyle(items, mode, enabled) {
+        const prefix = enabled ? 'set' : 'remove';
+        let meta, item, i, ilen;
+        if (mode === 'dataset') {
+            meta = this.getDatasetMeta(items[0].datasetIndex);
+            meta.controller['_' + prefix + 'DatasetHoverStyle']();
+        }
+        for(i = 0, ilen = items.length; i < ilen; ++i){
+            item = items[i];
+            const controller = item && this.getDatasetMeta(item.datasetIndex).controller;
+            if (controller) {
+                controller[prefix + 'HoverStyle'](item.element, item.datasetIndex, item.index);
+            }
+        }
+    }
+ getActiveElements() {
+        return this._active || [];
+    }
+ setActiveElements(activeElements) {
+        const lastActive = this._active || [];
+        const active = activeElements.map(({ datasetIndex , index  })=>{
+            const meta = this.getDatasetMeta(datasetIndex);
+            if (!meta) {
+                throw new Error('No dataset found at index ' + datasetIndex);
+            }
+            return {
+                datasetIndex,
+                element: meta.data[index],
+                index
+            };
+        });
+        const changed = !_elementsEqual(active, lastActive);
+        if (changed) {
+            this._active = active;
+            this._lastEvent = null;
+            this._updateHoverStyles(active, lastActive);
+        }
+    }
+ notifyPlugins(hook, args, filter) {
+        return this._plugins.notify(this, hook, args, filter);
+    }
+ isPluginEnabled(pluginId) {
+        return this._plugins._cache.filter((p)=>p.plugin.id === pluginId).length === 1;
+    }
+ _updateHoverStyles(active, lastActive, replay) {
+        const hoverOptions = this.options.hover;
+        const diff = (a, b)=>a.filter((x)=>!b.some((y)=>x.datasetIndex === y.datasetIndex && x.index === y.index));
+        const deactivated = diff(lastActive, active);
+        const activated = replay ? active : diff(active, lastActive);
+        if (deactivated.length) {
+            this.updateHoverStyle(deactivated, hoverOptions.mode, false);
+        }
+        if (activated.length && hoverOptions.mode) {
+            this.updateHoverStyle(activated, hoverOptions.mode, true);
+        }
+    }
+ _eventHandler(e, replay) {
+        const args = {
+            event: e,
+            replay,
+            cancelable: true,
+            inChartArea: this.isPointInArea(e)
+        };
+        const eventFilter = (plugin)=>(plugin.options.events || this.options.events).includes(e.native.type);
+        if (this.notifyPlugins('beforeEvent', args, eventFilter) === false) {
+            return;
+        }
+        const changed = this._handleEvent(e, replay, args.inChartArea);
+        args.cancelable = false;
+        this.notifyPlugins('afterEvent', args, eventFilter);
+        if (changed || args.changed) {
+            this.render();
+        }
+        return this;
+    }
+ _handleEvent(e, replay, inChartArea) {
+        const { _active: lastActive = [] , options  } = this;
+        const useFinalPosition = replay;
+        const active = this._getActiveElements(e, lastActive, inChartArea, useFinalPosition);
+        const isClick = _isClickEvent(e);
+        const lastEvent = determineLastEvent(e, this._lastEvent, inChartArea, isClick);
+        if (inChartArea) {
+            this._lastEvent = null;
+            callback(options.onHover, [
+                e,
+                active,
+                this
+            ], this);
+            if (isClick) {
+                callback(options.onClick, [
+                    e,
+                    active,
+                    this
+                ], this);
+            }
+        }
+        const changed = !_elementsEqual(active, lastActive);
+        if (changed || replay) {
+            this._active = active;
+            this._updateHoverStyles(active, lastActive, replay);
+        }
+        this._lastEvent = lastEvent;
+        return changed;
+    }
+ _getActiveElements(e, lastActive, inChartArea, useFinalPosition) {
+        if (e.type === 'mouseout') {
+            return [];
+        }
+        if (!inChartArea) {
+            return lastActive;
+        }
+        const hoverOptions = this.options.hover;
+        return this.getElementsAtEventForMode(e, hoverOptions.mode, hoverOptions, useFinalPosition);
+    }
+}
+function invalidatePlugins() {
+    return each(Chart.instances, (chart)=>chart._plugins.invalidate());
+}
+
+function clipSelf(ctx, element, endAngle) {
+    const { startAngle , x , y , outerRadius , innerRadius , options  } = element;
+    const { borderWidth , borderJoinStyle  } = options;
+    const outerAngleClip = Math.min(borderWidth / outerRadius, _normalizeAngle(startAngle - endAngle));
+    ctx.beginPath();
+    ctx.arc(x, y, outerRadius - borderWidth / 2, startAngle + outerAngleClip / 2, endAngle - outerAngleClip / 2);
+    if (innerRadius > 0) {
+        const innerAngleClip = Math.min(borderWidth / innerRadius, _normalizeAngle(startAngle - endAngle));
+        ctx.arc(x, y, innerRadius + borderWidth / 2, endAngle - innerAngleClip / 2, startAngle + innerAngleClip / 2, true);
+    } else {
+        const clipWidth = Math.min(borderWidth / 2, outerRadius * _normalizeAngle(startAngle - endAngle));
+        if (borderJoinStyle === 'round') {
+            ctx.arc(x, y, clipWidth, endAngle - PI / 2, startAngle + PI / 2, true);
+        } else if (borderJoinStyle === 'bevel') {
+            const r = 2 * clipWidth * clipWidth;
+            const endX = -r * Math.cos(endAngle + PI / 2) + x;
+            const endY = -r * Math.sin(endAngle + PI / 2) + y;
+            const startX = r * Math.cos(startAngle + PI / 2) + x;
+            const startY = r * Math.sin(startAngle + PI / 2) + y;
+            ctx.lineTo(endX, endY);
+            ctx.lineTo(startX, startY);
+        }
+    }
+    ctx.closePath();
+    ctx.moveTo(0, 0);
+    ctx.rect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    ctx.clip('evenodd');
+}
+function clipArc(ctx, element, endAngle) {
+    const { startAngle , pixelMargin , x , y , outerRadius , innerRadius  } = element;
+    let angleMargin = pixelMargin / outerRadius;
+    // Draw an inner border by clipping the arc and drawing a double-width border
+    // Enlarge the clipping arc by 0.33 pixels to eliminate glitches between borders
+    ctx.beginPath();
+    ctx.arc(x, y, outerRadius, startAngle - angleMargin, endAngle + angleMargin);
+    if (innerRadius > pixelMargin) {
+        angleMargin = pixelMargin / innerRadius;
+        ctx.arc(x, y, innerRadius, endAngle + angleMargin, startAngle - angleMargin, true);
+    } else {
+        ctx.arc(x, y, pixelMargin, endAngle + HALF_PI, startAngle - HALF_PI);
+    }
+    ctx.closePath();
+    ctx.clip();
+}
+function toRadiusCorners(value) {
+    return _readValueToProps(value, [
+        'outerStart',
+        'outerEnd',
+        'innerStart',
+        'innerEnd'
+    ]);
+}
+/**
+ * Parse border radius from the provided options
+ */ function parseBorderRadius$1(arc, innerRadius, outerRadius, angleDelta) {
+    const o = toRadiusCorners(arc.options.borderRadius);
+    const halfThickness = (outerRadius - innerRadius) / 2;
+    const innerLimit = Math.min(halfThickness, angleDelta * innerRadius / 2);
+    // Outer limits are complicated. We want to compute the available angular distance at
+    // a radius of outerRadius - borderRadius because for small angular distances, this term limits.
+    // We compute at r = outerRadius - borderRadius because this circle defines the center of the border corners.
+    //
+    // If the borderRadius is large, that value can become negative.
+    // This causes the outer borders to lose their radius entirely, which is rather unexpected. To solve that, if borderRadius > outerRadius
+    // we know that the thickness term will dominate and compute the limits at that point
+    const computeOuterLimit = (val)=>{
+        const outerArcLimit = (outerRadius - Math.min(halfThickness, val)) * angleDelta / 2;
+        return _limitValue(val, 0, Math.min(halfThickness, outerArcLimit));
+    };
+    return {
+        outerStart: computeOuterLimit(o.outerStart),
+        outerEnd: computeOuterLimit(o.outerEnd),
+        innerStart: _limitValue(o.innerStart, 0, innerLimit),
+        innerEnd: _limitValue(o.innerEnd, 0, innerLimit)
+    };
+}
+/**
+ * Convert (r, 𝜃) to (x, y)
+ */ function rThetaToXY(r, theta, x, y) {
+    return {
+        x: x + r * Math.cos(theta),
+        y: y + r * Math.sin(theta)
+    };
+}
+/**
+ * Path the arc, respecting border radius by separating into left and right halves.
+ *
+ *   Start      End
+ *
+ *    1--->a--->2    Outer
+ *   /           \
+ *   8           3
+ *   |           |
+ *   |           |
+ *   7           4
+ *   \           /
+ *    6<---b<---5    Inner
+ */ function pathArc(ctx, element, offset, spacing, end, circular) {
+    const { x , y , startAngle: start , pixelMargin , innerRadius: innerR  } = element;
+    const outerRadius = Math.max(element.outerRadius + spacing + offset - pixelMargin, 0);
+    const innerRadius = innerR > 0 ? innerR + spacing + offset + pixelMargin : 0;
+    let spacingOffset = 0;
+    const alpha = end - start;
+    if (spacing) {
+        // When spacing is present, it is the same for all items
+        // So we adjust the start and end angle of the arc such that
+        // the distance is the same as it would be without the spacing
+        const noSpacingInnerRadius = innerR > 0 ? innerR - spacing : 0;
+        const noSpacingOuterRadius = outerRadius > 0 ? outerRadius - spacing : 0;
+        const avNogSpacingRadius = (noSpacingInnerRadius + noSpacingOuterRadius) / 2;
+        const adjustedAngle = avNogSpacingRadius !== 0 ? alpha * avNogSpacingRadius / (avNogSpacingRadius + spacing) : alpha;
+        spacingOffset = (alpha - adjustedAngle) / 2;
+    }
+    const beta = Math.max(0.001, alpha * outerRadius - offset / PI) / outerRadius;
+    const angleOffset = (alpha - beta) / 2;
+    const startAngle = start + angleOffset + spacingOffset;
+    const endAngle = end - angleOffset - spacingOffset;
+    const { outerStart , outerEnd , innerStart , innerEnd  } = parseBorderRadius$1(element, innerRadius, outerRadius, endAngle - startAngle);
+    const outerStartAdjustedRadius = outerRadius - outerStart;
+    const outerEndAdjustedRadius = outerRadius - outerEnd;
+    const outerStartAdjustedAngle = startAngle + outerStart / outerStartAdjustedRadius;
+    const outerEndAdjustedAngle = endAngle - outerEnd / outerEndAdjustedRadius;
+    const innerStartAdjustedRadius = innerRadius + innerStart;
+    const innerEndAdjustedRadius = innerRadius + innerEnd;
+    const innerStartAdjustedAngle = startAngle + innerStart / innerStartAdjustedRadius;
+    const innerEndAdjustedAngle = endAngle - innerEnd / innerEndAdjustedRadius;
+    ctx.beginPath();
+    if (circular) {
+        // The first arc segments from point 1 to point a to point 2
+        const outerMidAdjustedAngle = (outerStartAdjustedAngle + outerEndAdjustedAngle) / 2;
+        ctx.arc(x, y, outerRadius, outerStartAdjustedAngle, outerMidAdjustedAngle);
+        ctx.arc(x, y, outerRadius, outerMidAdjustedAngle, outerEndAdjustedAngle);
+        // The corner segment from point 2 to point 3
+        if (outerEnd > 0) {
+            const pCenter = rThetaToXY(outerEndAdjustedRadius, outerEndAdjustedAngle, x, y);
+            ctx.arc(pCenter.x, pCenter.y, outerEnd, outerEndAdjustedAngle, endAngle + HALF_PI);
+        }
+        // The line from point 3 to point 4
+        const p4 = rThetaToXY(innerEndAdjustedRadius, endAngle, x, y);
+        ctx.lineTo(p4.x, p4.y);
+        // The corner segment from point 4 to point 5
+        if (innerEnd > 0) {
+            const pCenter = rThetaToXY(innerEndAdjustedRadius, innerEndAdjustedAngle, x, y);
+            ctx.arc(pCenter.x, pCenter.y, innerEnd, endAngle + HALF_PI, innerEndAdjustedAngle + Math.PI);
+        }
+        // The inner arc from point 5 to point b to point 6
+        const innerMidAdjustedAngle = (endAngle - innerEnd / innerRadius + (startAngle + innerStart / innerRadius)) / 2;
+        ctx.arc(x, y, innerRadius, endAngle - innerEnd / innerRadius, innerMidAdjustedAngle, true);
+        ctx.arc(x, y, innerRadius, innerMidAdjustedAngle, startAngle + innerStart / innerRadius, true);
+        // The corner segment from point 6 to point 7
+        if (innerStart > 0) {
+            const pCenter = rThetaToXY(innerStartAdjustedRadius, innerStartAdjustedAngle, x, y);
+            ctx.arc(pCenter.x, pCenter.y, innerStart, innerStartAdjustedAngle + Math.PI, startAngle - HALF_PI);
+        }
+        // The line from point 7 to point 8
+        const p8 = rThetaToXY(outerStartAdjustedRadius, startAngle, x, y);
+        ctx.lineTo(p8.x, p8.y);
+        // The corner segment from point 8 to point 1
+        if (outerStart > 0) {
+            const pCenter = rThetaToXY(outerStartAdjustedRadius, outerStartAdjustedAngle, x, y);
+            ctx.arc(pCenter.x, pCenter.y, outerStart, startAngle - HALF_PI, outerStartAdjustedAngle);
+        }
+    } else {
+        ctx.moveTo(x, y);
+        const outerStartX = Math.cos(outerStartAdjustedAngle) * outerRadius + x;
+        const outerStartY = Math.sin(outerStartAdjustedAngle) * outerRadius + y;
+        ctx.lineTo(outerStartX, outerStartY);
+        const outerEndX = Math.cos(outerEndAdjustedAngle) * outerRadius + x;
+        const outerEndY = Math.sin(outerEndAdjustedAngle) * outerRadius + y;
+        ctx.lineTo(outerEndX, outerEndY);
+    }
+    ctx.closePath();
+}
+function drawArc(ctx, element, offset, spacing, circular) {
+    const { fullCircles , startAngle , circumference  } = element;
+    let endAngle = element.endAngle;
+    if (fullCircles) {
+        pathArc(ctx, element, offset, spacing, endAngle, circular);
+        for(let i = 0; i < fullCircles; ++i){
+            ctx.fill();
+        }
+        if (!isNaN(circumference)) {
+            endAngle = startAngle + (circumference % TAU || TAU);
+        }
+    }
+    pathArc(ctx, element, offset, spacing, endAngle, circular);
+    ctx.fill();
+    return endAngle;
+}
+function drawBorder(ctx, element, offset, spacing, circular) {
+    const { fullCircles , startAngle , circumference , options  } = element;
+    const { borderWidth , borderJoinStyle , borderDash , borderDashOffset , borderRadius  } = options;
+    const inner = options.borderAlign === 'inner';
+    if (!borderWidth) {
+        return;
+    }
+    ctx.setLineDash(borderDash || []);
+    ctx.lineDashOffset = borderDashOffset;
+    if (inner) {
+        ctx.lineWidth = borderWidth * 2;
+        ctx.lineJoin = borderJoinStyle || 'round';
+    } else {
+        ctx.lineWidth = borderWidth;
+        ctx.lineJoin = borderJoinStyle || 'bevel';
+    }
+    let endAngle = element.endAngle;
+    if (fullCircles) {
+        pathArc(ctx, element, offset, spacing, endAngle, circular);
+        for(let i = 0; i < fullCircles; ++i){
+            ctx.stroke();
+        }
+        if (!isNaN(circumference)) {
+            endAngle = startAngle + (circumference % TAU || TAU);
+        }
+    }
+    if (inner) {
+        clipArc(ctx, element, endAngle);
+    }
+    if (options.selfJoin && endAngle - startAngle >= PI && borderRadius === 0 && borderJoinStyle !== 'miter') {
+        clipSelf(ctx, element, endAngle);
+    }
+    if (!fullCircles) {
+        pathArc(ctx, element, offset, spacing, endAngle, circular);
+        ctx.stroke();
+    }
+}
+class ArcElement extends Element {
+    static id = 'arc';
+    static defaults = {
+        borderAlign: 'center',
+        borderColor: '#fff',
+        borderDash: [],
+        borderDashOffset: 0,
+        borderJoinStyle: undefined,
+        borderRadius: 0,
+        borderWidth: 2,
+        offset: 0,
+        spacing: 0,
+        angle: undefined,
+        circular: true,
+        selfJoin: false
+    };
+    static defaultRoutes = {
+        backgroundColor: 'backgroundColor'
+    };
+    static descriptors = {
+        _scriptable: true,
+        _indexable: (name)=>name !== 'borderDash'
+    };
+    circumference;
+    endAngle;
+    fullCircles;
+    innerRadius;
+    outerRadius;
+    pixelMargin;
+    startAngle;
+    constructor(cfg){
+        super();
+        this.options = undefined;
+        this.circumference = undefined;
+        this.startAngle = undefined;
+        this.endAngle = undefined;
+        this.innerRadius = undefined;
+        this.outerRadius = undefined;
+        this.pixelMargin = 0;
+        this.fullCircles = 0;
+        if (cfg) {
+            Object.assign(this, cfg);
+        }
+    }
+    inRange(chartX, chartY, useFinalPosition) {
+        const point = this.getProps([
+            'x',
+            'y'
+        ], useFinalPosition);
+        const { angle , distance  } = getAngleFromPoint(point, {
+            x: chartX,
+            y: chartY
+        });
+        const { startAngle , endAngle , innerRadius , outerRadius , circumference  } = this.getProps([
+            'startAngle',
+            'endAngle',
+            'innerRadius',
+            'outerRadius',
+            'circumference'
+        ], useFinalPosition);
+        const rAdjust = (this.options.spacing + this.options.borderWidth) / 2;
+        const _circumference = valueOrDefault(circumference, endAngle - startAngle);
+        const nonZeroBetween = _angleBetween(angle, startAngle, endAngle) && startAngle !== endAngle;
+        const betweenAngles = _circumference >= TAU || nonZeroBetween;
+        const withinRadius = _isBetween(distance, innerRadius + rAdjust, outerRadius + rAdjust);
+        return betweenAngles && withinRadius;
+    }
+    getCenterPoint(useFinalPosition) {
+        const { x , y , startAngle , endAngle , innerRadius , outerRadius  } = this.getProps([
+            'x',
+            'y',
+            'startAngle',
+            'endAngle',
+            'innerRadius',
+            'outerRadius'
+        ], useFinalPosition);
+        const { offset , spacing  } = this.options;
+        const halfAngle = (startAngle + endAngle) / 2;
+        const halfRadius = (innerRadius + outerRadius + spacing + offset) / 2;
+        return {
+            x: x + Math.cos(halfAngle) * halfRadius,
+            y: y + Math.sin(halfAngle) * halfRadius
+        };
+    }
+    tooltipPosition(useFinalPosition) {
+        return this.getCenterPoint(useFinalPosition);
+    }
+    draw(ctx) {
+        const { options , circumference  } = this;
+        const offset = (options.offset || 0) / 4;
+        const spacing = (options.spacing || 0) / 2;
+        const circular = options.circular;
+        this.pixelMargin = options.borderAlign === 'inner' ? 0.33 : 0;
+        this.fullCircles = circumference > TAU ? Math.floor(circumference / TAU) : 0;
+        if (circumference === 0 || this.innerRadius < 0 || this.outerRadius < 0) {
+            return;
+        }
+        ctx.save();
+        const halfAngle = (this.startAngle + this.endAngle) / 2;
+        ctx.translate(Math.cos(halfAngle) * offset, Math.sin(halfAngle) * offset);
+        const fix = 1 - Math.sin(Math.min(PI, circumference || 0));
+        const radiusOffset = offset * fix;
+        ctx.fillStyle = options.backgroundColor;
+        ctx.strokeStyle = options.borderColor;
+        drawArc(ctx, this, radiusOffset, spacing, circular);
+        drawBorder(ctx, this, radiusOffset, spacing, circular);
+        ctx.restore();
+    }
+}
+
+function setStyle(ctx, options, style = options) {
+    ctx.lineCap = valueOrDefault(style.borderCapStyle, options.borderCapStyle);
+    ctx.setLineDash(valueOrDefault(style.borderDash, options.borderDash));
+    ctx.lineDashOffset = valueOrDefault(style.borderDashOffset, options.borderDashOffset);
+    ctx.lineJoin = valueOrDefault(style.borderJoinStyle, options.borderJoinStyle);
+    ctx.lineWidth = valueOrDefault(style.borderWidth, options.borderWidth);
+    ctx.strokeStyle = valueOrDefault(style.borderColor, options.borderColor);
+}
+function lineTo(ctx, previous, target) {
+    ctx.lineTo(target.x, target.y);
+}
+ function getLineMethod(options) {
+    if (options.stepped) {
+        return _steppedLineTo;
+    }
+    if (options.tension || options.cubicInterpolationMode === 'monotone') {
+        return _bezierCurveTo;
+    }
+    return lineTo;
+}
+function pathVars(points, segment, params = {}) {
+    const count = points.length;
+    const { start: paramsStart = 0 , end: paramsEnd = count - 1  } = params;
+    const { start: segmentStart , end: segmentEnd  } = segment;
+    const start = Math.max(paramsStart, segmentStart);
+    const end = Math.min(paramsEnd, segmentEnd);
+    const outside = paramsStart < segmentStart && paramsEnd < segmentStart || paramsStart > segmentEnd && paramsEnd > segmentEnd;
+    return {
+        count,
+        start,
+        loop: segment.loop,
+        ilen: end < start && !outside ? count + end - start : end - start
+    };
+}
+ function pathSegment(ctx, line, segment, params) {
+    const { points , options  } = line;
+    const { count , start , loop , ilen  } = pathVars(points, segment, params);
+    const lineMethod = getLineMethod(options);
+    let { move =true , reverse  } = params || {};
+    let i, point, prev;
+    for(i = 0; i <= ilen; ++i){
+        point = points[(start + (reverse ? ilen - i : i)) % count];
+        if (point.skip) {
+            continue;
+        } else if (move) {
+            ctx.moveTo(point.x, point.y);
+            move = false;
+        } else {
+            lineMethod(ctx, prev, point, reverse, options.stepped);
+        }
+        prev = point;
+    }
+    if (loop) {
+        point = points[(start + (reverse ? ilen : 0)) % count];
+        lineMethod(ctx, prev, point, reverse, options.stepped);
+    }
+    return !!loop;
+}
+ function fastPathSegment(ctx, line, segment, params) {
+    const points = line.points;
+    const { count , start , ilen  } = pathVars(points, segment, params);
+    const { move =true , reverse  } = params || {};
+    let avgX = 0;
+    let countX = 0;
+    let i, point, prevX, minY, maxY, lastY;
+    const pointIndex = (index)=>(start + (reverse ? ilen - index : index)) % count;
+    const drawX = ()=>{
+        if (minY !== maxY) {
+            ctx.lineTo(avgX, maxY);
+            ctx.lineTo(avgX, minY);
+            ctx.lineTo(avgX, lastY);
+        }
+    };
+    if (move) {
+        point = points[pointIndex(0)];
+        ctx.moveTo(point.x, point.y);
+    }
+    for(i = 0; i <= ilen; ++i){
+        point = points[pointIndex(i)];
+        if (point.skip) {
+            continue;
+        }
+        const x = point.x;
+        const y = point.y;
+        const truncX = x | 0;
+        if (truncX === prevX) {
+            if (y < minY) {
+                minY = y;
+            } else if (y > maxY) {
+                maxY = y;
+            }
+            avgX = (countX * avgX + x) / ++countX;
+        } else {
+            drawX();
+            ctx.lineTo(x, y);
+            prevX = truncX;
+            countX = 0;
+            minY = maxY = y;
+        }
+        lastY = y;
+    }
+    drawX();
+}
+ function _getSegmentMethod(line) {
+    const opts = line.options;
+    const borderDash = opts.borderDash && opts.borderDash.length;
+    const useFastPath = !line._decimated && !line._loop && !opts.tension && opts.cubicInterpolationMode !== 'monotone' && !opts.stepped && !borderDash;
+    return useFastPath ? fastPathSegment : pathSegment;
+}
+ function _getInterpolationMethod(options) {
+    if (options.stepped) {
+        return _steppedInterpolation;
+    }
+    if (options.tension || options.cubicInterpolationMode === 'monotone') {
+        return _bezierInterpolation;
+    }
+    return _pointInLine;
+}
+function strokePathWithCache(ctx, line, start, count) {
+    let path = line._path;
+    if (!path) {
+        path = line._path = new Path2D();
+        if (line.path(path, start, count)) {
+            path.closePath();
+        }
+    }
+    setStyle(ctx, line.options);
+    ctx.stroke(path);
+}
+function strokePathDirect(ctx, line, start, count) {
+    const { segments , options  } = line;
+    const segmentMethod = _getSegmentMethod(line);
+    for (const segment of segments){
+        setStyle(ctx, options, segment.style);
+        ctx.beginPath();
+        if (segmentMethod(ctx, line, segment, {
+            start,
+            end: start + count - 1
+        })) {
+            ctx.closePath();
+        }
+        ctx.stroke();
+    }
+}
+const usePath2D = typeof Path2D === 'function';
+function draw(ctx, line, start, count) {
+    if (usePath2D && !line.options.segment) {
+        strokePathWithCache(ctx, line, start, count);
+    } else {
+        strokePathDirect(ctx, line, start, count);
+    }
+}
+class LineElement extends Element {
+    static id = 'line';
+ static defaults = {
+        borderCapStyle: 'butt',
+        borderDash: [],
+        borderDashOffset: 0,
+        borderJoinStyle: 'miter',
+        borderWidth: 3,
+        capBezierPoints: true,
+        cubicInterpolationMode: 'default',
+        fill: false,
+        spanGaps: false,
+        stepped: false,
+        tension: 0
+    };
+ static defaultRoutes = {
+        backgroundColor: 'backgroundColor',
+        borderColor: 'borderColor'
+    };
+    static descriptors = {
+        _scriptable: true,
+        _indexable: (name)=>name !== 'borderDash' && name !== 'fill'
+    };
+    constructor(cfg){
+        super();
+        this.animated = true;
+        this.options = undefined;
+        this._chart = undefined;
+        this._loop = undefined;
+        this._fullLoop = undefined;
+        this._path = undefined;
+        this._points = undefined;
+        this._segments = undefined;
+        this._decimated = false;
+        this._pointsUpdated = false;
+        this._datasetIndex = undefined;
+        if (cfg) {
+            Object.assign(this, cfg);
+        }
+    }
+    updateControlPoints(chartArea, indexAxis) {
+        const options = this.options;
+        if ((options.tension || options.cubicInterpolationMode === 'monotone') && !options.stepped && !this._pointsUpdated) {
+            const loop = options.spanGaps ? this._loop : this._fullLoop;
+            _updateBezierControlPoints(this._points, options, chartArea, loop, indexAxis);
+            this._pointsUpdated = true;
+        }
+    }
+    set points(points) {
+        this._points = points;
+        delete this._segments;
+        delete this._path;
+        this._pointsUpdated = false;
+    }
+    get points() {
+        return this._points;
+    }
+    get segments() {
+        return this._segments || (this._segments = _computeSegments(this, this.options.segment));
+    }
+ first() {
+        const segments = this.segments;
+        const points = this.points;
+        return segments.length && points[segments[0].start];
+    }
+ last() {
+        const segments = this.segments;
+        const points = this.points;
+        const count = segments.length;
+        return count && points[segments[count - 1].end];
+    }
+ interpolate(point, property) {
+        const options = this.options;
+        const value = point[property];
+        const points = this.points;
+        const segments = _boundSegments(this, {
+            property,
+            start: value,
+            end: value
+        });
+        if (!segments.length) {
+            return;
+        }
+        const result = [];
+        const _interpolate = _getInterpolationMethod(options);
+        let i, ilen;
+        for(i = 0, ilen = segments.length; i < ilen; ++i){
+            const { start , end  } = segments[i];
+            const p1 = points[start];
+            const p2 = points[end];
+            if (p1 === p2) {
+                result.push(p1);
+                continue;
+            }
+            const t = Math.abs((value - p1[property]) / (p2[property] - p1[property]));
+            const interpolated = _interpolate(p1, p2, t, options.stepped);
+            interpolated[property] = point[property];
+            result.push(interpolated);
+        }
+        return result.length === 1 ? result[0] : result;
+    }
+ pathSegment(ctx, segment, params) {
+        const segmentMethod = _getSegmentMethod(this);
+        return segmentMethod(ctx, this, segment, params);
+    }
+ path(ctx, start, count) {
+        const segments = this.segments;
+        const segmentMethod = _getSegmentMethod(this);
+        let loop = this._loop;
+        start = start || 0;
+        count = count || this.points.length - start;
+        for (const segment of segments){
+            loop &= segmentMethod(ctx, this, segment, {
+                start,
+                end: start + count - 1
+            });
+        }
+        return !!loop;
+    }
+ draw(ctx, chartArea, start, count) {
+        const options = this.options || {};
+        const points = this.points || [];
+        if (points.length && options.borderWidth) {
+            ctx.save();
+            draw(ctx, this, start, count);
+            ctx.restore();
+        }
+        if (this.animated) {
+            this._pointsUpdated = false;
+            this._path = undefined;
+        }
+    }
+}
+
+function inRange$1(el, pos, axis, useFinalPosition) {
+    const options = el.options;
+    const { [axis]: value  } = el.getProps([
+        axis
+    ], useFinalPosition);
+    return Math.abs(pos - value) < options.radius + options.hitRadius;
+}
+class PointElement extends Element {
+    static id = 'point';
+    parsed;
+    skip;
+    stop;
+    /**
+   * @type {any}
+   */ static defaults = {
+        borderWidth: 1,
+        hitRadius: 1,
+        hoverBorderWidth: 1,
+        hoverRadius: 4,
+        pointStyle: 'circle',
+        radius: 3,
+        rotation: 0
+    };
+    /**
+   * @type {any}
+   */ static defaultRoutes = {
+        backgroundColor: 'backgroundColor',
+        borderColor: 'borderColor'
+    };
+    constructor(cfg){
+        super();
+        this.options = undefined;
+        this.parsed = undefined;
+        this.skip = undefined;
+        this.stop = undefined;
+        if (cfg) {
+            Object.assign(this, cfg);
+        }
+    }
+    inRange(mouseX, mouseY, useFinalPosition) {
+        const options = this.options;
+        const { x , y  } = this.getProps([
+            'x',
+            'y'
+        ], useFinalPosition);
+        return Math.pow(mouseX - x, 2) + Math.pow(mouseY - y, 2) < Math.pow(options.hitRadius + options.radius, 2);
+    }
+    inXRange(mouseX, useFinalPosition) {
+        return inRange$1(this, mouseX, 'x', useFinalPosition);
+    }
+    inYRange(mouseY, useFinalPosition) {
+        return inRange$1(this, mouseY, 'y', useFinalPosition);
+    }
+    getCenterPoint(useFinalPosition) {
+        const { x , y  } = this.getProps([
+            'x',
+            'y'
+        ], useFinalPosition);
+        return {
+            x,
+            y
+        };
+    }
+    size(options) {
+        options = options || this.options || {};
+        let radius = options.radius || 0;
+        radius = Math.max(radius, radius && options.hoverRadius || 0);
+        const borderWidth = radius && options.borderWidth || 0;
+        return (radius + borderWidth) * 2;
+    }
+    draw(ctx, area) {
+        const options = this.options;
+        if (this.skip || options.radius < 0.1 || !_isPointInArea(this, area, this.size(options) / 2)) {
+            return;
+        }
+        ctx.strokeStyle = options.borderColor;
+        ctx.lineWidth = options.borderWidth;
+        ctx.fillStyle = options.backgroundColor;
+        drawPoint(ctx, options, this.x, this.y);
+    }
+    getRange() {
+        const options = this.options || {};
+        // @ts-expect-error Fallbacks should never be hit in practice
+        return options.radius + options.hitRadius;
+    }
+}
+
+function getBarBounds(bar, useFinalPosition) {
+    const { x , y , base , width , height  } =  bar.getProps([
+        'x',
+        'y',
+        'base',
+        'width',
+        'height'
+    ], useFinalPosition);
+    let left, right, top, bottom, half;
+    if (bar.horizontal) {
+        half = height / 2;
+        left = Math.min(x, base);
+        right = Math.max(x, base);
+        top = y - half;
+        bottom = y + half;
+    } else {
+        half = width / 2;
+        left = x - half;
+        right = x + half;
+        top = Math.min(y, base);
+        bottom = Math.max(y, base);
+    }
+    return {
+        left,
+        top,
+        right,
+        bottom
+    };
+}
+function skipOrLimit(skip, value, min, max) {
+    return skip ? 0 : _limitValue(value, min, max);
+}
+function parseBorderWidth(bar, maxW, maxH) {
+    const value = bar.options.borderWidth;
+    const skip = bar.borderSkipped;
+    const o = toTRBL(value);
+    return {
+        t: skipOrLimit(skip.top, o.top, 0, maxH),
+        r: skipOrLimit(skip.right, o.right, 0, maxW),
+        b: skipOrLimit(skip.bottom, o.bottom, 0, maxH),
+        l: skipOrLimit(skip.left, o.left, 0, maxW)
+    };
+}
+function parseBorderRadius(bar, maxW, maxH) {
+    const { enableBorderRadius  } = bar.getProps([
+        'enableBorderRadius'
+    ]);
+    const value = bar.options.borderRadius;
+    const o = toTRBLCorners(value);
+    const maxR = Math.min(maxW, maxH);
+    const skip = bar.borderSkipped;
+    const enableBorder = enableBorderRadius || isObject(value);
+    return {
+        topLeft: skipOrLimit(!enableBorder || skip.top || skip.left, o.topLeft, 0, maxR),
+        topRight: skipOrLimit(!enableBorder || skip.top || skip.right, o.topRight, 0, maxR),
+        bottomLeft: skipOrLimit(!enableBorder || skip.bottom || skip.left, o.bottomLeft, 0, maxR),
+        bottomRight: skipOrLimit(!enableBorder || skip.bottom || skip.right, o.bottomRight, 0, maxR)
+    };
+}
+function boundingRects(bar) {
+    const bounds = getBarBounds(bar);
+    const width = bounds.right - bounds.left;
+    const height = bounds.bottom - bounds.top;
+    const border = parseBorderWidth(bar, width / 2, height / 2);
+    const radius = parseBorderRadius(bar, width / 2, height / 2);
+    return {
+        outer: {
+            x: bounds.left,
+            y: bounds.top,
+            w: width,
+            h: height,
+            radius
+        },
+        inner: {
+            x: bounds.left + border.l,
+            y: bounds.top + border.t,
+            w: width - border.l - border.r,
+            h: height - border.t - border.b,
+            radius: {
+                topLeft: Math.max(0, radius.topLeft - Math.max(border.t, border.l)),
+                topRight: Math.max(0, radius.topRight - Math.max(border.t, border.r)),
+                bottomLeft: Math.max(0, radius.bottomLeft - Math.max(border.b, border.l)),
+                bottomRight: Math.max(0, radius.bottomRight - Math.max(border.b, border.r))
+            }
+        }
+    };
+}
+function inRange(bar, x, y, useFinalPosition) {
+    const skipX = x === null;
+    const skipY = y === null;
+    const skipBoth = skipX && skipY;
+    const bounds = bar && !skipBoth && getBarBounds(bar, useFinalPosition);
+    return bounds && (skipX || _isBetween(x, bounds.left, bounds.right)) && (skipY || _isBetween(y, bounds.top, bounds.bottom));
+}
+function hasRadius(radius) {
+    return radius.topLeft || radius.topRight || radius.bottomLeft || radius.bottomRight;
+}
+ function addNormalRectPath(ctx, rect) {
+    ctx.rect(rect.x, rect.y, rect.w, rect.h);
+}
+function inflateRect(rect, amount, refRect = {}) {
+    const x = rect.x !== refRect.x ? -amount : 0;
+    const y = rect.y !== refRect.y ? -amount : 0;
+    const w = (rect.x + rect.w !== refRect.x + refRect.w ? amount : 0) - x;
+    const h = (rect.y + rect.h !== refRect.y + refRect.h ? amount : 0) - y;
+    return {
+        x: rect.x + x,
+        y: rect.y + y,
+        w: rect.w + w,
+        h: rect.h + h,
+        radius: rect.radius
+    };
+}
+class BarElement extends Element {
+    static id = 'bar';
+ static defaults = {
+        borderSkipped: 'start',
+        borderWidth: 0,
+        borderRadius: 0,
+        inflateAmount: 'auto',
+        pointStyle: undefined
+    };
+ static defaultRoutes = {
+        backgroundColor: 'backgroundColor',
+        borderColor: 'borderColor'
+    };
+    constructor(cfg){
+        super();
+        this.options = undefined;
+        this.horizontal = undefined;
+        this.base = undefined;
+        this.width = undefined;
+        this.height = undefined;
+        this.inflateAmount = undefined;
+        if (cfg) {
+            Object.assign(this, cfg);
+        }
+    }
+    draw(ctx) {
+        const { inflateAmount , options: { borderColor , backgroundColor  }  } = this;
+        const { inner , outer  } = boundingRects(this);
+        const addRectPath = hasRadius(outer.radius) ? addRoundedRectPath : addNormalRectPath;
+        ctx.save();
+        if (outer.w !== inner.w || outer.h !== inner.h) {
+            ctx.beginPath();
+            addRectPath(ctx, inflateRect(outer, inflateAmount, inner));
+            ctx.clip();
+            addRectPath(ctx, inflateRect(inner, -inflateAmount, outer));
+            ctx.fillStyle = borderColor;
+            ctx.fill('evenodd');
+        }
+        ctx.beginPath();
+        addRectPath(ctx, inflateRect(inner, inflateAmount));
+        ctx.fillStyle = backgroundColor;
+        ctx.fill();
+        ctx.restore();
+    }
+    inRange(mouseX, mouseY, useFinalPosition) {
+        return inRange(this, mouseX, mouseY, useFinalPosition);
+    }
+    inXRange(mouseX, useFinalPosition) {
+        return inRange(this, mouseX, null, useFinalPosition);
+    }
+    inYRange(mouseY, useFinalPosition) {
+        return inRange(this, null, mouseY, useFinalPosition);
+    }
+    getCenterPoint(useFinalPosition) {
+        const { x , y , base , horizontal  } =  this.getProps([
+            'x',
+            'y',
+            'base',
+            'horizontal'
+        ], useFinalPosition);
+        return {
+            x: horizontal ? (x + base) / 2 : x,
+            y: horizontal ? y : (y + base) / 2
+        };
+    }
+    getRange(axis) {
+        return axis === 'x' ? this.width / 2 : this.height / 2;
+    }
+}
+
+var elements = /*#__PURE__*/Object.freeze({
+__proto__: null,
+ArcElement: ArcElement,
+BarElement: BarElement,
+LineElement: LineElement,
+PointElement: PointElement
+});
+
+const BORDER_COLORS = [
+    'rgb(54, 162, 235)',
+    'rgb(255, 99, 132)',
+    'rgb(255, 159, 64)',
+    'rgb(255, 205, 86)',
+    'rgb(75, 192, 192)',
+    'rgb(153, 102, 255)',
+    'rgb(201, 203, 207)' // grey
+];
+// Border colors with 50% transparency
+const BACKGROUND_COLORS = /* #__PURE__ */ BORDER_COLORS.map((color)=>color.replace('rgb(', 'rgba(').replace(')', ', 0.5)'));
+function getBorderColor(i) {
+    return BORDER_COLORS[i % BORDER_COLORS.length];
+}
+function getBackgroundColor(i) {
+    return BACKGROUND_COLORS[i % BACKGROUND_COLORS.length];
+}
+function colorizeDefaultDataset(dataset, i) {
+    dataset.borderColor = getBorderColor(i);
+    dataset.backgroundColor = getBackgroundColor(i);
+    return ++i;
+}
+function colorizeDoughnutDataset(dataset, i) {
+    dataset.backgroundColor = dataset.data.map(()=>getBorderColor(i++));
+    return i;
+}
+function colorizePolarAreaDataset(dataset, i) {
+    dataset.backgroundColor = dataset.data.map(()=>getBackgroundColor(i++));
+    return i;
+}
+function getColorizer(chart) {
+    let i = 0;
+    return (dataset, datasetIndex)=>{
+        const controller = chart.getDatasetMeta(datasetIndex).controller;
+        if (controller instanceof DoughnutController) {
+            i = colorizeDoughnutDataset(dataset, i);
+        } else if (controller instanceof PolarAreaController) {
+            i = colorizePolarAreaDataset(dataset, i);
+        } else if (controller) {
+            i = colorizeDefaultDataset(dataset, i);
+        }
+    };
+}
+function containsColorsDefinitions(descriptors) {
+    let k;
+    for(k in descriptors){
+        if (descriptors[k].borderColor || descriptors[k].backgroundColor) {
+            return true;
+        }
+    }
+    return false;
+}
+function containsColorsDefinition(descriptor) {
+    return descriptor && (descriptor.borderColor || descriptor.backgroundColor);
+}
+function containsDefaultColorsDefenitions() {
+    return defaults.borderColor !== 'rgba(0,0,0,0.1)' || defaults.backgroundColor !== 'rgba(0,0,0,0.1)';
+}
+var plugin_colors = {
+    id: 'colors',
+    defaults: {
+        enabled: true,
+        forceOverride: false
+    },
+    beforeLayout (chart, _args, options) {
+        if (!options.enabled) {
+            return;
+        }
+        const { data: { datasets  } , options: chartOptions  } = chart.config;
+        const { elements  } = chartOptions;
+        const containsColorDefenition = containsColorsDefinitions(datasets) || containsColorsDefinition(chartOptions) || elements && containsColorsDefinitions(elements) || containsDefaultColorsDefenitions();
+        if (!options.forceOverride && containsColorDefenition) {
+            return;
+        }
+        const colorizer = getColorizer(chart);
+        datasets.forEach(colorizer);
+    }
+};
+
+function lttbDecimation(data, start, count, availableWidth, options) {
+ const samples = options.samples || availableWidth;
+    if (samples >= count) {
+        return data.slice(start, start + count);
+    }
+    const decimated = [];
+    const bucketWidth = (count - 2) / (samples - 2);
+    let sampledIndex = 0;
+    const endIndex = start + count - 1;
+    let a = start;
+    let i, maxAreaPoint, maxArea, area, nextA;
+    decimated[sampledIndex++] = data[a];
+    for(i = 0; i < samples - 2; i++){
+        let avgX = 0;
+        let avgY = 0;
+        let j;
+        const avgRangeStart = Math.floor((i + 1) * bucketWidth) + 1 + start;
+        const avgRangeEnd = Math.min(Math.floor((i + 2) * bucketWidth) + 1, count) + start;
+        const avgRangeLength = avgRangeEnd - avgRangeStart;
+        for(j = avgRangeStart; j < avgRangeEnd; j++){
+            avgX += data[j].x;
+            avgY += data[j].y;
+        }
+        avgX /= avgRangeLength;
+        avgY /= avgRangeLength;
+        const rangeOffs = Math.floor(i * bucketWidth) + 1 + start;
+        const rangeTo = Math.min(Math.floor((i + 1) * bucketWidth) + 1, count) + start;
+        const { x: pointAx , y: pointAy  } = data[a];
+        maxArea = area = -1;
+        for(j = rangeOffs; j < rangeTo; j++){
+            area = 0.5 * Math.abs((pointAx - avgX) * (data[j].y - pointAy) - (pointAx - data[j].x) * (avgY - pointAy));
+            if (area > maxArea) {
+                maxArea = area;
+                maxAreaPoint = data[j];
+                nextA = j;
+            }
+        }
+        decimated[sampledIndex++] = maxAreaPoint;
+        a = nextA;
+    }
+    decimated[sampledIndex++] = data[endIndex];
+    return decimated;
+}
+function minMaxDecimation(data, start, count, availableWidth) {
+    let avgX = 0;
+    let countX = 0;
+    let i, point, x, y, prevX, minIndex, maxIndex, startIndex, minY, maxY;
+    const decimated = [];
+    const endIndex = start + count - 1;
+    const xMin = data[start].x;
+    const xMax = data[endIndex].x;
+    const dx = xMax - xMin;
+    for(i = start; i < start + count; ++i){
+        point = data[i];
+        x = (point.x - xMin) / dx * availableWidth;
+        y = point.y;
+        const truncX = x | 0;
+        if (truncX === prevX) {
+            if (y < minY) {
+                minY = y;
+                minIndex = i;
+            } else if (y > maxY) {
+                maxY = y;
+                maxIndex = i;
+            }
+            avgX = (countX * avgX + point.x) / ++countX;
+        } else {
+            const lastIndex = i - 1;
+            if (!isNullOrUndef(minIndex) && !isNullOrUndef(maxIndex)) {
+                const intermediateIndex1 = Math.min(minIndex, maxIndex);
+                const intermediateIndex2 = Math.max(minIndex, maxIndex);
+                if (intermediateIndex1 !== startIndex && intermediateIndex1 !== lastIndex) {
+                    decimated.push({
+                        ...data[intermediateIndex1],
+                        x: avgX
+                    });
+                }
+                if (intermediateIndex2 !== startIndex && intermediateIndex2 !== lastIndex) {
+                    decimated.push({
+                        ...data[intermediateIndex2],
+                        x: avgX
+                    });
+                }
+            }
+            if (i > 0 && lastIndex !== startIndex) {
+                decimated.push(data[lastIndex]);
+            }
+            decimated.push(point);
+            prevX = truncX;
+            countX = 0;
+            minY = maxY = y;
+            minIndex = maxIndex = startIndex = i;
+        }
+    }
+    return decimated;
+}
+function cleanDecimatedDataset(dataset) {
+    if (dataset._decimated) {
+        const data = dataset._data;
+        delete dataset._decimated;
+        delete dataset._data;
+        Object.defineProperty(dataset, 'data', {
+            configurable: true,
+            enumerable: true,
+            writable: true,
+            value: data
+        });
+    }
+}
+function cleanDecimatedData(chart) {
+    chart.data.datasets.forEach((dataset)=>{
+        cleanDecimatedDataset(dataset);
+    });
+}
+function getStartAndCountOfVisiblePointsSimplified(meta, points) {
+    const pointCount = points.length;
+    let start = 0;
+    let count;
+    const { iScale  } = meta;
+    const { min , max , minDefined , maxDefined  } = iScale.getUserBounds();
+    if (minDefined) {
+        start = _limitValue(_lookupByKey(points, iScale.axis, min).lo, 0, pointCount - 1);
+    }
+    if (maxDefined) {
+        count = _limitValue(_lookupByKey(points, iScale.axis, max).hi + 1, start, pointCount) - start;
+    } else {
+        count = pointCount - start;
+    }
+    return {
+        start,
+        count
+    };
+}
+var plugin_decimation = {
+    id: 'decimation',
+    defaults: {
+        algorithm: 'min-max',
+        enabled: false
+    },
+    beforeElementsUpdate: (chart, args, options)=>{
+        if (!options.enabled) {
+            cleanDecimatedData(chart);
+            return;
+        }
+        const availableWidth = chart.width;
+        chart.data.datasets.forEach((dataset, datasetIndex)=>{
+            const { _data , indexAxis  } = dataset;
+            const meta = chart.getDatasetMeta(datasetIndex);
+            const data = _data || dataset.data;
+            if (resolve([
+                indexAxis,
+                chart.options.indexAxis
+            ]) === 'y') {
+                return;
+            }
+            if (!meta.controller.supportsDecimation) {
+                return;
+            }
+            const xAxis = chart.scales[meta.xAxisID];
+            if (xAxis.type !== 'linear' && xAxis.type !== 'time') {
+                return;
+            }
+            if (chart.options.parsing) {
+                return;
+            }
+            let { start , count  } = getStartAndCountOfVisiblePointsSimplified(meta, data);
+            const threshold = options.threshold || 4 * availableWidth;
+            if (count <= threshold) {
+                cleanDecimatedDataset(dataset);
+                return;
+            }
+            if (isNullOrUndef(_data)) {
+                dataset._data = data;
+                delete dataset.data;
+                Object.defineProperty(dataset, 'data', {
+                    configurable: true,
+                    enumerable: true,
+                    get: function() {
+                        return this._decimated;
+                    },
+                    set: function(d) {
+                        this._data = d;
+                    }
+                });
+            }
+            let decimated;
+            switch(options.algorithm){
+                case 'lttb':
+                    decimated = lttbDecimation(data, start, count, availableWidth, options);
+                    break;
+                case 'min-max':
+                    decimated = minMaxDecimation(data, start, count, availableWidth);
+                    break;
+                default:
+                    throw new Error(`Unsupported decimation algorithm '${options.algorithm}'`);
+            }
+            dataset._decimated = decimated;
+        });
+    },
+    destroy (chart) {
+        cleanDecimatedData(chart);
+    }
+};
+
+function _segments(line, target, property) {
+    const segments = line.segments;
+    const points = line.points;
+    const tpoints = target.points;
+    const parts = [];
+    for (const segment of segments){
+        let { start , end  } = segment;
+        end = _findSegmentEnd(start, end, points);
+        const bounds = _getBounds(property, points[start], points[end], segment.loop);
+        if (!target.segments) {
+            parts.push({
+                source: segment,
+                target: bounds,
+                start: points[start],
+                end: points[end]
+            });
+            continue;
+        }
+        const targetSegments = _boundSegments(target, bounds);
+        for (const tgt of targetSegments){
+            const subBounds = _getBounds(property, tpoints[tgt.start], tpoints[tgt.end], tgt.loop);
+            const fillSources = _boundSegment(segment, points, subBounds);
+            for (const fillSource of fillSources){
+                parts.push({
+                    source: fillSource,
+                    target: tgt,
+                    start: {
+                        [property]: _getEdge(bounds, subBounds, 'start', Math.max)
+                    },
+                    end: {
+                        [property]: _getEdge(bounds, subBounds, 'end', Math.min)
+                    }
+                });
+            }
+        }
+    }
+    return parts;
+}
+function _getBounds(property, first, last, loop) {
+    if (loop) {
+        return;
+    }
+    let start = first[property];
+    let end = last[property];
+    if (property === 'angle') {
+        start = _normalizeAngle(start);
+        end = _normalizeAngle(end);
+    }
+    return {
+        property,
+        start,
+        end
+    };
+}
+function _pointsFromSegments(boundary, line) {
+    const { x =null , y =null  } = boundary || {};
+    const linePoints = line.points;
+    const points = [];
+    line.segments.forEach(({ start , end  })=>{
+        end = _findSegmentEnd(start, end, linePoints);
+        const first = linePoints[start];
+        const last = linePoints[end];
+        if (y !== null) {
+            points.push({
+                x: first.x,
+                y
+            });
+            points.push({
+                x: last.x,
+                y
+            });
+        } else if (x !== null) {
+            points.push({
+                x,
+                y: first.y
+            });
+            points.push({
+                x,
+                y: last.y
+            });
+        }
+    });
+    return points;
+}
+function _findSegmentEnd(start, end, points) {
+    for(; end > start; end--){
+        const point = points[end];
+        if (!isNaN(point.x) && !isNaN(point.y)) {
+            break;
+        }
+    }
+    return end;
+}
+function _getEdge(a, b, prop, fn) {
+    if (a && b) {
+        return fn(a[prop], b[prop]);
+    }
+    return a ? a[prop] : b ? b[prop] : 0;
+}
+
+function _createBoundaryLine(boundary, line) {
+    let points = [];
+    let _loop = false;
+    if (isArray(boundary)) {
+        _loop = true;
+        points = boundary;
+    } else {
+        points = _pointsFromSegments(boundary, line);
+    }
+    return points.length ? new LineElement({
+        points,
+        options: {
+            tension: 0
+        },
+        _loop,
+        _fullLoop: _loop
+    }) : null;
+}
+function _shouldApplyFill(source) {
+    return source && source.fill !== false;
+}
+
+function _resolveTarget(sources, index, propagate) {
+    const source = sources[index];
+    let fill = source.fill;
+    const visited = [
+        index
+    ];
+    let target;
+    if (!propagate) {
+        return fill;
+    }
+    while(fill !== false && visited.indexOf(fill) === -1){
+        if (!isNumberFinite(fill)) {
+            return fill;
+        }
+        target = sources[fill];
+        if (!target) {
+            return false;
+        }
+        if (target.visible) {
+            return fill;
+        }
+        visited.push(fill);
+        fill = target.fill;
+    }
+    return false;
+}
+ function _decodeFill(line, index, count) {
+     const fill = parseFillOption(line);
+    if (isObject(fill)) {
+        return isNaN(fill.value) ? false : fill;
+    }
+    let target = parseFloat(fill);
+    if (isNumberFinite(target) && Math.floor(target) === target) {
+        return decodeTargetIndex(fill[0], index, target, count);
+    }
+    return [
+        'origin',
+        'start',
+        'end',
+        'stack',
+        'shape'
+    ].indexOf(fill) >= 0 && fill;
+}
+function decodeTargetIndex(firstCh, index, target, count) {
+    if (firstCh === '-' || firstCh === '+') {
+        target = index + target;
+    }
+    if (target === index || target < 0 || target >= count) {
+        return false;
+    }
+    return target;
+}
+ function _getTargetPixel(fill, scale) {
+    let pixel = null;
+    if (fill === 'start') {
+        pixel = scale.bottom;
+    } else if (fill === 'end') {
+        pixel = scale.top;
+    } else if (isObject(fill)) {
+        pixel = scale.getPixelForValue(fill.value);
+    } else if (scale.getBasePixel) {
+        pixel = scale.getBasePixel();
+    }
+    return pixel;
+}
+ function _getTargetValue(fill, scale, startValue) {
+    let value;
+    if (fill === 'start') {
+        value = startValue;
+    } else if (fill === 'end') {
+        value = scale.options.reverse ? scale.min : scale.max;
+    } else if (isObject(fill)) {
+        value = fill.value;
+    } else {
+        value = scale.getBaseValue();
+    }
+    return value;
+}
+ function parseFillOption(line) {
+    const options = line.options;
+    const fillOption = options.fill;
+    let fill = valueOrDefault(fillOption && fillOption.target, fillOption);
+    if (fill === undefined) {
+        fill = !!options.backgroundColor;
+    }
+    if (fill === false || fill === null) {
+        return false;
+    }
+    if (fill === true) {
+        return 'origin';
+    }
+    return fill;
+}
+
+function _buildStackLine(source) {
+    const { scale , index , line  } = source;
+    const points = [];
+    const segments = line.segments;
+    const sourcePoints = line.points;
+    const linesBelow = getLinesBelow(scale, index);
+    linesBelow.push(_createBoundaryLine({
+        x: null,
+        y: scale.bottom
+    }, line));
+    for(let i = 0; i < segments.length; i++){
+        const segment = segments[i];
+        for(let j = segment.start; j <= segment.end; j++){
+            addPointsBelow(points, sourcePoints[j], linesBelow);
+        }
+    }
+    return new LineElement({
+        points,
+        options: {}
+    });
+}
+ function getLinesBelow(scale, index) {
+    const below = [];
+    const metas = scale.getMatchingVisibleMetas('line');
+    for(let i = 0; i < metas.length; i++){
+        const meta = metas[i];
+        if (meta.index === index) {
+            break;
+        }
+        if (!meta.hidden) {
+            below.unshift(meta.dataset);
+        }
+    }
+    return below;
+}
+ function addPointsBelow(points, sourcePoint, linesBelow) {
+    const postponed = [];
+    for(let j = 0; j < linesBelow.length; j++){
+        const line = linesBelow[j];
+        const { first , last , point  } = findPoint(line, sourcePoint, 'x');
+        if (!point || first && last) {
+            continue;
+        }
+        if (first) {
+            postponed.unshift(point);
+        } else {
+            points.push(point);
+            if (!last) {
+                break;
+            }
+        }
+    }
+    points.push(...postponed);
+}
+ function findPoint(line, sourcePoint, property) {
+    const point = line.interpolate(sourcePoint, property);
+    if (!point) {
+        return {};
+    }
+    const pointValue = point[property];
+    const segments = line.segments;
+    const linePoints = line.points;
+    let first = false;
+    let last = false;
+    for(let i = 0; i < segments.length; i++){
+        const segment = segments[i];
+        const firstValue = linePoints[segment.start][property];
+        const lastValue = linePoints[segment.end][property];
+        if (_isBetween(pointValue, firstValue, lastValue)) {
+            first = pointValue === firstValue;
+            last = pointValue === lastValue;
+            break;
+        }
+    }
+    return {
+        first,
+        last,
+        point
+    };
+}
+
+class simpleArc {
+    constructor(opts){
+        this.x = opts.x;
+        this.y = opts.y;
+        this.radius = opts.radius;
+    }
+    pathSegment(ctx, bounds, opts) {
+        const { x , y , radius  } = this;
+        bounds = bounds || {
+            start: 0,
+            end: TAU
+        };
+        ctx.arc(x, y, radius, bounds.end, bounds.start, true);
+        return !opts.bounds;
+    }
+    interpolate(point) {
+        const { x , y , radius  } = this;
+        const angle = point.angle;
+        return {
+            x: x + Math.cos(angle) * radius,
+            y: y + Math.sin(angle) * radius,
+            angle
+        };
+    }
+}
+
+function _getTarget(source) {
+    const { chart , fill , line  } = source;
+    if (isNumberFinite(fill)) {
+        return getLineByIndex(chart, fill);
+    }
+    if (fill === 'stack') {
+        return _buildStackLine(source);
+    }
+    if (fill === 'shape') {
+        return true;
+    }
+    const boundary = computeBoundary(source);
+    if (boundary instanceof simpleArc) {
+        return boundary;
+    }
+    return _createBoundaryLine(boundary, line);
+}
+ function getLineByIndex(chart, index) {
+    const meta = chart.getDatasetMeta(index);
+    const visible = meta && chart.isDatasetVisible(index);
+    return visible ? meta.dataset : null;
+}
+function computeBoundary(source) {
+    const scale = source.scale || {};
+    if (scale.getPointPositionForValue) {
+        return computeCircularBoundary(source);
+    }
+    return computeLinearBoundary(source);
+}
+function computeLinearBoundary(source) {
+    const { scale ={} , fill  } = source;
+    const pixel = _getTargetPixel(fill, scale);
+    if (isNumberFinite(pixel)) {
+        const horizontal = scale.isHorizontal();
+        return {
+            x: horizontal ? pixel : null,
+            y: horizontal ? null : pixel
+        };
+    }
+    return null;
+}
+function computeCircularBoundary(source) {
+    const { scale , fill  } = source;
+    const options = scale.options;
+    const length = scale.getLabels().length;
+    const start = options.reverse ? scale.max : scale.min;
+    const value = _getTargetValue(fill, scale, start);
+    const target = [];
+    if (options.grid.circular) {
+        const center = scale.getPointPositionForValue(0, start);
+        return new simpleArc({
+            x: center.x,
+            y: center.y,
+            radius: scale.getDistanceFromCenterForValue(value)
+        });
+    }
+    for(let i = 0; i < length; ++i){
+        target.push(scale.getPointPositionForValue(i, value));
+    }
+    return target;
+}
+
+function _drawfill(ctx, source, area) {
+    const target = _getTarget(source);
+    const { chart , index , line , scale , axis  } = source;
+    const lineOpts = line.options;
+    const fillOption = lineOpts.fill;
+    const color = lineOpts.backgroundColor;
+    const { above =color , below =color  } = fillOption || {};
+    const meta = chart.getDatasetMeta(index);
+    const clip = getDatasetClipArea(chart, meta);
+    if (target && line.points.length) {
+        clipArea(ctx, area);
+        doFill(ctx, {
+            line,
+            target,
+            above,
+            below,
+            area,
+            scale,
+            axis,
+            clip
+        });
+        unclipArea(ctx);
+    }
+}
+function doFill(ctx, cfg) {
+    const { line , target , above , below , area , scale , clip  } = cfg;
+    const property = line._loop ? 'angle' : cfg.axis;
+    ctx.save();
+    let fillColor = below;
+    if (below !== above) {
+        if (property === 'x') {
+            clipVertical(ctx, target, area.top);
+            fill(ctx, {
+                line,
+                target,
+                color: above,
+                scale,
+                property,
+                clip
+            });
+            ctx.restore();
+            ctx.save();
+            clipVertical(ctx, target, area.bottom);
+        } else if (property === 'y') {
+            clipHorizontal(ctx, target, area.left);
+            fill(ctx, {
+                line,
+                target,
+                color: below,
+                scale,
+                property,
+                clip
+            });
+            ctx.restore();
+            ctx.save();
+            clipHorizontal(ctx, target, area.right);
+            fillColor = above;
+        }
+    }
+    fill(ctx, {
+        line,
+        target,
+        color: fillColor,
+        scale,
+        property,
+        clip
+    });
+    ctx.restore();
+}
+function clipVertical(ctx, target, clipY) {
+    const { segments , points  } = target;
+    let first = true;
+    let lineLoop = false;
+    ctx.beginPath();
+    for (const segment of segments){
+        const { start , end  } = segment;
+        const firstPoint = points[start];
+        const lastPoint = points[_findSegmentEnd(start, end, points)];
+        if (first) {
+            ctx.moveTo(firstPoint.x, firstPoint.y);
+            first = false;
+        } else {
+            ctx.lineTo(firstPoint.x, clipY);
+            ctx.lineTo(firstPoint.x, firstPoint.y);
+        }
+        lineLoop = !!target.pathSegment(ctx, segment, {
+            move: lineLoop
+        });
+        if (lineLoop) {
+            ctx.closePath();
+        } else {
+            ctx.lineTo(lastPoint.x, clipY);
+        }
+    }
+    ctx.lineTo(target.first().x, clipY);
+    ctx.closePath();
+    ctx.clip();
+}
+function clipHorizontal(ctx, target, clipX) {
+    const { segments , points  } = target;
+    let first = true;
+    let lineLoop = false;
+    ctx.beginPath();
+    for (const segment of segments){
+        const { start , end  } = segment;
+        const firstPoint = points[start];
+        const lastPoint = points[_findSegmentEnd(start, end, points)];
+        if (first) {
+            ctx.moveTo(firstPoint.x, firstPoint.y);
+            first = false;
+        } else {
+            ctx.lineTo(clipX, firstPoint.y);
+            ctx.lineTo(firstPoint.x, firstPoint.y);
+        }
+        lineLoop = !!target.pathSegment(ctx, segment, {
+            move: lineLoop
+        });
+        if (lineLoop) {
+            ctx.closePath();
+        } else {
+            ctx.lineTo(clipX, lastPoint.y);
+        }
+    }
+    ctx.lineTo(clipX, target.first().y);
+    ctx.closePath();
+    ctx.clip();
+}
+function fill(ctx, cfg) {
+    const { line , target , property , color , scale , clip  } = cfg;
+    const segments = _segments(line, target, property);
+    for (const { source: src , target: tgt , start , end  } of segments){
+        const { style: { backgroundColor =color  } = {}  } = src;
+        const notShape = target !== true;
+        ctx.save();
+        ctx.fillStyle = backgroundColor;
+        clipBounds(ctx, scale, clip, notShape && _getBounds(property, start, end));
+        ctx.beginPath();
+        const lineLoop = !!line.pathSegment(ctx, src);
+        let loop;
+        if (notShape) {
+            if (lineLoop) {
+                ctx.closePath();
+            } else {
+                interpolatedLineTo(ctx, target, end, property);
+            }
+            const targetLoop = !!target.pathSegment(ctx, tgt, {
+                move: lineLoop,
+                reverse: true
+            });
+            loop = lineLoop && targetLoop;
+            if (!loop) {
+                interpolatedLineTo(ctx, target, start, property);
+            }
+        }
+        ctx.closePath();
+        ctx.fill(loop ? 'evenodd' : 'nonzero');
+        ctx.restore();
+    }
+}
+function clipBounds(ctx, scale, clip, bounds) {
+    const chartArea = scale.chart.chartArea;
+    const { property , start , end  } = bounds || {};
+    if (property === 'x' || property === 'y') {
+        let left, top, right, bottom;
+        if (property === 'x') {
+            left = start;
+            top = chartArea.top;
+            right = end;
+            bottom = chartArea.bottom;
+        } else {
+            left = chartArea.left;
+            top = start;
+            right = chartArea.right;
+            bottom = end;
+        }
+        ctx.beginPath();
+        if (clip) {
+            left = Math.max(left, clip.left);
+            right = Math.min(right, clip.right);
+            top = Math.max(top, clip.top);
+            bottom = Math.min(bottom, clip.bottom);
+        }
+        ctx.rect(left, top, right - left, bottom - top);
+        ctx.clip();
+    }
+}
+function interpolatedLineTo(ctx, target, point, property) {
+    const interpolatedPoint = target.interpolate(point, property);
+    if (interpolatedPoint) {
+        ctx.lineTo(interpolatedPoint.x, interpolatedPoint.y);
+    }
+}
+
+var index = {
+    id: 'filler',
+    afterDatasetsUpdate (chart, _args, options) {
+        const count = (chart.data.datasets || []).length;
+        const sources = [];
+        let meta, i, line, source;
+        for(i = 0; i < count; ++i){
+            meta = chart.getDatasetMeta(i);
+            line = meta.dataset;
+            source = null;
+            if (line && line.options && line instanceof LineElement) {
+                source = {
+                    visible: chart.isDatasetVisible(i),
+                    index: i,
+                    fill: _decodeFill(line, i, count),
+                    chart,
+                    axis: meta.controller.options.indexAxis,
+                    scale: meta.vScale,
+                    line
+                };
+            }
+            meta.$filler = source;
+            sources.push(source);
+        }
+        for(i = 0; i < count; ++i){
+            source = sources[i];
+            if (!source || source.fill === false) {
+                continue;
+            }
+            source.fill = _resolveTarget(sources, i, options.propagate);
+        }
+    },
+    beforeDraw (chart, _args, options) {
+        const draw = options.drawTime === 'beforeDraw';
+        const metasets = chart.getSortedVisibleDatasetMetas();
+        const area = chart.chartArea;
+        for(let i = metasets.length - 1; i >= 0; --i){
+            const source = metasets[i].$filler;
+            if (!source) {
+                continue;
+            }
+            source.line.updateControlPoints(area, source.axis);
+            if (draw && source.fill) {
+                _drawfill(chart.ctx, source, area);
+            }
+        }
+    },
+    beforeDatasetsDraw (chart, _args, options) {
+        if (options.drawTime !== 'beforeDatasetsDraw') {
+            return;
+        }
+        const metasets = chart.getSortedVisibleDatasetMetas();
+        for(let i = metasets.length - 1; i >= 0; --i){
+            const source = metasets[i].$filler;
+            if (_shouldApplyFill(source)) {
+                _drawfill(chart.ctx, source, chart.chartArea);
+            }
+        }
+    },
+    beforeDatasetDraw (chart, args, options) {
+        const source = args.meta.$filler;
+        if (!_shouldApplyFill(source) || options.drawTime !== 'beforeDatasetDraw') {
+            return;
+        }
+        _drawfill(chart.ctx, source, chart.chartArea);
+    },
+    defaults: {
+        propagate: true,
+        drawTime: 'beforeDatasetDraw'
+    }
+};
+
+const getBoxSize = (labelOpts, fontSize)=>{
+    let { boxHeight =fontSize , boxWidth =fontSize  } = labelOpts;
+    if (labelOpts.usePointStyle) {
+        boxHeight = Math.min(boxHeight, fontSize);
+        boxWidth = labelOpts.pointStyleWidth || Math.min(boxWidth, fontSize);
+    }
+    return {
+        boxWidth,
+        boxHeight,
+        itemHeight: Math.max(fontSize, boxHeight)
+    };
+};
+const itemsEqual = (a, b)=>a !== null && b !== null && a.datasetIndex === b.datasetIndex && a.index === b.index;
+class Legend extends Element {
+ constructor(config){
+        super();
+        this._added = false;
+        this.legendHitBoxes = [];
+ this._hoveredItem = null;
+        this.doughnutMode = false;
+        this.chart = config.chart;
+        this.options = config.options;
+        this.ctx = config.ctx;
+        this.legendItems = undefined;
+        this.columnSizes = undefined;
+        this.lineWidths = undefined;
+        this.maxHeight = undefined;
+        this.maxWidth = undefined;
+        this.top = undefined;
+        this.bottom = undefined;
+        this.left = undefined;
+        this.right = undefined;
+        this.height = undefined;
+        this.width = undefined;
+        this._margins = undefined;
+        this.position = undefined;
+        this.weight = undefined;
+        this.fullSize = undefined;
+    }
+    update(maxWidth, maxHeight, margins) {
+        this.maxWidth = maxWidth;
+        this.maxHeight = maxHeight;
+        this._margins = margins;
+        this.setDimensions();
+        this.buildLabels();
+        this.fit();
+    }
+    setDimensions() {
+        if (this.isHorizontal()) {
+            this.width = this.maxWidth;
+            this.left = this._margins.left;
+            this.right = this.width;
+        } else {
+            this.height = this.maxHeight;
+            this.top = this._margins.top;
+            this.bottom = this.height;
+        }
+    }
+    buildLabels() {
+        const labelOpts = this.options.labels || {};
+        let legendItems = callback(labelOpts.generateLabels, [
+            this.chart
+        ], this) || [];
+        if (labelOpts.filter) {
+            legendItems = legendItems.filter((item)=>labelOpts.filter(item, this.chart.data));
+        }
+        if (labelOpts.sort) {
+            legendItems = legendItems.sort((a, b)=>labelOpts.sort(a, b, this.chart.data));
+        }
+        if (this.options.reverse) {
+            legendItems.reverse();
+        }
+        this.legendItems = legendItems;
+    }
+    fit() {
+        const { options , ctx  } = this;
+        if (!options.display) {
+            this.width = this.height = 0;
+            return;
+        }
+        const labelOpts = options.labels;
+        const labelFont = toFont(labelOpts.font);
+        const fontSize = labelFont.size;
+        const titleHeight = this._computeTitleHeight();
+        const { boxWidth , itemHeight  } = getBoxSize(labelOpts, fontSize);
+        let width, height;
+        ctx.font = labelFont.string;
+        if (this.isHorizontal()) {
+            width = this.maxWidth;
+            height = this._fitRows(titleHeight, fontSize, boxWidth, itemHeight) + 10;
+        } else {
+            height = this.maxHeight;
+            width = this._fitCols(titleHeight, labelFont, boxWidth, itemHeight) + 10;
+        }
+        this.width = Math.min(width, options.maxWidth || this.maxWidth);
+        this.height = Math.min(height, options.maxHeight || this.maxHeight);
+    }
+ _fitRows(titleHeight, fontSize, boxWidth, itemHeight) {
+        const { ctx , maxWidth , options: { labels: { padding  }  }  } = this;
+        const hitboxes = this.legendHitBoxes = [];
+        const lineWidths = this.lineWidths = [
+            0
+        ];
+        const lineHeight = itemHeight + padding;
+        let totalHeight = titleHeight;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        let row = -1;
+        let top = -lineHeight;
+        this.legendItems.forEach((legendItem, i)=>{
+            const itemWidth = boxWidth + fontSize / 2 + ctx.measureText(legendItem.text).width;
+            if (i === 0 || lineWidths[lineWidths.length - 1] + itemWidth + 2 * padding > maxWidth) {
+                totalHeight += lineHeight;
+                lineWidths[lineWidths.length - (i > 0 ? 0 : 1)] = 0;
+                top += lineHeight;
+                row++;
+            }
+            hitboxes[i] = {
+                left: 0,
+                top,
+                row,
+                width: itemWidth,
+                height: itemHeight
+            };
+            lineWidths[lineWidths.length - 1] += itemWidth + padding;
+        });
+        return totalHeight;
+    }
+    _fitCols(titleHeight, labelFont, boxWidth, _itemHeight) {
+        const { ctx , maxHeight , options: { labels: { padding  }  }  } = this;
+        const hitboxes = this.legendHitBoxes = [];
+        const columnSizes = this.columnSizes = [];
+        const heightLimit = maxHeight - titleHeight;
+        let totalWidth = padding;
+        let currentColWidth = 0;
+        let currentColHeight = 0;
+        let left = 0;
+        let col = 0;
+        this.legendItems.forEach((legendItem, i)=>{
+            const { itemWidth , itemHeight  } = calculateItemSize(boxWidth, labelFont, ctx, legendItem, _itemHeight);
+            if (i > 0 && currentColHeight + itemHeight + 2 * padding > heightLimit) {
+                totalWidth += currentColWidth + padding;
+                columnSizes.push({
+                    width: currentColWidth,
+                    height: currentColHeight
+                });
+                left += currentColWidth + padding;
+                col++;
+                currentColWidth = currentColHeight = 0;
+            }
+            hitboxes[i] = {
+                left,
+                top: currentColHeight,
+                col,
+                width: itemWidth,
+                height: itemHeight
+            };
+            currentColWidth = Math.max(currentColWidth, itemWidth);
+            currentColHeight += itemHeight + padding;
+        });
+        totalWidth += currentColWidth;
+        columnSizes.push({
+            width: currentColWidth,
+            height: currentColHeight
+        });
+        return totalWidth;
+    }
+    adjustHitBoxes() {
+        if (!this.options.display) {
+            return;
+        }
+        const titleHeight = this._computeTitleHeight();
+        const { legendHitBoxes: hitboxes , options: { align , labels: { padding  } , rtl  }  } = this;
+        const rtlHelper = getRtlAdapter(rtl, this.left, this.width);
+        if (this.isHorizontal()) {
+            let row = 0;
+            let left = _alignStartEnd(align, this.left + padding, this.right - this.lineWidths[row]);
+            for (const hitbox of hitboxes){
+                if (row !== hitbox.row) {
+                    row = hitbox.row;
+                    left = _alignStartEnd(align, this.left + padding, this.right - this.lineWidths[row]);
+                }
+                hitbox.top += this.top + titleHeight + padding;
+                hitbox.left = rtlHelper.leftForLtr(rtlHelper.x(left), hitbox.width);
+                left += hitbox.width + padding;
+            }
+        } else {
+            let col = 0;
+            let top = _alignStartEnd(align, this.top + titleHeight + padding, this.bottom - this.columnSizes[col].height);
+            for (const hitbox of hitboxes){
+                if (hitbox.col !== col) {
+                    col = hitbox.col;
+                    top = _alignStartEnd(align, this.top + titleHeight + padding, this.bottom - this.columnSizes[col].height);
+                }
+                hitbox.top = top;
+                hitbox.left += this.left + padding;
+                hitbox.left = rtlHelper.leftForLtr(rtlHelper.x(hitbox.left), hitbox.width);
+                top += hitbox.height + padding;
+            }
+        }
+    }
+    isHorizontal() {
+        return this.options.position === 'top' || this.options.position === 'bottom';
+    }
+    draw() {
+        if (this.options.display) {
+            const ctx = this.ctx;
+            clipArea(ctx, this);
+            this._draw();
+            unclipArea(ctx);
+        }
+    }
+ _draw() {
+        const { options: opts , columnSizes , lineWidths , ctx  } = this;
+        const { align , labels: labelOpts  } = opts;
+        const defaultColor = defaults.color;
+        const rtlHelper = getRtlAdapter(opts.rtl, this.left, this.width);
+        const labelFont = toFont(labelOpts.font);
+        const { padding  } = labelOpts;
+        const fontSize = labelFont.size;
+        const halfFontSize = fontSize / 2;
+        let cursor;
+        this.drawTitle();
+        ctx.textAlign = rtlHelper.textAlign('left');
+        ctx.textBaseline = 'middle';
+        ctx.lineWidth = 0.5;
+        ctx.font = labelFont.string;
+        const { boxWidth , boxHeight , itemHeight  } = getBoxSize(labelOpts, fontSize);
+        const drawLegendBox = function(x, y, legendItem) {
+            if (isNaN(boxWidth) || boxWidth <= 0 || isNaN(boxHeight) || boxHeight < 0) {
+                return;
+            }
+            ctx.save();
+            const lineWidth = valueOrDefault(legendItem.lineWidth, 1);
+            ctx.fillStyle = valueOrDefault(legendItem.fillStyle, defaultColor);
+            ctx.lineCap = valueOrDefault(legendItem.lineCap, 'butt');
+            ctx.lineDashOffset = valueOrDefault(legendItem.lineDashOffset, 0);
+            ctx.lineJoin = valueOrDefault(legendItem.lineJoin, 'miter');
+            ctx.lineWidth = lineWidth;
+            ctx.strokeStyle = valueOrDefault(legendItem.strokeStyle, defaultColor);
+            ctx.setLineDash(valueOrDefault(legendItem.lineDash, []));
+            if (labelOpts.usePointStyle) {
+                const drawOptions = {
+                    radius: boxHeight * Math.SQRT2 / 2,
+                    pointStyle: legendItem.pointStyle,
+                    rotation: legendItem.rotation,
+                    borderWidth: lineWidth
+                };
+                const centerX = rtlHelper.xPlus(x, boxWidth / 2);
+                const centerY = y + halfFontSize;
+                drawPointLegend(ctx, drawOptions, centerX, centerY, labelOpts.pointStyleWidth && boxWidth);
+            } else {
+                const yBoxTop = y + Math.max((fontSize - boxHeight) / 2, 0);
+                const xBoxLeft = rtlHelper.leftForLtr(x, boxWidth);
+                const borderRadius = toTRBLCorners(legendItem.borderRadius);
+                ctx.beginPath();
+                if (Object.values(borderRadius).some((v)=>v !== 0)) {
+                    addRoundedRectPath(ctx, {
+                        x: xBoxLeft,
+                        y: yBoxTop,
+                        w: boxWidth,
+                        h: boxHeight,
+                        radius: borderRadius
+                    });
+                } else {
+                    ctx.rect(xBoxLeft, yBoxTop, boxWidth, boxHeight);
+                }
+                ctx.fill();
+                if (lineWidth !== 0) {
+                    ctx.stroke();
+                }
+            }
+            ctx.restore();
+        };
+        const fillText = function(x, y, legendItem) {
+            renderText(ctx, legendItem.text, x, y + itemHeight / 2, labelFont, {
+                strikethrough: legendItem.hidden,
+                textAlign: rtlHelper.textAlign(legendItem.textAlign)
+            });
+        };
+        const isHorizontal = this.isHorizontal();
+        const titleHeight = this._computeTitleHeight();
+        if (isHorizontal) {
+            cursor = {
+                x: _alignStartEnd(align, this.left + padding, this.right - lineWidths[0]),
+                y: this.top + padding + titleHeight,
+                line: 0
+            };
+        } else {
+            cursor = {
+                x: this.left + padding,
+                y: _alignStartEnd(align, this.top + titleHeight + padding, this.bottom - columnSizes[0].height),
+                line: 0
+            };
+        }
+        overrideTextDirection(this.ctx, opts.textDirection);
+        const lineHeight = itemHeight + padding;
+        this.legendItems.forEach((legendItem, i)=>{
+            ctx.strokeStyle = legendItem.fontColor;
+            ctx.fillStyle = legendItem.fontColor;
+            const textWidth = ctx.measureText(legendItem.text).width;
+            const textAlign = rtlHelper.textAlign(legendItem.textAlign || (legendItem.textAlign = labelOpts.textAlign));
+            const width = boxWidth + halfFontSize + textWidth;
+            let x = cursor.x;
+            let y = cursor.y;
+            rtlHelper.setWidth(this.width);
+            if (isHorizontal) {
+                if (i > 0 && x + width + padding > this.right) {
+                    y = cursor.y += lineHeight;
+                    cursor.line++;
+                    x = cursor.x = _alignStartEnd(align, this.left + padding, this.right - lineWidths[cursor.line]);
+                }
+            } else if (i > 0 && y + lineHeight > this.bottom) {
+                x = cursor.x = x + columnSizes[cursor.line].width + padding;
+                cursor.line++;
+                y = cursor.y = _alignStartEnd(align, this.top + titleHeight + padding, this.bottom - columnSizes[cursor.line].height);
+            }
+            const realX = rtlHelper.x(x);
+            drawLegendBox(realX, y, legendItem);
+            x = _textX(textAlign, x + boxWidth + halfFontSize, isHorizontal ? x + width : this.right, opts.rtl);
+            fillText(rtlHelper.x(x), y, legendItem);
+            if (isHorizontal) {
+                cursor.x += width + padding;
+            } else if (typeof legendItem.text !== 'string') {
+                const fontLineHeight = labelFont.lineHeight;
+                cursor.y += calculateLegendItemHeight(legendItem, fontLineHeight) + padding;
+            } else {
+                cursor.y += lineHeight;
+            }
+        });
+        restoreTextDirection(this.ctx, opts.textDirection);
+    }
+ drawTitle() {
+        const opts = this.options;
+        const titleOpts = opts.title;
+        const titleFont = toFont(titleOpts.font);
+        const titlePadding = toPadding(titleOpts.padding);
+        if (!titleOpts.display) {
+            return;
+        }
+        const rtlHelper = getRtlAdapter(opts.rtl, this.left, this.width);
+        const ctx = this.ctx;
+        const position = titleOpts.position;
+        const halfFontSize = titleFont.size / 2;
+        const topPaddingPlusHalfFontSize = titlePadding.top + halfFontSize;
+        let y;
+        let left = this.left;
+        let maxWidth = this.width;
+        if (this.isHorizontal()) {
+            maxWidth = Math.max(...this.lineWidths);
+            y = this.top + topPaddingPlusHalfFontSize;
+            left = _alignStartEnd(opts.align, left, this.right - maxWidth);
+        } else {
+            const maxHeight = this.columnSizes.reduce((acc, size)=>Math.max(acc, size.height), 0);
+            y = topPaddingPlusHalfFontSize + _alignStartEnd(opts.align, this.top, this.bottom - maxHeight - opts.labels.padding - this._computeTitleHeight());
+        }
+        const x = _alignStartEnd(position, left, left + maxWidth);
+        ctx.textAlign = rtlHelper.textAlign(_toLeftRightCenter(position));
+        ctx.textBaseline = 'middle';
+        ctx.strokeStyle = titleOpts.color;
+        ctx.fillStyle = titleOpts.color;
+        ctx.font = titleFont.string;
+        renderText(ctx, titleOpts.text, x, y, titleFont);
+    }
+ _computeTitleHeight() {
+        const titleOpts = this.options.title;
+        const titleFont = toFont(titleOpts.font);
+        const titlePadding = toPadding(titleOpts.padding);
+        return titleOpts.display ? titleFont.lineHeight + titlePadding.height : 0;
+    }
+ _getLegendItemAt(x, y) {
+        let i, hitBox, lh;
+        if (_isBetween(x, this.left, this.right) && _isBetween(y, this.top, this.bottom)) {
+            lh = this.legendHitBoxes;
+            for(i = 0; i < lh.length; ++i){
+                hitBox = lh[i];
+                if (_isBetween(x, hitBox.left, hitBox.left + hitBox.width) && _isBetween(y, hitBox.top, hitBox.top + hitBox.height)) {
+                    return this.legendItems[i];
+                }
+            }
+        }
+        return null;
+    }
+ handleEvent(e) {
+        const opts = this.options;
+        if (!isListened(e.type, opts)) {
+            return;
+        }
+        const hoveredItem = this._getLegendItemAt(e.x, e.y);
+        if (e.type === 'mousemove' || e.type === 'mouseout') {
+            const previous = this._hoveredItem;
+            const sameItem = itemsEqual(previous, hoveredItem);
+            if (previous && !sameItem) {
+                callback(opts.onLeave, [
+                    e,
+                    previous,
+                    this
+                ], this);
+            }
+            this._hoveredItem = hoveredItem;
+            if (hoveredItem && !sameItem) {
+                callback(opts.onHover, [
+                    e,
+                    hoveredItem,
+                    this
+                ], this);
+            }
+        } else if (hoveredItem) {
+            callback(opts.onClick, [
+                e,
+                hoveredItem,
+                this
+            ], this);
+        }
+    }
+}
+function calculateItemSize(boxWidth, labelFont, ctx, legendItem, _itemHeight) {
+    const itemWidth = calculateItemWidth(legendItem, boxWidth, labelFont, ctx);
+    const itemHeight = calculateItemHeight(_itemHeight, legendItem, labelFont.lineHeight);
+    return {
+        itemWidth,
+        itemHeight
+    };
+}
+function calculateItemWidth(legendItem, boxWidth, labelFont, ctx) {
+    let legendItemText = legendItem.text;
+    if (legendItemText && typeof legendItemText !== 'string') {
+        legendItemText = legendItemText.reduce((a, b)=>a.length > b.length ? a : b);
+    }
+    return boxWidth + labelFont.size / 2 + ctx.measureText(legendItemText).width;
+}
+function calculateItemHeight(_itemHeight, legendItem, fontLineHeight) {
+    let itemHeight = _itemHeight;
+    if (typeof legendItem.text !== 'string') {
+        itemHeight = calculateLegendItemHeight(legendItem, fontLineHeight);
+    }
+    return itemHeight;
+}
+function calculateLegendItemHeight(legendItem, fontLineHeight) {
+    const labelHeight = legendItem.text ? legendItem.text.length : 0;
+    return fontLineHeight * labelHeight;
+}
+function isListened(type, opts) {
+    if ((type === 'mousemove' || type === 'mouseout') && (opts.onHover || opts.onLeave)) {
+        return true;
+    }
+    if (opts.onClick && (type === 'click' || type === 'mouseup')) {
+        return true;
+    }
+    return false;
+}
+var plugin_legend = {
+    id: 'legend',
+ _element: Legend,
+    start (chart, _args, options) {
+        const legend = chart.legend = new Legend({
+            ctx: chart.ctx,
+            options,
+            chart
+        });
+        layouts.configure(chart, legend, options);
+        layouts.addBox(chart, legend);
+    },
+    stop (chart) {
+        layouts.removeBox(chart, chart.legend);
+        delete chart.legend;
+    },
+    beforeUpdate (chart, _args, options) {
+        const legend = chart.legend;
+        layouts.configure(chart, legend, options);
+        legend.options = options;
+    },
+    afterUpdate (chart) {
+        const legend = chart.legend;
+        legend.buildLabels();
+        legend.adjustHitBoxes();
+    },
+    afterEvent (chart, args) {
+        if (!args.replay) {
+            chart.legend.handleEvent(args.event);
+        }
+    },
+    defaults: {
+        display: true,
+        position: 'top',
+        align: 'center',
+        fullSize: true,
+        reverse: false,
+        weight: 1000,
+        onClick (e, legendItem, legend) {
+            const index = legendItem.datasetIndex;
+            const ci = legend.chart;
+            if (ci.isDatasetVisible(index)) {
+                ci.hide(index);
+                legendItem.hidden = true;
+            } else {
+                ci.show(index);
+                legendItem.hidden = false;
+            }
+        },
+        onHover: null,
+        onLeave: null,
+        labels: {
+            color: (ctx)=>ctx.chart.options.color,
+            boxWidth: 40,
+            padding: 10,
+            generateLabels (chart) {
+                const datasets = chart.data.datasets;
+                const { labels: { usePointStyle , pointStyle , textAlign , color , useBorderRadius , borderRadius  }  } = chart.legend.options;
+                return chart._getSortedDatasetMetas().map((meta)=>{
+                    const style = meta.controller.getStyle(usePointStyle ? 0 : undefined);
+                    const borderWidth = toPadding(style.borderWidth);
+                    return {
+                        text: datasets[meta.index].label,
+                        fillStyle: style.backgroundColor,
+                        fontColor: color,
+                        hidden: !meta.visible,
+                        lineCap: style.borderCapStyle,
+                        lineDash: style.borderDash,
+                        lineDashOffset: style.borderDashOffset,
+                        lineJoin: style.borderJoinStyle,
+                        lineWidth: (borderWidth.width + borderWidth.height) / 4,
+                        strokeStyle: style.borderColor,
+                        pointStyle: pointStyle || style.pointStyle,
+                        rotation: style.rotation,
+                        textAlign: textAlign || style.textAlign,
+                        borderRadius: useBorderRadius && (borderRadius || style.borderRadius),
+                        datasetIndex: meta.index
+                    };
+                }, this);
+            }
+        },
+        title: {
+            color: (ctx)=>ctx.chart.options.color,
+            display: false,
+            position: 'center',
+            text: ''
+        }
+    },
+    descriptors: {
+        _scriptable: (name)=>!name.startsWith('on'),
+        labels: {
+            _scriptable: (name)=>![
+                    'generateLabels',
+                    'filter',
+                    'sort'
+                ].includes(name)
+        }
+    }
+};
+
+class Title extends Element {
+ constructor(config){
+        super();
+        this.chart = config.chart;
+        this.options = config.options;
+        this.ctx = config.ctx;
+        this._padding = undefined;
+        this.top = undefined;
+        this.bottom = undefined;
+        this.left = undefined;
+        this.right = undefined;
+        this.width = undefined;
+        this.height = undefined;
+        this.position = undefined;
+        this.weight = undefined;
+        this.fullSize = undefined;
+    }
+    update(maxWidth, maxHeight) {
+        const opts = this.options;
+        this.left = 0;
+        this.top = 0;
+        if (!opts.display) {
+            this.width = this.height = this.right = this.bottom = 0;
+            return;
+        }
+        this.width = this.right = maxWidth;
+        this.height = this.bottom = maxHeight;
+        const lineCount = isArray(opts.text) ? opts.text.length : 1;
+        this._padding = toPadding(opts.padding);
+        const textSize = lineCount * toFont(opts.font).lineHeight + this._padding.height;
+        if (this.isHorizontal()) {
+            this.height = textSize;
+        } else {
+            this.width = textSize;
+        }
+    }
+    isHorizontal() {
+        const pos = this.options.position;
+        return pos === 'top' || pos === 'bottom';
+    }
+    _drawArgs(offset) {
+        const { top , left , bottom , right , options  } = this;
+        const align = options.align;
+        let rotation = 0;
+        let maxWidth, titleX, titleY;
+        if (this.isHorizontal()) {
+            titleX = _alignStartEnd(align, left, right);
+            titleY = top + offset;
+            maxWidth = right - left;
+        } else {
+            if (options.position === 'left') {
+                titleX = left + offset;
+                titleY = _alignStartEnd(align, bottom, top);
+                rotation = PI * -0.5;
+            } else {
+                titleX = right - offset;
+                titleY = _alignStartEnd(align, top, bottom);
+                rotation = PI * 0.5;
+            }
+            maxWidth = bottom - top;
+        }
+        return {
+            titleX,
+            titleY,
+            maxWidth,
+            rotation
+        };
+    }
+    draw() {
+        const ctx = this.ctx;
+        const opts = this.options;
+        if (!opts.display) {
+            return;
+        }
+        const fontOpts = toFont(opts.font);
+        const lineHeight = fontOpts.lineHeight;
+        const offset = lineHeight / 2 + this._padding.top;
+        const { titleX , titleY , maxWidth , rotation  } = this._drawArgs(offset);
+        renderText(ctx, opts.text, 0, 0, fontOpts, {
+            color: opts.color,
+            maxWidth,
+            rotation,
+            textAlign: _toLeftRightCenter(opts.align),
+            textBaseline: 'middle',
+            translation: [
+                titleX,
+                titleY
+            ]
+        });
+    }
+}
+function createTitle(chart, titleOpts) {
+    const title = new Title({
+        ctx: chart.ctx,
+        options: titleOpts,
+        chart
+    });
+    layouts.configure(chart, title, titleOpts);
+    layouts.addBox(chart, title);
+    chart.titleBlock = title;
+}
+var plugin_title = {
+    id: 'title',
+ _element: Title,
+    start (chart, _args, options) {
+        createTitle(chart, options);
+    },
+    stop (chart) {
+        const titleBlock = chart.titleBlock;
+        layouts.removeBox(chart, titleBlock);
+        delete chart.titleBlock;
+    },
+    beforeUpdate (chart, _args, options) {
+        const title = chart.titleBlock;
+        layouts.configure(chart, title, options);
+        title.options = options;
+    },
+    defaults: {
+        align: 'center',
+        display: false,
+        font: {
+            weight: 'bold'
+        },
+        fullSize: true,
+        padding: 10,
+        position: 'top',
+        text: '',
+        weight: 2000
+    },
+    defaultRoutes: {
+        color: 'color'
+    },
+    descriptors: {
+        _scriptable: true,
+        _indexable: false
+    }
+};
+
+const map = new WeakMap();
+var plugin_subtitle = {
+    id: 'subtitle',
+    start (chart, _args, options) {
+        const title = new Title({
+            ctx: chart.ctx,
+            options,
+            chart
+        });
+        layouts.configure(chart, title, options);
+        layouts.addBox(chart, title);
+        map.set(chart, title);
+    },
+    stop (chart) {
+        layouts.removeBox(chart, map.get(chart));
+        map.delete(chart);
+    },
+    beforeUpdate (chart, _args, options) {
+        const title = map.get(chart);
+        layouts.configure(chart, title, options);
+        title.options = options;
+    },
+    defaults: {
+        align: 'center',
+        display: false,
+        font: {
+            weight: 'normal'
+        },
+        fullSize: true,
+        padding: 0,
+        position: 'top',
+        text: '',
+        weight: 1500
+    },
+    defaultRoutes: {
+        color: 'color'
+    },
+    descriptors: {
+        _scriptable: true,
+        _indexable: false
+    }
+};
+
+const positioners = {
+ average (items) {
+        if (!items.length) {
+            return false;
+        }
+        let i, len;
+        let xSet = new Set();
+        let y = 0;
+        let count = 0;
+        for(i = 0, len = items.length; i < len; ++i){
+            const el = items[i].element;
+            if (el && el.hasValue()) {
+                const pos = el.tooltipPosition();
+                xSet.add(pos.x);
+                y += pos.y;
+                ++count;
+            }
+        }
+        if (count === 0 || xSet.size === 0) {
+            return false;
+        }
+        const xAverage = [
+            ...xSet
+        ].reduce((a, b)=>a + b) / xSet.size;
+        return {
+            x: xAverage,
+            y: y / count
+        };
+    },
+ nearest (items, eventPosition) {
+        if (!items.length) {
+            return false;
+        }
+        let x = eventPosition.x;
+        let y = eventPosition.y;
+        let minDistance = Number.POSITIVE_INFINITY;
+        let i, len, nearestElement;
+        for(i = 0, len = items.length; i < len; ++i){
+            const el = items[i].element;
+            if (el && el.hasValue()) {
+                const center = el.getCenterPoint();
+                const d = distanceBetweenPoints(eventPosition, center);
+                if (d < minDistance) {
+                    minDistance = d;
+                    nearestElement = el;
+                }
+            }
+        }
+        if (nearestElement) {
+            const tp = nearestElement.tooltipPosition();
+            x = tp.x;
+            y = tp.y;
+        }
+        return {
+            x,
+            y
+        };
+    }
+};
+function pushOrConcat(base, toPush) {
+    if (toPush) {
+        if (isArray(toPush)) {
+            Array.prototype.push.apply(base, toPush);
+        } else {
+            base.push(toPush);
+        }
+    }
+    return base;
+}
+ function splitNewlines(str) {
+    if ((typeof str === 'string' || str instanceof String) && str.indexOf('\n') > -1) {
+        return str.split('\n');
+    }
+    return str;
+}
+ function createTooltipItem(chart, item) {
+    const { element , datasetIndex , index  } = item;
+    const controller = chart.getDatasetMeta(datasetIndex).controller;
+    const { label , value  } = controller.getLabelAndValue(index);
+    return {
+        chart,
+        label,
+        parsed: controller.getParsed(index),
+        raw: chart.data.datasets[datasetIndex].data[index],
+        formattedValue: value,
+        dataset: controller.getDataset(),
+        dataIndex: index,
+        datasetIndex,
+        element
+    };
+}
+ function getTooltipSize(tooltip, options) {
+    const ctx = tooltip.chart.ctx;
+    const { body , footer , title  } = tooltip;
+    const { boxWidth , boxHeight  } = options;
+    const bodyFont = toFont(options.bodyFont);
+    const titleFont = toFont(options.titleFont);
+    const footerFont = toFont(options.footerFont);
+    const titleLineCount = title.length;
+    const footerLineCount = footer.length;
+    const bodyLineItemCount = body.length;
+    const padding = toPadding(options.padding);
+    let height = padding.height;
+    let width = 0;
+    let combinedBodyLength = body.reduce((count, bodyItem)=>count + bodyItem.before.length + bodyItem.lines.length + bodyItem.after.length, 0);
+    combinedBodyLength += tooltip.beforeBody.length + tooltip.afterBody.length;
+    if (titleLineCount) {
+        height += titleLineCount * titleFont.lineHeight + (titleLineCount - 1) * options.titleSpacing + options.titleMarginBottom;
+    }
+    if (combinedBodyLength) {
+        const bodyLineHeight = options.displayColors ? Math.max(boxHeight, bodyFont.lineHeight) : bodyFont.lineHeight;
+        height += bodyLineItemCount * bodyLineHeight + (combinedBodyLength - bodyLineItemCount) * bodyFont.lineHeight + (combinedBodyLength - 1) * options.bodySpacing;
+    }
+    if (footerLineCount) {
+        height += options.footerMarginTop + footerLineCount * footerFont.lineHeight + (footerLineCount - 1) * options.footerSpacing;
+    }
+    let widthPadding = 0;
+    const maxLineWidth = function(line) {
+        width = Math.max(width, ctx.measureText(line).width + widthPadding);
+    };
+    ctx.save();
+    ctx.font = titleFont.string;
+    each(tooltip.title, maxLineWidth);
+    ctx.font = bodyFont.string;
+    each(tooltip.beforeBody.concat(tooltip.afterBody), maxLineWidth);
+    widthPadding = options.displayColors ? boxWidth + 2 + options.boxPadding : 0;
+    each(body, (bodyItem)=>{
+        each(bodyItem.before, maxLineWidth);
+        each(bodyItem.lines, maxLineWidth);
+        each(bodyItem.after, maxLineWidth);
+    });
+    widthPadding = 0;
+    ctx.font = footerFont.string;
+    each(tooltip.footer, maxLineWidth);
+    ctx.restore();
+    width += padding.width;
+    return {
+        width,
+        height
+    };
+}
+function determineYAlign(chart, size) {
+    const { y , height  } = size;
+    if (y < height / 2) {
+        return 'top';
+    } else if (y > chart.height - height / 2) {
+        return 'bottom';
+    }
+    return 'center';
+}
+function doesNotFitWithAlign(xAlign, chart, options, size) {
+    const { x , width  } = size;
+    const caret = options.caretSize + options.caretPadding;
+    if (xAlign === 'left' && x + width + caret > chart.width) {
+        return true;
+    }
+    if (xAlign === 'right' && x - width - caret < 0) {
+        return true;
+    }
+}
+function determineXAlign(chart, options, size, yAlign) {
+    const { x , width  } = size;
+    const { width: chartWidth , chartArea: { left , right  }  } = chart;
+    let xAlign = 'center';
+    if (yAlign === 'center') {
+        xAlign = x <= (left + right) / 2 ? 'left' : 'right';
+    } else if (x <= width / 2) {
+        xAlign = 'left';
+    } else if (x >= chartWidth - width / 2) {
+        xAlign = 'right';
+    }
+    if (doesNotFitWithAlign(xAlign, chart, options, size)) {
+        xAlign = 'center';
+    }
+    return xAlign;
+}
+ function determineAlignment(chart, options, size) {
+    const yAlign = size.yAlign || options.yAlign || determineYAlign(chart, size);
+    return {
+        xAlign: size.xAlign || options.xAlign || determineXAlign(chart, options, size, yAlign),
+        yAlign
+    };
+}
+function alignX(size, xAlign) {
+    let { x , width  } = size;
+    if (xAlign === 'right') {
+        x -= width;
+    } else if (xAlign === 'center') {
+        x -= width / 2;
+    }
+    return x;
+}
+function alignY(size, yAlign, paddingAndSize) {
+    let { y , height  } = size;
+    if (yAlign === 'top') {
+        y += paddingAndSize;
+    } else if (yAlign === 'bottom') {
+        y -= height + paddingAndSize;
+    } else {
+        y -= height / 2;
+    }
+    return y;
+}
+ function getBackgroundPoint(options, size, alignment, chart) {
+    const { caretSize , caretPadding , cornerRadius  } = options;
+    const { xAlign , yAlign  } = alignment;
+    const paddingAndSize = caretSize + caretPadding;
+    const { topLeft , topRight , bottomLeft , bottomRight  } = toTRBLCorners(cornerRadius);
+    let x = alignX(size, xAlign);
+    const y = alignY(size, yAlign, paddingAndSize);
+    if (yAlign === 'center') {
+        if (xAlign === 'left') {
+            x += paddingAndSize;
+        } else if (xAlign === 'right') {
+            x -= paddingAndSize;
+        }
+    } else if (xAlign === 'left') {
+        x -= Math.max(topLeft, bottomLeft) + caretSize;
+    } else if (xAlign === 'right') {
+        x += Math.max(topRight, bottomRight) + caretSize;
+    }
+    return {
+        x: _limitValue(x, 0, chart.width - size.width),
+        y: _limitValue(y, 0, chart.height - size.height)
+    };
+}
+function getAlignedX(tooltip, align, options) {
+    const padding = toPadding(options.padding);
+    return align === 'center' ? tooltip.x + tooltip.width / 2 : align === 'right' ? tooltip.x + tooltip.width - padding.right : tooltip.x + padding.left;
+}
+ function getBeforeAfterBodyLines(callback) {
+    return pushOrConcat([], splitNewlines(callback));
+}
+function createTooltipContext(parent, tooltip, tooltipItems) {
+    return createContext(parent, {
+        tooltip,
+        tooltipItems,
+        type: 'tooltip'
+    });
+}
+function overrideCallbacks(callbacks, context) {
+    const override = context && context.dataset && context.dataset.tooltip && context.dataset.tooltip.callbacks;
+    return override ? callbacks.override(override) : callbacks;
+}
+const defaultCallbacks = {
+    beforeTitle: noop,
+    title (tooltipItems) {
+        if (tooltipItems.length > 0) {
+            const item = tooltipItems[0];
+            const labels = item.chart.data.labels;
+            const labelCount = labels ? labels.length : 0;
+            if (this && this.options && this.options.mode === 'dataset') {
+                return item.dataset.label || '';
+            } else if (item.label) {
+                return item.label;
+            } else if (labelCount > 0 && item.dataIndex < labelCount) {
+                return labels[item.dataIndex];
+            }
+        }
+        return '';
+    },
+    afterTitle: noop,
+    beforeBody: noop,
+    beforeLabel: noop,
+    label (tooltipItem) {
+        if (this && this.options && this.options.mode === 'dataset') {
+            return tooltipItem.label + ': ' + tooltipItem.formattedValue || tooltipItem.formattedValue;
+        }
+        let label = tooltipItem.dataset.label || '';
+        if (label) {
+            label += ': ';
+        }
+        const value = tooltipItem.formattedValue;
+        if (!isNullOrUndef(value)) {
+            label += value;
+        }
+        return label;
+    },
+    labelColor (tooltipItem) {
+        const meta = tooltipItem.chart.getDatasetMeta(tooltipItem.datasetIndex);
+        const options = meta.controller.getStyle(tooltipItem.dataIndex);
+        return {
+            borderColor: options.borderColor,
+            backgroundColor: options.backgroundColor,
+            borderWidth: options.borderWidth,
+            borderDash: options.borderDash,
+            borderDashOffset: options.borderDashOffset,
+            borderRadius: 0
+        };
+    },
+    labelTextColor () {
+        return this.options.bodyColor;
+    },
+    labelPointStyle (tooltipItem) {
+        const meta = tooltipItem.chart.getDatasetMeta(tooltipItem.datasetIndex);
+        const options = meta.controller.getStyle(tooltipItem.dataIndex);
+        return {
+            pointStyle: options.pointStyle,
+            rotation: options.rotation
+        };
+    },
+    afterLabel: noop,
+    afterBody: noop,
+    beforeFooter: noop,
+    footer: noop,
+    afterFooter: noop
+};
+ function invokeCallbackWithFallback(callbacks, name, ctx, arg) {
+    const result = callbacks[name].call(ctx, arg);
+    if (typeof result === 'undefined') {
+        return defaultCallbacks[name].call(ctx, arg);
+    }
+    return result;
+}
+class Tooltip extends Element {
+ static positioners = positioners;
+    constructor(config){
+        super();
+        this.opacity = 0;
+        this._active = [];
+        this._eventPosition = undefined;
+        this._size = undefined;
+        this._cachedAnimations = undefined;
+        this._tooltipItems = [];
+        this.$animations = undefined;
+        this.$context = undefined;
+        this.chart = config.chart;
+        this.options = config.options;
+        this.dataPoints = undefined;
+        this.title = undefined;
+        this.beforeBody = undefined;
+        this.body = undefined;
+        this.afterBody = undefined;
+        this.footer = undefined;
+        this.xAlign = undefined;
+        this.yAlign = undefined;
+        this.x = undefined;
+        this.y = undefined;
+        this.height = undefined;
+        this.width = undefined;
+        this.caretX = undefined;
+        this.caretY = undefined;
+        this.labelColors = undefined;
+        this.labelPointStyles = undefined;
+        this.labelTextColors = undefined;
+    }
+    initialize(options) {
+        this.options = options;
+        this._cachedAnimations = undefined;
+        this.$context = undefined;
+    }
+ _resolveAnimations() {
+        const cached = this._cachedAnimations;
+        if (cached) {
+            return cached;
+        }
+        const chart = this.chart;
+        const options = this.options.setContext(this.getContext());
+        const opts = options.enabled && chart.options.animation && options.animations;
+        const animations = new Animations(this.chart, opts);
+        if (opts._cacheable) {
+            this._cachedAnimations = Object.freeze(animations);
+        }
+        return animations;
+    }
+ getContext() {
+        return this.$context || (this.$context = createTooltipContext(this.chart.getContext(), this, this._tooltipItems));
+    }
+    getTitle(context, options) {
+        const { callbacks  } = options;
+        const beforeTitle = invokeCallbackWithFallback(callbacks, 'beforeTitle', this, context);
+        const title = invokeCallbackWithFallback(callbacks, 'title', this, context);
+        const afterTitle = invokeCallbackWithFallback(callbacks, 'afterTitle', this, context);
+        let lines = [];
+        lines = pushOrConcat(lines, splitNewlines(beforeTitle));
+        lines = pushOrConcat(lines, splitNewlines(title));
+        lines = pushOrConcat(lines, splitNewlines(afterTitle));
+        return lines;
+    }
+    getBeforeBody(tooltipItems, options) {
+        return getBeforeAfterBodyLines(invokeCallbackWithFallback(options.callbacks, 'beforeBody', this, tooltipItems));
+    }
+    getBody(tooltipItems, options) {
+        const { callbacks  } = options;
+        const bodyItems = [];
+        each(tooltipItems, (context)=>{
+            const bodyItem = {
+                before: [],
+                lines: [],
+                after: []
+            };
+            const scoped = overrideCallbacks(callbacks, context);
+            pushOrConcat(bodyItem.before, splitNewlines(invokeCallbackWithFallback(scoped, 'beforeLabel', this, context)));
+            pushOrConcat(bodyItem.lines, invokeCallbackWithFallback(scoped, 'label', this, context));
+            pushOrConcat(bodyItem.after, splitNewlines(invokeCallbackWithFallback(scoped, 'afterLabel', this, context)));
+            bodyItems.push(bodyItem);
+        });
+        return bodyItems;
+    }
+    getAfterBody(tooltipItems, options) {
+        return getBeforeAfterBodyLines(invokeCallbackWithFallback(options.callbacks, 'afterBody', this, tooltipItems));
+    }
+    getFooter(tooltipItems, options) {
+        const { callbacks  } = options;
+        const beforeFooter = invokeCallbackWithFallback(callbacks, 'beforeFooter', this, tooltipItems);
+        const footer = invokeCallbackWithFallback(callbacks, 'footer', this, tooltipItems);
+        const afterFooter = invokeCallbackWithFallback(callbacks, 'afterFooter', this, tooltipItems);
+        let lines = [];
+        lines = pushOrConcat(lines, splitNewlines(beforeFooter));
+        lines = pushOrConcat(lines, splitNewlines(footer));
+        lines = pushOrConcat(lines, splitNewlines(afterFooter));
+        return lines;
+    }
+ _createItems(options) {
+        const active = this._active;
+        const data = this.chart.data;
+        const labelColors = [];
+        const labelPointStyles = [];
+        const labelTextColors = [];
+        let tooltipItems = [];
+        let i, len;
+        for(i = 0, len = active.length; i < len; ++i){
+            tooltipItems.push(createTooltipItem(this.chart, active[i]));
+        }
+        if (options.filter) {
+            tooltipItems = tooltipItems.filter((element, index, array)=>options.filter(element, index, array, data));
+        }
+        if (options.itemSort) {
+            tooltipItems = tooltipItems.sort((a, b)=>options.itemSort(a, b, data));
+        }
+        each(tooltipItems, (context)=>{
+            const scoped = overrideCallbacks(options.callbacks, context);
+            labelColors.push(invokeCallbackWithFallback(scoped, 'labelColor', this, context));
+            labelPointStyles.push(invokeCallbackWithFallback(scoped, 'labelPointStyle', this, context));
+            labelTextColors.push(invokeCallbackWithFallback(scoped, 'labelTextColor', this, context));
+        });
+        this.labelColors = labelColors;
+        this.labelPointStyles = labelPointStyles;
+        this.labelTextColors = labelTextColors;
+        this.dataPoints = tooltipItems;
+        return tooltipItems;
+    }
+    update(changed, replay) {
+        const options = this.options.setContext(this.getContext());
+        const active = this._active;
+        let properties;
+        let tooltipItems = [];
+        if (!active.length) {
+            if (this.opacity !== 0) {
+                properties = {
+                    opacity: 0
+                };
+            }
+        } else {
+            const position = positioners[options.position].call(this, active, this._eventPosition);
+            tooltipItems = this._createItems(options);
+            this.title = this.getTitle(tooltipItems, options);
+            this.beforeBody = this.getBeforeBody(tooltipItems, options);
+            this.body = this.getBody(tooltipItems, options);
+            this.afterBody = this.getAfterBody(tooltipItems, options);
+            this.footer = this.getFooter(tooltipItems, options);
+            const size = this._size = getTooltipSize(this, options);
+            const positionAndSize = Object.assign({}, position, size);
+            const alignment = determineAlignment(this.chart, options, positionAndSize);
+            const backgroundPoint = getBackgroundPoint(options, positionAndSize, alignment, this.chart);
+            this.xAlign = alignment.xAlign;
+            this.yAlign = alignment.yAlign;
+            properties = {
+                opacity: 1,
+                x: backgroundPoint.x,
+                y: backgroundPoint.y,
+                width: size.width,
+                height: size.height,
+                caretX: position.x,
+                caretY: position.y
+            };
+        }
+        this._tooltipItems = tooltipItems;
+        this.$context = undefined;
+        if (properties) {
+            this._resolveAnimations().update(this, properties);
+        }
+        if (changed && options.external) {
+            options.external.call(this, {
+                chart: this.chart,
+                tooltip: this,
+                replay
+            });
+        }
+    }
+    drawCaret(tooltipPoint, ctx, size, options) {
+        const caretPosition = this.getCaretPosition(tooltipPoint, size, options);
+        ctx.lineTo(caretPosition.x1, caretPosition.y1);
+        ctx.lineTo(caretPosition.x2, caretPosition.y2);
+        ctx.lineTo(caretPosition.x3, caretPosition.y3);
+    }
+    getCaretPosition(tooltipPoint, size, options) {
+        const { xAlign , yAlign  } = this;
+        const { caretSize , cornerRadius  } = options;
+        const { topLeft , topRight , bottomLeft , bottomRight  } = toTRBLCorners(cornerRadius);
+        const { x: ptX , y: ptY  } = tooltipPoint;
+        const { width , height  } = size;
+        let x1, x2, x3, y1, y2, y3;
+        if (yAlign === 'center') {
+            y2 = ptY + height / 2;
+            if (xAlign === 'left') {
+                x1 = ptX;
+                x2 = x1 - caretSize;
+                y1 = y2 + caretSize;
+                y3 = y2 - caretSize;
+            } else {
+                x1 = ptX + width;
+                x2 = x1 + caretSize;
+                y1 = y2 - caretSize;
+                y3 = y2 + caretSize;
+            }
+            x3 = x1;
+        } else {
+            if (xAlign === 'left') {
+                x2 = ptX + Math.max(topLeft, bottomLeft) + caretSize;
+            } else if (xAlign === 'right') {
+                x2 = ptX + width - Math.max(topRight, bottomRight) - caretSize;
+            } else {
+                x2 = this.caretX;
+            }
+            if (yAlign === 'top') {
+                y1 = ptY;
+                y2 = y1 - caretSize;
+                x1 = x2 - caretSize;
+                x3 = x2 + caretSize;
+            } else {
+                y1 = ptY + height;
+                y2 = y1 + caretSize;
+                x1 = x2 + caretSize;
+                x3 = x2 - caretSize;
+            }
+            y3 = y1;
+        }
+        return {
+            x1,
+            x2,
+            x3,
+            y1,
+            y2,
+            y3
+        };
+    }
+    drawTitle(pt, ctx, options) {
+        const title = this.title;
+        const length = title.length;
+        let titleFont, titleSpacing, i;
+        if (length) {
+            const rtlHelper = getRtlAdapter(options.rtl, this.x, this.width);
+            pt.x = getAlignedX(this, options.titleAlign, options);
+            ctx.textAlign = rtlHelper.textAlign(options.titleAlign);
+            ctx.textBaseline = 'middle';
+            titleFont = toFont(options.titleFont);
+            titleSpacing = options.titleSpacing;
+            ctx.fillStyle = options.titleColor;
+            ctx.font = titleFont.string;
+            for(i = 0; i < length; ++i){
+                ctx.fillText(title[i], rtlHelper.x(pt.x), pt.y + titleFont.lineHeight / 2);
+                pt.y += titleFont.lineHeight + titleSpacing;
+                if (i + 1 === length) {
+                    pt.y += options.titleMarginBottom - titleSpacing;
+                }
+            }
+        }
+    }
+ _drawColorBox(ctx, pt, i, rtlHelper, options) {
+        const labelColor = this.labelColors[i];
+        const labelPointStyle = this.labelPointStyles[i];
+        const { boxHeight , boxWidth  } = options;
+        const bodyFont = toFont(options.bodyFont);
+        const colorX = getAlignedX(this, 'left', options);
+        const rtlColorX = rtlHelper.x(colorX);
+        const yOffSet = boxHeight < bodyFont.lineHeight ? (bodyFont.lineHeight - boxHeight) / 2 : 0;
+        const colorY = pt.y + yOffSet;
+        if (options.usePointStyle) {
+            const drawOptions = {
+                radius: Math.min(boxWidth, boxHeight) / 2,
+                pointStyle: labelPointStyle.pointStyle,
+                rotation: labelPointStyle.rotation,
+                borderWidth: 1
+            };
+            const centerX = rtlHelper.leftForLtr(rtlColorX, boxWidth) + boxWidth / 2;
+            const centerY = colorY + boxHeight / 2;
+            ctx.strokeStyle = options.multiKeyBackground;
+            ctx.fillStyle = options.multiKeyBackground;
+            drawPoint(ctx, drawOptions, centerX, centerY);
+            ctx.strokeStyle = labelColor.borderColor;
+            ctx.fillStyle = labelColor.backgroundColor;
+            drawPoint(ctx, drawOptions, centerX, centerY);
+        } else {
+            ctx.lineWidth = isObject(labelColor.borderWidth) ? Math.max(...Object.values(labelColor.borderWidth)) : labelColor.borderWidth || 1;
+            ctx.strokeStyle = labelColor.borderColor;
+            ctx.setLineDash(labelColor.borderDash || []);
+            ctx.lineDashOffset = labelColor.borderDashOffset || 0;
+            const outerX = rtlHelper.leftForLtr(rtlColorX, boxWidth);
+            const innerX = rtlHelper.leftForLtr(rtlHelper.xPlus(rtlColorX, 1), boxWidth - 2);
+            const borderRadius = toTRBLCorners(labelColor.borderRadius);
+            if (Object.values(borderRadius).some((v)=>v !== 0)) {
+                ctx.beginPath();
+                ctx.fillStyle = options.multiKeyBackground;
+                addRoundedRectPath(ctx, {
+                    x: outerX,
+                    y: colorY,
+                    w: boxWidth,
+                    h: boxHeight,
+                    radius: borderRadius
+                });
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = labelColor.backgroundColor;
+                ctx.beginPath();
+                addRoundedRectPath(ctx, {
+                    x: innerX,
+                    y: colorY + 1,
+                    w: boxWidth - 2,
+                    h: boxHeight - 2,
+                    radius: borderRadius
+                });
+                ctx.fill();
+            } else {
+                ctx.fillStyle = options.multiKeyBackground;
+                ctx.fillRect(outerX, colorY, boxWidth, boxHeight);
+                ctx.strokeRect(outerX, colorY, boxWidth, boxHeight);
+                ctx.fillStyle = labelColor.backgroundColor;
+                ctx.fillRect(innerX, colorY + 1, boxWidth - 2, boxHeight - 2);
+            }
+        }
+        ctx.fillStyle = this.labelTextColors[i];
+    }
+    drawBody(pt, ctx, options) {
+        const { body  } = this;
+        const { bodySpacing , bodyAlign , displayColors , boxHeight , boxWidth , boxPadding  } = options;
+        const bodyFont = toFont(options.bodyFont);
+        let bodyLineHeight = bodyFont.lineHeight;
+        let xLinePadding = 0;
+        const rtlHelper = getRtlAdapter(options.rtl, this.x, this.width);
+        const fillLineOfText = function(line) {
+            ctx.fillText(line, rtlHelper.x(pt.x + xLinePadding), pt.y + bodyLineHeight / 2);
+            pt.y += bodyLineHeight + bodySpacing;
+        };
+        const bodyAlignForCalculation = rtlHelper.textAlign(bodyAlign);
+        let bodyItem, textColor, lines, i, j, ilen, jlen;
+        ctx.textAlign = bodyAlign;
+        ctx.textBaseline = 'middle';
+        ctx.font = bodyFont.string;
+        pt.x = getAlignedX(this, bodyAlignForCalculation, options);
+        ctx.fillStyle = options.bodyColor;
+        each(this.beforeBody, fillLineOfText);
+        xLinePadding = displayColors && bodyAlignForCalculation !== 'right' ? bodyAlign === 'center' ? boxWidth / 2 + boxPadding : boxWidth + 2 + boxPadding : 0;
+        for(i = 0, ilen = body.length; i < ilen; ++i){
+            bodyItem = body[i];
+            textColor = this.labelTextColors[i];
+            ctx.fillStyle = textColor;
+            each(bodyItem.before, fillLineOfText);
+            lines = bodyItem.lines;
+            if (displayColors && lines.length) {
+                this._drawColorBox(ctx, pt, i, rtlHelper, options);
+                bodyLineHeight = Math.max(bodyFont.lineHeight, boxHeight);
+            }
+            for(j = 0, jlen = lines.length; j < jlen; ++j){
+                fillLineOfText(lines[j]);
+                bodyLineHeight = bodyFont.lineHeight;
+            }
+            each(bodyItem.after, fillLineOfText);
+        }
+        xLinePadding = 0;
+        bodyLineHeight = bodyFont.lineHeight;
+        each(this.afterBody, fillLineOfText);
+        pt.y -= bodySpacing;
+    }
+    drawFooter(pt, ctx, options) {
+        const footer = this.footer;
+        const length = footer.length;
+        let footerFont, i;
+        if (length) {
+            const rtlHelper = getRtlAdapter(options.rtl, this.x, this.width);
+            pt.x = getAlignedX(this, options.footerAlign, options);
+            pt.y += options.footerMarginTop;
+            ctx.textAlign = rtlHelper.textAlign(options.footerAlign);
+            ctx.textBaseline = 'middle';
+            footerFont = toFont(options.footerFont);
+            ctx.fillStyle = options.footerColor;
+            ctx.font = footerFont.string;
+            for(i = 0; i < length; ++i){
+                ctx.fillText(footer[i], rtlHelper.x(pt.x), pt.y + footerFont.lineHeight / 2);
+                pt.y += footerFont.lineHeight + options.footerSpacing;
+            }
+        }
+    }
+    drawBackground(pt, ctx, tooltipSize, options) {
+        const { xAlign , yAlign  } = this;
+        const { x , y  } = pt;
+        const { width , height  } = tooltipSize;
+        const { topLeft , topRight , bottomLeft , bottomRight  } = toTRBLCorners(options.cornerRadius);
+        ctx.fillStyle = options.backgroundColor;
+        ctx.strokeStyle = options.borderColor;
+        ctx.lineWidth = options.borderWidth;
+        ctx.beginPath();
+        ctx.moveTo(x + topLeft, y);
+        if (yAlign === 'top') {
+            this.drawCaret(pt, ctx, tooltipSize, options);
+        }
+        ctx.lineTo(x + width - topRight, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + topRight);
+        if (yAlign === 'center' && xAlign === 'right') {
+            this.drawCaret(pt, ctx, tooltipSize, options);
+        }
+        ctx.lineTo(x + width, y + height - bottomRight);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - bottomRight, y + height);
+        if (yAlign === 'bottom') {
+            this.drawCaret(pt, ctx, tooltipSize, options);
+        }
+        ctx.lineTo(x + bottomLeft, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - bottomLeft);
+        if (yAlign === 'center' && xAlign === 'left') {
+            this.drawCaret(pt, ctx, tooltipSize, options);
+        }
+        ctx.lineTo(x, y + topLeft);
+        ctx.quadraticCurveTo(x, y, x + topLeft, y);
+        ctx.closePath();
+        ctx.fill();
+        if (options.borderWidth > 0) {
+            ctx.stroke();
+        }
+    }
+ _updateAnimationTarget(options) {
+        const chart = this.chart;
+        const anims = this.$animations;
+        const animX = anims && anims.x;
+        const animY = anims && anims.y;
+        if (animX || animY) {
+            const position = positioners[options.position].call(this, this._active, this._eventPosition);
+            if (!position) {
+                return;
+            }
+            const size = this._size = getTooltipSize(this, options);
+            const positionAndSize = Object.assign({}, position, this._size);
+            const alignment = determineAlignment(chart, options, positionAndSize);
+            const point = getBackgroundPoint(options, positionAndSize, alignment, chart);
+            if (animX._to !== point.x || animY._to !== point.y) {
+                this.xAlign = alignment.xAlign;
+                this.yAlign = alignment.yAlign;
+                this.width = size.width;
+                this.height = size.height;
+                this.caretX = position.x;
+                this.caretY = position.y;
+                this._resolveAnimations().update(this, point);
+            }
+        }
+    }
+ _willRender() {
+        return !!this.opacity;
+    }
+    draw(ctx) {
+        const options = this.options.setContext(this.getContext());
+        let opacity = this.opacity;
+        if (!opacity) {
+            return;
+        }
+        this._updateAnimationTarget(options);
+        const tooltipSize = {
+            width: this.width,
+            height: this.height
+        };
+        const pt = {
+            x: this.x,
+            y: this.y
+        };
+        opacity = Math.abs(opacity) < 1e-3 ? 0 : opacity;
+        const padding = toPadding(options.padding);
+        const hasTooltipContent = this.title.length || this.beforeBody.length || this.body.length || this.afterBody.length || this.footer.length;
+        if (options.enabled && hasTooltipContent) {
+            ctx.save();
+            ctx.globalAlpha = opacity;
+            this.drawBackground(pt, ctx, tooltipSize, options);
+            overrideTextDirection(ctx, options.textDirection);
+            pt.y += padding.top;
+            this.drawTitle(pt, ctx, options);
+            this.drawBody(pt, ctx, options);
+            this.drawFooter(pt, ctx, options);
+            restoreTextDirection(ctx, options.textDirection);
+            ctx.restore();
+        }
+    }
+ getActiveElements() {
+        return this._active || [];
+    }
+ setActiveElements(activeElements, eventPosition) {
+        const lastActive = this._active;
+        const active = activeElements.map(({ datasetIndex , index  })=>{
+            const meta = this.chart.getDatasetMeta(datasetIndex);
+            if (!meta) {
+                throw new Error('Cannot find a dataset at index ' + datasetIndex);
+            }
+            return {
+                datasetIndex,
+                element: meta.data[index],
+                index
+            };
+        });
+        const changed = !_elementsEqual(lastActive, active);
+        const positionChanged = this._positionChanged(active, eventPosition);
+        if (changed || positionChanged) {
+            this._active = active;
+            this._eventPosition = eventPosition;
+            this._ignoreReplayEvents = true;
+            this.update(true);
+        }
+    }
+ handleEvent(e, replay, inChartArea = true) {
+        if (replay && this._ignoreReplayEvents) {
+            return false;
+        }
+        this._ignoreReplayEvents = false;
+        const options = this.options;
+        const lastActive = this._active || [];
+        const active = this._getActiveElements(e, lastActive, replay, inChartArea);
+        const positionChanged = this._positionChanged(active, e);
+        const changed = replay || !_elementsEqual(active, lastActive) || positionChanged;
+        if (changed) {
+            this._active = active;
+            if (options.enabled || options.external) {
+                this._eventPosition = {
+                    x: e.x,
+                    y: e.y
+                };
+                this.update(true, replay);
+            }
+        }
+        return changed;
+    }
+ _getActiveElements(e, lastActive, replay, inChartArea) {
+        const options = this.options;
+        if (e.type === 'mouseout') {
+            return [];
+        }
+        if (!inChartArea) {
+            return lastActive.filter((i)=>this.chart.data.datasets[i.datasetIndex] && this.chart.getDatasetMeta(i.datasetIndex).controller.getParsed(i.index) !== undefined);
+        }
+        const active = this.chart.getElementsAtEventForMode(e, options.mode, options, replay);
+        if (options.reverse) {
+            active.reverse();
+        }
+        return active;
+    }
+ _positionChanged(active, e) {
+        const { caretX , caretY , options  } = this;
+        const position = positioners[options.position].call(this, active, e);
+        return position !== false && (caretX !== position.x || caretY !== position.y);
+    }
+}
+var plugin_tooltip = {
+    id: 'tooltip',
+    _element: Tooltip,
+    positioners,
+    afterInit (chart, _args, options) {
+        if (options) {
+            chart.tooltip = new Tooltip({
+                chart,
+                options
+            });
+        }
+    },
+    beforeUpdate (chart, _args, options) {
+        if (chart.tooltip) {
+            chart.tooltip.initialize(options);
+        }
+    },
+    reset (chart, _args, options) {
+        if (chart.tooltip) {
+            chart.tooltip.initialize(options);
+        }
+    },
+    afterDraw (chart) {
+        const tooltip = chart.tooltip;
+        if (tooltip && tooltip._willRender()) {
+            const args = {
+                tooltip
+            };
+            if (chart.notifyPlugins('beforeTooltipDraw', {
+                ...args,
+                cancelable: true
+            }) === false) {
+                return;
+            }
+            tooltip.draw(chart.ctx);
+            chart.notifyPlugins('afterTooltipDraw', args);
+        }
+    },
+    afterEvent (chart, args) {
+        if (chart.tooltip) {
+            const useFinalPosition = args.replay;
+            if (chart.tooltip.handleEvent(args.event, useFinalPosition, args.inChartArea)) {
+                args.changed = true;
+            }
+        }
+    },
+    defaults: {
+        enabled: true,
+        external: null,
+        position: 'average',
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        titleColor: '#fff',
+        titleFont: {
+            weight: 'bold'
+        },
+        titleSpacing: 2,
+        titleMarginBottom: 6,
+        titleAlign: 'left',
+        bodyColor: '#fff',
+        bodySpacing: 2,
+        bodyFont: {},
+        bodyAlign: 'left',
+        footerColor: '#fff',
+        footerSpacing: 2,
+        footerMarginTop: 6,
+        footerFont: {
+            weight: 'bold'
+        },
+        footerAlign: 'left',
+        padding: 6,
+        caretPadding: 2,
+        caretSize: 5,
+        cornerRadius: 6,
+        boxHeight: (ctx, opts)=>opts.bodyFont.size,
+        boxWidth: (ctx, opts)=>opts.bodyFont.size,
+        multiKeyBackground: '#fff',
+        displayColors: true,
+        boxPadding: 0,
+        borderColor: 'rgba(0,0,0,0)',
+        borderWidth: 0,
+        animation: {
+            duration: 400,
+            easing: 'easeOutQuart'
+        },
+        animations: {
+            numbers: {
+                type: 'number',
+                properties: [
+                    'x',
+                    'y',
+                    'width',
+                    'height',
+                    'caretX',
+                    'caretY'
+                ]
+            },
+            opacity: {
+                easing: 'linear',
+                duration: 200
+            }
+        },
+        callbacks: defaultCallbacks
+    },
+    defaultRoutes: {
+        bodyFont: 'font',
+        footerFont: 'font',
+        titleFont: 'font'
+    },
+    descriptors: {
+        _scriptable: (name)=>name !== 'filter' && name !== 'itemSort' && name !== 'external',
+        _indexable: false,
+        callbacks: {
+            _scriptable: false,
+            _indexable: false
+        },
+        animation: {
+            _fallback: false
+        },
+        animations: {
+            _fallback: 'animation'
+        }
+    },
+    additionalOptionScopes: [
+        'interaction'
+    ]
+};
+
+var plugins = /*#__PURE__*/Object.freeze({
+__proto__: null,
+Colors: plugin_colors,
+Decimation: plugin_decimation,
+Filler: index,
+Legend: plugin_legend,
+SubTitle: plugin_subtitle,
+Title: plugin_title,
+Tooltip: plugin_tooltip
+});
+
+const addIfString = (labels, raw, index, addedLabels)=>{
+    if (typeof raw === 'string') {
+        index = labels.push(raw) - 1;
+        addedLabels.unshift({
+            index,
+            label: raw
+        });
+    } else if (isNaN(raw)) {
+        index = null;
+    }
+    return index;
+};
+function findOrAddLabel(labels, raw, index, addedLabels) {
+    const first = labels.indexOf(raw);
+    if (first === -1) {
+        return addIfString(labels, raw, index, addedLabels);
+    }
+    const last = labels.lastIndexOf(raw);
+    return first !== last ? index : first;
+}
+const validIndex = (index, max)=>index === null ? null : _limitValue(Math.round(index), 0, max);
+function _getLabelForValue(value) {
+    const labels = this.getLabels();
+    if (value >= 0 && value < labels.length) {
+        return labels[value];
+    }
+    return value;
+}
+class CategoryScale extends Scale {
+    static id = 'category';
+ static defaults = {
+        ticks: {
+            callback: _getLabelForValue
+        }
+    };
+    constructor(cfg){
+        super(cfg);
+         this._startValue = undefined;
+        this._valueRange = 0;
+        this._addedLabels = [];
+    }
+    init(scaleOptions) {
+        const added = this._addedLabels;
+        if (added.length) {
+            const labels = this.getLabels();
+            for (const { index , label  } of added){
+                if (labels[index] === label) {
+                    labels.splice(index, 1);
+                }
+            }
+            this._addedLabels = [];
+        }
+        super.init(scaleOptions);
+    }
+    parse(raw, index) {
+        if (isNullOrUndef(raw)) {
+            return null;
+        }
+        const labels = this.getLabels();
+        index = isFinite(index) && labels[index] === raw ? index : findOrAddLabel(labels, raw, valueOrDefault(index, raw), this._addedLabels);
+        return validIndex(index, labels.length - 1);
+    }
+    determineDataLimits() {
+        const { minDefined , maxDefined  } = this.getUserBounds();
+        let { min , max  } = this.getMinMax(true);
+        if (this.options.bounds === 'ticks') {
+            if (!minDefined) {
+                min = 0;
+            }
+            if (!maxDefined) {
+                max = this.getLabels().length - 1;
+            }
+        }
+        this.min = min;
+        this.max = max;
+    }
+    buildTicks() {
+        const min = this.min;
+        const max = this.max;
+        const offset = this.options.offset;
+        const ticks = [];
+        let labels = this.getLabels();
+        labels = min === 0 && max === labels.length - 1 ? labels : labels.slice(min, max + 1);
+        this._valueRange = Math.max(labels.length - (offset ? 0 : 1), 1);
+        this._startValue = this.min - (offset ? 0.5 : 0);
+        for(let value = min; value <= max; value++){
+            ticks.push({
+                value
+            });
+        }
+        return ticks;
+    }
+    getLabelForValue(value) {
+        return _getLabelForValue.call(this, value);
+    }
+ configure() {
+        super.configure();
+        if (!this.isHorizontal()) {
+            this._reversePixels = !this._reversePixels;
+        }
+    }
+    getPixelForValue(value) {
+        if (typeof value !== 'number') {
+            value = this.parse(value);
+        }
+        return value === null ? NaN : this.getPixelForDecimal((value - this._startValue) / this._valueRange);
+    }
+    getPixelForTick(index) {
+        const ticks = this.ticks;
+        if (index < 0 || index > ticks.length - 1) {
+            return null;
+        }
+        return this.getPixelForValue(ticks[index].value);
+    }
+    getValueForPixel(pixel) {
+        return Math.round(this._startValue + this.getDecimalForPixel(pixel) * this._valueRange);
+    }
+    getBasePixel() {
+        return this.bottom;
+    }
+}
+
+function generateTicks$1(generationOptions, dataRange) {
+    const ticks = [];
+    const MIN_SPACING = 1e-14;
+    const { bounds , step , min , max , precision , count , maxTicks , maxDigits , includeBounds  } = generationOptions;
+    const unit = step || 1;
+    const maxSpaces = maxTicks - 1;
+    const { min: rmin , max: rmax  } = dataRange;
+    const minDefined = !isNullOrUndef(min);
+    const maxDefined = !isNullOrUndef(max);
+    const countDefined = !isNullOrUndef(count);
+    const minSpacing = (rmax - rmin) / (maxDigits + 1);
+    let spacing = niceNum((rmax - rmin) / maxSpaces / unit) * unit;
+    let factor, niceMin, niceMax, numSpaces;
+    if (spacing < MIN_SPACING && !minDefined && !maxDefined) {
+        return [
+            {
+                value: rmin
+            },
+            {
+                value: rmax
+            }
+        ];
+    }
+    numSpaces = Math.ceil(rmax / spacing) - Math.floor(rmin / spacing);
+    if (numSpaces > maxSpaces) {
+        spacing = niceNum(numSpaces * spacing / maxSpaces / unit) * unit;
+    }
+    if (!isNullOrUndef(precision)) {
+        factor = Math.pow(10, precision);
+        spacing = Math.ceil(spacing * factor) / factor;
+    }
+    if (bounds === 'ticks') {
+        niceMin = Math.floor(rmin / spacing) * spacing;
+        niceMax = Math.ceil(rmax / spacing) * spacing;
+    } else {
+        niceMin = rmin;
+        niceMax = rmax;
+    }
+    if (minDefined && maxDefined && step && almostWhole((max - min) / step, spacing / 1000)) {
+        numSpaces = Math.round(Math.min((max - min) / spacing, maxTicks));
+        spacing = (max - min) / numSpaces;
+        niceMin = min;
+        niceMax = max;
+    } else if (countDefined) {
+        niceMin = minDefined ? min : niceMin;
+        niceMax = maxDefined ? max : niceMax;
+        numSpaces = count - 1;
+        spacing = (niceMax - niceMin) / numSpaces;
+    } else {
+        numSpaces = (niceMax - niceMin) / spacing;
+        if (almostEquals(numSpaces, Math.round(numSpaces), spacing / 1000)) {
+            numSpaces = Math.round(numSpaces);
+        } else {
+            numSpaces = Math.ceil(numSpaces);
+        }
+    }
+    const decimalPlaces = Math.max(_decimalPlaces(spacing), _decimalPlaces(niceMin));
+    factor = Math.pow(10, isNullOrUndef(precision) ? decimalPlaces : precision);
+    niceMin = Math.round(niceMin * factor) / factor;
+    niceMax = Math.round(niceMax * factor) / factor;
+    let j = 0;
+    if (minDefined) {
+        if (includeBounds && niceMin !== min) {
+            ticks.push({
+                value: min
+            });
+            if (niceMin < min) {
+                j++;
+            }
+            if (almostEquals(Math.round((niceMin + j * spacing) * factor) / factor, min, relativeLabelSize(min, minSpacing, generationOptions))) {
+                j++;
+            }
+        } else if (niceMin < min) {
+            j++;
+        }
+    }
+    for(; j < numSpaces; ++j){
+        const tickValue = Math.round((niceMin + j * spacing) * factor) / factor;
+        if (maxDefined && tickValue > max) {
+            break;
+        }
+        ticks.push({
+            value: tickValue
+        });
+    }
+    if (maxDefined && includeBounds && niceMax !== max) {
+        if (ticks.length && almostEquals(ticks[ticks.length - 1].value, max, relativeLabelSize(max, minSpacing, generationOptions))) {
+            ticks[ticks.length - 1].value = max;
+        } else {
+            ticks.push({
+                value: max
+            });
+        }
+    } else if (!maxDefined || niceMax === max) {
+        ticks.push({
+            value: niceMax
+        });
+    }
+    return ticks;
+}
+function relativeLabelSize(value, minSpacing, { horizontal , minRotation  }) {
+    const rad = toRadians(minRotation);
+    const ratio = (horizontal ? Math.sin(rad) : Math.cos(rad)) || 0.001;
+    const length = 0.75 * minSpacing * ('' + value).length;
+    return Math.min(minSpacing / ratio, length);
+}
+class LinearScaleBase extends Scale {
+    constructor(cfg){
+        super(cfg);
+         this.start = undefined;
+         this.end = undefined;
+         this._startValue = undefined;
+         this._endValue = undefined;
+        this._valueRange = 0;
+    }
+    parse(raw, index) {
+        if (isNullOrUndef(raw)) {
+            return null;
+        }
+        if ((typeof raw === 'number' || raw instanceof Number) && !isFinite(+raw)) {
+            return null;
+        }
+        return +raw;
+    }
+    handleTickRangeOptions() {
+        const { beginAtZero  } = this.options;
+        const { minDefined , maxDefined  } = this.getUserBounds();
+        let { min , max  } = this;
+        const setMin = (v)=>min = minDefined ? min : v;
+        const setMax = (v)=>max = maxDefined ? max : v;
+        if (beginAtZero) {
+            const minSign = sign(min);
+            const maxSign = sign(max);
+            if (minSign < 0 && maxSign < 0) {
+                setMax(0);
+            } else if (minSign > 0 && maxSign > 0) {
+                setMin(0);
+            }
+        }
+        if (min === max) {
+            let offset = max === 0 ? 1 : Math.abs(max * 0.05);
+            setMax(max + offset);
+            if (!beginAtZero) {
+                setMin(min - offset);
+            }
+        }
+        this.min = min;
+        this.max = max;
+    }
+    getTickLimit() {
+        const tickOpts = this.options.ticks;
+        let { maxTicksLimit , stepSize  } = tickOpts;
+        let maxTicks;
+        if (stepSize) {
+            maxTicks = Math.ceil(this.max / stepSize) - Math.floor(this.min / stepSize) + 1;
+            if (maxTicks > 1000) {
+                console.warn(`scales.${this.id}.ticks.stepSize: ${stepSize} would result generating up to ${maxTicks} ticks. Limiting to 1000.`);
+                maxTicks = 1000;
+            }
+        } else {
+            maxTicks = this.computeTickLimit();
+            maxTicksLimit = maxTicksLimit || 11;
+        }
+        if (maxTicksLimit) {
+            maxTicks = Math.min(maxTicksLimit, maxTicks);
+        }
+        return maxTicks;
+    }
+ computeTickLimit() {
+        return Number.POSITIVE_INFINITY;
+    }
+    buildTicks() {
+        const opts = this.options;
+        const tickOpts = opts.ticks;
+        let maxTicks = this.getTickLimit();
+        maxTicks = Math.max(2, maxTicks);
+        const numericGeneratorOptions = {
+            maxTicks,
+            bounds: opts.bounds,
+            min: opts.min,
+            max: opts.max,
+            precision: tickOpts.precision,
+            step: tickOpts.stepSize,
+            count: tickOpts.count,
+            maxDigits: this._maxDigits(),
+            horizontal: this.isHorizontal(),
+            minRotation: tickOpts.minRotation || 0,
+            includeBounds: tickOpts.includeBounds !== false
+        };
+        const dataRange = this._range || this;
+        const ticks = generateTicks$1(numericGeneratorOptions, dataRange);
+        if (opts.bounds === 'ticks') {
+            _setMinAndMaxByKey(ticks, this, 'value');
+        }
+        if (opts.reverse) {
+            ticks.reverse();
+            this.start = this.max;
+            this.end = this.min;
+        } else {
+            this.start = this.min;
+            this.end = this.max;
+        }
+        return ticks;
+    }
+ configure() {
+        const ticks = this.ticks;
+        let start = this.min;
+        let end = this.max;
+        super.configure();
+        if (this.options.offset && ticks.length) {
+            const offset = (end - start) / Math.max(ticks.length - 1, 1) / 2;
+            start -= offset;
+            end += offset;
+        }
+        this._startValue = start;
+        this._endValue = end;
+        this._valueRange = end - start;
+    }
+    getLabelForValue(value) {
+        return formatNumber(value, this.chart.options.locale, this.options.ticks.format);
+    }
+}
+
+class LinearScale extends LinearScaleBase {
+    static id = 'linear';
+ static defaults = {
+        ticks: {
+            callback: Ticks.formatters.numeric
+        }
+    };
+    determineDataLimits() {
+        const { min , max  } = this.getMinMax(true);
+        this.min = isNumberFinite(min) ? min : 0;
+        this.max = isNumberFinite(max) ? max : 1;
+        this.handleTickRangeOptions();
+    }
+ computeTickLimit() {
+        const horizontal = this.isHorizontal();
+        const length = horizontal ? this.width : this.height;
+        const minRotation = toRadians(this.options.ticks.minRotation);
+        const ratio = (horizontal ? Math.sin(minRotation) : Math.cos(minRotation)) || 0.001;
+        const tickFont = this._resolveTickFontOptions(0);
+        return Math.ceil(length / Math.min(40, tickFont.lineHeight / ratio));
+    }
+    getPixelForValue(value) {
+        return value === null ? NaN : this.getPixelForDecimal((value - this._startValue) / this._valueRange);
+    }
+    getValueForPixel(pixel) {
+        return this._startValue + this.getDecimalForPixel(pixel) * this._valueRange;
+    }
+}
+
+const log10Floor = (v)=>Math.floor(log10(v));
+const changeExponent = (v, m)=>Math.pow(10, log10Floor(v) + m);
+function isMajor(tickVal) {
+    const remain = tickVal / Math.pow(10, log10Floor(tickVal));
+    return remain === 1;
+}
+function steps(min, max, rangeExp) {
+    const rangeStep = Math.pow(10, rangeExp);
+    const start = Math.floor(min / rangeStep);
+    const end = Math.ceil(max / rangeStep);
+    return end - start;
+}
+function startExp(min, max) {
+    const range = max - min;
+    let rangeExp = log10Floor(range);
+    while(steps(min, max, rangeExp) > 10){
+        rangeExp++;
+    }
+    while(steps(min, max, rangeExp) < 10){
+        rangeExp--;
+    }
+    return Math.min(rangeExp, log10Floor(min));
+}
+ function generateTicks(generationOptions, { min , max  }) {
+    min = finiteOrDefault(generationOptions.min, min);
+    const ticks = [];
+    const minExp = log10Floor(min);
+    let exp = startExp(min, max);
+    let precision = exp < 0 ? Math.pow(10, Math.abs(exp)) : 1;
+    const stepSize = Math.pow(10, exp);
+    const base = minExp > exp ? Math.pow(10, minExp) : 0;
+    const start = Math.round((min - base) * precision) / precision;
+    const offset = Math.floor((min - base) / stepSize / 10) * stepSize * 10;
+    let significand = Math.floor((start - offset) / Math.pow(10, exp));
+    let value = finiteOrDefault(generationOptions.min, Math.round((base + offset + significand * Math.pow(10, exp)) * precision) / precision);
+    while(value < max){
+        ticks.push({
+            value,
+            major: isMajor(value),
+            significand
+        });
+        if (significand >= 10) {
+            significand = significand < 15 ? 15 : 20;
+        } else {
+            significand++;
+        }
+        if (significand >= 20) {
+            exp++;
+            significand = 2;
+            precision = exp >= 0 ? 1 : precision;
+        }
+        value = Math.round((base + offset + significand * Math.pow(10, exp)) * precision) / precision;
+    }
+    const lastTick = finiteOrDefault(generationOptions.max, value);
+    ticks.push({
+        value: lastTick,
+        major: isMajor(lastTick),
+        significand
+    });
+    return ticks;
+}
+class LogarithmicScale extends Scale {
+    static id = 'logarithmic';
+ static defaults = {
+        ticks: {
+            callback: Ticks.formatters.logarithmic,
+            major: {
+                enabled: true
+            }
+        }
+    };
+    constructor(cfg){
+        super(cfg);
+         this.start = undefined;
+         this.end = undefined;
+         this._startValue = undefined;
+        this._valueRange = 0;
+    }
+    parse(raw, index) {
+        const value = LinearScaleBase.prototype.parse.apply(this, [
+            raw,
+            index
+        ]);
+        if (value === 0) {
+            this._zero = true;
+            return undefined;
+        }
+        return isNumberFinite(value) && value > 0 ? value : null;
+    }
+    determineDataLimits() {
+        const { min , max  } = this.getMinMax(true);
+        this.min = isNumberFinite(min) ? Math.max(0, min) : null;
+        this.max = isNumberFinite(max) ? Math.max(0, max) : null;
+        if (this.options.beginAtZero) {
+            this._zero = true;
+        }
+        if (this._zero && this.min !== this._suggestedMin && !isNumberFinite(this._userMin)) {
+            this.min = min === changeExponent(this.min, 0) ? changeExponent(this.min, -1) : changeExponent(this.min, 0);
+        }
+        this.handleTickRangeOptions();
+    }
+    handleTickRangeOptions() {
+        const { minDefined , maxDefined  } = this.getUserBounds();
+        let min = this.min;
+        let max = this.max;
+        const setMin = (v)=>min = minDefined ? min : v;
+        const setMax = (v)=>max = maxDefined ? max : v;
+        if (min === max) {
+            if (min <= 0) {
+                setMin(1);
+                setMax(10);
+            } else {
+                setMin(changeExponent(min, -1));
+                setMax(changeExponent(max, +1));
+            }
+        }
+        if (min <= 0) {
+            setMin(changeExponent(max, -1));
+        }
+        if (max <= 0) {
+            setMax(changeExponent(min, +1));
+        }
+        this.min = min;
+        this.max = max;
+    }
+    buildTicks() {
+        const opts = this.options;
+        const generationOptions = {
+            min: this._userMin,
+            max: this._userMax
+        };
+        const ticks = generateTicks(generationOptions, this);
+        if (opts.bounds === 'ticks') {
+            _setMinAndMaxByKey(ticks, this, 'value');
+        }
+        if (opts.reverse) {
+            ticks.reverse();
+            this.start = this.max;
+            this.end = this.min;
+        } else {
+            this.start = this.min;
+            this.end = this.max;
+        }
+        return ticks;
+    }
+ getLabelForValue(value) {
+        return value === undefined ? '0' : formatNumber(value, this.chart.options.locale, this.options.ticks.format);
+    }
+ configure() {
+        const start = this.min;
+        super.configure();
+        this._startValue = log10(start);
+        this._valueRange = log10(this.max) - log10(start);
+    }
+    getPixelForValue(value) {
+        if (value === undefined || value === 0) {
+            value = this.min;
+        }
+        if (value === null || isNaN(value)) {
+            return NaN;
+        }
+        return this.getPixelForDecimal(value === this.min ? 0 : (log10(value) - this._startValue) / this._valueRange);
+    }
+    getValueForPixel(pixel) {
+        const decimal = this.getDecimalForPixel(pixel);
+        return Math.pow(10, this._startValue + decimal * this._valueRange);
+    }
+}
+
+function getTickBackdropHeight(opts) {
+    const tickOpts = opts.ticks;
+    if (tickOpts.display && opts.display) {
+        const padding = toPadding(tickOpts.backdropPadding);
+        return valueOrDefault(tickOpts.font && tickOpts.font.size, defaults.font.size) + padding.height;
+    }
+    return 0;
+}
+function measureLabelSize(ctx, font, label) {
+    label = isArray(label) ? label : [
+        label
+    ];
+    return {
+        w: _longestText(ctx, font.string, label),
+        h: label.length * font.lineHeight
+    };
+}
+function determineLimits(angle, pos, size, min, max) {
+    if (angle === min || angle === max) {
+        return {
+            start: pos - size / 2,
+            end: pos + size / 2
+        };
+    } else if (angle < min || angle > max) {
+        return {
+            start: pos - size,
+            end: pos
+        };
+    }
+    return {
+        start: pos,
+        end: pos + size
+    };
+}
+ function fitWithPointLabels(scale) {
+    const orig = {
+        l: scale.left + scale._padding.left,
+        r: scale.right - scale._padding.right,
+        t: scale.top + scale._padding.top,
+        b: scale.bottom - scale._padding.bottom
+    };
+    const limits = Object.assign({}, orig);
+    const labelSizes = [];
+    const padding = [];
+    const valueCount = scale._pointLabels.length;
+    const pointLabelOpts = scale.options.pointLabels;
+    const additionalAngle = pointLabelOpts.centerPointLabels ? PI / valueCount : 0;
+    for(let i = 0; i < valueCount; i++){
+        const opts = pointLabelOpts.setContext(scale.getPointLabelContext(i));
+        padding[i] = opts.padding;
+        const pointPosition = scale.getPointPosition(i, scale.drawingArea + padding[i], additionalAngle);
+        const plFont = toFont(opts.font);
+        const textSize = measureLabelSize(scale.ctx, plFont, scale._pointLabels[i]);
+        labelSizes[i] = textSize;
+        const angleRadians = _normalizeAngle(scale.getIndexAngle(i) + additionalAngle);
+        const angle = Math.round(toDegrees(angleRadians));
+        const hLimits = determineLimits(angle, pointPosition.x, textSize.w, 0, 180);
+        const vLimits = determineLimits(angle, pointPosition.y, textSize.h, 90, 270);
+        updateLimits(limits, orig, angleRadians, hLimits, vLimits);
+    }
+    scale.setCenterPoint(orig.l - limits.l, limits.r - orig.r, orig.t - limits.t, limits.b - orig.b);
+    scale._pointLabelItems = buildPointLabelItems(scale, labelSizes, padding);
+}
+function updateLimits(limits, orig, angle, hLimits, vLimits) {
+    const sin = Math.abs(Math.sin(angle));
+    const cos = Math.abs(Math.cos(angle));
+    let x = 0;
+    let y = 0;
+    if (hLimits.start < orig.l) {
+        x = (orig.l - hLimits.start) / sin;
+        limits.l = Math.min(limits.l, orig.l - x);
+    } else if (hLimits.end > orig.r) {
+        x = (hLimits.end - orig.r) / sin;
+        limits.r = Math.max(limits.r, orig.r + x);
+    }
+    if (vLimits.start < orig.t) {
+        y = (orig.t - vLimits.start) / cos;
+        limits.t = Math.min(limits.t, orig.t - y);
+    } else if (vLimits.end > orig.b) {
+        y = (vLimits.end - orig.b) / cos;
+        limits.b = Math.max(limits.b, orig.b + y);
+    }
+}
+function createPointLabelItem(scale, index, itemOpts) {
+    const outerDistance = scale.drawingArea;
+    const { extra , additionalAngle , padding , size  } = itemOpts;
+    const pointLabelPosition = scale.getPointPosition(index, outerDistance + extra + padding, additionalAngle);
+    const angle = Math.round(toDegrees(_normalizeAngle(pointLabelPosition.angle + HALF_PI)));
+    const y = yForAngle(pointLabelPosition.y, size.h, angle);
+    const textAlign = getTextAlignForAngle(angle);
+    const left = leftForTextAlign(pointLabelPosition.x, size.w, textAlign);
+    return {
+        visible: true,
+        x: pointLabelPosition.x,
+        y,
+        textAlign,
+        left,
+        top: y,
+        right: left + size.w,
+        bottom: y + size.h
+    };
+}
+function isNotOverlapped(item, area) {
+    if (!area) {
+        return true;
+    }
+    const { left , top , right , bottom  } = item;
+    const apexesInArea = _isPointInArea({
+        x: left,
+        y: top
+    }, area) || _isPointInArea({
+        x: left,
+        y: bottom
+    }, area) || _isPointInArea({
+        x: right,
+        y: top
+    }, area) || _isPointInArea({
+        x: right,
+        y: bottom
+    }, area);
+    return !apexesInArea;
+}
+function buildPointLabelItems(scale, labelSizes, padding) {
+    const items = [];
+    const valueCount = scale._pointLabels.length;
+    const opts = scale.options;
+    const { centerPointLabels , display  } = opts.pointLabels;
+    const itemOpts = {
+        extra: getTickBackdropHeight(opts) / 2,
+        additionalAngle: centerPointLabels ? PI / valueCount : 0
+    };
+    let area;
+    for(let i = 0; i < valueCount; i++){
+        itemOpts.padding = padding[i];
+        itemOpts.size = labelSizes[i];
+        const item = createPointLabelItem(scale, i, itemOpts);
+        items.push(item);
+        if (display === 'auto') {
+            item.visible = isNotOverlapped(item, area);
+            if (item.visible) {
+                area = item;
+            }
+        }
+    }
+    return items;
+}
+function getTextAlignForAngle(angle) {
+    if (angle === 0 || angle === 180) {
+        return 'center';
+    } else if (angle < 180) {
+        return 'left';
+    }
+    return 'right';
+}
+function leftForTextAlign(x, w, align) {
+    if (align === 'right') {
+        x -= w;
+    } else if (align === 'center') {
+        x -= w / 2;
+    }
+    return x;
+}
+function yForAngle(y, h, angle) {
+    if (angle === 90 || angle === 270) {
+        y -= h / 2;
+    } else if (angle > 270 || angle < 90) {
+        y -= h;
+    }
+    return y;
+}
+function drawPointLabelBox(ctx, opts, item) {
+    const { left , top , right , bottom  } = item;
+    const { backdropColor  } = opts;
+    if (!isNullOrUndef(backdropColor)) {
+        const borderRadius = toTRBLCorners(opts.borderRadius);
+        const padding = toPadding(opts.backdropPadding);
+        ctx.fillStyle = backdropColor;
+        const backdropLeft = left - padding.left;
+        const backdropTop = top - padding.top;
+        const backdropWidth = right - left + padding.width;
+        const backdropHeight = bottom - top + padding.height;
+        if (Object.values(borderRadius).some((v)=>v !== 0)) {
+            ctx.beginPath();
+            addRoundedRectPath(ctx, {
+                x: backdropLeft,
+                y: backdropTop,
+                w: backdropWidth,
+                h: backdropHeight,
+                radius: borderRadius
+            });
+            ctx.fill();
+        } else {
+            ctx.fillRect(backdropLeft, backdropTop, backdropWidth, backdropHeight);
+        }
+    }
+}
+function drawPointLabels(scale, labelCount) {
+    const { ctx , options: { pointLabels  }  } = scale;
+    for(let i = labelCount - 1; i >= 0; i--){
+        const item = scale._pointLabelItems[i];
+        if (!item.visible) {
+            continue;
+        }
+        const optsAtIndex = pointLabels.setContext(scale.getPointLabelContext(i));
+        drawPointLabelBox(ctx, optsAtIndex, item);
+        const plFont = toFont(optsAtIndex.font);
+        const { x , y , textAlign  } = item;
+        renderText(ctx, scale._pointLabels[i], x, y + plFont.lineHeight / 2, plFont, {
+            color: optsAtIndex.color,
+            textAlign: textAlign,
+            textBaseline: 'middle'
+        });
+    }
+}
+function pathRadiusLine(scale, radius, circular, labelCount) {
+    const { ctx  } = scale;
+    if (circular) {
+        ctx.arc(scale.xCenter, scale.yCenter, radius, 0, TAU);
+    } else {
+        let pointPosition = scale.getPointPosition(0, radius);
+        ctx.moveTo(pointPosition.x, pointPosition.y);
+        for(let i = 1; i < labelCount; i++){
+            pointPosition = scale.getPointPosition(i, radius);
+            ctx.lineTo(pointPosition.x, pointPosition.y);
+        }
+    }
+}
+function drawRadiusLine(scale, gridLineOpts, radius, labelCount, borderOpts) {
+    const ctx = scale.ctx;
+    const circular = gridLineOpts.circular;
+    const { color , lineWidth  } = gridLineOpts;
+    if (!circular && !labelCount || !color || !lineWidth || radius < 0) {
+        return;
+    }
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lineWidth;
+    ctx.setLineDash(borderOpts.dash || []);
+    ctx.lineDashOffset = borderOpts.dashOffset;
+    ctx.beginPath();
+    pathRadiusLine(scale, radius, circular, labelCount);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
+}
+function createPointLabelContext(parent, index, label) {
+    return createContext(parent, {
+        label,
+        index,
+        type: 'pointLabel'
+    });
+}
+class RadialLinearScale extends LinearScaleBase {
+    static id = 'radialLinear';
+ static defaults = {
+        display: true,
+        animate: true,
+        position: 'chartArea',
+        angleLines: {
+            display: true,
+            lineWidth: 1,
+            borderDash: [],
+            borderDashOffset: 0.0
+        },
+        grid: {
+            circular: false
+        },
+        startAngle: 0,
+        ticks: {
+            showLabelBackdrop: true,
+            callback: Ticks.formatters.numeric
+        },
+        pointLabels: {
+            backdropColor: undefined,
+            backdropPadding: 2,
+            display: true,
+            font: {
+                size: 10
+            },
+            callback (label) {
+                return label;
+            },
+            padding: 5,
+            centerPointLabels: false
+        }
+    };
+    static defaultRoutes = {
+        'angleLines.color': 'borderColor',
+        'pointLabels.color': 'color',
+        'ticks.color': 'color'
+    };
+    static descriptors = {
+        angleLines: {
+            _fallback: 'grid'
+        }
+    };
+    constructor(cfg){
+        super(cfg);
+         this.xCenter = undefined;
+         this.yCenter = undefined;
+         this.drawingArea = undefined;
+         this._pointLabels = [];
+        this._pointLabelItems = [];
+    }
+    setDimensions() {
+        const padding = this._padding = toPadding(getTickBackdropHeight(this.options) / 2);
+        const w = this.width = this.maxWidth - padding.width;
+        const h = this.height = this.maxHeight - padding.height;
+        this.xCenter = Math.floor(this.left + w / 2 + padding.left);
+        this.yCenter = Math.floor(this.top + h / 2 + padding.top);
+        this.drawingArea = Math.floor(Math.min(w, h) / 2);
+    }
+    determineDataLimits() {
+        const { min , max  } = this.getMinMax(false);
+        this.min = isNumberFinite(min) && !isNaN(min) ? min : 0;
+        this.max = isNumberFinite(max) && !isNaN(max) ? max : 0;
+        this.handleTickRangeOptions();
+    }
+ computeTickLimit() {
+        return Math.ceil(this.drawingArea / getTickBackdropHeight(this.options));
+    }
+    generateTickLabels(ticks) {
+        LinearScaleBase.prototype.generateTickLabels.call(this, ticks);
+        this._pointLabels = this.getLabels().map((value, index)=>{
+            const label = callback(this.options.pointLabels.callback, [
+                value,
+                index
+            ], this);
+            return label || label === 0 ? label : '';
+        }).filter((v, i)=>this.chart.getDataVisibility(i));
+    }
+    fit() {
+        const opts = this.options;
+        if (opts.display && opts.pointLabels.display) {
+            fitWithPointLabels(this);
+        } else {
+            this.setCenterPoint(0, 0, 0, 0);
+        }
+    }
+    setCenterPoint(leftMovement, rightMovement, topMovement, bottomMovement) {
+        this.xCenter += Math.floor((leftMovement - rightMovement) / 2);
+        this.yCenter += Math.floor((topMovement - bottomMovement) / 2);
+        this.drawingArea -= Math.min(this.drawingArea / 2, Math.max(leftMovement, rightMovement, topMovement, bottomMovement));
+    }
+    getIndexAngle(index) {
+        const angleMultiplier = TAU / (this._pointLabels.length || 1);
+        const startAngle = this.options.startAngle || 0;
+        return _normalizeAngle(index * angleMultiplier + toRadians(startAngle));
+    }
+    getDistanceFromCenterForValue(value) {
+        if (isNullOrUndef(value)) {
+            return NaN;
+        }
+        const scalingFactor = this.drawingArea / (this.max - this.min);
+        if (this.options.reverse) {
+            return (this.max - value) * scalingFactor;
+        }
+        return (value - this.min) * scalingFactor;
+    }
+    getValueForDistanceFromCenter(distance) {
+        if (isNullOrUndef(distance)) {
+            return NaN;
+        }
+        const scaledDistance = distance / (this.drawingArea / (this.max - this.min));
+        return this.options.reverse ? this.max - scaledDistance : this.min + scaledDistance;
+    }
+    getPointLabelContext(index) {
+        const pointLabels = this._pointLabels || [];
+        if (index >= 0 && index < pointLabels.length) {
+            const pointLabel = pointLabels[index];
+            return createPointLabelContext(this.getContext(), index, pointLabel);
+        }
+    }
+    getPointPosition(index, distanceFromCenter, additionalAngle = 0) {
+        const angle = this.getIndexAngle(index) - HALF_PI + additionalAngle;
+        return {
+            x: Math.cos(angle) * distanceFromCenter + this.xCenter,
+            y: Math.sin(angle) * distanceFromCenter + this.yCenter,
+            angle
+        };
+    }
+    getPointPositionForValue(index, value) {
+        return this.getPointPosition(index, this.getDistanceFromCenterForValue(value));
+    }
+    getBasePosition(index) {
+        return this.getPointPositionForValue(index || 0, this.getBaseValue());
+    }
+    getPointLabelPosition(index) {
+        const { left , top , right , bottom  } = this._pointLabelItems[index];
+        return {
+            left,
+            top,
+            right,
+            bottom
+        };
+    }
+ drawBackground() {
+        const { backgroundColor , grid: { circular  }  } = this.options;
+        if (backgroundColor) {
+            const ctx = this.ctx;
+            ctx.save();
+            ctx.beginPath();
+            pathRadiusLine(this, this.getDistanceFromCenterForValue(this._endValue), circular, this._pointLabels.length);
+            ctx.closePath();
+            ctx.fillStyle = backgroundColor;
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+ drawGrid() {
+        const ctx = this.ctx;
+        const opts = this.options;
+        const { angleLines , grid , border  } = opts;
+        const labelCount = this._pointLabels.length;
+        let i, offset, position;
+        if (opts.pointLabels.display) {
+            drawPointLabels(this, labelCount);
+        }
+        if (grid.display) {
+            this.ticks.forEach((tick, index)=>{
+                if (index !== 0 || index === 0 && this.min < 0) {
+                    offset = this.getDistanceFromCenterForValue(tick.value);
+                    const context = this.getContext(index);
+                    const optsAtIndex = grid.setContext(context);
+                    const optsAtIndexBorder = border.setContext(context);
+                    drawRadiusLine(this, optsAtIndex, offset, labelCount, optsAtIndexBorder);
+                }
+            });
+        }
+        if (angleLines.display) {
+            ctx.save();
+            for(i = labelCount - 1; i >= 0; i--){
+                const optsAtIndex = angleLines.setContext(this.getPointLabelContext(i));
+                const { color , lineWidth  } = optsAtIndex;
+                if (!lineWidth || !color) {
+                    continue;
+                }
+                ctx.lineWidth = lineWidth;
+                ctx.strokeStyle = color;
+                ctx.setLineDash(optsAtIndex.borderDash);
+                ctx.lineDashOffset = optsAtIndex.borderDashOffset;
+                offset = this.getDistanceFromCenterForValue(opts.reverse ? this.min : this.max);
+                position = this.getPointPosition(i, offset);
+                ctx.beginPath();
+                ctx.moveTo(this.xCenter, this.yCenter);
+                ctx.lineTo(position.x, position.y);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+    }
+ drawBorder() {}
+ drawLabels() {
+        const ctx = this.ctx;
+        const opts = this.options;
+        const tickOpts = opts.ticks;
+        if (!tickOpts.display) {
+            return;
+        }
+        const startAngle = this.getIndexAngle(0);
+        let offset, width;
+        ctx.save();
+        ctx.translate(this.xCenter, this.yCenter);
+        ctx.rotate(startAngle);
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        this.ticks.forEach((tick, index)=>{
+            if (index === 0 && this.min >= 0 && !opts.reverse) {
+                return;
+            }
+            const optsAtIndex = tickOpts.setContext(this.getContext(index));
+            const tickFont = toFont(optsAtIndex.font);
+            offset = this.getDistanceFromCenterForValue(this.ticks[index].value);
+            if (optsAtIndex.showLabelBackdrop) {
+                ctx.font = tickFont.string;
+                width = ctx.measureText(tick.label).width;
+                ctx.fillStyle = optsAtIndex.backdropColor;
+                const padding = toPadding(optsAtIndex.backdropPadding);
+                ctx.fillRect(-width / 2 - padding.left, -offset - tickFont.size / 2 - padding.top, width + padding.width, tickFont.size + padding.height);
+            }
+            renderText(ctx, tick.label, 0, -offset, tickFont, {
+                color: optsAtIndex.color,
+                strokeColor: optsAtIndex.textStrokeColor,
+                strokeWidth: optsAtIndex.textStrokeWidth
+            });
+        });
+        ctx.restore();
+    }
+ drawTitle() {}
+}
+
+const INTERVALS = {
+    millisecond: {
+        common: true,
+        size: 1,
+        steps: 1000
+    },
+    second: {
+        common: true,
+        size: 1000,
+        steps: 60
+    },
+    minute: {
+        common: true,
+        size: 60000,
+        steps: 60
+    },
+    hour: {
+        common: true,
+        size: 3600000,
+        steps: 24
+    },
+    day: {
+        common: true,
+        size: 86400000,
+        steps: 30
+    },
+    week: {
+        common: false,
+        size: 604800000,
+        steps: 4
+    },
+    month: {
+        common: true,
+        size: 2.628e9,
+        steps: 12
+    },
+    quarter: {
+        common: false,
+        size: 7.884e9,
+        steps: 4
+    },
+    year: {
+        common: true,
+        size: 3.154e10
+    }
+};
+ const UNITS =  /* #__PURE__ */ Object.keys(INTERVALS);
+ function sorter(a, b) {
+    return a - b;
+}
+ function parse(scale, input) {
+    if (isNullOrUndef(input)) {
+        return null;
+    }
+    const adapter = scale._adapter;
+    const { parser , round , isoWeekday  } = scale._parseOpts;
+    let value = input;
+    if (typeof parser === 'function') {
+        value = parser(value);
+    }
+    if (!isNumberFinite(value)) {
+        value = typeof parser === 'string' ? adapter.parse(value, parser) : adapter.parse(value);
+    }
+    if (value === null) {
+        return null;
+    }
+    if (round) {
+        value = round === 'week' && (isNumber(isoWeekday) || isoWeekday === true) ? adapter.startOf(value, 'isoWeek', isoWeekday) : adapter.startOf(value, round);
+    }
+    return +value;
+}
+ function determineUnitForAutoTicks(minUnit, min, max, capacity) {
+    const ilen = UNITS.length;
+    for(let i = UNITS.indexOf(minUnit); i < ilen - 1; ++i){
+        const interval = INTERVALS[UNITS[i]];
+        const factor = interval.steps ? interval.steps : Number.MAX_SAFE_INTEGER;
+        if (interval.common && Math.ceil((max - min) / (factor * interval.size)) <= capacity) {
+            return UNITS[i];
+        }
+    }
+    return UNITS[ilen - 1];
+}
+ function determineUnitForFormatting(scale, numTicks, minUnit, min, max) {
+    for(let i = UNITS.length - 1; i >= UNITS.indexOf(minUnit); i--){
+        const unit = UNITS[i];
+        if (INTERVALS[unit].common && scale._adapter.diff(max, min, unit) >= numTicks - 1) {
+            return unit;
+        }
+    }
+    return UNITS[minUnit ? UNITS.indexOf(minUnit) : 0];
+}
+ function determineMajorUnit(unit) {
+    for(let i = UNITS.indexOf(unit) + 1, ilen = UNITS.length; i < ilen; ++i){
+        if (INTERVALS[UNITS[i]].common) {
+            return UNITS[i];
+        }
+    }
+}
+ function addTick(ticks, time, timestamps) {
+    if (!timestamps) {
+        ticks[time] = true;
+    } else if (timestamps.length) {
+        const { lo , hi  } = _lookup(timestamps, time);
+        const timestamp = timestamps[lo] >= time ? timestamps[lo] : timestamps[hi];
+        ticks[timestamp] = true;
+    }
+}
+ function setMajorTicks(scale, ticks, map, majorUnit) {
+    const adapter = scale._adapter;
+    const first = +adapter.startOf(ticks[0].value, majorUnit);
+    const last = ticks[ticks.length - 1].value;
+    let major, index;
+    for(major = first; major <= last; major = +adapter.add(major, 1, majorUnit)){
+        index = map[major];
+        if (index >= 0) {
+            ticks[index].major = true;
+        }
+    }
+    return ticks;
+}
+ function ticksFromTimestamps(scale, values, majorUnit) {
+    const ticks = [];
+     const map = {};
+    const ilen = values.length;
+    let i, value;
+    for(i = 0; i < ilen; ++i){
+        value = values[i];
+        map[value] = i;
+        ticks.push({
+            value,
+            major: false
+        });
+    }
+    return ilen === 0 || !majorUnit ? ticks : setMajorTicks(scale, ticks, map, majorUnit);
+}
+class TimeScale extends Scale {
+    static id = 'time';
+ static defaults = {
+ bounds: 'data',
+        adapters: {},
+        time: {
+            parser: false,
+            unit: false,
+            round: false,
+            isoWeekday: false,
+            minUnit: 'millisecond',
+            displayFormats: {}
+        },
+        ticks: {
+ source: 'auto',
+            callback: false,
+            major: {
+                enabled: false
+            }
+        }
+    };
+ constructor(props){
+        super(props);
+         this._cache = {
+            data: [],
+            labels: [],
+            all: []
+        };
+         this._unit = 'day';
+         this._majorUnit = undefined;
+        this._offsets = {};
+        this._normalized = false;
+        this._parseOpts = undefined;
+    }
+    init(scaleOpts, opts = {}) {
+        const time = scaleOpts.time || (scaleOpts.time = {});
+         const adapter = this._adapter = new adapters._date(scaleOpts.adapters.date);
+        adapter.init(opts);
+        mergeIf(time.displayFormats, adapter.formats());
+        this._parseOpts = {
+            parser: time.parser,
+            round: time.round,
+            isoWeekday: time.isoWeekday
+        };
+        super.init(scaleOpts);
+        this._normalized = opts.normalized;
+    }
+ parse(raw, index) {
+        if (raw === undefined) {
+            return null;
+        }
+        return parse(this, raw);
+    }
+    beforeLayout() {
+        super.beforeLayout();
+        this._cache = {
+            data: [],
+            labels: [],
+            all: []
+        };
+    }
+    determineDataLimits() {
+        const options = this.options;
+        const adapter = this._adapter;
+        const unit = options.time.unit || 'day';
+        let { min , max , minDefined , maxDefined  } = this.getUserBounds();
+ function _applyBounds(bounds) {
+            if (!minDefined && !isNaN(bounds.min)) {
+                min = Math.min(min, bounds.min);
+            }
+            if (!maxDefined && !isNaN(bounds.max)) {
+                max = Math.max(max, bounds.max);
+            }
+        }
+        if (!minDefined || !maxDefined) {
+            _applyBounds(this._getLabelBounds());
+            if (options.bounds !== 'ticks' || options.ticks.source !== 'labels') {
+                _applyBounds(this.getMinMax(false));
+            }
+        }
+        min = isNumberFinite(min) && !isNaN(min) ? min : +adapter.startOf(Date.now(), unit);
+        max = isNumberFinite(max) && !isNaN(max) ? max : +adapter.endOf(Date.now(), unit) + 1;
+        this.min = Math.min(min, max - 1);
+        this.max = Math.max(min + 1, max);
+    }
+ _getLabelBounds() {
+        const arr = this.getLabelTimestamps();
+        let min = Number.POSITIVE_INFINITY;
+        let max = Number.NEGATIVE_INFINITY;
+        if (arr.length) {
+            min = arr[0];
+            max = arr[arr.length - 1];
+        }
+        return {
+            min,
+            max
+        };
+    }
+ buildTicks() {
+        const options = this.options;
+        const timeOpts = options.time;
+        const tickOpts = options.ticks;
+        const timestamps = tickOpts.source === 'labels' ? this.getLabelTimestamps() : this._generate();
+        if (options.bounds === 'ticks' && timestamps.length) {
+            this.min = this._userMin || timestamps[0];
+            this.max = this._userMax || timestamps[timestamps.length - 1];
+        }
+        const min = this.min;
+        const max = this.max;
+        const ticks = _filterBetween(timestamps, min, max);
+        this._unit = timeOpts.unit || (tickOpts.autoSkip ? determineUnitForAutoTicks(timeOpts.minUnit, this.min, this.max, this._getLabelCapacity(min)) : determineUnitForFormatting(this, ticks.length, timeOpts.minUnit, this.min, this.max));
+        this._majorUnit = !tickOpts.major.enabled || this._unit === 'year' ? undefined : determineMajorUnit(this._unit);
+        this.initOffsets(timestamps);
+        if (options.reverse) {
+            ticks.reverse();
+        }
+        return ticksFromTimestamps(this, ticks, this._majorUnit);
+    }
+    afterAutoSkip() {
+        if (this.options.offsetAfterAutoskip) {
+            this.initOffsets(this.ticks.map((tick)=>+tick.value));
+        }
+    }
+ initOffsets(timestamps = []) {
+        let start = 0;
+        let end = 0;
+        let first, last;
+        if (this.options.offset && timestamps.length) {
+            first = this.getDecimalForValue(timestamps[0]);
+            if (timestamps.length === 1) {
+                start = 1 - first;
+            } else {
+                start = (this.getDecimalForValue(timestamps[1]) - first) / 2;
+            }
+            last = this.getDecimalForValue(timestamps[timestamps.length - 1]);
+            if (timestamps.length === 1) {
+                end = last;
+            } else {
+                end = (last - this.getDecimalForValue(timestamps[timestamps.length - 2])) / 2;
+            }
+        }
+        const limit = timestamps.length < 3 ? 0.5 : 0.25;
+        start = _limitValue(start, 0, limit);
+        end = _limitValue(end, 0, limit);
+        this._offsets = {
+            start,
+            end,
+            factor: 1 / (start + 1 + end)
+        };
+    }
+ _generate() {
+        const adapter = this._adapter;
+        const min = this.min;
+        const max = this.max;
+        const options = this.options;
+        const timeOpts = options.time;
+        const minor = timeOpts.unit || determineUnitForAutoTicks(timeOpts.minUnit, min, max, this._getLabelCapacity(min));
+        const stepSize = valueOrDefault(options.ticks.stepSize, 1);
+        const weekday = minor === 'week' ? timeOpts.isoWeekday : false;
+        const hasWeekday = isNumber(weekday) || weekday === true;
+        const ticks = {};
+        let first = min;
+        let time, count;
+        if (hasWeekday) {
+            first = +adapter.startOf(first, 'isoWeek', weekday);
+        }
+        first = +adapter.startOf(first, hasWeekday ? 'day' : minor);
+        if (adapter.diff(max, min, minor) > 100000 * stepSize) {
+            throw new Error(min + ' and ' + max + ' are too far apart with stepSize of ' + stepSize + ' ' + minor);
+        }
+        const timestamps = options.ticks.source === 'data' && this.getDataTimestamps();
+        for(time = first, count = 0; time < max; time = +adapter.add(time, stepSize, minor), count++){
+            addTick(ticks, time, timestamps);
+        }
+        if (time === max || options.bounds === 'ticks' || count === 1) {
+            addTick(ticks, time, timestamps);
+        }
+        return Object.keys(ticks).sort(sorter).map((x)=>+x);
+    }
+ getLabelForValue(value) {
+        const adapter = this._adapter;
+        const timeOpts = this.options.time;
+        if (timeOpts.tooltipFormat) {
+            return adapter.format(value, timeOpts.tooltipFormat);
+        }
+        return adapter.format(value, timeOpts.displayFormats.datetime);
+    }
+ format(value, format) {
+        const options = this.options;
+        const formats = options.time.displayFormats;
+        const unit = this._unit;
+        const fmt = format || formats[unit];
+        return this._adapter.format(value, fmt);
+    }
+ _tickFormatFunction(time, index, ticks, format) {
+        const options = this.options;
+        const formatter = options.ticks.callback;
+        if (formatter) {
+            return callback(formatter, [
+                time,
+                index,
+                ticks
+            ], this);
+        }
+        const formats = options.time.displayFormats;
+        const unit = this._unit;
+        const majorUnit = this._majorUnit;
+        const minorFormat = unit && formats[unit];
+        const majorFormat = majorUnit && formats[majorUnit];
+        const tick = ticks[index];
+        const major = majorUnit && majorFormat && tick && tick.major;
+        return this._adapter.format(time, format || (major ? majorFormat : minorFormat));
+    }
+ generateTickLabels(ticks) {
+        let i, ilen, tick;
+        for(i = 0, ilen = ticks.length; i < ilen; ++i){
+            tick = ticks[i];
+            tick.label = this._tickFormatFunction(tick.value, i, ticks);
+        }
+    }
+ getDecimalForValue(value) {
+        return value === null ? NaN : (value - this.min) / (this.max - this.min);
+    }
+ getPixelForValue(value) {
+        const offsets = this._offsets;
+        const pos = this.getDecimalForValue(value);
+        return this.getPixelForDecimal((offsets.start + pos) * offsets.factor);
+    }
+ getValueForPixel(pixel) {
+        const offsets = this._offsets;
+        const pos = this.getDecimalForPixel(pixel) / offsets.factor - offsets.end;
+        return this.min + pos * (this.max - this.min);
+    }
+ _getLabelSize(label) {
+        const ticksOpts = this.options.ticks;
+        const tickLabelWidth = this.ctx.measureText(label).width;
+        const angle = toRadians(this.isHorizontal() ? ticksOpts.maxRotation : ticksOpts.minRotation);
+        const cosRotation = Math.cos(angle);
+        const sinRotation = Math.sin(angle);
+        const tickFontSize = this._resolveTickFontOptions(0).size;
+        return {
+            w: tickLabelWidth * cosRotation + tickFontSize * sinRotation,
+            h: tickLabelWidth * sinRotation + tickFontSize * cosRotation
+        };
+    }
+ _getLabelCapacity(exampleTime) {
+        const timeOpts = this.options.time;
+        const displayFormats = timeOpts.displayFormats;
+        const format = displayFormats[timeOpts.unit] || displayFormats.millisecond;
+        const exampleLabel = this._tickFormatFunction(exampleTime, 0, ticksFromTimestamps(this, [
+            exampleTime
+        ], this._majorUnit), format);
+        const size = this._getLabelSize(exampleLabel);
+        const capacity = Math.floor(this.isHorizontal() ? this.width / size.w : this.height / size.h) - 1;
+        return capacity > 0 ? capacity : 1;
+    }
+ getDataTimestamps() {
+        let timestamps = this._cache.data || [];
+        let i, ilen;
+        if (timestamps.length) {
+            return timestamps;
+        }
+        const metas = this.getMatchingVisibleMetas();
+        if (this._normalized && metas.length) {
+            return this._cache.data = metas[0].controller.getAllParsedValues(this);
+        }
+        for(i = 0, ilen = metas.length; i < ilen; ++i){
+            timestamps = timestamps.concat(metas[i].controller.getAllParsedValues(this));
+        }
+        return this._cache.data = this.normalize(timestamps);
+    }
+ getLabelTimestamps() {
+        const timestamps = this._cache.labels || [];
+        let i, ilen;
+        if (timestamps.length) {
+            return timestamps;
+        }
+        const labels = this.getLabels();
+        for(i = 0, ilen = labels.length; i < ilen; ++i){
+            timestamps.push(parse(this, labels[i]));
+        }
+        return this._cache.labels = this._normalized ? timestamps : this.normalize(timestamps);
+    }
+ normalize(values) {
+        return _arrayUnique(values.sort(sorter));
+    }
+}
+
+function interpolate(table, val, reverse) {
+    let lo = 0;
+    let hi = table.length - 1;
+    let prevSource, nextSource, prevTarget, nextTarget;
+    if (reverse) {
+        if (val >= table[lo].pos && val <= table[hi].pos) {
+            ({ lo , hi  } = _lookupByKey(table, 'pos', val));
+        }
+        ({ pos: prevSource , time: prevTarget  } = table[lo]);
+        ({ pos: nextSource , time: nextTarget  } = table[hi]);
+    } else {
+        if (val >= table[lo].time && val <= table[hi].time) {
+            ({ lo , hi  } = _lookupByKey(table, 'time', val));
+        }
+        ({ time: prevSource , pos: prevTarget  } = table[lo]);
+        ({ time: nextSource , pos: nextTarget  } = table[hi]);
+    }
+    const span = nextSource - prevSource;
+    return span ? prevTarget + (nextTarget - prevTarget) * (val - prevSource) / span : prevTarget;
+}
+class TimeSeriesScale extends TimeScale {
+    static id = 'timeseries';
+ static defaults = TimeScale.defaults;
+ constructor(props){
+        super(props);
+         this._table = [];
+         this._minPos = undefined;
+         this._tableRange = undefined;
+    }
+ initOffsets() {
+        const timestamps = this._getTimestampsForTable();
+        const table = this._table = this.buildLookupTable(timestamps);
+        this._minPos = interpolate(table, this.min);
+        this._tableRange = interpolate(table, this.max) - this._minPos;
+        super.initOffsets(timestamps);
+    }
+ buildLookupTable(timestamps) {
+        const { min , max  } = this;
+        const items = [];
+        const table = [];
+        let i, ilen, prev, curr, next;
+        for(i = 0, ilen = timestamps.length; i < ilen; ++i){
+            curr = timestamps[i];
+            if (curr >= min && curr <= max) {
+                items.push(curr);
+            }
+        }
+        if (items.length < 2) {
+            return [
+                {
+                    time: min,
+                    pos: 0
+                },
+                {
+                    time: max,
+                    pos: 1
+                }
+            ];
+        }
+        for(i = 0, ilen = items.length; i < ilen; ++i){
+            next = items[i + 1];
+            prev = items[i - 1];
+            curr = items[i];
+            if (Math.round((next + prev) / 2) !== curr) {
+                table.push({
+                    time: curr,
+                    pos: i / (ilen - 1)
+                });
+            }
+        }
+        return table;
+    }
+ _generate() {
+        const min = this.min;
+        const max = this.max;
+        let timestamps = super.getDataTimestamps();
+        if (!timestamps.includes(min) || !timestamps.length) {
+            timestamps.splice(0, 0, min);
+        }
+        if (!timestamps.includes(max) || timestamps.length === 1) {
+            timestamps.push(max);
+        }
+        return timestamps.sort((a, b)=>a - b);
+    }
+ _getTimestampsForTable() {
+        let timestamps = this._cache.all || [];
+        if (timestamps.length) {
+            return timestamps;
+        }
+        const data = this.getDataTimestamps();
+        const label = this.getLabelTimestamps();
+        if (data.length && label.length) {
+            timestamps = this.normalize(data.concat(label));
+        } else {
+            timestamps = data.length ? data : label;
+        }
+        timestamps = this._cache.all = timestamps;
+        return timestamps;
+    }
+ getDecimalForValue(value) {
+        return (interpolate(this._table, value) - this._minPos) / this._tableRange;
+    }
+ getValueForPixel(pixel) {
+        const offsets = this._offsets;
+        const decimal = this.getDecimalForPixel(pixel) / offsets.factor - offsets.end;
+        return interpolate(this._table, decimal * this._tableRange + this._minPos, true);
+    }
+}
+
+var scales = /*#__PURE__*/Object.freeze({
+__proto__: null,
+CategoryScale: CategoryScale,
+LinearScale: LinearScale,
+LogarithmicScale: LogarithmicScale,
+RadialLinearScale: RadialLinearScale,
+TimeScale: TimeScale,
+TimeSeriesScale: TimeSeriesScale
+});
+
+const registerables = [
+    controllers,
+    elements,
+    plugins,
+    scales
+];
+
+export { Animation, Animations, ArcElement, BarController, BarElement, BasePlatform, BasicPlatform, BubbleController, CategoryScale, Chart, plugin_colors as Colors, DatasetController, plugin_decimation as Decimation, DomPlatform, DoughnutController, Element, index as Filler, Interaction, plugin_legend as Legend, LineController, LineElement, LinearScale, LogarithmicScale, PieController, PointElement, PolarAreaController, RadarController, RadialLinearScale, Scale, ScatterController, plugin_subtitle as SubTitle, Ticks, TimeScale, TimeSeriesScale, plugin_title as Title, plugin_tooltip as Tooltip, adapters as _adapters, _detectPlatform, animator, controllers, defaults, elements, layouts, plugins, registerables, registry, scales };
+//# sourceMappingURL=chart.js.map
