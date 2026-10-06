@@ -76,7 +76,7 @@
         <% end %>
       </tbody>
     </table>
-    <% if @availability.values.any?(&:needs_downloads?) %>
+    <% if @servers.any? { |server| !server.workflow_disabled?(@workflow) && @availability[server.id]&.needs_downloads? } %>
       <%= submit_tag 'Prepare selected servers', class: 'btn btn-outline-secondary btn-sm' %>
     <% end %>
   <% end %>
