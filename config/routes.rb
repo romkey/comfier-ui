@@ -93,6 +93,7 @@ Rails.application.routes.draw do
     resource :privacy_notice, only: %i[edit update]
     resource :motd, only: %i[edit update]
     resource :app_setting, only: %i[edit update]
+    resource :time_limits, only: %i[edit update]
     resources :reports, only: %i[index show update] do
       member do
         delete :unshare

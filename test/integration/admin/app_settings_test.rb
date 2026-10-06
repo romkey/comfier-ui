@@ -48,21 +48,5 @@ module Admin
       assert_response :unprocessable_content
       assert_in_delta 0.488, app_settings(:default).reload.email_notification_attachment_max_mb
     end
-
-    test 'admins can update the time limits' do
-      sign_in_as users(:admin)
-
-      get edit_admin_app_setting_path
-
-      assert_select 'input[name="app_setting[video_timeout_minutes]"][value="240"]'
-
-      patch admin_app_setting_path, params: { app_setting: { video_timeout_minutes: 300, image_timeout_minutes: 0 } }
-
-      assert_response :unprocessable_content
-      patch admin_app_setting_path, params: { app_setting: { video_timeout_minutes: 300 } }
-
-      assert_redirected_to edit_admin_app_setting_path
-      assert_equal 300, app_settings(:default).reload.video_timeout_minutes
-    end
   end
 end

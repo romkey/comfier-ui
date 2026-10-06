@@ -7,6 +7,7 @@ module Agent
   class Dispatcher
     ACTIVE = %w[dispatched accepted running uploading cancelling].freeze
     LOCK_NAMESPACE = 7_401
+    P90_TIMEOUT_CAP_S = 4 * 3600
 
     def self.dispatch_for!(backend, request_id: nil) = new(backend, request_id:).dispatch!
 
@@ -91,7 +92,8 @@ module Agent
 
     # A time limit set on the workflow wins. Otherwise 3 × p90 when the estimate is meaningful
     # (≥ 5 minutes), else the default for the job's kind. A hard 5-minute floor used to kill slow first
-    # runs on new servers with low p90 estimates.
+    # runs on new servers with low p90 estimates. The estimate is capped at four hours, or at the kind's
+    # limit when an admin has raised it past that.
     def timeout_s(job)
       default = job.agent_timeout_s
       return default if job.workflow&.default_timeout_s.present?
@@ -100,7 +102,7 @@ module Agent
       computed = (3 * job.predicted_p90_ms / 1000.0).round
       return default if computed < 300
 
-      computed.clamp(300, 14_400)
+      computed.clamp(300, [P90_TIMEOUT_CAP_S, default].max)
     end
 
     def base_url = Dispatcher.base_url

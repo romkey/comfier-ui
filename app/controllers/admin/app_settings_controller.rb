@@ -16,9 +16,8 @@ module Admin
     private
 
     def settings_params
-      params.expect(app_setting: [:email_notification_attachment_max_mb, :slack_notification_attachment_max_mb,
-                                  :report_auto_hide_threshold, :allow_user_backends,
-                                  *AppSetting::TIMEOUT_ATTRS.values])
+      params.expect(app_setting: %i[email_notification_attachment_max_mb slack_notification_attachment_max_mb
+                                    report_auto_hide_threshold allow_user_backends])
     end
   end
 end

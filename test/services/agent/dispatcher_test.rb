@@ -142,6 +142,21 @@ module Agent
       assert_equal 4 * 3600, @socket.last_of_type('job.assign')['timeout_s']
     end
 
+    test 'the p90 cap follows a kind limit raised past four hours' do
+      AppSetting.current.update!(image_timeout_minutes: 6 * 60)
+      queued_job(predicted_p90_ms: 2 * 3600 * 1000)
+      agent_request(@backend)
+
+      assert_equal 6 * 3600, @socket.last_of_type('job.assign')['timeout_s']
+    end
+
+    test 'the p90 estimate is capped at four hours under lower kind limits' do
+      queued_job(predicted_p90_ms: 2 * 3600 * 1000)
+      agent_request(@backend)
+
+      assert_equal 4 * 3600, @socket.last_of_type('job.assign')['timeout_s']
+    end
+
     test 'video jobs without an estimate get the video default' do
       @workflow.update_columns(kind: 'video') # rubocop:disable Rails/SkipsModelValidations
       queued_job
