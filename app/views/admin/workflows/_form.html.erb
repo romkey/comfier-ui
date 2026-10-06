@@ -80,6 +80,16 @@
           <%= f.number_field :position, class: 'form-control form-control-sm num' %>
           <div class="form-text text-12">Lowest is the default style.</div>
         </div>
+        <div class="col-sm-3">
+          <%= f.label :timeout_minutes, 'Time limit', class: 'form-label' %>
+          <div class="input-group input-group-sm">
+            <%= f.number_field :timeout_minutes, min: 1, max: 1440, class: 'form-control num',
+                                                 placeholder: (workflow.kind_info.timeout / 1.minute).to_s %>
+            <span class="input-group-text">min</span>
+          </div>
+          <div class="form-text text-12">A run is stopped after this. Blank uses the
+            <%= link_to "#{workflow.kind_info.noun} default", edit_admin_app_setting_path(anchor: 'time-limits') %>.</div>
+        </div>
       </div>
 
       <div class="mb-3">

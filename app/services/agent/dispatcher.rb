@@ -89,10 +89,12 @@ module Agent
         'filename' => input.filename, 'bytes' => input.bytes }.compact
     end
 
-    # 3 × p90 when the estimate is meaningful (≥ 5 minutes); otherwise the workflow default (1 hour).
-    # A hard 5-minute floor used to kill slow first runs on new servers with low p90 estimates.
+    # A time limit set on the workflow wins. Otherwise 3 × p90 when the estimate is meaningful
+    # (≥ 5 minutes), else the default for the job's kind. A hard 5-minute floor used to kill slow first
+    # runs on new servers with low p90 estimates.
     def timeout_s(job)
-      default = job.workflow&.default_timeout_s || 3600
+      default = job.agent_timeout_s
+      return default if job.workflow&.default_timeout_s.present?
       return default unless job.predicted_p90_ms.to_i.positive?
 
       computed = (3 * job.predicted_p90_ms / 1000.0).round

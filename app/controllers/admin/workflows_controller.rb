@@ -127,8 +127,8 @@ module Admin
     # The models file is applied after the text list so its download links fill in what's typed.
     def assign_workflow
       permitted = params.expect(workflow: %i[name kind description graph_json graph_file enabled position
-                                             base_resolution frame_rate steps guidance required_models_text
-                                             models_file])
+                                             base_resolution frame_rate steps guidance timeout_minutes
+                                             required_models_text models_file])
       exports = WorkflowExportRouter.route(
         @workflow,
         graph_file: permitted.delete(:graph_file),

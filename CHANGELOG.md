@@ -13,10 +13,14 @@ All notable changes to this project are documented here. The format follows
   still waiting on the server move elsewhere (pinned ones fail with the reason).
 
 ### Changed
+- **Settings**: `GENERATION_TIMEOUT_MINUTES` is removed; time limits are set under Settings instead.
 - **Servers**: The "Styles it runs" allowlist in server settings is replaced by the per-style toggles. Existing
   allowlists are converted to the equivalent turned-off styles, and styles added later now run everywhere by default.
 
 ### Fixed
+- **Workflows**: Long runs on agent servers were always stopped after one hour. Admins now set time limits per
+  page under Settings → **Time limits** (defaults: image 20 minutes, video 4 hours, audio 30 minutes, 3D 1 hour),
+  and can give a style its own **Time limit** on its workflow page, which also overrides the estimate-based limit.
 - **Servers**: The Styles table no longer goes blank when the agent reports back after **Re-scan**. Turbo had left
   the frame's `src` pointing at the POST-only `rescan` URL, so the live reload hit a 404; `frame-refresh` now reloads
   from its declared URL.

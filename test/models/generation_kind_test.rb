@@ -15,6 +15,17 @@ class GenerationKindTest < ActiveSupport::TestCase
     end
   end
 
+  test 'each kind has its own time limit' do
+    assert_equal([20, 240, 30, 60], GenerationKind.all.map { it.timeout / 1.minute })
+  end
+
+  test 'time limits come from settings' do
+    AppSetting.current.update!(video_timeout_minutes: 300)
+
+    assert_equal 300.minutes, GenerationKind.find('video').timeout
+    assert_equal 20.minutes, GenerationKind.find('image').timeout
+  end
+
   test 'find raises for unknown kinds' do
     assert_raises(KeyError) { GenerationKind.find('hologram') }
   end

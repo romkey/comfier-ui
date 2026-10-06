@@ -126,12 +126,36 @@ module Agent
       assert_equal 'dispatched', gen.reload.agent_state
     end
 
-    test 'low p90 estimates use the workflow default timeout, not a five-minute floor' do
+    test 'low p90 estimates use the default for the kind, not a five-minute floor' do
       gen = queued_job(predicted_p90_ms: 4_000)
       agent_request(@backend)
 
-      assert_equal 3600, @socket.last_of_type('job.assign')['timeout_s']
+      assert_equal 20 * 60, @socket.last_of_type('job.assign')['timeout_s']
       assert_equal 'dispatched', gen.reload.agent_state
+    end
+
+    test 'a time limit set on the workflow overrides the p90 estimate' do
+      @workflow.update!(default_timeout_s: 4 * 3600)
+      queued_job(predicted_p90_ms: 200_000)
+      agent_request(@backend)
+
+      assert_equal 4 * 3600, @socket.last_of_type('job.assign')['timeout_s']
+    end
+
+    test 'video jobs without an estimate get the video default' do
+      @workflow.update_columns(kind: 'video') # rubocop:disable Rails/SkipsModelValidations
+      queued_job
+      agent_request(@backend)
+
+      assert_equal 240 * 60, @socket.last_of_type('job.assign')['timeout_s']
+    end
+
+    test 'without a workflow limit the default follows the settings for the kind' do
+      AppSetting.current.update!(image_timeout_minutes: 45)
+      queued_job
+      agent_request(@backend)
+
+      assert_equal 45 * 60, @socket.last_of_type('job.assign')['timeout_s']
     end
   end
 end

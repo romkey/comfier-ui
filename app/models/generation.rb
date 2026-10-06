@@ -65,11 +65,12 @@ class Generation < ApplicationRecord # rubocop:disable Metrics/ClassLength
 
   def in_progress? = queued? || running?
 
-  def timed_out?(limit = self.class.timeout)
+  def timed_out?(limit = timeout_limit)
     (submitted_at || created_at) < limit.ago
   end
 
-  def self.timeout = ENV.fetch('GENERATION_TIMEOUT_MINUTES', 60).to_i.minutes
+  # The workflow's own limit when it has one, else the default for its kind (image, video, …).
+  def timeout_limit = workflow&.default_timeout_s&.seconds || kind_info.timeout
 
   def fail!(message)
     update!(status: :failed, error_message: message.to_s.truncate(1000), completed_at: Time.current)

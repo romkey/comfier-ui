@@ -33,6 +33,7 @@ class Workflow < ApplicationRecord # rubocop:disable Metrics/ClassLength
   validates :frame_rate, numericality: { only_integer: true, in: 1..120 }
   validates :steps, numericality: { only_integer: true, in: 1..150 }
   validates :guidance, numericality: { greater_than: 0, less_than_or_equal_to: 30 }
+  validates :default_timeout_s, numericality: { only_integer: true, in: 60..86_400 }, allow_nil: true
   validate :graph_is_api_format
   validate :placeholders_are_known
   validate :model_list_is_valid
@@ -42,6 +43,13 @@ class Workflow < ApplicationRecord # rubocop:disable Metrics/ClassLength
   scope :ordered, -> { order(:position, :name) }
 
   def kind_info = GenerationKind.find(kind)
+
+  # The admin form edits the per-workflow time limit in minutes; blank means the server default.
+  def timeout_minutes = default_timeout_s && (default_timeout_s / 60)
+
+  def timeout_minutes=(value)
+    self.default_timeout_s = value.presence && (value.to_f * 60).round
+  end
 
   def graph_json
     raw = @graph_json || (graph.present? ? JSON.pretty_generate(graph) : '')

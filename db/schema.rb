@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_120100) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -73,6 +73,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_120100) do
     t.integer "session_epoch", default: 0, null: false
     t.decimal "slack_notification_attachment_max_mb", precision: 8, scale: 3, default: "5.0", null: false
     t.datetime "updated_at", null: false
+    t.integer "image_timeout_minutes", default: 20, null: false
+    t.integer "video_timeout_minutes", default: 240, null: false
+    t.integer "audio_timeout_minutes", default: 30, null: false
+    t.integer "model_3d_timeout_minutes", default: 60, null: false
   end
 
   create_table "backend_inventories", force: :cascade do |t|

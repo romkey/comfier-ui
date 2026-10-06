@@ -111,7 +111,7 @@ with the output attached. Email addresses and Slack IDs come from Authentik; use
 | `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_USERNAME`, `POSTGRES_PASSWORD` | PostgreSQL connection |
 | `POSTGRES_DATABASE`, `POSTGRES_DATABASE_TEST`, `POSTGRES_DATABASE_PRODUCTION` | Database name per environment |
 | `POSTGRES_HOST_PORT` | Dev only: host port when compose publishes Postgres |
-| `TIME_ZONE`, `GENERATION_TIMEOUT_MINUTES`, `SIDEKIQ_CONCURRENCY`, `FORCE_SSL`, `ASSUME_SSL` | Optional tuning |
+| `TIME_ZONE`, `SIDEKIQ_CONCURRENCY`, `FORCE_SSL`, `ASSUME_SSL` | Optional tuning |
 | `MODEL_DOWNLOAD_TIMEOUT_HOURS` | How long a model download may run before it's marked failed (default `12`) |
 | `SMTP_ADDRESS`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD` | Outgoing mail server for email notifications |
 | `SMTP_AUTHENTICATION`, `SMTP_ENABLE_STARTTLS`, `SMTP_DOMAIN` | SMTP options (defaults `plain`, `true`, `APP_URL` host) |
