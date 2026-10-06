@@ -155,4 +155,35 @@ class BackendTest < ActiveSupport::TestCase
     assert_nil generations(:alice_done).reload.backend
     assert_nil users(:alice).reload.preferred_backend
   end
+
+  test 'turning a style off keeps it off the server' do
+    backend = create_agent_backend!(owner: users(:alice))
+    workflow = workflows(:sd_image)
+
+    assert backend.allows_workflow?(workflow)
+    assert backend.set_workflow_enabled!(workflow, false)
+    assert_not backend.set_workflow_enabled!(workflow, false), 'turning it off twice changes nothing'
+    assert backend.reload.workflow_disabled?(workflow)
+    assert_equal [workflow.id], backend.disabled_workflow_ids
+    assert_not_includes backend.workflows_for_server, workflow
+  end
+
+  test 'turning a style back on lets the server run it again' do
+    backend = create_agent_backend!(owner: users(:alice))
+    workflow = workflows(:sd_image)
+    backend.set_workflow_enabled!(workflow, false)
+
+    assert backend.set_workflow_enabled!(workflow, true)
+    assert backend.reload.allows_workflow?(workflow)
+    assert_empty backend.disabled_workflow_ids
+    assert_includes backend.workflows_for_server, workflow
+  end
+
+  test 'new styles run on every server by default' do
+    backend = create_agent_backend!(owner: users(:alice))
+    backend.set_workflow_enabled!(workflows(:sd_image), false)
+    added = create_agent_workflow!(name: 'Brand new style')
+
+    assert backend.reload.allows_workflow?(added)
+  end
 end

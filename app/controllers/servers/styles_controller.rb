@@ -3,7 +3,7 @@ module Servers
   class StylesController < ApplicationController
     before_action :set_backend
     before_action :require_view, only: :show
-    before_action :require_manage, only: :rescan
+    before_action :require_manage, only: %i[rescan update]
 
     def show
       load_styles
@@ -17,7 +17,22 @@ module Servers
       render :show, layout: false
     end
 
+    # Turns one style on or off for this server.
+    def update
+      workflow = Workflow.find(params.require(:workflow_id))
+      enabled = ActiveModel::Type::Boolean.new.cast(params.require(:enabled))
+      audit_toggle(workflow, enabled) if Agent::ServerStyles.set!(@backend, workflow, enabled:)
+      load_styles
+      render :show, layout: false
+    end
+
     private
+
+    def audit_toggle(workflow, enabled)
+      ActivityLog.record(kind: :server_updated, user: current_user, subject: @backend, request:,
+                         message: "Turned #{enabled ? 'on' : 'off'} #{workflow.name} on #{@backend.name}",
+                         details: { workflow_id: workflow.id, enabled: })
+    end
 
     def set_backend
       @backend = Backend.agent.kept.find(params[:server_id])

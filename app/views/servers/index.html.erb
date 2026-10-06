@@ -51,8 +51,9 @@
       </thead>
       <tbody>
         <% @backends.each do |backend| %>
-          <% records = @availability[backend.id].to_a %>
+          <% records = @availability[backend.id].to_a.reject { backend.disabled_workflow_ids.include?(it.workflow_id) } %>
           <% ready = records.count(&:ready?) %>
+          <% runs = @workflows.count { backend.allows_workflow?(it) } %>
           <% queue = backend.generations.agent_waiting.count %>
           <tr class="row-link" data-controller="row-link" data-row-link-href-value="<%= server_path(backend) %>">
             <%= render 'servers/status_cell', backend: %>
@@ -74,7 +75,7 @@
                 <span class="text-secondary">—</span>
               <% else %>
                 <span class="num <%= 'text-secondary' if ready.zero? %>"><%= ready %></span>
-                <span class="text-secondary">of <%= @workflows.size %></span>
+                <span class="text-secondary">of <%= runs %></span>
               <% end %>
             </td>
           </tr>

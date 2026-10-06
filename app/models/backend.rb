@@ -62,8 +62,17 @@ class Backend < ApplicationRecord # rubocop:disable Metrics/ClassLength
     full
   end
 
-  def allows_workflow?(workflow)
-    allowed_workflow_ids.blank? || Array(allowed_workflow_ids).map(&:to_i).include?(workflow.id)
+  def allows_workflow?(workflow) = !workflow_disabled?(workflow)
+
+  def workflow_disabled?(workflow) = disabled_workflow_ids.include?(workflow.id)
+
+  # Turns one style on or off for this server. Returns true when the setting changed.
+  def set_workflow_enabled!(workflow, enabled)
+    return false if enabled == allows_workflow?(workflow)
+
+    ids = enabled ? disabled_workflow_ids - [workflow.id] : (disabled_workflow_ids + [workflow.id]).sort
+    update!(disabled_workflow_ids: ids)
+    true
   end
 
   def allows_auto_download_for?(user)
@@ -158,8 +167,7 @@ class Backend < ApplicationRecord # rubocop:disable Metrics/ClassLength
 
   def workflows_for_server
     scope = Workflow.enabled.ordered
-    ids = allowed_workflow_ids
-    ids.present? ? scope.where(id: ids) : scope
+    disabled_workflow_ids.empty? ? scope : scope.where.not(id: disabled_workflow_ids)
   end
 
   # How this backend would fetch a file: :agent and :node need a download link, :manager needs an

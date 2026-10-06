@@ -20,17 +20,36 @@
   <tbody>
     <% workflows.each do |workflow| %>
       <% record = availability[workflow.id] %>
-      <tr>
+      <% off = backend.workflow_disabled?(workflow) %>
+      <tr id="<%= dom_id(workflow, :server_style) %>" class="<%= 'style-off' if off %>">
         <td><%= workflow.name %> <span class="text-12 text-secondary"><%= workflow.kind_info.label %></span></td>
-        <td><%= availability_cell(record) %></td>
-        <td class="text-12 text-secondary">
-          <%= Array(record&.details&.dig('reasons')).first %>
-          <% Array(record&.details&.dig('hints')).each do |hint| %><div class="text-warning"><%= hint %></div><% end %>
+        <td>
+          <% if off %>
+            <span class="badge text-bg-secondary fw-medium" title="Turned off on this server">Off</span>
+          <% else %>
+            <%= availability_cell(record) %>
+          <% end %>
         </td>
-        <td class="text-end">
-          <% if can_manage && record&.needs_downloads? %>
-            <%= button_to 'Download', server_downloads_path(backend, workflow_id: workflow.id),
-                          class: 'btn btn-outline-secondary btn-sm' %>
+        <td class="text-12 text-secondary">
+          <% if off %>
+            Jobs for this style won't run here.
+          <% else %>
+            <%= Array(record&.details&.dig('reasons')).first %>
+            <% Array(record&.details&.dig('hints')).each do |hint| %><div class="text-warning"><%= hint %></div><% end %>
+          <% end %>
+        </td>
+        <td class="text-end text-nowrap">
+          <% if can_manage %>
+            <div class="d-inline-flex gap-2 align-items-center">
+              <% if !off && record&.needs_downloads? %>
+                <%= button_to 'Download', server_downloads_path(backend, workflow_id: workflow.id),
+                              class: 'btn btn-outline-secondary btn-sm' %>
+              <% end %>
+              <%= button_to off ? 'Turn on' : 'Turn off', server_styles_path(backend), method: :patch,
+                            params: { workflow_id: workflow.id, enabled: off ? '1' : '0' },
+                            class: 'btn btn-outline-secondary btn-sm',
+                            aria: { label: "#{off ? 'Turn on' : 'Turn off'} #{workflow.name} on #{backend.name}" } %>
+            </div>
           <% end %>
         </td>
       </tr>

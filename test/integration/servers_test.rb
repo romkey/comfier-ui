@@ -263,4 +263,68 @@ class ServersTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert response.parsed_body.key?('summary')
   end
+
+  test 'owners turn a style off from the server page' do
+    backend = create_agent_backend!(owner: @alice)
+    workflow = workflows(:sd_image)
+    row = "##{ActionView::RecordIdentifier.dom_id(workflow, :server_style)}"
+    sign_in_as @alice
+
+    get server_path(backend)
+
+    assert_select "#{row} button", text: 'Turn off'
+
+    patch server_styles_path(backend), params: { workflow_id: workflow.id, enabled: '0' }
+
+    assert_response :success
+    assert_select "turbo-frame#server_styles_#{backend.id} #{row}" do
+      assert_select '.badge', text: 'Off'
+      assert_select 'button', text: 'Turn on'
+    end
+    assert_not backend.reload.allows_workflow?(workflow)
+    assert_equal "Turned off #{workflow.name} on #{backend.name}",
+                 ActivityLog.where(kind: 'server_updated', subject: backend).last.message
+  end
+
+  test 'owners turn a style back on' do
+    backend = create_agent_backend!(owner: @alice)
+    workflow = workflows(:sd_image)
+    backend.set_workflow_enabled!(workflow, false)
+    sign_in_as @alice
+
+    patch server_styles_path(backend), params: { workflow_id: workflow.id, enabled: '1' }
+
+    assert_response :success
+    assert backend.reload.allows_workflow?(workflow)
+  end
+
+  test 'people a server is shared with see a turned-off style but cannot change it' do
+    backend = create_agent_backend!(owner: @alice, visibility: 'shared')
+    backend.backend_shares.create!(user: @bob)
+    workflow = workflows(:sd_image)
+    backend.set_workflow_enabled!(workflow, false)
+    sign_in_as @bob
+
+    get server_path(backend)
+
+    assert_select "##{ActionView::RecordIdentifier.dom_id(workflow, :server_style)} .badge", text: 'Off'
+    assert_select 'button', text: 'Turn on', count: 0
+
+    patch server_styles_path(backend), params: { workflow_id: workflow.id, enabled: '1' }
+
+    assert_response :not_found
+    assert_not backend.reload.allows_workflow?(workflow)
+  end
+
+  test 'the server list counts only styles that are turned on' do
+    backend = create_agent_backend!(owner: @alice)
+    backend.set_workflow_enabled!(workflows(:sd_image), false)
+    Agent::Availability.recompute_for_backend!(backend)
+    sign_in_as @alice
+
+    get servers_path
+
+    assert_response :success
+    assert_match "of #{Workflow.enabled.count - 1}", response.body
+  end
 end

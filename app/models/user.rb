@@ -26,6 +26,11 @@ class User < ApplicationRecord
 
   def self.admin_group = ENV.fetch('AUTHENTIK_ADMIN_GROUP', 'comfier-admins')
 
+  # Whether the site's message of the day should show for this user.
+  def sees_motd?(settings = AppSetting.current)
+    settings.motd? && dismissed_motd_digest != settings.motd_digest
+  end
+
   # Creates or refreshes a user from an OmniAuth auth hash. Admin rights follow Authentik group
   # membership on every sign-in, so removing someone from the group revokes them next login.
   def self.from_omniauth(auth)
