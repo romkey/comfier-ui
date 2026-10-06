@@ -21,6 +21,9 @@ All notable changes to this project are documented here. The format follows
 - **Workflows**: Long runs on agent servers were always stopped after one hour. Admins now set time limits per
   page under Settings → **Time limits** (defaults: image 20 minutes, video 4 hours, audio 30 minutes, 3D 1 hour),
   and can give a style its own **Time limit** on its workflow page, which also overrides the estimate-based limit.
+- **Servers**: The Styles table no longer goes blank when the agent reports back after **Re-scan**. Turbo had left
+  the frame's `src` pointing at the POST-only `rescan` URL, so the live reload hit a 404; `frame-refresh` now reloads
+  from its declared URL.
 - **Servers**: Styles **Re-scan** preserves the “Re-scanning…” state until fresh inventory arrives, live frame
   reloads no longer show “Content missing”, and style availability recomputes on every agent inventory message even
   when the model list hash is unchanged.
