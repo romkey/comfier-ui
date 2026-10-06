@@ -87,4 +87,21 @@ class PublicSharesTest < ActionDispatch::IntegrationTest
 
     assert_response :not_found
   end
+
+  test 'shared video output supports byte ranges for playback' do
+    @generation.outputs.purge
+    @generation.outputs.attach(
+      io: StringIO.new('0123456789'),
+      filename: 'clip.mp4',
+      content_type: 'video/mp4'
+    )
+
+    get public_share_output_path(@token, 0), headers: { 'Range' => 'bytes=0-4' }
+
+    assert_response :partial_content
+    assert_equal 'bytes', response.headers['Accept-Ranges']
+    assert_equal 'bytes 0-4/10', response.headers['Content-Range']
+    assert_equal '5', response.headers['Content-Length']
+    assert_equal '01234', response.body
+  end
 end
