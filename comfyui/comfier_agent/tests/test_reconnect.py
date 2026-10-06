@@ -160,3 +160,37 @@ def test_terminal_buffer_is_bounded():
         conn.buffer_terminal({"type": "job.cancelled", "job_id": f"j_{i}"})
     assert len(conn._terminal_out) == TERMINAL_BUFFER_MAX  # noqa: SLF001
     assert conn._terminal_out[-1]["job_id"] == f"j_{TERMINAL_BUFFER_MAX + 19}"  # noqa: SLF001
+
+
+@pytest.mark.asyncio
+async def test_cancel_interrupts_a_running_prompt_without_a_websocket_hint(agent):
+    runtime = await agent.start()
+    prompt_id = await agent.run_to_execution("j_8")
+    agent.comfy.queue_running = [[0, prompt_id, {}, {}, []]]
+    start = len(agent.front.messages)
+    await agent.front.send({"type": "job.cancel", "job_id": "j_8"})
+    await agent.front.wait_for(lambda: prompt_id in agent.comfy.interrupts, timeout=5)
+    agent.comfy.queue_running = []
+    await agent.comfy.push_ws({"type": "execution_interrupted", "prompt_id": prompt_id})
+
+    (cancelled,) = await agent.front.wait_for_types("job.cancelled", timeout=5, after=start)
+    assert cancelled["job_id"] == "j_8"
+    assert runtime.jobs.active is None
+    assert "job.completed" not in [m["type"] for m in agent.front.messages[start:]]
+
+
+@pytest.mark.asyncio
+async def test_cancel_gives_up_when_comfyui_never_confirms(agent, monkeypatch):
+    from comfier_agent import jobs
+
+    monkeypatch.setattr(jobs, "CANCEL_GRACE_S", 0.3)
+    runtime = await agent.start()
+    await agent.run_to_execution("j_9")
+    start = len(agent.front.messages)
+    await agent.front.send({"type": "job.cancel", "job_id": "j_9"})
+
+    await agent.front.wait_for_types("job.cancelled", timeout=5, after=start)
+    await agent.front.wait_for_types("job.request", timeout=5, after=start)
+    assert runtime.jobs.active is None
+    await asyncio.sleep(0.6)
+    assert [m["type"] for m in agent.front.messages[start:]].count("job.cancelled") == 1

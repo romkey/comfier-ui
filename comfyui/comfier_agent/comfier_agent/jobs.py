@@ -52,6 +52,8 @@ OUTPUT_KINDS = {
 OOM = re.compile(r"OutOfMemory|out of memory|CUDA error: out of memory", re.I)
 MAX_DETAIL = 2000
 MAX_TRACEBACK = 8000
+# How long a cancelled job waits for ComfyUI to report the interrupt before giving up on it.
+CANCEL_GRACE_S = 10
 
 
 def output_kind(filename: str) -> str | None:
@@ -193,6 +195,8 @@ class JobContext:
     progress: float = 0.0
     node: str | None = None
     cancel_requested: bool = False
+    cancel_requested_at: float | None = None
+    finished: bool = False
     started_at: float = field(default_factory=time.time)
     ws_state: dict[str, Any] = field(default_factory=dict)
     timings: JobTimings = field(default_factory=JobTimings)
@@ -294,24 +298,47 @@ class JobManager:
         if self.active is None or self.active.job_id != job_id:
             await self.send({"type": "job.cancelled", "job_id": job_id})
             return
-        self.active.cancel_requested = True
         ctx = self.active
+        if not ctx.cancel_requested:
+            ctx.cancel_requested = True
+            ctx.cancel_requested_at = time.time()
         if ctx.phase == "inputs":
             await self._finish_cancel(ctx)
             return
-        if ctx.prompt_id and ctx.phase == "queued":
-            await self.comfy.delete_queue([ctx.prompt_id])
-            await self._finish_cancel(ctx)
-            return
-        if ctx.prompt_id and ctx.phase in ("running", "queued"):
-            if ctx.ws_state.get("executing_prompt") == ctx.prompt_id:
-                await self.comfy.interrupt(ctx.prompt_id)
-        # execution_interrupted handler completes cancel
+        if ctx.prompt_id and ctx.phase in ("queued", "running"):
+            if await self._stop_prompt(ctx.prompt_id) == "pending":
+                await self._finish_cancel(ctx)
+        # Otherwise execution_interrupted ends the watch, or it gives up after CANCEL_GRACE_S.
+
+    async def _stop_prompt(self, prompt_id: str) -> str | None:
+        """Takes the prompt out of ComfyUI wherever it is, going by ComfyUI's own queue rather than our
+        WebSocket view of it, which can be stale. Returns "pending", "running" or None if it's gone."""
+        try:
+            queue = await self.comfy.queue()
+        except Exception:
+            LOG.warning("couldn't read the ComfyUI queue to cancel %s; interrupting", prompt_id, exc_info=True)
+            queue = {}
+        pending = {item[1] for item in queue.get("queue_pending") or [] if len(item) > 1}
+        running = {item[1] for item in queue.get("queue_running") or [] if len(item) > 1}
+        try:
+            if prompt_id in pending:
+                await self.comfy.delete_queue([prompt_id])
+                return "pending"
+            if prompt_id in running or not queue:
+                await self.comfy.interrupt(prompt_id)
+                return "running"
+        except Exception:
+            LOG.warning("couldn't stop prompt %s", prompt_id, exc_info=True)
+        return None
 
     async def _finish_cancel(self, ctx: JobContext) -> None:
+        if ctx.finished:
+            return
+        ctx.finished = True
         delete_job_inputs(self.config, ctx.job_id)
         self.prompt_ids.discard(ctx.prompt_id or "")
-        self.active = None
+        if self.active is ctx:
+            self.active = None
         msg = {"type": "job.cancelled", "job_id": ctx.job_id}
         await self.send(msg)
         self._terminal_buffer.append(msg)
@@ -366,6 +393,8 @@ class JobManager:
 
             workflow = replace_input_refs(workflow, mapping)
             timings.mark_inputs_done()
+            if ctx.cancel_requested:
+                raise JobCancelled()
             await self._progress(ctx, "inputs", 1.0)
 
             result = await self.comfy.submit_prompt(workflow, job_id=job_id)
@@ -401,6 +430,9 @@ class JobManager:
                 msg["warning"] = warning
             await self._terminal(compact(msg), ctx)
         except JobCancelled:
+            # A cancel that landed mid-submit, or one ComfyUI never confirmed, can leave the prompt behind.
+            if ctx.prompt_id:
+                await self._stop_prompt(ctx.prompt_id)
             await self._finish_cancel(ctx)
         except JobError as exc:
             await self._fail(
@@ -485,6 +517,11 @@ class JobManager:
             await self.comfy.ensure_ws()
             deadline = time.time() + timeout_s
             while not watch.done.is_set():
+                if ctx.finished:
+                    raise JobCancelled()
+                if ctx.cancel_requested and time.time() - (ctx.cancel_requested_at or 0) >= CANCEL_GRACE_S:
+                    # ComfyUI never said it stopped (it may already be done, or we missed the event).
+                    raise JobCancelled()
                 if time.time() >= deadline:
                     await self.comfy.interrupt(ctx.prompt_id)
                     raise JobError("execute", "timeout")
@@ -495,6 +532,8 @@ class JobManager:
                     pass
         finally:
             self.comfy.remove_ws_handler(watch.on_event)
+        if watch.interrupted and ctx.cancel_requested:
+            raise JobCancelled()
         if watch.error:
             if ctx.cancel_requested:
                 raise JobCancelled()
@@ -519,9 +558,13 @@ class JobManager:
         await self._terminal(failure_message(ctx.job_id, stage, error, ctx.timings.to_dict(), **extra), ctx)
 
     async def _terminal(self, msg: dict, ctx: JobContext) -> None:
+        if ctx.finished:
+            return
+        ctx.finished = True
         delete_job_inputs(self.config, ctx.job_id)
         self.prompt_ids.discard(ctx.prompt_id or "")
-        self.active = None
+        if self.active is ctx:
+            self.active = None
         await self.send(msg)
         self._terminal_buffer.append(msg)
         if self.on_terminal:
@@ -599,6 +642,7 @@ class ExecutionWatch:
         self.timings = timings
         self.done = asyncio.Event()
         self.error: dict | None = None
+        self.interrupted = False
         self.nodes: set[str] = set()
         self.cached: set[str] = set()
         self.current_node: str | None = None
@@ -655,6 +699,7 @@ class ExecutionWatch:
         self.done.set()
 
     def _on_execution_interrupted(self, _data: dict) -> None:
+        self.interrupted = True
         if not self.ctx.cancel_requested:
             self.error = {"exception_message": "interrupted"}
         self.done.set()
