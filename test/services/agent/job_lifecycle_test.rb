@@ -70,6 +70,71 @@ module Agent
       assert_equal 'cancelled', gen.reload.agent_state
     end
 
+    test 'a late accept takes back a job the ack timeout requeued' do
+      gen = job_on
+      travel(AgentTiming::ASSIGN_ACK_TIMEOUT_S + 1) { AssignAckTimeoutJob.perform_now(gen.id) }
+
+      assert_equal 'queued', gen.reload.agent_state
+
+      event('job.accepted', gen)
+
+      assert_equal 'accepted', gen.reload.agent_state
+      assert_predicate gen, :running?
+    end
+
+    test 'a requeued job the agent finished anyway completes' do
+      gen = job_on(state: 'queued', dispatched_at: nil)
+      output = uploaded_output(gen)
+      outputs = [{ 'upload_id' => output.upload_id, 'node' => '9', 'filename' => 'out.png' }]
+      event('job.completed', gen, outputs:)
+
+      assert_equal 'completed', gen.reload.agent_state
+      assert_equal 1, gen.outputs.count
+    end
+
+    def status_with(*gens, **)
+      jobs = gens.map { { 'job_id' => it.is_a?(String) ? it : job_id(it), 'state' => 'running', 'progress' => 0.2 } }
+      agent_status(@backend, state: 'busy', accepting: false, comfier_jobs: jobs, **)
+    end
+
+    test 'a status naming a job queued here takes it back as running' do
+      gen = job_on(state: 'queued', dispatched_at: nil)
+      waiting = job_on(state: 'queued', dispatched_at: nil)
+      status_with(gen)
+      gen.reload
+
+      assert_equal 'running', gen.agent_state
+      assert gen.running_at
+      assert_in_delta 0.2, gen.agent_progress
+      assert_empty @socket.of_type('job.cancel')
+
+      agent_request(@backend)
+
+      assert_equal 'queued', waiting.reload.agent_state
+    end
+
+    test 'a status naming an ended or moved job cancels it on the agent, once per interval' do
+      ended = job_on(state: 'failed')
+      moved = job_on(create_agent_backend!(owner: @alice, name: 'Other'), state: 'running')
+      status_with(ended, moved, 'j_999999')
+      status_with(ended, moved, 'j_999999')
+
+      assert_equal [job_id(ended), job_id(moved), 'j_999999'], @socket.of_type('job.cancel').pluck('job_id')
+      assert_equal 'running', moved.reload.agent_state
+
+      travel(Agent::JobLifecycle::STRAY_CANCEL_EVERY_S + 1) { status_with(ended) }
+
+      assert_equal 4, @socket.of_type('job.cancel').size
+    end
+
+    test 'a status naming a job running here changes nothing' do
+      gen = job_on(state: 'running')
+      status_with(gen)
+
+      assert_equal 'running', gen.reload.agent_state
+      assert_empty @socket.of_type('job.cancel')
+    end
+
     test 'events for another server are ignored' do
       other = create_agent_backend!(owner: @alice, name: 'Other')
       gen = job_on(other)

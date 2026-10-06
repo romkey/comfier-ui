@@ -5,6 +5,11 @@ module Agent
   # change is a compare-and-set, so duplicated or late events are harmless.
   module JobLifecycle # rubocop:disable Metrics/ModuleLength
     ON_SERVER = Generation::ON_SERVER_STATES
+    # Back in this server's queue after a late or lost job.accepted, though the agent may be running it.
+    RECLAIMABLE = %w[queued dispatched].freeze
+    # The agent may keep running these; anything else it reports should be cancelled.
+    KEEP_ON_AGENT = (ON_SERVER - %w[cancelling] + RECLAIMABLE).freeze
+    STRAY_CANCEL_EVERY_S = 15
     OOM = /OutOfMemory|out of memory|CUDA error: out of memory/i
     MODEL_NOT_IN_LIST = /value_not_in_list|not in list|not in \[/i
     OOM_MESSAGE = 'The server ran out of GPU memory. Try a smaller size or fewer frames.'
@@ -25,7 +30,7 @@ module Agent
       gen = find(backend, message['job_id'])
       return unless gen
 
-      gen.agent_transition!(from: 'dispatched', to: 'accepted', accepted_at: Time.current)
+      adopt!(gen, 'accepted')
       Warmth.job_started!(backend)
     end
 
@@ -45,7 +50,7 @@ module Agent
     end
 
     def progress!(backend, message)
-      gen = find(backend, message['job_id'])
+      gen = reclaim(find(backend, message['job_id']))
       return unless gen && %w[accepted running uploading].include?(gen.agent_state)
 
       advance_phase!(gen, message['phase'] == 'uploading' ? 'uploading' : 'running')
@@ -56,7 +61,7 @@ module Agent
     end
 
     def completed!(backend, message)
-      gen = find(backend, message['job_id'])
+      gen = reclaim(find(backend, message['job_id']))
       return unless gen && ON_SERVER.include?(gen.agent_state)
 
       outputs, missing = uploaded_outputs(gen, backend, message)
@@ -73,7 +78,7 @@ module Agent
     end
 
     def failed!(backend, message)
-      gen = find(backend, message['job_id'])
+      gen = reclaim(find(backend, message['job_id']))
       return unless gen && ON_SERVER.include?(gen.agent_state)
 
       stage = message['stage'].to_s
@@ -93,6 +98,48 @@ module Agent
         record_attempt!(gen, backend, 'cancelled')
       end
       after_job!(backend, gen)
+    end
+
+    # The agent says it has this job, in a hello or a status. Requeued here though the agent was
+    # running it: take it back. Cancelling, ended or now another server's: tell the agent to cancel.
+    # `target` (from a hello) also moves an accepted or running job to the agent's phase.
+    def reported_active!(backend, job_id, target: nil)
+      gen = find(backend, job_id)
+      state = gen&.agent_state
+      return cancel_stray!(backend, job_id) if KEEP_ON_AGENT.exclude?(state)
+      return reported_reclaim!(backend, gen, target || 'running') if RECLAIMABLE.include?(state)
+      return if target.nil? || [target, 'uploading'].include?(state)
+
+      gen.agent_transition!(from: state, to: target)
+    end
+
+    def reported_reclaim!(backend, gen, target)
+      from = gen.agent_state
+      return unless adopt!(gen, target)
+
+      Rails.logger.info("[Agent] backend #{backend.id} is running #{gen.agent_job_id}; took it back from #{from}")
+      Timeline.schedule(backend)
+      Presence.publish!(backend)
+    end
+
+    def cancel_stray!(backend, job_id)
+      return unless Store.once_per?("stray_cancel:#{backend.id}:#{job_id}", ttl: STRAY_CANCEL_EVERY_S)
+
+      Commands.send_message(backend.id, { 'type' => 'job.cancel', 'job_id' => job_id.to_s })
+    end
+
+    # Queued or dispatched here, and the agent says it accepted or is running it.
+    def adopt!(gen, target)
+      now = Time.current
+      attrs = { accepted_at: gen.accepted_at || now, dispatched_at: gen.dispatched_at || now }
+      attrs[:running_at] = now if target == 'running' && gen.running_at.nil?
+      gen.agent_transition!(from: RECLAIMABLE, to: target, **attrs)
+    end
+
+    # An event for a job requeued here after its job.accepted went missing: the agent ran it anyway.
+    def reclaim(gen)
+      adopt!(gen, 'running') if gen && RECLAIMABLE.include?(gen.agent_state)
+      gen
     end
 
     # The frontend asked to cancel. Waiting jobs end now; jobs on a server wait for its

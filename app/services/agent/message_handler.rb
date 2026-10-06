@@ -140,11 +140,14 @@ module Agent
       end
     end
 
+    # Also squares the agent's jobs with ours: one requeued here while it ran gets taken back, and one
+    # that ended or moved elsewhere gets cancelled, so neither leaves the server stuck busy.
     def update_job_progress!(message)
       Array(message['comfier_jobs']).each do |job|
         id = GenerationAgent.id_from_job_id(job['job_id'])
         next unless id
 
+        JobLifecycle.reported_active!(@backend, job['job_id'])
         Generation.where(id:, backend_id: @backend.id, agent_state: %w[accepted running uploading])
                   .update_all(agent_progress: job['progress'].to_f, current_node: job['node']) # rubocop:disable Rails/SkipsModelValidations
       end

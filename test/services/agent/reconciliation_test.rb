@@ -39,6 +39,14 @@ module Agent
       assert_equal 'running', gen.reload.agent_state
     end
 
+    test 'a listed job requeued here while the agent ran it is taken back' do
+      gen = job_on(state: 'queued', status: :queued, dispatched_at: nil)
+      socket = reconnect!(active_jobs: [{ 'job_id' => job_id(gen), 'state' => 'running' }])
+
+      assert_equal 'running', gen.reload.agent_state
+      assert_empty socket.of_type('job.cancel')
+    end
+
     test 'a listed job we were cancelling gets the cancel again' do
       gen = job_on(state: 'cancelling')
       socket = reconnect!(active_jobs: [{ 'job_id' => job_id(gen), 'state' => 'running' }])
