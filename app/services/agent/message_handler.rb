@@ -141,8 +141,11 @@ module Agent
     end
 
     # Also squares the agent's jobs with ours: one requeued here while it ran gets taken back, and one
-    # that ended or moved elsewhere gets cancelled, so neither leaves the server stuck busy.
+    # that ended or moved elsewhere gets cancelled, so neither leaves the server stuck busy. Only a busy
+    # status counts: older agents kept listing their last job after it ended.
     def update_job_progress!(message)
+      return unless message['state'] == 'busy'
+
       Array(message['comfier_jobs']).each do |job|
         id = GenerationAgent.id_from_job_id(job['job_id'])
         next unless id

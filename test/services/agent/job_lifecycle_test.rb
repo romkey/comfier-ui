@@ -92,9 +92,9 @@ module Agent
       assert_equal 1, gen.outputs.count
     end
 
-    def status_with(*gens, **)
+    def status_with(*gens, state: 'busy', accepting: false)
       jobs = gens.map { { 'job_id' => it.is_a?(String) ? it : job_id(it), 'state' => 'running', 'progress' => 0.2 } }
-      agent_status(@backend, state: 'busy', accepting: false, comfier_jobs: jobs, **)
+      agent_status(@backend, state:, accepting:, comfier_jobs: jobs)
     end
 
     test 'a status naming a job queued here takes it back as running' do
@@ -125,6 +125,15 @@ module Agent
       travel(Agent::JobLifecycle::STRAY_CANCEL_EVERY_S + 1) { status_with(ended) }
 
       assert_equal 4, @socket.of_type('job.cancel').size
+    end
+
+    test 'an idle status still naming an old job is ignored' do
+      requeued = job_on(state: 'queued', dispatched_at: nil)
+      ended = job_on(state: 'failed')
+      status_with(requeued, ended, state: 'idle', accepting: true)
+
+      assert_equal 'queued', requeued.reload.agent_state
+      assert_empty @socket.of_type('job.cancel')
     end
 
     test 'a status naming a job running here changes nothing' do

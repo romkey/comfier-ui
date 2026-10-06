@@ -72,6 +72,7 @@ class StatusTracker:
         snap.uptime_s = int(time.time() - self.started_at)
         snap.disk_free = disk_free_by_label(self.config)
         snap.accepting_reason = None
+        snap.comfier_jobs = [active_job] if active_job else []
 
         if not comfy_reachable:
             snap.state = "error"
@@ -128,7 +129,6 @@ class StatusTracker:
         if not disk_ok:
             snap.state = "disk_low"
         elif active_job:
-            snap.comfier_jobs = [active_job]
             snap.state = "busy"
         elif fr > 0 or fp > 0:
             if not self.config.accept_when_local_busy:
