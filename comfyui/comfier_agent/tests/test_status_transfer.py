@@ -33,3 +33,24 @@ async def test_busy_local_when_foreign_queue_and_no_share():
     )
     assert tracker.snapshot.state == "busy_local"
     assert not tracker.snapshot.accepting
+
+
+@pytest.mark.asyncio
+async def test_finished_job_drops_out_of_the_status():
+    from comfier_agent.comfy_client import ComfyClient
+    from comfier_agent.status import ComfierJobStatus
+
+    class FakeComfy(ComfyClient):
+        async def system_stats(self):
+            return {"devices": [{"vram_free": 1}]}
+
+        async def queue(self):
+            return {"queue_running": [], "queue_pending": []}
+
+    tracker = StatusTracker(AgentConfig(enabled=True, min_free_disk_gb=0), started_at=0)
+    comfy = FakeComfy("http://127.0.0.1:1")
+    job = ComfierJobStatus(job_id="j_1", state="running")
+    for active in (job, None):
+        await tracker.refresh(comfy, comfier_prompt_ids=set(), active_job=active, downloads=[], comfy_reachable=True)
+    assert tracker.snapshot.state == "idle"
+    assert tracker.to_message()["comfier_jobs"] == []
