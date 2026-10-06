@@ -69,7 +69,7 @@ module GenerationAgent
     reload
   end
 
-  def agent_timeout_s = workflow&.default_timeout_s || (self.class.timeout / 1.second).to_i
+  def agent_timeout_s = timeout_limit.to_i
 
   STATUS_LINES = { 'routing' => 'Finding a server', 'waiting_models' => 'Waiting for models to download',
                    'uploading' => 'Saving results', 'cancelling' => 'Cancelling' }.freeze

@@ -12,6 +12,8 @@ class AppSetting < ApplicationRecord
   validates :chat_default_model, length: { maximum: 255 }, allow_blank: true
   validates :session_epoch, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :motd_text, length: { maximum: 1000 }
+  TIMEOUT_ATTRS = GenerationKind.keys.index_with { :"#{it}_timeout_minutes" }.freeze
+  validates(*TIMEOUT_ATTRS.values, numericality: { only_integer: true, in: 1..1440 })
 
   normalizes :motd_text, with: ->(text) { text.to_s.strip.presence }
 
@@ -21,6 +23,8 @@ class AppSetting < ApplicationRecord
   def motd_digest
     Digest::SHA256.hexdigest(motd_text.to_s)[0, 16] if motd?
   end
+
+  def timeout_minutes_for(kind) = public_send(TIMEOUT_ATTRS.fetch(kind.to_s))
 
   def chat_notice?
     chat_notice_text.present?

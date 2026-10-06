@@ -38,6 +38,23 @@
     <div class="form-text text-12">Uses distinct reporters on one case. Set to 0 to never auto-hide.</div>
   </div>
 
+  <div class="h-section-label mt-4 mb-2" id="time-limits">Time limits</div>
+  <p class="text-13 text-secondary mb-3">
+    How long one run may take before it's stopped. A style can set its own limit on its workflow page.
+  </p>
+  <div class="row g-3 mb-3">
+    <% GenerationKind.all.each do |kind| %>
+      <% attr = AppSetting::TIMEOUT_ATTRS.fetch(kind.key) %>
+      <div class="col-sm-3">
+        <%= f.label attr, kind.label, class: 'form-label' %>
+        <div class="input-group input-group-sm">
+          <%= f.number_field attr, min: 1, max: 1440, step: 1, required: true, class: 'form-control num' %>
+          <span class="input-group-text">min</span>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
   <div class="h-section-label mt-4 mb-2">Servers</div>
   <div class="form-check form-switch mb-3">
     <%= f.check_box :allow_user_backends, class: 'form-check-input', role: 'switch' %>

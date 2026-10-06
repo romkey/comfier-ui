@@ -181,6 +181,15 @@ class GenerationTest < ActiveSupport::TestCase
     assert_predicate generation, :timed_out?
   end
 
+  test 'timeout_limit prefers the workflow limit over the kind default' do
+    generation = generations(:alice_running)
+
+    assert_equal generation.kind_info.timeout, generation.timeout_limit
+    generation.workflow.default_timeout_s = 900
+
+    assert_equal 15.minutes, generation.timeout_limit
+  end
+
   test 'title prefers the prompt' do
     assert_equal 'A lighthouse at dusk', generations(:alice_done).title
     assert_equal 'Image #5', Generation.new(id: 5, kind: 'image').title

@@ -4,6 +4,9 @@ class GenerationKind
   Kind = Data.define(:key, :label, :noun, :icon, :path, :default_duration) do
     def to_s = label
     def to_param = key
+
+    # How long one run may take before it's stopped, unless its workflow sets its own limit. Set under Settings.
+    def timeout = AppSetting.current.timeout_minutes_for(key).minutes
   end
 
   ALL = [
