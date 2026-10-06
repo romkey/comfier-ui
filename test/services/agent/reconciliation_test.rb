@@ -75,5 +75,24 @@ module Agent
       assert_equal @backend.id, gen.reload.backend_id
       assert_equal 'queued', gen.agent_state
     end
+
+    test 'jobs pinned to a server route when inventory arrives after reconcile' do
+      gen = Generation.create!(user: @alice, workflow: @workflow, prompt: 'x', kind: :image, status: :queued,
+                               agent_state: 'routing', filled_workflow_json: { '1' => {} })
+      gen.update_columns(pinned_backend_id: @backend.id, agent_phase: 'waiting_for_server') # rubocop:disable Rails/SkipsModelValidations
+      connect_agent!(@backend)
+      agent_hello(@backend)
+      agent_status(@backend)
+      Reconciliation.run!(@backend)
+
+      assert_nil gen.reload.backend_id
+      assert_equal 'waiting_for_server', gen.agent_phase
+
+      agent_inventory(@backend, **inventory_for(@workflow))
+
+      assert_equal @backend.id, gen.reload.backend_id
+      assert_equal 'queued', gen.agent_state
+      assert_nil gen.agent_phase
+    end
   end
 end

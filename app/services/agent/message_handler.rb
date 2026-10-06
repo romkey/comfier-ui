@@ -84,6 +84,7 @@ module Agent
       inventory = @backend.backend_inventory
       changed = inventory.nil? || inventory.inventory_hash != message['hash']
       InventoryStore.store!(@backend, message) if changed
+      route_parked_jobs! if changed
       request_object_info(message['object_info_hash'])
       RecomputeAvailabilityJob.perform_later(backend_id: @backend.id)
       Presence.publish!(@backend) if changed
@@ -105,8 +106,19 @@ module Agent
       Warmth.note_status!(@backend, message)
       track_local_use!(message, previous)
       update_job_progress!(message)
+      route_parked_jobs!
       Timeline.schedule(@backend)
       Presence.publish!(@backend)
+    end
+
+    def route_parked_jobs!
+      @backend.reload
+      return unless @backend.backend_inventory
+      return unless Presence.online?(@backend)
+      return if @backend.paused?
+      return unless Store.once_per?("route_waiting:#{@backend.id}", ttl: 2)
+
+      ServerPause.route_waiting!(@backend)
     end
 
     def persist_status!(message)
