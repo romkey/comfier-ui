@@ -27,6 +27,13 @@ module Agent
                          ttl: AgentTiming::OFFLINE_AFTER_S)
       end
 
+      # Job progress means the agent is alive even when its status is late (it waits on ComfyUI,
+      # which can be slow mid-step). Only extends a presence that hasn't expired yet.
+      def touch!(backend)
+        current = status(backend)
+        record_status!(backend, current) if current
+      end
+
       def record_hello!(backend, hello)
         Store.write_json("hello:#{backend.id}", hello, ttl: 1.day)
       end

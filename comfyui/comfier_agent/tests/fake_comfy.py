@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from typing import Any
 
@@ -41,6 +42,7 @@ class FakeComfy:
         self.uploads: list[dict] = []
         self.output_files: dict[str, bytes] = {}
         self.reject_prompt: dict | None = None
+        self.stats_delay_s = 0.0
 
     async def start(self) -> str:
         self.runner = web.AppRunner(self.app)
@@ -58,6 +60,8 @@ class FakeComfy:
             await self.runner.cleanup()
 
     async def system_stats(self, _request):
+        if self.stats_delay_s:
+            await asyncio.sleep(self.stats_delay_s)
         return web.json_response({
             "system": {
                 "os": "posix",

@@ -153,6 +153,19 @@ class StatusTracker:
         elif snap.state == "busy":
             snap.accepting_reason = "Running a Comfier job"
 
+    def mark_unresponsive(self, active_job: ComfierJobStatus | None) -> None:
+        """ComfyUI didn't answer in time. While our job runs that's expected, so stay busy and keep
+        the last resource figures; otherwise it's an error."""
+        snap = self.snapshot
+        snap.comfier_jobs = [active_job] if active_job else []
+        snap.accepting = False
+        if active_job:
+            snap.state = "busy"
+            snap.accepting_reason = "Running a Comfier job"
+        else:
+            snap.state = "error"
+            snap.accepting_reason = "ComfyUI isn't responding"
+
     def to_message(self) -> dict[str, Any]:
         s = self.snapshot
         msg = {

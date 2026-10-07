@@ -2,6 +2,7 @@ import asyncio
 
 import pytest
 
+from comfier_agent import jobs, runtime
 from comfier_agent.jobs import failure_message, output_kind, split_allowed, validation_error_text
 from comfier_agent.transfer import UploadError, upload_file_multipart
 
@@ -62,6 +63,36 @@ async def test_completed_job_sends_kind_and_skips_unsupported_outputs(agent):
     assert done["outputs"][0]["upload_id"] == "u_test_1"
     assert "report.html" in done["warning"]
     assert agent.front.uploads[0]["kind"] == "image"
+
+
+@pytest.mark.asyncio
+async def test_waits_for_history_written_after_execution_success(agent, monkeypatch):
+    monkeypatch.setattr(jobs, "HISTORY_POLL_S", 0.05)
+    await agent.start()
+    prompt_id = await agent.run_to_execution()
+    agent.comfy.output_files["clip.mp4"] = b"MP4"
+    await agent.comfy.push_ws({"type": "execution_start", "prompt_id": prompt_id})
+    await agent.comfy.push_ws({"type": "execution_success", "prompt_id": prompt_id})
+    await asyncio.sleep(0.3)
+    assert not agent.front.of_type("job.completed")
+    agent.comfy.history[prompt_id] = {
+        "outputs": {"9": {"images": [{"filename": "clip.mp4", "type": "output", "subfolder": ""}]}},
+    }
+    (done,) = await agent.front.wait_for_types("job.completed", timeout=8)
+    assert [o["filename"] for o in done["outputs"]] == ["clip.mp4"]
+
+
+@pytest.mark.asyncio
+async def test_history_that_never_appears_fails_at_outputs(agent, monkeypatch):
+    monkeypatch.setattr(jobs, "HISTORY_POLL_S", 0.05)
+    monkeypatch.setattr(jobs, "HISTORY_WAIT_S", 0.2)
+    await agent.start()
+    prompt_id = await agent.run_to_execution()
+    await agent.comfy.push_ws({"type": "execution_success", "prompt_id": prompt_id})
+    (failed,) = await agent.front.wait_for_types("job.failed", timeout=8)
+    assert failed["stage"] == "outputs"
+    assert "history" in failed["error"]
+    assert not agent.front.of_type("job.completed")
 
 
 @pytest.mark.asyncio
@@ -171,3 +202,17 @@ async def test_upload_retries_transient_errors_with_a_fresh_body(tmp_path):
     finally:
         await runner.cleanup()
     await asyncio.sleep(0)
+
+
+@pytest.mark.asyncio
+async def test_slow_comfyui_does_not_hold_up_status_while_a_job_runs(agent, monkeypatch):
+    monkeypatch.setattr(runtime, "STATUS_REFRESH_TIMEOUT_S", 0.2)
+    await agent.start(heartbeat_seconds=0.1)
+    await agent.run_to_execution()
+    agent.comfy.stats_delay_s = 3
+    start = len(agent.front.messages)
+    await asyncio.sleep(1.0)
+    statuses = [m for m in agent.front.messages[start:] if m.get("type") == "status"]
+    assert len(statuses) >= 2
+    assert statuses[-1]["state"] == "busy"
+    assert statuses[-1]["comfier_jobs"][0]["job_id"] == "j_1"

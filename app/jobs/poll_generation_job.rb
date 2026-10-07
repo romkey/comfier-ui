@@ -13,7 +13,8 @@ class PollGenerationJob < ApplicationJob # rubocop:disable Metrics/ClassLength
 
     generation.with_lock do
       generation.reload
-      return unless generation.running?
+      # Agent servers report back over their socket; they have no URL to poll.
+      return unless generation.running? && !generation.agent_job?
 
       requeue_in, finalize = poll(generation)
     end

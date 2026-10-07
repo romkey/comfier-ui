@@ -18,6 +18,17 @@ All notable changes to this project are documented here. The format follows
   allowlists are converted to the equivalent turned-off styles, and styles added later now run everywhere by default.
 
 ### Fixed
+- **Agent servers**: Long jobs were marked lost partway through, then cancelled on the server, which older agents
+  reported as completed with nothing to show. A status after a short gap now clears the server's offline marker
+  (before, the next late status expired its jobs at once instead of after the two-minute grace), job progress counts
+  as a sign of life, and the agent no longer holds its heartbeat for up to five minutes waiting on a busy ComfyUI.
+- **Agent servers**: A finished job could come back with no outputs because the agent read ComfyUI's history before
+  ComfyUI had written it (ComfyUI reports success first, and can unload models before saving history). The agent now
+  waits up to two minutes for the history entry.
+- **Agent servers**: A completion with no outputs now fails the generation with the server's explanation instead of
+  showing it as succeeded with nothing to see. One that arrives while the job is being cancelled counts as the
+  cancel, since agents before the interrupt fix reported cancelled jobs that way.
+- **Agent servers**: Viewing a running agent job no longer queues HTTP polls that fail with "not an HTTP URI".
 - **Workflows**: Long runs on agent servers were always stopped after one hour. Admins now set time limits per
   page under Settings → **Time limits** (defaults: image 20 minutes, video 4 hours, audio 30 minutes, 3D 1 hour),
   and can give a style its own **Time limit** on its workflow page, which also overrides the estimate-based limit.
