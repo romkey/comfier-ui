@@ -22,9 +22,13 @@ class PrivacyController < ApplicationController
     end
   end
 
+  def code_of_conduct
+    redirect_to PrivacyNotice.current.safe_code_of_conduct_url, allow_other_host: true
+  end
+
   # Declining signs the user out and sends them to the admin-chosen page.
   def decline
-    url = PrivacyNotice.current.decline_url
+    url = PrivacyNotice.current.safe_decline_url
     ActivityLog.record(
       kind: :logout,
       user: current_user,

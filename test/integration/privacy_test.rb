@@ -48,9 +48,17 @@ class PrivacyTest < ActionDispatch::IntegrationTest
 
     get privacy_path
 
-    assert_select 'a[href=?]', 'https://example.com/code-of-conduct.pdf'
+    assert_select 'a[href=?]', code_of_conduct_path
     assert_select 'button', 'I Understand and Agree'
     assert_select 'button', 'I Do Not Agree'
+  end
+
+  test 'the code of conduct link goes to the admin-chosen document' do
+    sign_in_as users(:alice)
+
+    get code_of_conduct_path
+
+    assert_redirected_to 'https://example.com/code-of-conduct.pdf'
   end
 
   test 'declining signs the user out and sends them to the decline page' do
