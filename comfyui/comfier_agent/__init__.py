@@ -32,10 +32,12 @@ def _register_routes() -> None:
 
 def _start_agent_thread() -> None:
     try:
+        from comfier_agent import __version__
         from comfier_agent.config import load_config
         from comfier_agent.runtime import AgentRuntime
         import asyncio
 
+        LOG.info("Comfier agent %s starting", __version__)
         config = load_config()
         if not config.ok:
             LOG.warning(config.idle_reason)

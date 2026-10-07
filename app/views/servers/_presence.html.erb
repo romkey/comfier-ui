@@ -21,6 +21,7 @@
         <dt class="col-5 text-secondary fw-normal">Free disk</dt>
         <dd class="col-7 mb-1 <%= 'text-warning fw-medium' if disk < AgentTiming::MIN_FREE_DISK_GB.gigabytes * 2 %>"><%= human_bytes(disk) %></dd>
       <% end %>
+      <dt class="col-5 text-secondary fw-normal">Agent</dt><dd class="col-7 mb-1"><%= agent_version_line(backend) %></dd>
       <dt class="col-5 text-secondary fw-normal">ComfyUI</dt><dd class="col-7 mb-1"><%= backend.comfyui_version.presence || '—' %></dd>
       <dt class="col-5 text-secondary fw-normal">Models</dt>
       <dd class="col-7 mb-1 num"><%= backend.backend_inventory&.model_count || '—' %></dd>

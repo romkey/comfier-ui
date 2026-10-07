@@ -106,7 +106,7 @@
       <%= render 'servers/keys', backend: @backend, keys: @keys %>
       <div class="text-12 text-secondary mt-4">
         <div class="h-section-label">System</div>
-        <div>Agent <%= @backend.agent_version.presence || '—' %></div>
+        <div>Agent <%= agent_version_line(@backend) %></div>
         <% if (os = @backend.system_json&.dig('os')).present? %><div><%= os %></div><% end %>
         <div>Added <%= friendly_time(@backend.created_at) %></div>
         <% if @backend.connected_at %><div>Last connected <%= friendly_time(@backend.connected_at) %></div><% end %>

@@ -167,6 +167,10 @@ a home network without opening a port. Members can add their own unless an admin
 The key can also be pasted into the **Comfier** tab in ComfyUI's sidebar, which shows whether the agent is
 connected and, if not, why.
 
+The server's **Status** card shows which agent version it runs. **Update available** means this Comfier comes with
+a newer agent: reinstall it on the server from the steps above. **Newer than Comfier** means the server's agent is
+newer than this Comfier, so Comfier itself needs updating.
+
 ### Your server's settings
 
 Open your server and choose **Settings**:

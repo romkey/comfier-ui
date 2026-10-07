@@ -54,12 +54,21 @@ module Agent
         gpu_name: gpu&.dig('name'), vram_total: gpu && (gpu['vram_total_bytes'] || gpu['vram_total']),
         last_seen_at: Time.current, connected_at: Time.current, offline_since: nil, offline_reason: nil
       )
+      log_agent_version
       Presence.record_hello!(@backend, message)
       OpenRequest.clear(@backend.id)
       Speeds.inherit!(@backend)
       Reconciliation.on_hello!(@backend, message)
       push_pause_state
       Presence.publish!(@backend, force: true)
+    end
+
+    def log_agent_version
+      status = @backend.agent_version_status
+      return if %i[current unknown].include?(status)
+
+      Rails.logger.warn("[Agent] backend #{@backend.id} runs agent #{@backend.agent_version}; Comfier ships " \
+                        "#{Version.expected} (#{status == :outdated ? 'update the agent' : 'update Comfier'})")
     end
 
     def hello_system_json(message)

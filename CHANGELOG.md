@@ -23,6 +23,12 @@ All notable changes to this project are documented here. The format follows
   Turned-off styles can't be picked for that server in the studio, jobs don't route there, and jobs for that style
   still waiting on the server move elsewhere (pinned ones fail with the reason).
 
+- **Servers**: Each agent server's Status card shows the agent version it runs, with **Update available** when this
+  Comfier ships a newer agent and **Newer than Comfier** when the server's agent is ahead and Comfier needs
+  updating. Admins see the same flag in Settings → Backends, the agent logs its version when ComfyUI starts, and the
+  Comfier panel in ComfyUI shows it. The agent is now version 0.2.0, so every agent installed before this reports as
+  out of date.
+
 ### Changed
 - **Settings**: `GENERATION_TIMEOUT_MINUTES` is removed; time limits are set under Settings instead.
 - **Servers**: The "Styles it runs" allowlist in server settings is replaced by the per-style toggles. Existing

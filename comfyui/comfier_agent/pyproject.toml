@@ -4,10 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "comfier-agent"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Comfier managed worker agent for ComfyUI"
 readme = "README.md"
 requires-python = ">=3.10"
+
+[tool.setuptools.dynamic]
+version = { attr = "comfier_agent.__version__" }
 
 [tool.setuptools.packages.find]
 where = ["."]

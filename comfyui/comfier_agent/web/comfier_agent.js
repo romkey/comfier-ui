@@ -67,6 +67,7 @@ function renderStatus(root, status) {
       conn.last_close_code ? el("span", { class: "muted", title: "Last close code" }, String(conn.last_close_code)) : null),
     el("div", { class: "row" }, el("span", { class: "muted" }, "Server name"), el("span", {}, status.backend_name || "—")),
     el("div", { class: "row" }, el("span", { class: "muted" }, "Comfier"), el("span", {}, status.frontend_url || "Not set")),
+    el("div", { class: "row" }, el("span", { class: "muted" }, "Agent version"), el("span", {}, status.agent_version || "—")),
   ];
   if (conn.connected) {
     rows.push(el("div", { class: "row" }, el("span", { class: "muted" }, "Taking jobs"),

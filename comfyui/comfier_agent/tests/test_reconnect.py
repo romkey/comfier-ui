@@ -2,6 +2,7 @@ import asyncio
 
 import pytest
 
+import comfier_agent
 from comfier_agent.connection import CLOSE_REASONS, TERMINAL_BUFFER_MAX, FrontendConnection
 from comfier_agent.models import DownloadState
 from comfier_agent.routes import apply_config, status_payload
@@ -121,6 +122,7 @@ async def test_revoked_key_close_is_explained_and_backs_off(agent):
     payload = status_payload(runtime)
     assert payload["connection"]["last_close_code"] == 4401
     assert payload["backend_name"] == runtime.config.backend_name
+    assert payload["agent_version"] == comfier_agent.__version__
 
 
 @pytest.mark.asyncio
