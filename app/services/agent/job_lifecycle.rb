@@ -264,8 +264,11 @@ module Agent
       failed!(backend, message.merge('stage' => 'outputs', 'error' => "Missing outputs: #{missing.to_sentence}"))
     end
 
-    # The job ran, so its timings still count; there's just nothing to show for it.
+    # The job ran, so its timings still count; there's just nothing to show for it. Agents before the
+    # interrupt fix reported a cancelled job as completed with no outputs.
     def no_outputs!(gen, backend, message)
+      return cancelled!(backend, message) if gen.agent_state == 'cancelling'
+
       text = [NO_OUTPUTS_MESSAGE, message['warning'].presence].compact.join(' Server said: ')
       return unless fail!(gen, text, from: ON_SERVER)
 

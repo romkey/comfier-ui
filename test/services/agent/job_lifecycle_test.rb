@@ -75,6 +75,15 @@ module Agent
       assert_equal 1, PerfSample.where(backend: @backend).count
     end
 
+    test 'an empty completion while cancelling counts as the cancel' do
+      gen = job_on(state: 'cancelling')
+      event('job.completed', gen, outputs: [], warning: 'workflow produced no output files')
+      gen.reload
+
+      assert_equal 'cancelled', gen.agent_state
+      assert_equal Generation::CANCELLED_MESSAGE, gen.error_message
+    end
+
     test 'duplicate and late events are harmless' do
       gen = job_on(state: 'accepted')
       event('job.accepted', gen)

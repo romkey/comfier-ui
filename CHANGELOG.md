@@ -22,7 +22,8 @@ All notable changes to this project are documented here. The format follows
   ComfyUI had written it (ComfyUI reports success first, and can unload models before saving history). The agent now
   waits up to two minutes for the history entry.
 - **Agent servers**: A completion with no outputs now fails the generation with the server's explanation instead of
-  showing it as succeeded with nothing to see.
+  showing it as succeeded with nothing to see. One that arrives while the job is being cancelled counts as the
+  cancel, since agents before the interrupt fix reported cancelled jobs that way.
 - **Agent servers**: Viewing a running agent job no longer queues HTTP polls that fail with "not an HTTP URI".
 - **Workflows**: Long runs on agent servers were always stopped after one hour. Admins now set time limits per
   page under Settings → **Time limits** (defaults: image 20 minutes, video 4 hours, audio 30 minutes, 3D 1 hour),
