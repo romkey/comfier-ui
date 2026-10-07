@@ -175,6 +175,17 @@ module Agent
       assert_equal 'dispatched', gen.reload.agent_state
     end
 
+    test 'a completion with only a preview has nothing to show' do
+      gen = job_on(state: 'uploading')
+      preview = uploaded_output(gen)
+      preview.update!(kind: Outputs::PREVIEW)
+      event('job.completed', gen, outputs: [{ 'upload_id' => preview.upload_id, 'role' => 'preview' }])
+      gen.reload
+
+      assert_predicate gen, :failed?
+      assert_not gen.output_poster.attached?
+    end
+
     test 'completion referencing an upload from another job fails the outputs stage' do
       gen = job_on(state: 'uploading')
       foreign = uploaded_output(job_on(state: 'completed'))

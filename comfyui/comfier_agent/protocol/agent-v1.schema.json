@@ -156,7 +156,10 @@
           "items": {
             "type": "object",
             "required": ["upload_id"],
-            "properties": { "upload_id": { "type": "string", "maxLength": 64 } }
+            "properties": {
+              "upload_id": { "type": "string", "maxLength": 64 },
+              "role": { "description": "\"preview\": a still of the job's 3D output, not an output itself", "const": "preview" }
+            }
           }
         },
         "duration_ms": { "type": "integer" },
@@ -198,7 +201,12 @@
         "inputs": { "type": "array" },
         "upload_url": { "type": "string" },
         "requires": { "type": "object" },
-        "timeout_s": { "type": "integer" }
+        "timeout_s": { "type": "integer" },
+        "previews": {
+          "description": "Output kinds the frontend accepts a preview image for (role=preview uploads)",
+          "type": "array",
+          "items": { "enum": ["3d"] }
+        }
       }
     },
     "job_cancel": {

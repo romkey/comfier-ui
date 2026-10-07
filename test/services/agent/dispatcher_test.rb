@@ -31,6 +31,7 @@ module Agent
       assert_equal job_id(gen), assign['job_id']
       assert_equal 'r_1', assign['request_id']
       assert_equal ['v1-5-pruned-emaonly-fp16.safetensors'], assign.dig('requires', 'models', 'checkpoints')
+      assert_equal %w[3d], assign['previews']
       assert_nil OpenRequest.get(@backend.id)
     end
 

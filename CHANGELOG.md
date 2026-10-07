@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- **3D results**: Agent servers render a 1024×1024 preview image of a job's first 3D model and upload it with the
+  results, so 3D work shows a picture in Results, on its page, and on shared and public pages instead of a file icon.
+  The agent draws it on the CPU with `trimesh` (which ComfyUI's 3D nodes usually install) and skips it when that
+  isn't available or the model can't be read; FBX isn't supported. Older agents and older Comfier servers carry on
+  without previews. `AGENT_MAX_PREVIEW_MB` (default 25) caps the upload.
 - **Message of the day**: Admins set a banner under Settings → Message of the day. It shows at the top of every
   page for signed-in users, who can dismiss it; changing the text shows it to everyone again.
 - **Servers**: Owners and admins turn individual styles on or off per server from the server page's Styles table.

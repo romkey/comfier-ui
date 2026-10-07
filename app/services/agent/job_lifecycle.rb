@@ -67,7 +67,7 @@ module Agent
 
       outputs, missing = uploaded_outputs(gen, backend, message)
       return missing_outputs!(backend, message, missing) if missing.any?
-      return no_outputs!(gen, backend, message) if outputs.none?
+      return no_outputs!(gen, backend, message) if outputs.all? { Outputs.preview?(it) }
 
       return unless gen.agent_transition!(from: ON_SERVER, to: 'completed', agent_phase: nil, agent_progress: 1.0,
                                           error_message: nil)

@@ -64,6 +64,12 @@ body { font-size: 14px; }
 
 .output-media { display: block; max-width: 100%; border-radius: var(--bs-border-radius); }
 .output-full .output-media { max-height: 75vh; margin-inline: auto; }
+.output-model-preview { position: relative; width: 100%; height: 100%; }
+.output-full .output-model-preview { width: fit-content; height: auto; max-width: 100%; margin-inline: auto; }
+.output-model-badge {
+  position: absolute; left: 0.35rem; bottom: 0.35rem; line-height: 1; padding: 0.2rem 0.35rem;
+  border-radius: var(--bs-border-radius-sm); background: rgba(0, 0, 0, 0.55); color: #fff; font-size: 0.7rem;
+}
 .output-file { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; padding: 1rem; max-width: 100%; }
 
 .studio-form summary { cursor: pointer; }

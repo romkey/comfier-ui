@@ -178,6 +178,36 @@ class GenerationsTest < ActionDispatch::IntegrationTest
     assert_select '.text-12', text: /Processing took/
   end
 
+  test 'a 3D result shows its preview image on the first model only' do
+    generation = generations(:alice_done)
+    generation.update!(kind: :model_3d)
+    %w[textured.glb white.glb].each do |name|
+      generation.outputs.attach(io: StringIO.new('glTF'), filename: name, content_type: 'model/gltf-binary')
+    end
+    generation.output_poster.attach(io: file_fixture('pixel.png').open, filename: 'textured_preview.png',
+                                    content_type: 'image/png')
+
+    get generation_path(generation)
+
+    assert_select '.output-model-preview img[alt="Preview of textured.glb"]', count: 1
+    assert_select '.output-model-badge', count: 1
+    assert_select '.output-file', text: /white\.glb/, count: 1
+
+    get generations_path
+
+    assert_select '.result-card .output-model-preview img', count: 1
+  end
+
+  test 'a 3D result without a preview shows the file' do
+    generation = generations(:alice_done)
+    generation.outputs.attach(io: StringIO.new('glTF'), filename: 'mesh.glb', content_type: 'model/gltf-binary')
+
+    get generation_path(generation)
+
+    assert_select '.output-model-preview', count: 0
+    assert_select '.output-file', text: /mesh\.glb/
+  end
+
   test 'shows why a generation failed' do
     get generation_path(generations(:alice_failed))
 

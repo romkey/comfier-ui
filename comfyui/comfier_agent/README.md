@@ -15,7 +15,9 @@ ComfyUI, and uploads the results. It also downloads the models Comfier asks for 
    cp -r /tmp/comfier-ui/comfyui/comfier_agent ComfyUI/custom_nodes/comfier_agent
    ```
 
-   `aiohttp` ships with ComfyUI; there's nothing else to install.
+   `aiohttp` ships with ComfyUI; there's nothing else to install. For preview images of 3D results (below), the agent
+   also uses `numpy`, `Pillow` and `trimesh`; ComfyUI's 3D nodes usually bring them, or `pip install trimesh` in
+   ComfyUI's environment.
 3. Give it Comfier's URL and the key, either as environment variables before ComfyUI starts:
 
    ```bash
@@ -87,6 +89,9 @@ server stops taking jobs and Comfier shows which path is low.
 - **Results**: only image, video, audio and 3D files (`png`, `jpg`, `webp`, `gif`, `mp4`, `webm`, `mov`, `wav`,
   `mp3`, `flac`, `ogg`, `glb`, `gltf`, `obj`, `ply`, `fbx`). Anything else a workflow writes is skipped with a
   warning.
+- **3D previews**: a 1024×1024 JPEG of a job's first 3D result (`glb`, `gltf`, `obj` or `ply`), for browsers that
+  can't show the model. It's rendered on the CPU in a separate process, gives up after two minutes, and is skipped
+  (with a warning in ComfyUI's log) when `trimesh` isn't installed or the model can't be read. FBX isn't supported.
 - **Timings**: how long each phase of a job took, used for Comfier's time estimates.
 - **Failures**: which node failed and ComfyUI's error, with out-of-memory errors called out.
 

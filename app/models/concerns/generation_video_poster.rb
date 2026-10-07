@@ -1,4 +1,5 @@
-# First-frame thumbnail for video results in grids and lists.
+# Still for results the browser can't show as a picture by themselves: the first frame of a video, or the
+# preview image an agent renders of a 3D model (see Agent::Outputs.attach!).
 module GenerationVideoPoster
   extend ActiveSupport::Concern
 
