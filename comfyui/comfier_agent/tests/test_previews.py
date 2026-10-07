@@ -66,6 +66,20 @@ async def test_a_preview_that_cant_be_rendered_leaves_the_job_alone(agent, tmp_p
 
 
 @pytest.mark.asyncio
+async def test_a_renderer_that_wont_start_leaves_the_job_alone(agent, monkeypatch):
+    async def no_spawn(*args, **kwargs):
+        raise OSError("cannot spawn")
+
+    monkeypatch.setattr(jobs.asyncio, "create_subprocess_exec", no_spawn)
+    await agent.start()
+    prompt_id = await agent.run_to_execution(previews=["3d"])
+    await agent.finish(prompt_id, {"mesh.glb": b"glTF...."})
+    (done,) = await agent.front.wait_for_types("job.completed", timeout=8)
+
+    assert [o["filename"] for o in done["outputs"]] == ["mesh.glb"]
+
+
+@pytest.mark.asyncio
 async def test_slow_renders_are_killed(tmp_path, monkeypatch):
     monkeypatch.setattr(jobs, "PREVIEW_SCRIPT", stub_renderer(tmp_path, "import time\ntime.sleep(30)\n"))
     monkeypatch.setattr(jobs, "PREVIEW_TIMEOUT_S", 0.2)
