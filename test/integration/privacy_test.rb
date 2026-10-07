@@ -97,4 +97,40 @@ class PrivacyTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_content
     assert_equal 'https://example.com/goodbye', PrivacyNotice.current.decline_url
   end
+
+  test 'agreeing from a page kept after declining shows the notice again instead of a 422' do
+    users(:alice).update!(privacy_accepted_version: nil)
+    sign_in_as users(:alice)
+
+    with_forgery_protection do
+      get privacy_path
+      stale_token = css_select("form[action='#{accept_privacy_path}'] input[name=authenticity_token]").first['value']
+      decline_token = css_select("form[action='#{decline_privacy_path}'] input[name=authenticity_token]").first['value']
+      post decline_privacy_path, params: { authenticity_token: decline_token }
+
+      post accept_privacy_path, params: { authenticity_token: stale_token }
+
+      assert_redirected_to privacy_path
+    end
+    assert_nil users(:alice).reload.privacy_accepted_version
+  end
+
+  test 'the notice page is not kept for the back button' do
+    users(:alice).update!(privacy_accepted_version: nil)
+    sign_in_as users(:alice)
+
+    get privacy_path
+
+    assert_equal 'no-store', response.headers['Cache-Control']
+  end
+
+  private
+
+  def with_forgery_protection
+    previous = ActionController::Base.allow_forgery_protection
+    ActionController::Base.allow_forgery_protection = true
+    yield
+  ensure
+    ActionController::Base.allow_forgery_protection = previous
+  end
 end

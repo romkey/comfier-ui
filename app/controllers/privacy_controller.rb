@@ -3,7 +3,15 @@ class PrivacyController < ApplicationController
   layout 'bare'
   skip_privacy_gate
 
+  # A notice page kept from an earlier session, say after I Do Not Agree and Back, carries a stale form token.
+  # Show the notice again rather than a 422.
+  rescue_from ActionController::InvalidAuthenticityToken do
+    redirect_to privacy_path, alert: 'That page had expired. Please choose again.', status: :see_other
+  end
+
   def show
+    # Don't let Back show a copy whose buttons belong to an earlier session.
+    response.headers['Cache-Control'] = 'no-store'
     @notice = PrivacyNotice.current
   end
 
