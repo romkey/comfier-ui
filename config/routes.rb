@@ -42,6 +42,9 @@ Rails.application.routes.draw do
   end
 
   resources :generations, path: 'results', only: %i[index show create destroy] do
+    collection do
+      post :bulk
+    end
     member do
       post :retry
       post :cancel
