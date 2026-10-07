@@ -26,7 +26,10 @@ class GenerationsController < ApplicationController # rubocop:disable Metrics/Cl
 
     @pagy, @generations = pagy(:offset, filtered_generations(scope), limit: PER_PAGE)
     # A bulk action (or a delete elsewhere) can empty the page we were on; fall back to the new last page.
-    redirect_to results_return_path(page: @pagy.last) if @pagy.page > @pagy.last
+    return unless @pagy.page > @pagy.last
+
+    flash.keep # carry the bulk action's notice through this extra hop
+    redirect_to results_return_path(page: @pagy.last)
   end
 
   # Applies one action to the results ticked in select mode on the Results page.

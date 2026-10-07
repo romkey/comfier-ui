@@ -141,6 +141,9 @@ class GenerationsTest < ActionDispatch::IntegrationTest
     follow_redirect!
 
     assert_redirected_to generations_path
+    follow_redirect!
+
+    assert_select '.alert', text: /Deleted 1 result\./
   end
 
   test 'bulk with nothing selected or an unknown operation changes nothing' do
