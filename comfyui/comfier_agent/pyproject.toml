@@ -14,7 +14,9 @@ where = ["."]
 include = ["comfier_agent*"]
 
 [project.optional-dependencies]
-test = ["pytest>=8.0", "pytest-asyncio>=0.24", "aiohttp>=3.9", "jsonschema>=4.18"]
+preview = ["numpy>=1.24", "pillow>=10.0", "trimesh>=4.0"]
+test = ["pytest>=8.0", "pytest-asyncio>=0.24", "aiohttp>=3.9", "jsonschema>=4.18", "numpy>=1.24", "pillow>=10.0",
+        "trimesh>=4.0"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

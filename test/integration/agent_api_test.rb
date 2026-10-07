@@ -12,10 +12,20 @@ class AgentApiTest < ActionDispatch::IntegrationTest
 
   def auth(token = @token) = { 'Authorization' => "Bearer #{token}" }
 
-  def upload(io, filename, content_type: 'application/octet-stream', job: @generation, token: @token)
-    file = Rack::Test::UploadedFile.new(io, content_type, original_filename: filename)
-    post api_agent_job_outputs_path("j_#{job.id}"), params: { file:, node: '9', filename: }, headers: auth(token)
+  def upload(io, filename, token: @token, **fields)
+    file = Rack::Test::UploadedFile.new(io, 'application/octet-stream', original_filename: filename)
+    post api_agent_job_outputs_path("j_#{@generation.id}"), params: { file:, node: '9', filename:, **fields },
+                                                            headers: auth(token)
   end
+
+  def upload_id = response.parsed_body['upload_id']
+
+  def complete(*upload_ids)
+    agent_message(@backend, { 'type' => 'job.completed', 'job_id' => "j_#{@generation.id}",
+                              'outputs' => upload_ids.map { { 'upload_id' => it } } })
+  end
+
+  def glb = tempfile("glTF\x02\x00\x00\x00".b)
 
   def tempfile(bytes, name = 'upload')
     file = Tempfile.new(name)
@@ -105,6 +115,59 @@ class AgentApiTest < ActionDispatch::IntegrationTest
 
     assert_equal [upload_id], @generation.generation_outputs.pluck(:upload_id)
     assert_equal 1, @generation.reload.outputs.count
+  end
+
+  test 'a 3D preview is stored as a preview, apart from an output of the same name' do
+    upload(file_fixture('pixel.png').open, 'mesh.png')
+    output_id = upload_id
+    upload(file_fixture('pixel.png').open, 'mesh.png', role: 'preview')
+
+    assert_response :success
+    assert_not_equal output_id, upload_id
+    assert_equal 'preview', GenerationOutput.find_by!(upload_id:).kind
+  end
+
+  test 'a preview must be an image' do
+    upload(glb, 'mesh_preview.glb', role: 'preview')
+
+    assert_response :unsupported_media_type
+    assert_includes response.parsed_body['error'], 'PNG, JPEG or WebP'
+  end
+
+  test 'oversized previews are refused' do
+    with_env('AGENT_MAX_PREVIEW_MB' => '0.00001') do
+      upload(file_fixture('pixel.png').open, 'mesh_preview.png', role: 'preview')
+    end
+
+    assert_response :content_too_large
+  end
+
+  test 'completing a 3D job keeps its preview as the poster of the first model' do
+    @generation.update!(kind: :model_3d)
+    upload(glb, 'mesh.glb')
+    first = upload_id
+    upload(file_fixture('pixel.png').open, 'mesh_preview.png', role: 'preview')
+    preview = upload_id
+    upload(glb, 'white.glb')
+    complete(first, preview, upload_id)
+    @generation.reload
+
+    assert_predicate @generation, :succeeded?
+    assert_equal %w[mesh.glb white.glb], @generation.outputs.map { it.filename.to_s }.sort
+    assert_predicate @generation.output_poster, :attached?
+    assert_equal 'image/png', @generation.output_poster.content_type
+  end
+
+  test 'a preview without a 3D output is dropped' do
+    upload(file_fixture('pixel.png').open, 'a.png')
+    output = upload_id
+    upload(file_fixture('pixel.png').open, 'a_preview.png', role: 'preview')
+    preview_key = GenerationOutput.find_by!(upload_id:).storage_key
+    perform_enqueued_jobs { complete(output, upload_id) }
+
+    assert_equal 1, @generation.reload.outputs.count
+    assert_not @generation.output_poster.attached?
+    assert_not ActiveStorage::Blob.exists?(key: preview_key)
   end
 
   test 'another server cannot upload to this job' do

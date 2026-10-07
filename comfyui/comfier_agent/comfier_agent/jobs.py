@@ -7,6 +7,7 @@ import logging
 import mimetypes
 import os
 import re
+import sys
 import tempfile
 import time
 import traceback
@@ -58,10 +59,39 @@ CANCEL_GRACE_S = 10
 # model in between, so the entry can lag well behind a long job.
 HISTORY_WAIT_S = 120
 HISTORY_POLL_S = 0.5
+# Still image of a 3D result, rendered in its own process so a bad mesh can't take ComfyUI down with it.
+PREVIEW_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "preview.py")
+PREVIEW_TIMEOUT_S = 120
 
 
 def output_kind(filename: str) -> str | None:
     return OUTPUT_KINDS.get(os.path.splitext(filename)[1].lower())
+
+
+async def render_preview(model_path: str, filename: str) -> str | None:
+    """A JPEG of the model, or None when it can't be drawn (no trimesh, unreadable file, too slow)."""
+    out = tempfile.NamedTemporaryFile(delete=False, suffix=".jpg")
+    out.close()
+    rendered = False
+    proc = await asyncio.create_subprocess_exec(
+        sys.executable, PREVIEW_SCRIPT, model_path, out.name,
+        stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.PIPE,
+    )
+    try:
+        _, err = await asyncio.wait_for(proc.communicate(), PREVIEW_TIMEOUT_S)
+        rendered = proc.returncode == 0 and os.path.getsize(out.name) > 0
+        if not rendered:
+            detail = (err.decode(errors="replace").strip().splitlines() or ["no output"])[-1]
+            LOG.warning("no preview for %s: %s", filename, detail)
+    except asyncio.TimeoutError:
+        LOG.warning("no preview for %s: rendering took over %ss", filename, PREVIEW_TIMEOUT_S)
+    finally:
+        if proc.returncode is None:
+            proc.kill()
+            await proc.wait()
+        if not rendered:
+            os.remove(out.name)
+    return out.name if rendered else None
 
 
 def is_oom(*texts: str | None) -> bool:
@@ -419,7 +449,8 @@ class JobManager:
             files, skipped = split_allowed(collect_output_files(entry.get("outputs") or {}))
             if not files:
                 LOG.warning("prompt %s finished without any output files", ctx.prompt_id)
-            uploaded_out = await self._upload_outputs(ctx, files, upload_url, auth)
+            previews = "3d" in (assign.get("previews") or [])
+            uploaded_out = await self._upload_outputs(ctx, files, upload_url, auth, previews=previews)
 
             duration_ms = int((time.time() - t0) * 1000)
             msg = {
@@ -459,10 +490,14 @@ class JobManager:
                 traceback_tail=traceback.format_exc(),
             )
 
-    async def _upload_outputs(self, ctx: JobContext, files: list[dict[str, str]], upload_url: str, auth: str):
-        """Upload each result, keeping its file on disk until the frontend has it or we give up."""
+    async def _upload_outputs(
+        self, ctx: JobContext, files: list[dict[str, str]], upload_url: str, auth: str, *, previews: bool = False
+    ):
+        """Upload each result, keeping its file on disk until the frontend has it or we give up. When the
+        frontend takes previews, the first 3D result also gets a still image of it."""
         timings = ctx.timings
         uploaded = []
+        preview_tried = False
         if files:
             timings.mark_upload_start()
         for idx, fdesc in enumerate(files):
@@ -472,6 +507,7 @@ class JobManager:
             path = await self._download_output_file(fdesc)
             name = fdesc["filename"]
             kind, mime = output_kind(name), mime_for(name)
+            preview_path = None
             try:
                 resp = await upload_file_multipart(
                     self.comfy.session,
@@ -485,6 +521,9 @@ class JobManager:
                     should_stop=lambda: ctx.cancel_requested,
                 )
                 file_bytes = os.path.getsize(path)
+                if previews and kind == "3d" and not preview_tried:
+                    preview_tried = True
+                    preview_path = await render_preview(path, name)
             except UploadError as exc:
                 if ctx.cancel_requested:
                     raise JobCancelled() from exc
@@ -501,9 +540,51 @@ class JobManager:
                 "mime": mime,
                 "bytes": file_bytes,
             })
+            if preview_path:
+                entry = await self._upload_preview(ctx, fdesc, preview_path, upload_url, auth)
+                if entry:
+                    timings.output_bytes += entry["bytes"]
+                    uploaded.append(entry)
         if files:
             timings.mark_upload_end()
         return uploaded
+
+    async def _upload_preview(self, ctx: JobContext, fdesc: dict[str, str], path: str, upload_url: str, auth: str):
+        """A preview that doesn't make it is skipped; the model it shows is what the job is for."""
+        name = f"{os.path.splitext(fdesc['filename'])[0]}_preview.jpg"
+        mime = "image/jpeg"
+        try:
+            resp = await upload_file_multipart(
+                self.comfy.session,
+                upload_url,
+                auth_header=auth,
+                fields={
+                    "job_id": ctx.job_id, "node": fdesc["node"], "filename": name, "mime": mime, "kind": "image",
+                    "role": "preview",
+                },
+                file_path=path,
+                filename=name,
+                mime=mime,
+                retry_for_s=self.config.upload_retry_s,
+                should_stop=lambda: ctx.cancel_requested,
+            )
+            file_bytes = os.path.getsize(path)
+        except UploadError as exc:
+            if ctx.cancel_requested:
+                raise JobCancelled() from exc
+            LOG.warning("preview %s not uploaded: %s", name, exc)
+            return None
+        finally:
+            os.remove(path)
+        return {
+            "upload_id": resp["upload_id"],
+            "node": fdesc["node"],
+            "kind": "image",
+            "role": "preview",
+            "filename": name,
+            "mime": mime,
+            "bytes": file_bytes,
+        }
 
     async def _download_output_file(self, fdesc: dict[str, str]) -> str:
         tmp = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(fdesc["filename"])[1])

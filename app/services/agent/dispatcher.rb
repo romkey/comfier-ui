@@ -81,7 +81,8 @@ module Agent
           'node_types' => requirements.node_types,
           'models' => requirements.models.group_by { it['folder'] }.transform_values { |ms| ms.pluck('filename') }
         },
-        'timeout_s' => timeout_s(job)
+        'timeout_s' => timeout_s(job),
+        'previews' => %w[3d]
       }
     end
 

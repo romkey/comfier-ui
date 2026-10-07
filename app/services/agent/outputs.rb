@@ -23,6 +23,8 @@ module Agent
     TEXT_3D = %w[gltf obj ply].freeze
     INLINE_TYPES = KINDS.slice('image', 'video', 'audio').values.flat_map(&:values).uniq.freeze
     THUMBNAIL_TYPES = %w[image/png image/jpeg image/webp].freeze
+    # A still the agent renders of a 3D result, kept as the generation's poster rather than as an output.
+    PREVIEW = 'preview'
     MAX_FILENAME = 120
     UNSAFE_CHARS = /[\u0000-\u001f\u007f\u200e\u200f\u202a-\u202e\u2066-\u2069]/
 
@@ -32,6 +34,7 @@ module Agent
 
     def max_file_bytes = ENV.fetch('AGENT_MAX_OUTPUT_FILE_GB', 4).to_f.gigabytes
     def max_job_bytes = ENV.fetch('AGENT_MAX_OUTPUT_JOB_GB', 10).to_f.gigabytes
+    def max_preview_bytes = ENV.fetch('AGENT_MAX_PREVIEW_MB', 25).to_f.megabytes
 
     def sanitize_filename(name)
       base = File.basename(name.to_s.tr('\\', '/')).gsub(UNSAFE_CHARS, '').strip
@@ -84,12 +87,30 @@ module Agent
 
     def inline?(content_type) = INLINE_TYPES.include?(content_type)
 
+    def preview?(output) = output.kind == PREVIEW
+
+    def model?(attachment) = KINDS['3d'].value?(attachment.content_type.to_s)
+
+    # Attached in upload order, so the first 3D output is the one the agent drew the preview of.
     def attach!(gen, outputs)
-      outputs.each do |output|
+      previews, files = outputs.sort_by(&:id).partition { preview?(it) }
+      files.each do |output|
         blob = ActiveStorage::Blob.find_by(key: output.storage_key)
         gen.outputs.attach(blob) if blob && gen.outputs.none? { it.blob_id == blob.id }
       end
+      attach_preview!(gen, previews.first) if files.any? { it.kind == '3d' }
+      discard_unused_previews!(previews)
       discard_earlier_attempts!(gen, outputs)
+    end
+
+    def attach_preview!(gen, preview)
+      blob = preview && ActiveStorage::Blob.find_by(key: preview.storage_key)
+      gen.output_poster.attach(blob) if blob && !gen.output_poster.attached?
+    end
+
+    def discard_unused_previews!(previews)
+      ActiveStorage::Blob.where(key: previews.filter_map(&:storage_key)).where.missing(:attachments)
+                         .find_each(&:purge_later)
     end
 
     # Uploads from attempts that didn't finish are never attached, so their files would otherwise stay
