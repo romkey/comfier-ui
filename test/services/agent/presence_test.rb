@@ -76,6 +76,50 @@ module Agent
       assert_nil @backend.reload.offline_since
     end
 
+    test 'a status after a gap clears the offline marker so the lease grace starts over' do
+      bring_online!(@backend)
+      gen = Generation.create!(user: users(:alice), workflow: workflows(:sd_image), prompt: 'x', kind: :video,
+                               status: :running, backend: @backend, agent_state: 'running', agent_attempt: 1,
+                               filled_workflow_json: { '1' => {} }, dispatched_at: Time.current)
+      start = Time.current
+      travel_to(start + AgentTiming::OFFLINE_AFTER_S + 1) do
+        OfflineSweepJob.perform_now
+        agent_status(@backend, state: 'busy', accepting: false)
+
+        assert_nil @backend.reload.offline_since
+      end
+      # Hours later, one late status must not cost the job its lease straight away.
+      travel_to(start + 2.hours) do
+        OfflineSweepJob.perform_now
+        LeaseSweepJob.perform_now
+
+        assert_equal 'running', gen.reload.agent_state
+      end
+    end
+
+    test 'job progress keeps a busy server online while its status is late' do
+      bring_online!(@backend, state: 'busy', accepting: false)
+      start = Time.current
+      travel_to(start + 20.seconds) do
+        agent_message(@backend,
+                      { 'type' => 'job.progress', 'job_id' => 'j_0', 'phase' => 'running', 'progress' => 0.2 })
+      end
+      travel_to(start + AgentTiming::OFFLINE_AFTER_S + 10) do
+        assert Presence.online?(@backend)
+        assert_equal 'busy', Presence.agent_state(@backend)
+      end
+    end
+
+    test 'job progress does not bring back a server that already went offline' do
+      bring_online!(@backend)
+      travel_to(Time.current + AgentTiming::OFFLINE_AFTER_S + 1) do
+        agent_message(@backend,
+                      { 'type' => 'job.progress', 'job_id' => 'j_0', 'phase' => 'running', 'progress' => 0.2 })
+
+        assert_not Presence.online?(@backend)
+      end
+    end
+
     test 'status is persisted at most every 30 seconds' do
       bring_online!(@backend, state: 'idle')
       agent_status(@backend, state: 'busy')

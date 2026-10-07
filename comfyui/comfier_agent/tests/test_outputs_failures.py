@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 
-from comfier_agent import jobs
+from comfier_agent import jobs, runtime
 from comfier_agent.jobs import failure_message, output_kind, split_allowed, validation_error_text
 from comfier_agent.transfer import UploadError, upload_file_multipart
 
@@ -202,3 +202,17 @@ async def test_upload_retries_transient_errors_with_a_fresh_body(tmp_path):
     finally:
         await runner.cleanup()
     await asyncio.sleep(0)
+
+
+@pytest.mark.asyncio
+async def test_slow_comfyui_does_not_hold_up_status_while_a_job_runs(agent, monkeypatch):
+    monkeypatch.setattr(runtime, "STATUS_REFRESH_TIMEOUT_S", 0.2)
+    await agent.start(heartbeat_seconds=0.1)
+    await agent.run_to_execution()
+    agent.comfy.stats_delay_s = 3
+    start = len(agent.front.messages)
+    await asyncio.sleep(1.0)
+    statuses = [m for m in agent.front.messages[start:] if m.get("type") == "status"]
+    assert len(statuses) >= 2
+    assert statuses[-1]["state"] == "busy"
+    assert statuses[-1]["comfier_jobs"][0]["job_id"] == "j_1"
