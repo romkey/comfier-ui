@@ -10,7 +10,6 @@ class PrivacyNotice < ApplicationRecord
     • PDX Hackerspace is a space for tolerance and respect. Everyone is welcome.
     • No harassment or discrimination, including intimidation, stalking, harassing images or recordings, and unwelcome sexual attention.
     • That covers what you make here too. Don't create or share anything that harasses, demeans or targets a person or group.
-    • Admins can warn you, remove your access, or expel you from PDX Hackerspace if you break it.
 
     Your privacy, in short — Comfier stores what you submit and what it produces on this server:
     • Your prompts, reference images and results are kept here so you can find them again.
