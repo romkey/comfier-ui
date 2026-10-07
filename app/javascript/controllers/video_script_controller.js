@@ -3,6 +3,9 @@ import { Controller } from "@hotwired/stimulus"
 // "Write a script" on the Video page. Starts a VideoScriptJob, polls it while chat writes, and
 // replaces the description with the script. The server retries once on failure; Cancel stops waiting
 // and tells the server to drop the reply; Undo puts the original description back.
+//
+// Each click is a run. Cancel ends the current run, and any response that comes back for an ended
+// run is ignored, including the create response when Cancel lands before the request has an id.
 export default class extends Controller {
   static targets = ["prompt", "start", "spinner", "status", "cancel", "undo"]
   static values = { url: String }
@@ -12,10 +15,11 @@ export default class extends Controller {
   connect() {
     this.form = this.element.closest("form")
     this.idleText = this.statusTarget.textContent.trim()
+    this.run = 0
   }
 
   disconnect() {
-    this.stopPolling()
+    this.endRun()
   }
 
   async start() {
@@ -26,24 +30,26 @@ export default class extends Controller {
       return
     }
 
+    const run = this.endRun() // a fresh run; responses for any earlier one are ignored
     this.original = this.promptTarget.value
     this.show("working", "Asking chat to write a script…")
     try {
       const response = await this.request(this.urlValue, { method: "POST", body: this.specs() })
       const data = await response.json()
+      if (run !== this.run) return this.drop(response.ok && data.id)
       if (!response.ok) return this.show("idle", data.error || "Couldn't start the script.")
       this.id = data.id
-      this.poll()
+      this.poll(run)
     } catch {
-      this.show("idle", "Couldn't reach Comfier. Try again.")
+      if (run === this.run) this.show("idle", "Couldn't reach Comfier. Try again.")
     }
   }
 
-  async cancel() {
+  cancel() {
     const id = this.id
-    this.stopPolling()
+    this.endRun()
     this.show("idle", "Cancelled. Your description is unchanged.")
-    if (id) this.request(`${this.urlValue}/${id}`, { method: "DELETE" }).catch(() => {})
+    this.drop(id)
   }
 
   undo() {
@@ -53,29 +59,28 @@ export default class extends Controller {
     this.show("idle", "Restored your original description.")
   }
 
-  poll() {
-    this.timer = setTimeout(() => this.check(), this.constructor.POLL_MS)
+  poll(run) {
+    this.timer = setTimeout(() => this.check(run), this.constructor.POLL_MS)
   }
 
-  async check() {
-    const id = this.id
+  async check(run) {
     let data
     try {
-      const response = await this.request(`${this.urlValue}/${id}`)
+      const response = await this.request(`${this.urlValue}/${this.id}`)
       if (!response.ok) throw new Error(response.statusText)
       data = await response.json()
     } catch {
-      if (this.id === id) this.poll()
+      if (run === this.run) this.poll(run)
       return
     }
-    if (this.id !== id) return // cancelled or restarted while this check was in flight
+    if (run !== this.run) return // cancelled or restarted while this check was in flight
 
     switch (data.status) {
       case "pending":
-        return this.poll()
+        return this.poll(run)
       case "retrying":
         this.show("working", "Chat couldn't write the script. Trying once more…")
-        return this.poll()
+        return this.poll(run)
       case "succeeded":
         this.id = undefined
         this.setPrompt(data.script)
@@ -89,9 +94,16 @@ export default class extends Controller {
     }
   }
 
-  stopPolling() {
+  // Ends the current run and returns the number of the next one.
+  endRun() {
     clearTimeout(this.timer)
     this.id = undefined
+    return ++this.run
+  }
+
+  // Tells the server to throw away a request's reply.
+  drop(id) {
+    if (id) this.request(`${this.urlValue}/${id}`, { method: "DELETE" }).catch(() => {})
   }
 
   // idle: button ready · working: spinner + Cancel, description locked · done: Undo offered
