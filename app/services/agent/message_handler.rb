@@ -21,6 +21,7 @@ module Agent
     def call(message)
       type = message['type']
       @backend.reload
+      Presence.touch!(@backend) if type == 'job.progress'
       if (event = JOB_EVENTS[type]) then JobLifecycle.public_send(event, @backend, message)
       elsif (event = DOWNLOAD_EVENTS[type]) then DownloadLifecycle.public_send(event, @backend, message)
       else dispatch_other(type, message)
@@ -121,8 +122,11 @@ module Agent
       ServerPause.route_waiting!(@backend)
     end
 
+    # A status after OfflineSweepJob marked the server offline means it's back. Leaving offline_since
+    # set would make the next late status expire its leases at once instead of after LEASE_GRACE_S.
     def persist_status!(message)
       attrs = { last_seen_at: Time.current }
+      attrs.update(offline_since: nil, offline_reason: nil) if @backend.offline_since
       if @backend.last_status_persisted_at.nil? || @backend.last_status_persisted_at <= STATUS_PERSIST_EVERY.ago
         attrs[:last_status_json] = message
         attrs[:last_status_persisted_at] = Time.current
@@ -141,8 +145,11 @@ module Agent
     end
 
     # Also squares the agent's jobs with ours: one requeued here while it ran gets taken back, and one
-    # that ended or moved elsewhere gets cancelled, so neither leaves the server stuck busy.
+    # that ended or moved elsewhere gets cancelled, so neither leaves the server stuck busy. Only a busy
+    # status counts: older agents kept listing their last job after it ended.
     def update_job_progress!(message)
+      return unless message['state'] == 'busy'
+
       Array(message['comfier_jobs']).each do |job|
         id = GenerationAgent.id_from_job_id(job['job_id'])
         next unless id

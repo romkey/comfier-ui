@@ -16,29 +16,42 @@
   </div>
 </div>
 
+<% filters = { kind: @kind, status: @status, shared: ('1' if @shared), public: ('1' if @public) } %>
+<% filter_path = ->(**changes) { generations_path(filters.merge(changes).compact) } %>
+<% active_filters = filters.values.compact.size %>
+
 <div class="d-flex flex-wrap gap-2 mb-2">
-  <%= link_to 'All', generations_path(status: @status), class: ['filter-chip', { active: @kind.nil? }] %>
+  <%= link_to 'All', filter_path.(kind: nil), class: ['filter-chip', { active: @kind.nil? }] %>
   <% GenerationKind.all.each do |kind| %>
     <% count = @kind_counts.fetch(kind.key, 0) %>
-    <%= link_to generations_path(kind: kind.key, status: @status),
+    <%= link_to filter_path.(kind: kind.key),
                 class: ['filter-chip', { active: @kind == kind.key, muted: count.zero? }] do %>
       <i class="bi <%= kind.icon %>" aria-hidden="true"></i> <%= kind.label %> <span class="num"><%= count %></span>
     <% end %>
   <% end %>
   <span class="vr mx-1"></span>
-  <%= link_to generations_path(kind: @kind, status: @status == 'running' ? nil : 'running'),
+  <%= link_to filter_path.(status: @status == 'running' ? nil : 'running'),
               class: ['filter-chip', { active: @status == 'running', muted: @status_counts.fetch('running', 0).zero? }] do %>
     Generating <span class="num"><%= @status_counts.fetch('running', 0) %></span>
   <% end %>
-  <%= link_to generations_path(kind: @kind, status: @status == 'failed' ? nil : 'failed'),
+  <%= link_to filter_path.(status: @status == 'failed' ? nil : 'failed'),
               class: ['filter-chip', { active: @status == 'failed', danger: failed.positive?, muted: failed.zero? }] do %>
     Failed <span class="num"><%= failed %></span>
   <% end %>
+  <span class="vr mx-1"></span>
+  <%= link_to filter_path.(shared: @shared ? nil : '1'),
+              class: ['filter-chip', { active: @shared, muted: @shared_count.zero? }] do %>
+    <i class="bi bi-share" aria-hidden="true"></i> Shared <span class="num"><%= @shared_count %></span>
+  <% end %>
+  <%= link_to filter_path.(public: @public ? nil : '1'),
+              class: ['filter-chip', { active: @public, muted: @public_count.zero? }] do %>
+    <i class="bi bi-link-45deg" aria-hidden="true"></i> Public link <span class="num"><%= @public_count %></span>
+  <% end %>
 </div>
 
-<% if @kind || @status %>
+<% if active_filters.positive? %>
   <div class="text-12 text-secondary mb-3">
-    <%= [@kind, @status].compact.size %> <%= 'filter'.pluralize([@kind, @status].compact.size) %> active ·
+    <%= active_filters %> <%= 'filter'.pluralize(active_filters) %> active ·
     <%= link_to 'Clear', generations_path %>
   </div>
 <% else %>
@@ -46,8 +59,38 @@
 <% end %>
 
 <% if @generations.any? %>
-  <div id="results_generations" class="result-grid result-grid-lg">
-    <%= render partial: 'generations/generation', collection: @generations %>
+  <div data-controller="result-select" data-result-select-active-class="selecting">
+    <%= form_with url: bulk_generations_path, id: 'results_bulk_form', class: 'result-select-bar mb-3',
+                  data: { result_select_target: 'form', action: 'submit->result-select#confirm' } do %>
+      <% filters.compact.merge(page: (@pagy.page if @pagy.page > 1)).compact.each do |name, value| %>
+        <%= hidden_field_tag name, value, id: nil %>
+      <% end %>
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm"
+                data-result-select-target="toggle" data-action="result-select#toggle">Select</button>
+        <div class="result-select-actions d-flex flex-wrap align-items-center gap-2">
+          <span class="text-12 text-secondary"><span class="num" data-result-select-target="count">0</span> selected</span>
+          <button type="button" class="btn btn-link btn-sm text-12 p-0" data-action="result-select#selectAll">All</button>
+          <button type="button" class="btn btn-link btn-sm text-12 p-0" data-action="result-select#selectNone">None</button>
+          <span class="vr mx-1"></span>
+          <% [['share', 'Share'], ['unshare', 'Unshare'], ['link', 'Create links'], ['unlink', 'Revoke links']].each do |op, label| %>
+            <%= button_tag label, name: 'operation', value: op, class: 'btn btn-outline-secondary btn-sm',
+                                  disabled: true, data: { result_select_target: 'action' } %>
+          <% end %>
+          <%= button_tag name: 'operation', value: 'delete', class: 'btn btn-outline-danger btn-sm',
+                         disabled: true, data: { result_select_target: 'action' } do %>
+            <i class="bi bi-trash" aria-hidden="true"></i> Delete
+          <% end %>
+        </div>
+      </div>
+      <p class="result-select-actions text-12 text-secondary mt-2 mb-0">
+        Sharing and public links only apply to finished results.
+      </p>
+    <% end %>
+
+    <div id="results_generations" class="result-grid result-grid-lg" data-action="change->result-select#refresh">
+      <%= render partial: 'generations/generation', collection: @generations %>
+    </div>
   </div>
   <% if @pagy.last > 1 %>
     <nav class="mt-3 d-flex justify-content-center" aria-label="Pages"><%== @pagy.series_nav(:bootstrap) %></nav>

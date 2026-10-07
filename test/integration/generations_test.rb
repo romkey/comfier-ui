@@ -63,6 +63,100 @@ class GenerationsTest < ActionDispatch::IntegrationTest
     assert_select '.result-shared .bi-share-fill', count: 1
   end
 
+  test 'results can be filtered to shared work and to work with a public link' do
+    generations(:alice_done).share!
+    generations(:alice_failed).update!(public_token: 'tok')
+
+    get generations_path, params: { shared: '1' }
+
+    assert_select '.result-card', count: 1
+    assert_select '.result-card', text: /A lighthouse at dusk/
+    assert_select 'a.filter-chip.active', text: /Shared/
+
+    get generations_path, params: { public: '1', kind: 'video' }
+
+    assert_select '.result-card', count: 1
+    assert_select '.result-card', text: /A dancing robot/
+    assert_select '.text-12', text: /2 filters active/
+  end
+
+  test 'results has a select mode with a checkbox per card' do
+    get generations_path
+
+    assert_select 'button', text: 'Select'
+    assert_select 'form#results_bulk_form'
+    assert_select '.result-card input[type=checkbox][name="ids[]"][form=results_bulk_form]', count: 3
+  end
+
+  test 'bulk sharing and public links skip unfinished work' do
+    done = generations(:alice_done)
+    running = generations(:alice_running)
+
+    post bulk_generations_path, params: { operation: 'share', ids: [done.id, running.id], shared: '1' }
+
+    assert_redirected_to generations_path(shared: '1')
+    assert_equal 'Shared 1 result with everyone.', flash[:notice]
+    assert_predicate done.reload, :shared?
+    assert_not_predicate running.reload, :shared?
+
+    post bulk_generations_path, params: { operation: 'link', ids: [done.id, running.id] }
+
+    assert_predicate done.reload, :publicly_linked?
+    assert_not_predicate running.reload, :publicly_linked?
+
+    post bulk_generations_path, params: { operation: 'unlink', ids: [done.id] }
+
+    assert_not_predicate done.reload, :publicly_linked?
+
+    post bulk_generations_path, params: { operation: 'unshare', ids: [done.id] }
+
+    assert_not_predicate done.reload, :shared?
+  end
+
+  test 'bulk delete only touches the user\'s own results' do
+    ids = [generations(:alice_done).id, generations(:alice_failed).id, generations(:bob_done).id]
+
+    assert_difference('Generation.count', -2) do
+      post bulk_generations_path, params: { operation: 'delete', ids: }
+    end
+
+    assert_equal 'Deleted 2 results.', flash[:notice]
+    assert Generation.exists?(generations(:bob_done).id)
+  end
+
+  test 'a page past the end falls back to the last page and keeps the filters' do
+    get generations_path, params: { kind: 'image', page: 5 }
+
+    assert_redirected_to generations_path(kind: 'image')
+  end
+
+  test 'emptying the last page with a bulk action lands on the new last page' do
+    base = generations(:alice_done).attributes.except('id', 'created_at', 'updated_at')
+    Generation.insert_all(Array.new(GenerationsController::PER_PAGE - 2) { base }) # rubocop:disable Rails/SkipsModelValidations
+    oldest = users(:alice).generations.recent.last
+
+    post bulk_generations_path, params: { operation: 'delete', ids: [oldest.id], page: 2 }
+
+    assert_redirected_to generations_path(page: 2)
+    follow_redirect!
+
+    assert_redirected_to generations_path
+    follow_redirect!
+
+    assert_select '.alert', text: /Deleted 1 result\./
+  end
+
+  test 'bulk with nothing selected or an unknown operation changes nothing' do
+    post bulk_generations_path, params: { operation: 'delete' }
+
+    assert_redirected_to generations_path
+    assert_equal 'Select at least one result.', flash[:alert]
+
+    assert_no_difference('Generation.count') do
+      post bulk_generations_path, params: { operation: 'explode', ids: [generations(:alice_done).id] }
+    end
+  end
+
   test 'results can be filtered by kind and status' do
     get generations_path, params: { kind: 'video' }
 
@@ -104,6 +198,36 @@ class GenerationsTest < ActionDispatch::IntegrationTest
     assert_select 'dd', text: '42'
     assert_select '.text-12', text: /Started processing/
     assert_select '.text-12', text: /Processing took/
+  end
+
+  test 'a 3D result shows its preview image on the first model only' do
+    generation = generations(:alice_done)
+    generation.update!(kind: :model_3d)
+    %w[textured.glb white.glb].each do |name|
+      generation.outputs.attach(io: StringIO.new('glTF'), filename: name, content_type: 'model/gltf-binary')
+    end
+    generation.output_poster.attach(io: file_fixture('pixel.png').open, filename: 'textured_preview.png',
+                                    content_type: 'image/png')
+
+    get generation_path(generation)
+
+    assert_select '.output-model-preview img[alt="Preview of textured.glb"]', count: 1
+    assert_select '.output-model-badge', count: 1
+    assert_select '.output-file', text: /white\.glb/, count: 1
+
+    get generations_path
+
+    assert_select '.result-card .output-model-preview img', count: 1
+  end
+
+  test 'a 3D result without a preview shows the file' do
+    generation = generations(:alice_done)
+    generation.outputs.attach(io: StringIO.new('glTF'), filename: 'mesh.glb', content_type: 'model/gltf-binary')
+
+    get generation_path(generation)
+
+    assert_select '.output-model-preview', count: 0
+    assert_select '.output-file', text: /mesh\.glb/
   end
 
   test 'shows why a generation failed' do

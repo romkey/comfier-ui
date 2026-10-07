@@ -61,6 +61,29 @@ module Agent
       assert_equal 1, PerfSample.where(backend: @backend).count
     end
 
+    test 'completion without outputs fails with the server warning but keeps the timings' do
+      gen = job_on(state: 'uploading', structure_hash: 'sd15')
+      event('job.completed', gen, outputs: [], warning: 'workflow produced no output files',
+                                  timings: { 'execute_ms' => 12_000 })
+      gen.reload
+
+      assert_predicate gen, :failed?
+      assert_equal 'failed', gen.agent_state
+      assert_includes gen.error_message, 'without saving any output'
+      assert_includes gen.error_message, 'workflow produced no output files'
+      assert_equal 'failed', gen.job_attempts.last.outcome
+      assert_equal 1, PerfSample.where(backend: @backend).count
+    end
+
+    test 'an empty completion while cancelling counts as the cancel' do
+      gen = job_on(state: 'cancelling')
+      event('job.completed', gen, outputs: [], warning: 'workflow produced no output files')
+      gen.reload
+
+      assert_equal 'cancelled', gen.agent_state
+      assert_equal Generation::CANCELLED_MESSAGE, gen.error_message
+    end
+
     test 'duplicate and late events are harmless' do
       gen = job_on(state: 'accepted')
       event('job.accepted', gen)
@@ -92,9 +115,9 @@ module Agent
       assert_equal 1, gen.outputs.count
     end
 
-    def status_with(*gens, **)
+    def status_with(*gens, state: 'busy', accepting: false)
       jobs = gens.map { { 'job_id' => it.is_a?(String) ? it : job_id(it), 'state' => 'running', 'progress' => 0.2 } }
-      agent_status(@backend, state: 'busy', accepting: false, comfier_jobs: jobs, **)
+      agent_status(@backend, state:, accepting:, comfier_jobs: jobs)
     end
 
     test 'a status naming a job queued here takes it back as running' do
@@ -127,6 +150,15 @@ module Agent
       assert_equal 4, @socket.of_type('job.cancel').size
     end
 
+    test 'an idle status still naming an old job is ignored' do
+      requeued = job_on(state: 'queued', dispatched_at: nil)
+      ended = job_on(state: 'failed')
+      status_with(requeued, ended, state: 'idle', accepting: true)
+
+      assert_equal 'queued', requeued.reload.agent_state
+      assert_empty @socket.of_type('job.cancel')
+    end
+
     test 'a status naming a job running here changes nothing' do
       gen = job_on(state: 'running')
       status_with(gen)
@@ -141,6 +173,17 @@ module Agent
       event('job.accepted', gen)
 
       assert_equal 'dispatched', gen.reload.agent_state
+    end
+
+    test 'a completion with only a preview has nothing to show' do
+      gen = job_on(state: 'uploading')
+      preview = uploaded_output(gen)
+      preview.update!(kind: Outputs::PREVIEW)
+      event('job.completed', gen, outputs: [{ 'upload_id' => preview.upload_id, 'role' => 'preview' }])
+      gen.reload
+
+      assert_predicate gen, :failed?
+      assert_not gen.output_poster.attached?
     end
 
     test 'completion referencing an upload from another job fails the outputs stage' do

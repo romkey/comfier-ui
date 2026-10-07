@@ -172,7 +172,10 @@ class AgentSocketTest < ActionDispatch::IntegrationTest
     assert_equal 'r_1', assign['request_id']
 
     client.send_json(type: 'job.accepted', job_id: assign['job_id'])
-    client.send_json(type: 'job.completed', job_id: assign['job_id'], outputs: [], timings: { execute_ms: 1000 })
+    output = gen.generation_outputs.create!(upload_id: 'u_socket', backend: @backend, node: '9', filename: 'out.png',
+                                            kind: 'image', bytes: 1)
+    client.send_json(type: 'job.completed', job_id: assign['job_id'], outputs: [{ upload_id: output.upload_id }],
+                     timings: { execute_ms: 1000 })
     wait_until { gen.reload.succeeded? }
 
     assert_equal 'completed', gen.agent_state

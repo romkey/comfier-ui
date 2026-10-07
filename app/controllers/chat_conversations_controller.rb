@@ -54,8 +54,10 @@ class ChatConversationsController < ApplicationController
 
     conversation = current_user.chat_conversations.find(params[:id])
     conversation.destroy!
-    latest = current_user.chat_conversations.recent_first.first
-    redirect_to latest ? chat_path(latest) : chats_path, notice: 'Conversation deleted.', status: :see_other
+    next_conversation = current_user.chat_conversations.find_by(id: params[:return_to]) ||
+                        current_user.chat_conversations.recent_first.first
+    redirect_to next_conversation ? chat_path(next_conversation) : chats_path,
+                notice: 'Conversation deleted.', status: :see_other
   end
 
   private

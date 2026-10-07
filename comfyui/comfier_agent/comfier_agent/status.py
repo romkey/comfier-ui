@@ -72,6 +72,7 @@ class StatusTracker:
         snap.uptime_s = int(time.time() - self.started_at)
         snap.disk_free = disk_free_by_label(self.config)
         snap.accepting_reason = None
+        snap.comfier_jobs = [active_job] if active_job else []
 
         if not comfy_reachable:
             snap.state = "error"
@@ -128,7 +129,6 @@ class StatusTracker:
         if not disk_ok:
             snap.state = "disk_low"
         elif active_job:
-            snap.comfier_jobs = [active_job]
             snap.state = "busy"
         elif fr > 0 or fp > 0:
             if not self.config.accept_when_local_busy:
@@ -152,6 +152,19 @@ class StatusTracker:
             snap.accepting_reason = "Local ComfyUI queue has work (share queue is off)"
         elif snap.state == "busy":
             snap.accepting_reason = "Running a Comfier job"
+
+    def mark_unresponsive(self, active_job: ComfierJobStatus | None) -> None:
+        """ComfyUI didn't answer in time. While our job runs that's expected, so stay busy and keep
+        the last resource figures; otherwise it's an error."""
+        snap = self.snapshot
+        snap.comfier_jobs = [active_job] if active_job else []
+        snap.accepting = False
+        if active_job:
+            snap.state = "busy"
+            snap.accepting_reason = "Running a Comfier job"
+        else:
+            snap.state = "error"
+            snap.accepting_reason = "ComfyUI isn't responding"
 
     def to_message(self) -> dict[str, Any]:
         s = self.snapshot

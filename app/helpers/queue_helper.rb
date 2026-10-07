@@ -1,4 +1,3 @@
-
 module QueueHelper
   # distance_of_time_in_words already hedges most spans ("about 1 hour", "less than a minute").
   def queue_wait_label(seconds)
@@ -20,7 +19,15 @@ module QueueHelper
       end
     else
       safe_join([tag.span('Waiting', class: 'text-12 text-secondary'),
-                 (tag.div(agent_progress_line(generation), class: 'text-12 text-secondary') if generation.agent_job?)])
+                 (tag.div(queue_wait_reason(generation), class: 'text-12 text-secondary') if generation.agent_job?)])
     end
+  end
+
+  # The job page's progress line, minus its second person when the viewer isn't the job's owner.
+  def queue_wait_reason(generation)
+    line = agent_progress_line(generation)
+    return line if generation.user_id == current_user.id || line != Agent::Router::WAITING_FOR_OWN
+
+    "Waiting for the owner's server to come online"
   end
 end

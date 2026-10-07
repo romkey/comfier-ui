@@ -251,4 +251,12 @@ class PollGenerationJobTest < ActiveJob::TestCase
     assert_equal(['comfier_00001_.png'], @generation.outputs.map { it.filename.to_s })
     assert_equal 'fresh-png', @generation.outputs.first.download
   end
+
+  test 'leaves agent jobs alone since agent servers have no URL to poll' do
+    @generation.update!(agent_state: 'running')
+
+    assert_no_enqueued_jobs(only: PollGenerationJob) { PollGenerationJob.perform_now(@generation) }
+    assert_predicate @generation.reload, :running?
+    assert_not_requested :get, @history_url
+  end
 end

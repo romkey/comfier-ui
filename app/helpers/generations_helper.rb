@@ -50,30 +50,43 @@ module GenerationsHelper # rubocop:disable Metrics/ModuleLength
     end
   end
 
-  def video_poster_url(generation)
+  def output_poster_url(generation)
     return unless generation.output_poster.attached?
 
     rails_blob_path(generation.output_poster, disposition: 'inline')
   end
 
+  # The still that goes with one output: a video's first frame, or the preview of the 3D model it shows.
+  def output_poster_for(generation, attachment)
+    return unless attachment.content_type.to_s.start_with?('video/') || previewed_model?(generation, attachment)
+
+    output_poster_url(generation)
+  end
+
+  # Agents preview the first 3D output they upload, and outputs are attached in upload order.
+  def previewed_model?(generation, attachment)
+    generation.output_poster.attached? && Agent::Outputs.model?(attachment) &&
+      generation.outputs.select { Agent::Outputs.model?(it) }.min_by(&:id) == attachment
+  end
+
   def result_media_preview(generation)
     output = primary_result_output(generation)
     return video_poster_preview(generation) if video_result_with_poster?(generation, output)
-    return output_preview(output, poster_url: video_poster_url(generation)) if output
+    return output_preview(output, poster_url: output_poster_for(generation, output)) if output
 
     result_placeholder_preview(generation)
   end
 
   def public_output_preview(generation, attachment, index, controls: false)
     url = public_share_output_path(generation.public_token, index)
-    poster = video_poster_url(generation) if attachment.content_type.to_s.start_with?('video/')
+    poster = output_poster_for(generation, attachment)
     case attachment.content_type
     when %r{\Aimage/} then image_tag(url, alt: '', class: 'output-media', loading: 'lazy')
     when %r{\Avideo/}
       video_tag(url, class: 'output-media', controls:, poster:, muted: !controls, loop: true, playsinline: true,
                      preload: 'metadata')
     when %r{\Aaudio/} then audio_tag(url, controls: true, class: 'w-100', preload: 'metadata')
-    else file_output(attachment)
+    else poster ? model_preview(attachment, poster) : file_output(attachment)
     end
   end
 
@@ -85,7 +98,19 @@ module GenerationsHelper # rubocop:disable Metrics/ModuleLength
       video_tag(url, class: 'output-media', controls:, poster: poster_url, muted: !controls, loop: true,
                      playsinline: true, preload: 'metadata')
     when %r{\Aaudio/} then audio_tag(url, controls: true, class: 'w-100', preload: 'metadata')
-    else file_output(attachment)
+    else poster_url ? model_preview(attachment, poster_url) : file_output(attachment)
+    end
+  end
+
+  def model_preview(attachment, poster_url)
+    tag.div(class: 'output-model-preview') do
+      safe_join([
+                  image_tag(poster_url, alt: "Preview of #{attachment.filename}", class: 'output-media',
+                                        loading: 'lazy'),
+                  tag.span(class: 'output-model-badge', title: '3D model preview') do
+                    safe_join([tag.i(class: 'bi bi-box me-1', aria: { hidden: true }), '3D'])
+                  end
+                ])
     end
   end
 
@@ -103,7 +128,7 @@ module GenerationsHelper # rubocop:disable Metrics/ModuleLength
   def video_poster_preview(generation)
     tag.div(class: 'result-video-poster') do
       safe_join([
-                  image_tag(video_poster_url(generation), alt: '', class: 'output-media', loading: 'lazy'),
+                  image_tag(output_poster_url(generation), alt: '', class: 'output-media', loading: 'lazy'),
                   tag.span(class: 'result-play', aria: { hidden: true }) { tag.i(class: 'bi bi-play-fill') }
                 ])
     end
@@ -132,6 +157,7 @@ module GenerationsHelper # rubocop:disable Metrics/ModuleLength
 
     generation.outputs.find { |output| output.content_type.to_s.start_with?('video/') } ||
       generation.outputs.find { |output| output.content_type.to_s.start_with?('image/') } ||
+      generation.outputs.find { previewed_model?(generation, it) } ||
       generation.outputs.first
   end
 

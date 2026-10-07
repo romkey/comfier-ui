@@ -21,6 +21,8 @@ from comfier_agent.resources import build_resources
 from comfier_agent.status import StatusTracker
 
 LOG = logging.getLogger("comfier_agent")
+# Well under Comfier's 30 s offline window, so a slow ComfyUI never holds up the heartbeat.
+STATUS_REFRESH_TIMEOUT_S = 5
 
 
 class AgentRuntime:
@@ -193,15 +195,24 @@ class AgentRuntime:
 
     async def _publish_status(self, force: bool = False) -> None:
         accepting_before = self.status.snapshot.accepting
+        active_job = self.jobs.active_job_status() if self.jobs else None
         try:
             self._comfy_ok = True
-            await self.status.refresh(
-                self.comfy,
-                comfier_prompt_ids=self.jobs.prompt_ids if self.jobs else set(),
-                active_job=self.jobs.active_job_status() if self.jobs else None,
-                downloads=self.models.status_entries() if self.models else [],
-                comfy_reachable=self._comfy_ok,
+            await asyncio.wait_for(
+                self.status.refresh(
+                    self.comfy,
+                    comfier_prompt_ids=self.jobs.prompt_ids if self.jobs else set(),
+                    active_job=active_job,
+                    downloads=self.models.status_entries() if self.models else [],
+                    comfy_reachable=self._comfy_ok,
+                ),
+                timeout=STATUS_REFRESH_TIMEOUT_S,
             )
+        except asyncio.TimeoutError:
+            # ComfyUI can take minutes to answer mid-step. Comfier drops a server that goes ~30 s
+            # without a status, so report what we know rather than wait.
+            LOG.info("ComfyUI took over %ss to report its status", STATUS_REFRESH_TIMEOUT_S)
+            self.status.mark_unresponsive(active_job)
         except Exception:
             self._comfy_ok = False
             self.status.snapshot.state = "error"

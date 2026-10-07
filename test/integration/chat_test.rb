@@ -66,6 +66,49 @@ class ChatTest < ActionDispatch::IntegrationTest
     assert_match(/disabled="disabled"/, @response.body)
   end
 
+  test 'messages have copy buttons carrying the raw text' do
+    sign_in_as users(:alice)
+
+    get chat_path(chat_conversations(:alice_chat))
+
+    assert_response :success
+    assert_select "[data-controller='clipboard'][data-clipboard-text-value=?] button[aria-label='Copy prompt']",
+                  'What is Comfier?'
+    assert_select "[data-controller='clipboard'][data-clipboard-text-value=?] button[aria-label='Copy response']",
+                  'Comfier queues ComfyUI workflows for you.'
+  end
+
+  test 'sidebar lists a delete button for each conversation' do
+    sign_in_as users(:alice)
+    conversation = chat_conversations(:alice_chat)
+
+    get chat_path(conversation)
+
+    assert_select 'form[action=?] button.chat-conversation-delete', chat_path(conversation, return_to: conversation.id)
+  end
+
+  test 'deleting another conversation from the sidebar returns to the current one' do
+    sign_in_as users(:alice)
+    current = chat_conversations(:alice_chat)
+    other = users(:alice).chat_conversations.create!(title: 'Scratch', model: 'gpt-test')
+
+    assert_difference -> { ChatConversation.count }, -1 do
+      delete chat_path(other, return_to: current.id)
+    end
+
+    assert_redirected_to chat_path(current)
+  end
+
+  test 'members cannot delete other users conversations' do
+    sign_in_as users(:alice)
+
+    assert_no_difference -> { ChatConversation.count } do
+      delete chat_path(chat_conversations(:bob_chat))
+    end
+
+    assert_response :not_found
+  end
+
   test 'unconfigured LiteLLM shows a calm unavailable page' do
     ENV['LITELLM_URL'] = ''
     sign_in_as users(:alice)

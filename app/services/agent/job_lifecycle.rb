@@ -14,6 +14,7 @@ module Agent
     MODEL_NOT_IN_LIST = /value_not_in_list|not in list|not in \[/i
     OOM_MESSAGE = 'The server ran out of GPU memory. Try a smaller size or fewer frames.'
     LOST_MESSAGE = 'The server went offline while running this job.'
+    NO_OUTPUTS_MESSAGE = 'The workflow finished without saving any output. Does it have a Save node?'
     STAGE_MESSAGES = {
       'inputs' => "The server couldn't download this job's inputs: %s",
       'outputs' => "The server couldn't upload the results: %s"
@@ -66,6 +67,7 @@ module Agent
 
       outputs, missing = uploaded_outputs(gen, backend, message)
       return missing_outputs!(backend, message, missing) if missing.any?
+      return no_outputs!(gen, backend, message) if outputs.all? { Outputs.preview?(it) }
 
       return unless gen.agent_transition!(from: ON_SERVER, to: 'completed', agent_phase: nil, agent_progress: 1.0,
                                           error_message: nil)
@@ -260,6 +262,18 @@ module Agent
 
     def missing_outputs!(backend, message, missing)
       failed!(backend, message.merge('stage' => 'outputs', 'error' => "Missing outputs: #{missing.to_sentence}"))
+    end
+
+    # The job ran, so its timings still count; there's just nothing to show for it. Agents before the
+    # interrupt fix reported a cancelled job as completed with no outputs.
+    def no_outputs!(gen, backend, message)
+      return cancelled!(backend, message) if gen.agent_state == 'cancelling'
+
+      text = [NO_OUTPUTS_MESSAGE, message['warning'].presence].compact.join(' Server said: ')
+      return unless fail!(gen, text, from: ON_SERVER)
+
+      finish_attempt!(gen, backend, 'failed', timings: message['timings'])
+      after_job!(backend, gen)
     end
 
     def oom?(message) = [message['error'], message['exception_type']].join(' ').match?(OOM)

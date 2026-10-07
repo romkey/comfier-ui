@@ -34,7 +34,8 @@ module Api
         return render_error(*problem) if problem
 
         verdict = ::Agent::Outputs.check(file.tempfile, params[:filename].presence || file.original_filename)
-        return render_error(:unsupported_media_type, verdict.error) unless verdict.ok
+        problem = content_problem(file, verdict)
+        return render_error(*problem) if problem
 
         render json: { upload_id: store_output!(generation, file, verdict) }
       end
@@ -46,6 +47,22 @@ module Api
         return [:content_too_large, 'file is too large'] if file.size > ::Agent::Outputs.max_file_bytes
 
         [:content_too_large, 'job outputs are too large'] if over_job_limit?(generation, file)
+      end
+
+      def content_problem(file, verdict)
+        return [:unsupported_media_type, verdict.error] unless verdict.ok
+
+        preview_problem(file, verdict) if preview?
+      end
+
+      def preview? = params[:role] == ::Agent::Outputs::PREVIEW
+
+      def preview_problem(file, verdict)
+        unless ::Agent::Outputs::THUMBNAIL_TYPES.include?(verdict.content_type)
+          return [:unsupported_media_type, 'previews must be PNG, JPEG or WebP images']
+        end
+
+        [:content_too_large, 'preview is too large'] if file.size > ::Agent::Outputs.max_preview_bytes
       end
 
       def scoped_generation
@@ -68,13 +85,16 @@ module Api
                                                       content_type: verdict.content_type, identify: false)
         (existing || GenerationOutput.new(upload_id:)).update!(
           generation:, backend: current_backend, node: params[:node].to_s.first(64), filename: verdict.filename,
-          kind: verdict.kind, mime: verdict.content_type, bytes: blob.byte_size, storage_key: blob.key
+          kind: preview? ? ::Agent::Outputs::PREVIEW : verdict.kind, mime: verdict.content_type,
+          bytes: blob.byte_size, storage_key: blob.key
         )
         upload_id
       end
 
       def upload_id_for(generation, node, filename)
-        "u_#{Digest::SHA256.hexdigest([generation.id, generation.agent_attempt, node, filename].join(':'))[0, 16]}"
+        parts = [generation.id, generation.agent_attempt, node, filename]
+        parts << ::Agent::Outputs::PREVIEW if preview?
+        "u_#{Digest::SHA256.hexdigest(parts.join(':'))[0, 16]}"
       end
 
       def render_error(status, message) = render(json: { error: message }, status:)
