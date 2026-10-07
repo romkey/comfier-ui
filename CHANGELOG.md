@@ -40,6 +40,9 @@ All notable changes to this project are documented here. The format follows
   allowlists are converted to the equivalent turned-off styles, and styles added later now run everywhere by default.
 
 ### Fixed
+- Agreeing to the Code of Conduct and privacy notice from a stale copy of the page, such as going Back after
+  **I Do Not Agree** signed you out, showed a 422 error. It now shows the notice again, and the page is no longer
+  kept for the Back button.
 - **Agent servers**: Long jobs were marked lost partway through, then cancelled on the server, which older agents
   reported as completed with nothing to show. A status after a short gap now clears the server's offline marker
   (before, the next late status expired its jobs at once instead of after the two-minute grace), job progress counts
