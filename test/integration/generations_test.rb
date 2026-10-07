@@ -124,6 +124,28 @@ class GenerationsTest < ActionDispatch::IntegrationTest
     assert Generation.exists?(generations(:bob_done).id)
   end
 
+  test 'a page past the end falls back to the last page and keeps the filters' do
+    get generations_path, params: { kind: 'image', page: 5 }
+
+    assert_redirected_to generations_path(kind: 'image')
+  end
+
+  test 'emptying the last page with a bulk action lands on the new last page' do
+    base = generations(:alice_done).attributes.except('id', 'created_at', 'updated_at')
+    Generation.insert_all(Array.new(GenerationsController::PER_PAGE - 2) { base }) # rubocop:disable Rails/SkipsModelValidations
+    oldest = users(:alice).generations.recent.last
+
+    post bulk_generations_path, params: { operation: 'delete', ids: [oldest.id], page: 2 }
+
+    assert_redirected_to generations_path(page: 2)
+    follow_redirect!
+
+    assert_redirected_to generations_path
+    follow_redirect!
+
+    assert_select '.alert', text: /Deleted 1 result\./
+  end
+
   test 'bulk with nothing selected or an unknown operation changes nothing' do
     post bulk_generations_path, params: { operation: 'delete' }
 
