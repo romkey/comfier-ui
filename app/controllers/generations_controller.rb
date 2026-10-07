@@ -4,6 +4,15 @@ class GenerationsController < ApplicationController # rubocop:disable Metrics/Cl
   include GenerationReferenceReuse
 
   PER_PAGE = 24
+  # Which of the selected results each bulk action applies to, and what it does to each. Sharing and links only
+  # make sense for finished work, so those skip anything still running or failed.
+  BULK_OPERATIONS = {
+    'delete' => [->(scope) { scope }, :destroy!],
+    'share' => [->(scope) { scope.succeeded.where(shared_at: nil) }, :share!],
+    'unshare' => [->(scope) { scope.where.not(shared_at: nil) }, :unshare!],
+    'link' => [->(scope) { scope.succeeded.where(public_token: nil) }, :create_public_link!],
+    'unlink' => [->(scope) { scope.publicly_linked }, :revoke_public_link!]
+  }.freeze
 
   before_action :set_generation, only: %i[show destroy retry update_share create_public_link revoke_public_link]
   before_action :set_cancellable_generation, only: :cancel
@@ -14,11 +23,22 @@ class GenerationsController < ApplicationController # rubocop:disable Metrics/Cl
     @status_counts = scope.group(:status).count
     @kind = params[:kind].presence_in(GenerationKind.keys)
     @status = params[:status].presence_in(Generation.statuses.keys)
+    @shared_count, @public_count = sharing_counts(scope)
+    @shared = params[:shared] == '1'
+    @public = params[:public] == '1'
 
-    filtered = scope.recent.with_attached_outputs.with_attached_output_poster.includes(:workflow)
-    filtered = filtered.where(kind: @kind) if @kind
-    filtered = filtered.where(status: @status) if @status
-    @pagy, @generations = pagy(:offset, filtered, limit: PER_PAGE)
+    @pagy, @generations = pagy(:offset, filtered_generations(scope), limit: PER_PAGE)
+  end
+
+  # Applies one action to the results ticked in select mode on the Results page.
+  def bulk
+    operation = params[:operation].presence_in(BULK_OPERATIONS.keys)
+    generations = current_user.generations.where(id: Array(params[:ids]))
+    return redirect_to(results_return_path, alert: 'Select at least one result.', status: :see_other) \
+      if operation.nil? || generations.none?
+
+    count = apply_bulk(operation, generations)
+    redirect_to results_return_path, notice: bulk_notice(operation, count), status: :see_other
   end
 
   def show
@@ -88,6 +108,44 @@ class GenerationsController < ApplicationController # rubocop:disable Metrics/Cl
   end
 
   private
+
+  def filtered_generations(scope)
+    filtered = scope.recent.with_attached_outputs.with_attached_output_poster.includes(:workflow)
+    filtered = filtered.where(kind: @kind) if @kind
+    filtered = filtered.where(status: @status) if @status
+    filtered = filtered.where.not(shared_at: nil) if @shared
+    filtered = filtered.publicly_linked if @public
+    filtered
+  end
+
+  def sharing_counts(scope)
+    [scope.where.not(shared_at: nil).count, scope.publicly_linked.count]
+  end
+
+  def apply_bulk(operation, generations)
+    applicable, action = BULK_OPERATIONS.fetch(operation)
+    count = 0
+    applicable.call(generations).find_each do |generation|
+      generation.public_send(action)
+      count += 1
+    end
+    count
+  end
+
+  def bulk_notice(operation, count)
+    results = "#{count} #{'result'.pluralize(count)}"
+    {
+      'delete' => "Deleted #{results}.",
+      'share' => "Shared #{results} with everyone.",
+      'unshare' => "Stopped sharing #{results}.",
+      'link' => "Created public links for #{results}.",
+      'unlink' => "Revoked public links for #{results}."
+    }.fetch(operation)
+  end
+
+  def results_return_path
+    generations_path(params.permit(:kind, :status, :shared, :public, :page).to_h.compact_blank)
+  end
 
   def set_generation
     @generation = current_user.generations.find(params[:id])

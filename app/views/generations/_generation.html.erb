@@ -1,5 +1,11 @@
 <%= tag.article id: dom_id(generation), class: ['result-card', "result-#{generation_result_status(generation)}"] do %>
   <% output = primary_result_output(generation) %>
+  <%# Hidden until the Results page is in select mode; covers the card so a click ticks instead of opening it. %>
+  <label class="result-select" title="Select">
+    <%= check_box_tag 'ids[]', generation.id, false, id: nil, form: 'results_bulk_form', class: 'form-check-input',
+                                                    aria: { label: "Select #{generation.title}" },
+                                                    data: { result_select_target: 'checkbox' } %>
+  </label>
   <div class="result-media">
     <%= result_media_preview(generation) %>
     <% if output && generation.outputs.size > 1 %>
