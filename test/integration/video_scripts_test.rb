@@ -22,6 +22,15 @@ class VideoScriptsTest < ActionDispatch::IntegrationTest
     assert_select "button[formaction='#{video_script_path}']", text: /Write a script/
   end
 
+  test 'pressing Enter in the form still generates rather than writing a script' do
+    get '/video'
+
+    first_submit = css_select('form.studio-form button[type=submit]').first
+
+    assert_nil first_submit['formaction']
+    assert_equal 'Generate', first_submit.text.strip
+  end
+
   test 'the image page does not offer a script' do
     get '/image'
 
