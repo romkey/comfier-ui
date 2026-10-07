@@ -21,13 +21,12 @@ class GenerationsController < ApplicationController # rubocop:disable Metrics/Cl
     scope = current_user.generations
     @kind_counts = scope.group(:kind).count
     @status_counts = scope.group(:status).count
-    @kind = params[:kind].presence_in(GenerationKind.keys)
-    @status = params[:status].presence_in(Generation.statuses.keys)
     @shared_count, @public_count = sharing_counts(scope)
-    @shared = params[:shared] == '1'
-    @public = params[:public] == '1'
+    set_filters
 
     @pagy, @generations = pagy(:offset, filtered_generations(scope), limit: PER_PAGE)
+    # A bulk action (or a delete elsewhere) can empty the page we were on; fall back to the new last page.
+    redirect_to results_return_path(page: @pagy.last) if @pagy.page > @pagy.last
   end
 
   # Applies one action to the results ticked in select mode on the Results page.
@@ -109,6 +108,13 @@ class GenerationsController < ApplicationController # rubocop:disable Metrics/Cl
 
   private
 
+  def set_filters
+    @kind = params[:kind].presence_in(GenerationKind.keys)
+    @status = params[:status].presence_in(Generation.statuses.keys)
+    @shared = params[:shared] == '1'
+    @public = params[:public] == '1'
+  end
+
   def filtered_generations(scope)
     filtered = scope.recent.with_attached_outputs.with_attached_output_poster.includes(:workflow)
     filtered = filtered.where(kind: @kind) if @kind
@@ -143,8 +149,9 @@ class GenerationsController < ApplicationController # rubocop:disable Metrics/Cl
     }.fetch(operation)
   end
 
-  def results_return_path
-    generations_path(params.permit(:kind, :status, :shared, :public, :page).to_h.compact_blank)
+  def results_return_path(page: params[:page])
+    filters = params.permit(:kind, :status, :shared, :public).to_h
+    generations_path(filters.merge(page: (page if page.to_i > 1)).compact_blank)
   end
 
   def set_generation
