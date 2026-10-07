@@ -1,33 +1,46 @@
-# Starts a chat that writes a video script from the studio's prompt, length and frame size.
+# "Write a script" on the Video page: starts a VideoScriptJob, reports its progress, and cancels it.
 class VideoScriptsController < ApplicationController
   include ChatPage
 
-  before_action :load_chat_availability
+  before_action :load_chat_availability, only: :create
+  before_action :set_script_request, only: %i[show destroy]
+
+  def show
+    render json: @script_request
+  end
 
   def create
-    return redirect_to video_studio_path, alert: 'Chat is not available.', status: :see_other unless chat_available?
+    return render json: { error: 'Chat is not available.' }, status: :service_unavailable unless chat_available?
 
-    workflow = Workflow.enabled.where(kind: 'video').find(script_params[:workflow_id])
-    script = Chat::VideoScript.new(prompt: script_params[:prompt], workflow:,
-                                   aspect_ratio: script_params[:aspect_ratio], duration: script_params[:duration])
+    script = build_script
     if script.prompt.blank?
-      return redirect_to video_studio_path(workflow_id: workflow.id),
-                         alert: 'Describe the video first, then ask for a script.', status: :see_other
+      return render json: { error: 'Describe the video first, then ask for a script.' },
+                    status: :unprocessable_content
     end
 
-    redirect_to chat_path(start_conversation(script)), status: :see_other
+    render json: start_request(script), status: :created
+  end
+
+  def destroy
+    @script_request.with_lock { @script_request.cancelled! if @script_request.working? }
+    render json: @script_request
   end
 
   private
 
-  def start_conversation(script)
-    conversation, reply = ChatConversation.transaction do
-      conversation = current_user.chat_conversations.create!(model: default_chat_model, title: script.title)
-      conversation.chat_messages.create!(role: :user, content: script.message)
-      [conversation, conversation.chat_messages.create!(role: :assistant, status: :pending, content: '')]
-    end
-    ChatReplyJob.perform_later(reply.id)
-    conversation
+  def build_script
+    workflow = Workflow.enabled.where(kind: 'video').find(script_params[:workflow_id])
+    Chat::VideoScript.new(prompt: script_params[:prompt], workflow:,
+                          aspect_ratio: script_params[:aspect_ratio], duration: script_params[:duration])
+  end
+
+  def start_request(script)
+    current_user.video_script_requests.stale.delete_all
+    current_user.video_script_requests.create!(message: script.message).tap { VideoScriptJob.perform_later(it.id) }
+  end
+
+  def set_script_request
+    @script_request = current_user.video_script_requests.find(params[:id])
   end
 
   def script_params

@@ -48,9 +48,11 @@ The **Image**, **Video**, **Audio** and **3D Model** pages all work the same way
 If your job might run on a server that belongs to someone else, a note under the form says so. That server's owner
 can see your prompt, images and results.
 
-On the **Video** page, when Chat is available, **Write a script** under the description opens a new chat that turns
-your idea into a shot-by-shot script for the chosen length and shape. The reply ends with a ready-made prompt you can
-paste back into **Describe what you want**, and you can keep chatting to refine it.
+On the **Video** page, when Chat is available, **Write a script** under the description asks Chat to turn your idea
+into a script for the chosen **Length** and **Shape**. You stay on the page: a spinner shows while it writes, and
+**Cancel** stops waiting and leaves your description as it was. When the script is ready it replaces
+**Describe what you want**; edit it if you like, or choose **Undo** to get your original back. If Chat fails, Comfier
+tries once more and tells you if that fails too.
 
 Your request appears under **Recent** straight away and updates by itself as it goes from queued to generating to
 done. You can leave the page; the work carries on without you.
@@ -114,7 +116,7 @@ text chat with your organization's models — not ComfyUI generation.
 - Delete a conversation from the **⋯** menu at the top of the thread.
 
 Admins may show a notice at the top of Chat (for example, linking to a more capable chat system elsewhere). Configure
-that under **Settings → Chat**, along with the message **Write a script** on the Video page sends (its
+that under **Settings → Chat**, along with the message **Write a script** on the Video page sends to the default chat model (its
 `{{prompt}}`, `{{duration}}`, `{{width}}`, `{{height}}`, `{{aspect_ratio}}` and `{{orientation}}` tokens are filled
 from the form).
 

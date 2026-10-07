@@ -1,9 +1,4 @@
-<%# The session-wide token, not a per-form one: Write a script posts this form to a second action. %>
-<%= form_with model: generation, url: generations_path, class: 'studio-form card card-body', data: { turbo: false },
-              authenticity_token: form_authenticity_token do |f| %>
-  <%# Enter submits through the first submit button; keep that Generate, not Write a script further down. %>
-  <%= f.button 'Generate', type: 'submit', class: 'visually-hidden', tabindex: -1, aria: { hidden: true } %>
-
+<%= form_with model: generation, url: generations_path, class: 'studio-form card card-body', data: { turbo: false } do |f| %>
   <% if generation.errors.any? %>
     <div class="alert alert-danger py-2 text-13">
       <%= generation.errors.full_messages.to_sentence %>
@@ -66,17 +61,27 @@
   <% end %>
 
   <% if workflow.uses?(:prompt) %>
-    <div class="mb-3">
+    <% scriptable = kind.key == 'video' && LiteLlm::Client.configured? %>
+    <div class="mb-3" <%= tag.attributes(data: { controller: 'video-script', video_script_url_value: video_scripts_path }) if scriptable %>>
       <%= f.label :prompt, 'Describe what you want', class: 'form-label' %>
       <%= f.text_area :prompt, rows: 5, class: 'form-control', required: true, autofocus: true,
-                               placeholder: prompt_placeholder(kind) %>
-      <% if kind.key == 'video' && LiteLlm::Client.configured? %>
-        <div class="d-flex align-items-center gap-2 mt-2">
-          <%= f.button type: 'submit', formaction: video_script_path, formnovalidate: true,
-                       class: 'btn btn-outline-secondary btn-sm' do %>
+                               placeholder: prompt_placeholder(kind),
+                               data: scriptable ? { video_script_target: 'prompt' } : {} %>
+      <% if scriptable %>
+        <div class="d-flex flex-wrap align-items-center gap-2 mt-2 text-12">
+          <button type="button" class="btn btn-outline-secondary btn-sm"
+                  data-video-script-target="start" data-action="video-script#start">
             <i class="bi bi-journal-text me-1" aria-hidden="true"></i>Write a script
-          <% end %>
-          <span class="text-12 text-secondary">Opens a chat that turns this idea into a shot-by-shot script.</span>
+          </button>
+          <span class="spinner-border spinner-border-sm text-secondary d-none" aria-hidden="true"
+                data-video-script-target="spinner"></span>
+          <span class="text-secondary" role="status" aria-live="polite" data-video-script-target="status">
+            Chat rewrites your idea as a script for this length and shape.
+          </span>
+          <button type="button" class="btn btn-outline-secondary btn-sm d-none"
+                  data-video-script-target="cancel" data-action="video-script#cancel">Cancel</button>
+          <button type="button" class="btn btn-link btn-sm p-0 text-12 d-none"
+                  data-video-script-target="undo" data-action="video-script#undo">Undo</button>
         </div>
       <% end %>
     </div>

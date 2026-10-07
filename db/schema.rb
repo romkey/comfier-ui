@@ -545,6 +545,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_200000) do
     t.index ["provider", "uid"], name: "index_users_on_provider_and_uid", unique: true
   end
 
+  create_table "video_script_requests", force: :cascade do |t|
+    t.integer "attempts", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.text "error"
+    t.text "message", null: false
+    t.text "script"
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["user_id"], name: "index_video_script_requests_on_user_id"
+  end
+
   create_table "workflow_availabilities", force: :cascade do |t|
     t.bigint "backend_id", null: false
     t.datetime "created_at", null: false
@@ -637,6 +649,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_200000) do
   add_foreign_key "source_credentials", "users", column: "owner_user_id"
   add_foreign_key "transfer_stats", "backends"
   add_foreign_key "users", "backends", column: "preferred_backend_id", on_delete: :nullify
+  add_foreign_key "video_script_requests", "users"
   add_foreign_key "workflow_availabilities", "backends"
   add_foreign_key "workflow_availabilities", "workflows"
   add_foreign_key "workflow_models", "workflows"

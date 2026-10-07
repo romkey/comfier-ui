@@ -53,8 +53,8 @@
 
   <div class="h-section-label mt-4 mb-2">Video script prompt</div>
   <p class="text-13 text-secondary mb-3">
-    <strong>Write a script</strong> on the Video page starts a chat with this message. These tokens are filled in
-    from the studio form:
+    <strong>Write a script</strong> on the Video page sends this message to the default chat model and replaces the
+    member's description with the reply, so ask for the script only. These tokens are filled in from the studio form:
     <% Chat::VideoScript::TOKENS.each do |token| %>
       <code>{{<%= token %>}}</code><%= token == Chat::VideoScript::TOKENS.last ? '.' : ',' %>
     <% end %>
