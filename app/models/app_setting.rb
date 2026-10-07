@@ -15,11 +15,18 @@ class AppSetting < ApplicationRecord
   TIMEOUT_ATTRS = GenerationKind.keys.index_with { :"#{it}_timeout_minutes" }.freeze
   validates(*TIMEOUT_ATTRS.values, numericality: { only_integer: true, in: 1..1440 })
 
+  belongs_to :album_art_workflow, class_name: 'Workflow', optional: true
+  validate :album_art_workflow_is_usable
+
   normalizes :motd_text, with: ->(text) { text.to_s.strip.presence }
   # Saving the built-in text unchanged keeps following the default, so later improvements to it apply.
   normalizes :video_script_prompt, with: lambda { |text|
     text = text.to_s.gsub("\r\n", "\n").strip
     text.presence unless text == Chat::VideoScript::DEFAULT_TEMPLATE
+  }
+  normalizes :album_art_prompt, with: lambda { |text|
+    text = text.to_s.gsub("\r\n", "\n").strip
+    text.presence unless text == AlbumArt::DEFAULT_TEMPLATE
   }
 
   def motd? = motd_text.present?
@@ -88,6 +95,16 @@ class AppSetting < ApplicationRecord
     video_script_prompt.blank?
   end
 
+  def self.default_album_art_prompt = AlbumArt.default_template
+
+  def album_art_prompt_or_default
+    album_art_prompt.presence || self.class.default_album_art_prompt
+  end
+
+  def using_default_album_art_prompt?
+    album_art_prompt.blank?
+  end
+
   def invalidate_all_sessions!
     update!(session_epoch: session_epoch + 1)
   end
@@ -99,4 +116,13 @@ class AppSetting < ApplicationRecord
     fallback
   end
   private_class_method :env_attachment_max_mb
+
+  private
+
+  def album_art_workflow_is_usable
+    return if album_art_workflow.nil? || !album_art_workflow_id_changed?
+    return if AlbumArt.usable_workflow?(album_art_workflow)
+
+    errors.add(:album_art_workflow, 'must be an enabled image style that works from a prompt alone')
+  end
 end

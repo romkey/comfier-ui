@@ -1,0 +1,63 @@
+<% content_for :title, 'Album art' %>
+
+<h1 class="h-page-title mb-3">Album art</h1>
+<p class="text-13 text-secondary mb-3">
+  <strong>Create album art</strong> on a finished audio result queues a square image from this prompt. The cover
+  shows in the track's player.
+</p>
+
+<% fallback = AlbumArt.workflow unless @settings.album_art_workflow_id %>
+<% if @workflows.empty? %>
+  <div class="status-panel status-attention mb-3 text-13">
+    No image style can make album art yet. Add an enabled image workflow that uses <code>{{prompt}}</code> and
+    doesn't need an uploaded image.
+  </div>
+<% elsif @settings.album_art_workflow && !AlbumArt.usable_workflow?(@settings.album_art_workflow) %>
+  <div class="status-panel status-attention mb-3 text-13">
+    <%= @settings.album_art_workflow.name %> can't make album art any more, so the first available image style is
+    used instead. Pick another below.
+  </div>
+<% end %>
+
+<%= form_with model: @settings, url: admin_album_art_setting_path, method: :patch, class: 'settings-form-wide' do |f| %>
+  <% if @settings.errors.any? %>
+    <div class="alert alert-danger py-2 text-13"><%= @settings.errors.full_messages.to_sentence %></div>
+  <% end %>
+
+  <div class="mb-3">
+    <%= f.label :album_art_workflow_id, 'Image style', class: 'form-label' %>
+    <%= f.collection_select :album_art_workflow_id, @workflows, :id, :name,
+                            { include_blank: "First available#{" (#{fallback.name})" if fallback}" },
+                            class: 'form-select form-select-sm w-auto' %>
+    <div class="form-text text-12">Only enabled image styles that work from a prompt alone are listed.</div>
+  </div>
+
+  <div class="h-section-label mt-4 mb-2">Prompt</div>
+  <p class="text-13 text-secondary mb-3">
+    Sent to the image style as its prompt. <code>{{prompt}}</code> is the track's description and
+    <code>{{lyrics}}</code> its lyrics, with section markers like <code>[verse]</code> removed and long lyrics
+    shortened. Text between <code>{{#lyrics}}</code> and <code>{{/lyrics}}</code> is left out when the track has no
+    lyrics.
+  </p>
+
+  <div class="mb-3">
+    <%= f.label :album_art_prompt, 'Prompt', class: 'form-label visually-hidden' %>
+    <%= f.text_area :album_art_prompt, rows: 10, class: 'form-control form-control-sm font-monospace text-12',
+                                       spellcheck: false,
+                                       value: @settings.album_art_prompt_or_default %>
+    <div class="form-text text-12">
+      <% if @settings.using_default_album_art_prompt? %>
+        Using the built-in default prompt.
+      <% else %>
+        Custom prompt in use. Choose <strong>Reset prompt</strong> to restore the built-in prompt.
+      <% end %>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2">
+    <%= f.submit 'Save', class: 'btn btn-primary btn-sm' %>
+    <%= button_tag 'Reset prompt', name: 'reset_album_art_prompt', value: '1',
+                                   class: 'btn btn-outline-secondary btn-sm',
+                                   form: { data: { turbo_confirm: 'Restore the built-in album art prompt?' } } %>
+  </div>
+<% end %>

@@ -119,7 +119,7 @@ class GenerationsController < ApplicationController # rubocop:disable Metrics/Cl
   end
 
   def filtered_generations(scope)
-    filtered = scope.recent.with_attached_outputs.with_attached_output_poster.includes(:workflow)
+    filtered = scope.recent.with_attached_outputs.with_attached_output_poster.with_album_art.includes(:workflow)
     filtered = filtered.where(kind: @kind) if @kind
     filtered = filtered.where(status: @status) if @status
     filtered = filtered.where.not(shared_at: nil) if @shared

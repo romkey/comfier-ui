@@ -17,6 +17,7 @@ Rails.application.routes.draw do
 
   get 'p/:token', to: 'public_shares#show', as: :public_share
   get 'p/:token/outputs/:index', to: 'public_shares#output', as: :public_share_output
+  get 'p/:token/cover', to: 'public_shares#cover', as: :public_share_cover
   get 'queue', to: 'queue#index', as: :queue
   get 'shared', to: 'shared#index', as: :shared_index
   get 'shared/:id', to: 'shared#show', as: :shared
@@ -54,6 +55,7 @@ Rails.application.routes.draw do
       post :public_link, action: :create_public_link
       delete :public_link, action: :revoke_public_link
     end
+    resource :album_art, only: :create
   end
 
   resource :settings, only: %i[show update]
@@ -108,6 +110,7 @@ Rails.application.routes.draw do
     end
     resource :assistant_setting, only: %i[edit update]
     resource :chat_setting, only: %i[edit update]
+    resource :album_art_setting, only: %i[edit update]
 
     resources :activity_logs, only: %i[index show]
 
