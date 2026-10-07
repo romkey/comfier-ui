@@ -1,4 +1,6 @@
-<%= form_with model: generation, url: generations_path, class: 'studio-form card card-body', data: { turbo: false } do |f| %>
+<%# The session-wide token, not a per-form one: Write a script posts this form to a second action. %>
+<%= form_with model: generation, url: generations_path, class: 'studio-form card card-body', data: { turbo: false },
+              authenticity_token: form_authenticity_token do |f| %>
   <%# Enter submits through the first submit button; keep that Generate, not Write a script further down. %>
   <%= f.button 'Generate', type: 'submit', class: 'visually-hidden', tabindex: -1, aria: { hidden: true } %>
 
