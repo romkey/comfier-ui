@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_07_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -77,6 +77,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_130000) do
     t.integer "video_timeout_minutes", default: 240, null: false
     t.integer "audio_timeout_minutes", default: 30, null: false
     t.integer "model_3d_timeout_minutes", default: 60, null: false
+    t.text "video_script_prompt"
   end
 
   create_table "backend_inventories", force: :cascade do |t|

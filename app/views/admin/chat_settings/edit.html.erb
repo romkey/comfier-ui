@@ -51,5 +51,33 @@
     <div class="form-text text-12">When set, the message becomes a link.</div>
   </div>
 
-  <%= f.submit 'Save', class: 'btn btn-primary btn-sm' %>
+  <div class="h-section-label mt-4 mb-2">Video script prompt</div>
+  <p class="text-13 text-secondary mb-3">
+    <strong>Write a script</strong> on the Video page starts a chat with this message. These tokens are filled in
+    from the studio form:
+    <% Chat::VideoScript::TOKENS.each do |token| %>
+      <code>{{<%= token %>}}</code><%= token == Chat::VideoScript::TOKENS.last ? '.' : ',' %>
+    <% end %>
+  </p>
+
+  <div class="mb-3">
+    <%= f.label :video_script_prompt, 'Prompt', class: 'form-label' %>
+    <%= f.text_area :video_script_prompt, rows: 16, class: 'form-control form-control-sm font-monospace text-12',
+                                          spellcheck: false,
+                                          value: @settings.video_script_prompt_or_default %>
+    <div class="form-text text-12">
+      <% if @settings.using_default_video_script_prompt? %>
+        Using the built-in default prompt.
+      <% else %>
+        Custom prompt in use. Choose <strong>Reset script prompt</strong> to restore the built-in prompt.
+      <% end %>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2">
+    <%= f.submit 'Save', class: 'btn btn-primary btn-sm' %>
+    <%= button_tag 'Reset script prompt', name: 'reset_video_script_prompt', value: '1',
+                   class: 'btn btn-outline-secondary btn-sm',
+                   form: { data: { turbo_confirm: 'Restore the built-in video script prompt?' } } %>
+  </div>
 <% end %>

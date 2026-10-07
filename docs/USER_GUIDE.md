@@ -46,6 +46,10 @@ The **Image**, **Video**, **Audio** and **3D Model** pages all work the same way
 If your job might run on a server that belongs to someone else, a note under the form says so. That server's owner
 can see your prompt, images and results.
 
+On the **Video** page, when Chat is available, **Write a script** under the description opens a new chat that turns
+your idea into a shot-by-shot script for the chosen length and shape. The reply ends with a ready-made prompt you can
+paste back into **Describe what you want**, and you can keep chatting to refine it.
+
 Your request appears under **Recent** straight away and updates by itself as it goes from queued to generating to
 done. You can leave the page; the work carries on without you.
 
@@ -103,7 +107,9 @@ text chat with your organization's models — not ComfyUI generation.
 - Delete a conversation from the **⋯** menu at the top of the thread.
 
 Admins may show a notice at the top of Chat (for example, linking to a more capable chat system elsewhere). Configure
-that under **Settings → Chat**.
+that under **Settings → Chat**, along with the message **Write a script** on the Video page sends (its
+`{{prompt}}`, `{{duration}}`, `{{width}}`, `{{height}}`, `{{aspect_ratio}}` and `{{orientation}}` tokens are filled
+from the form).
 
 ## Settings
 
@@ -242,7 +248,7 @@ LLM, which replies with a list of substitutions — never a rewritten workflow. 
 a table; untick any you don't want, add others with **Add by hand**, then choose **Save**. Only the ticked changes
 are written, and nothing else in the JSON changes. Without an LLM, inputs the rules couldn't place are listed so
 you can add them yourself. Edit the LLM's system prompt under **Settings → Workflow assistant**. Member-facing
-**Chat** uses the same LiteLLM proxy; set its default model and optional top-of-page notice under **Settings → Chat**.
+**Chat** uses the same LiteLLM proxy; set its default model, optional top-of-page notice and video script prompt under **Settings → Chat**.
 
 To remove a workflow, open it (or use the **⋯** menu on the list) and choose **Delete**. Past results stay; they just
 lose the link back to this style.

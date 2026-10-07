@@ -6,6 +6,9 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- **Video**: **Write a script** under the description starts a chat that turns the idea into a shot-by-shot script
+  sized to the chosen length and shape, ending with a prompt ready to paste back. Admins edit the message it sends
+  under Settings → Chat.
 - **Message of the day**: Admins set a banner under Settings → Message of the day. It shows at the top of every
   page for signed-in users, who can dismiss it; changing the text shows it to everyone again.
 - **Servers**: Owners and admins turn individual styles on or off per server from the server page's Styles table.
