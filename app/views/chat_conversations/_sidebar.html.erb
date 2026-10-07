@@ -9,11 +9,17 @@
   <% if @conversations.any? %>
     <ul class="list-compact chat-conversation-list mb-0">
       <% @conversations.each do |conversation| %>
-        <li>
+        <li class="chat-conversation-row">
           <%= link_to chat_path(conversation),
                       class: ['chat-conversation-item', { active: @conversation&.id == conversation.id }] do %>
             <span class="text-truncate d-block text-13"><%= conversation.title_or_default %></span>
             <span class="text-12 text-secondary"><%= friendly_time(conversation.updated_at) %></span>
+          <% end %>
+          <%= button_to chat_path(conversation, return_to: @conversation&.id), method: :delete,
+                        class: 'btn btn-link btn-sm text-secondary chat-conversation-delete',
+                        title: 'Delete conversation', 'aria-label': "Delete #{conversation.title_or_default}",
+                        form: { data: { turbo_confirm: 'Delete this conversation?' } } do %>
+            <i class="bi bi-trash" aria-hidden="true"></i>
           <% end %>
         </li>
       <% end %>
