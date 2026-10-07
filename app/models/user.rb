@@ -2,6 +2,7 @@ class User < ApplicationRecord
   belongs_to :preferred_backend, class_name: 'Backend', optional: true, inverse_of: :preferring_users
   has_many :generations, dependent: :destroy
   has_many :chat_conversations, dependent: :destroy
+  has_many :video_script_requests, dependent: :delete_all
   has_many :owned_report_cases, class_name: 'ReportCase', foreign_key: :owner_id, dependent: :nullify,
                                 inverse_of: :owner
   has_many :reviewed_report_cases, class_name: 'ReportCase', foreign_key: :reviewed_by_id, dependent: :nullify,
