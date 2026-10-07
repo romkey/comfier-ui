@@ -42,6 +42,17 @@
         <i class="bi bi-image me-1" aria-hidden="true"></i>Use as reference
       <% end %>
     <% end %>
+    <% if AlbumArt.available_for?(@generation) %>
+      <% if @generation.album_art_in_progress? %>
+        <button type="button" class="btn btn-outline-secondary btn-sm" disabled>
+          <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>Creating album art…
+        </button>
+      <% else %>
+        <%= button_to generation_album_art_path(@generation), class: 'btn btn-outline-secondary btn-sm' do %>
+          <i class="bi bi-vinyl me-1" aria-hidden="true"></i><%= @generation.album_art_image ? 'New album art' : 'Create album art' %>
+        <% end %>
+      <% end %>
+    <% end %>
     <div class="dropdown">
       <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false"
               aria-label="More actions">
@@ -98,7 +109,8 @@
     <div class="d-flex flex-column gap-3">
       <% @generation.outputs.each do |output| %>
         <figure class="output-full mb-0">
-          <%= output_preview(output, controls: true, poster_url: output_poster_for(@generation, output)) %>
+          <%= output_preview(output, controls: true, poster_url: output_poster_for(@generation, output),
+                             cover_url: album_art_url(@generation)) %>
           <figcaption class="d-flex justify-content-between align-items-center text-12 text-secondary mt-1">
             <span class="text-truncate"><%= output.filename %></span>
             <%= link_to rails_blob_path(output, disposition: 'attachment'), class: 'btn btn-outline-secondary btn-sm' do %>
@@ -119,6 +131,15 @@
       <% if @generation.lyrics.present? %>
         <div class="h-section-label">Lyrics</div>
         <p class="text-13 mb-3 text-break"><%= @generation.lyrics %></p>
+      <% end %>
+      <% if (art = @generation.album_art_generation) %>
+        <div class="h-section-label">Album art</div>
+        <p class="text-13 mb-3">
+          <%= link_to 'Open image result', generation_path(art) %>
+          <% if art.failed? %>
+            <span class="text-secondary">· <%= art.cancelled? ? 'cancelled' : 'failed' %></span>
+          <% end %>
+        </p>
       <% end %>
       <% if @generation.negative_prompt.present? %>
         <div class="h-section-label">Avoid</div>

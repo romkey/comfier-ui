@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_07_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_07_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -78,6 +78,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_120000) do
     t.integer "audio_timeout_minutes", default: 30, null: false
     t.integer "model_3d_timeout_minutes", default: 60, null: false
     t.text "video_script_prompt"
+    t.text "album_art_prompt"
+    t.bigint "album_art_workflow_id"
+    t.index ["album_art_workflow_id"], name: "index_app_settings_on_album_art_workflow_id"
   end
 
   create_table "backend_inventories", force: :cascade do |t|
@@ -317,6 +320,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_120000) do
     t.float "work_units"
     t.bigint "workflow_id"
     t.string "workflow_name"
+    t.bigint "album_art_generation_id"
+    t.index ["album_art_generation_id"], name: "index_generations_on_album_art_generation_id"
     t.index ["backend_id", "agent_state"], name: "index_generations_on_backend_id_and_agent_state"
     t.index ["backend_id"], name: "index_generations_on_backend_id"
     t.index ["comfy_prompt_id"], name: "index_generations_on_comfy_prompt_id"
@@ -590,6 +595,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_120000) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "activity_logs", "users"
+  add_foreign_key "app_settings", "workflows", column: "album_art_workflow_id", on_delete: :nullify
   add_foreign_key "backend_inventories", "backends"
   add_foreign_key "backend_keys", "backends"
   add_foreign_key "backend_load_hours", "backends"
@@ -606,6 +612,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_120000) do
   add_foreign_key "generation_outputs", "backends"
   add_foreign_key "generation_outputs", "generations"
   add_foreign_key "generations", "backends", on_delete: :nullify
+  add_foreign_key "generations", "generations", column: "album_art_generation_id", on_delete: :nullify
   add_foreign_key "generations", "users", on_delete: :cascade
   add_foreign_key "generations", "workflows", on_delete: :nullify
   add_foreign_key "job_attempts", "backends"

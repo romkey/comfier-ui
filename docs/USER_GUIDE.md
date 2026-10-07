@@ -82,6 +82,11 @@ to take yours back.
 Image results also offer **Use as reference**, which opens the Image page with that output attached as your
 reference image.
 
+Finished audio results offer **Create album art**. It queues a square image made from the track's description and
+lyrics, and once it's done the cover shows in the track's player on its page, in Results, and on shared and public
+pages. The image is also a result of its own, linked from the track's page under **Album art**. Choose **New album
+art** to make another; the newest one replaces the cover.
+
 ## Shared
 
 **Shared** is a gallery of results members chose to make public. Filter by kind or **Only mine**. Open one to see
@@ -249,6 +254,11 @@ a table; untick any you don't want, add others with **Add by hand**, then choose
 are written, and nothing else in the JSON changes. Without an LLM, inputs the rules couldn't place are listed so
 you can add them yourself. Edit the LLM's system prompt under **Settings → Workflow assistant**. Member-facing
 **Chat** uses the same LiteLLM proxy; set its default model, optional top-of-page notice and video script prompt under **Settings → Chat**.
+
+Under **Settings → Album art**, choose which image style **Create album art** uses (by default, the first enabled
+image style that works from a prompt alone) and edit the prompt it sends. `{{prompt}}` is the track's description and
+`{{lyrics}}` its lyrics, with section markers such as `[verse]` removed and long lyrics shortened; text between
+`{{#lyrics}}` and `{{/lyrics}}` is left out for tracks without lyrics.
 
 To remove a workflow, open it (or use the **⋯** menu on the list) and choose **Delete**. Past results stay; they just
 lose the link back to this style.

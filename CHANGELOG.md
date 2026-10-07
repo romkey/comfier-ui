@@ -6,6 +6,9 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- **Audio**: **Create album art** on a finished audio result queues a square cover image from the track's
+  description and lyrics, and the cover then shows in the track's player on its page, in Results, and on shared and
+  public pages. Admins choose the image style and edit the prompt under Settings → Album art.
 - **Video**: **Write a script** under the description starts a chat that turns the idea into a shot-by-shot script
   sized to the chosen length and shape, ending with a prompt ready to paste back. Admins edit the message it sends
   under Settings → Chat.

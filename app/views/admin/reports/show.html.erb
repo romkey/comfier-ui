@@ -22,7 +22,8 @@
   <div class="mb-4">
     <% @generation.outputs.each do |output| %>
       <figure class="output-full mb-2">
-        <%= output_preview(output, controls: true, poster_url: output_poster_for(@generation, output)) %>
+        <%= output_preview(output, controls: true, poster_url: output_poster_for(@generation, output),
+                           cover_url: album_art_url(@generation)) %>
       </figure>
     <% end %>
   </div>

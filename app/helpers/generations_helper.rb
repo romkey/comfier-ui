@@ -72,7 +72,10 @@ module GenerationsHelper # rubocop:disable Metrics/ModuleLength
   def result_media_preview(generation)
     output = primary_result_output(generation)
     return video_poster_preview(generation) if video_result_with_poster?(generation, output)
-    return output_preview(output, poster_url: output_poster_for(generation, output)) if output
+    if output
+      return output_preview(output, poster_url: output_poster_for(generation, output),
+                                    cover_url: album_art_url(generation))
+    end
 
     result_placeholder_preview(generation)
   end
@@ -85,21 +88,37 @@ module GenerationsHelper # rubocop:disable Metrics/ModuleLength
     when %r{\Avideo/}
       video_tag(url, class: 'output-media', controls:, poster:, muted: !controls, loop: true, playsinline: true,
                      preload: 'metadata')
-    when %r{\Aaudio/} then audio_tag(url, controls: true, class: 'w-100', preload: 'metadata')
+    when %r{\Aaudio/}
+      audio_player(url, cover_url: (public_share_cover_path(generation.public_token) if generation.album_art_image))
     else poster ? model_preview(attachment, poster) : file_output(attachment)
     end
   end
 
-  def output_preview(attachment, controls: false, poster_url: nil)
+  def output_preview(attachment, controls: false, poster_url: nil, cover_url: nil)
     url = rails_blob_path(attachment, disposition: 'inline')
     case attachment.content_type
     when %r{\Aimage/} then image_tag(url, alt: attachment.filename.to_s, class: 'output-media', loading: 'lazy')
     when %r{\Avideo/}
       video_tag(url, class: 'output-media', controls:, poster: poster_url, muted: !controls, loop: true,
                      playsinline: true, preload: 'metadata')
-    when %r{\Aaudio/} then audio_tag(url, controls: true, class: 'w-100', preload: 'metadata')
+    when %r{\Aaudio/} then audio_player(url, cover_url:)
     else poster_url ? model_preview(attachment, poster_url) : file_output(attachment)
     end
+  end
+
+  # An audio player, with the track's album art above it when it has some.
+  def audio_player(url, cover_url: nil)
+    player = audio_tag(url, controls: true, class: 'w-100', preload: 'metadata')
+    return player unless cover_url
+
+    tag.div(class: 'output-audio') do
+      safe_join([image_tag(cover_url, alt: 'Album art', class: 'output-audio-cover', loading: 'lazy'), player])
+    end
+  end
+
+  def album_art_url(generation)
+    image = generation.album_art_image
+    rails_blob_path(image, disposition: 'inline') if image
   end
 
   def model_preview(attachment, poster_url)

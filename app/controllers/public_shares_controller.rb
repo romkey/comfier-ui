@@ -18,6 +18,14 @@ class PublicSharesController < ApplicationController
     serve_output(attachment)
   end
 
+  # An audio result's album art, which lives on its own image result.
+  def cover
+    image = @generation.album_art_image
+    return head :not_found unless image
+
+    serve_output(image)
+  end
+
   private
 
   def set_generation
