@@ -41,4 +41,52 @@ class PrivacyTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to privacy_path
   end
+
+  test 'the notice links to the code of conduct and offers both choices' do
+    users(:alice).update!(privacy_accepted_version: nil)
+    sign_in_as users(:alice)
+
+    get privacy_path
+
+    assert_select 'a[href=?]', 'https://example.com/code-of-conduct.pdf'
+    assert_select 'button', 'I Understand and Agree'
+    assert_select 'button', 'I Do Not Agree'
+  end
+
+  test 'declining signs the user out and sends them to the decline page' do
+    users(:alice).update!(privacy_accepted_version: nil)
+    sign_in_as users(:alice)
+
+    post decline_privacy_path
+
+    assert_redirected_to 'https://example.com/goodbye'
+    get image_studio_path
+
+    assert_redirected_to login_path
+    assert_nil users(:alice).reload.privacy_accepted_version
+  end
+
+  test 'admins can change the code of conduct and decline links' do
+    sign_in_as users(:admin)
+
+    patch admin_privacy_notice_path, params: { privacy_notice: { body: 'Be kind.',
+                                                                 code_of_conduct_url: 'https://example.org/coc',
+                                                                 decline_url: 'https://example.org/bye' } }
+
+    notice = PrivacyNotice.current
+
+    assert_equal 'https://example.org/coc', notice.code_of_conduct_url
+    assert_equal 'https://example.org/bye', notice.decline_url
+    assert_equal 1, notice.version
+  end
+
+  test 'admins cannot save a link that is not a web address' do
+    sign_in_as users(:admin)
+
+    patch admin_privacy_notice_path, params: { privacy_notice: { body: 'Be kind.',
+                                                                 decline_url: 'javascript:alert(1)' } }
+
+    assert_response :unprocessable_content
+    assert_equal 'https://example.com/goodbye', PrivacyNotice.current.decline_url
+  end
 end

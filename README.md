@@ -350,7 +350,7 @@ The first push to GHCR may require making the package public under the repo's **
 | `app/services/perf/` | Run-time samples, statistics, the predictor and per-server speed index used for ETAs and routing |
 | `app/services/backend_policy.rb` | Who can see, use and manage each server |
 | `config/schedule.yml` | sidekiq-cron jobs: offline and lease sweeps, rebalancing, speed index, load rollups |
-| `app/models/privacy_notice.rb` | Privacy notice text and version; users must agree before using the app |
+| `app/models/privacy_notice.rb` | Code of conduct and privacy notice text, links and version; users must agree before using the app |
 | `app/services/queue_estimator.rb` | Estimates wait times from recent run durations and queue position |
 | `app/controllers/shared_controller.rb` | Gallery of results members chose to share |
 | `app/jobs/notify_generation_job.rb` | Sends finished/failed/cancelled notifications, one retried job per channel |

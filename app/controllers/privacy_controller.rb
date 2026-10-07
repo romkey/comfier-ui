@@ -1,4 +1,4 @@
-# Shows the privacy notice and records agreement.
+# Shows the privacy notice and code of conduct, and records agreement.
 class PrivacyController < ApplicationController
   layout 'bare'
   skip_privacy_gate
@@ -20,5 +20,19 @@ class PrivacyController < ApplicationController
       session.delete(:return_to)
       redirect_to safe_return_path(return_to), notice: 'Thanks — you\'re all set.', status: :see_other
     end
+  end
+
+  # Declining signs the user out and sends them to the admin-chosen page.
+  def decline
+    url = PrivacyNotice.current.decline_url
+    ActivityLog.record(
+      kind: :logout,
+      user: current_user,
+      message: "#{current_user.display_name} declined the code of conduct",
+      details: { method: 'privacy_decline' },
+      request:
+    )
+    reset_session
+    redirect_to url, allow_other_host: true, status: :see_other
   end
 end

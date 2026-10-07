@@ -11,6 +11,7 @@ Rails.application.routes.draw do
 
   get 'privacy', to: 'privacy#show', as: :privacy
   post 'privacy/accept', to: 'privacy#accept', as: :accept_privacy
+  post 'privacy/decline', to: 'privacy#decline', as: :decline_privacy
   resource :motd_dismissal, only: :create
   get 'welcome/sharing', to: 'onboarding#sharing', as: :welcome_sharing
   patch 'welcome/sharing', to: 'onboarding#update_sharing'
