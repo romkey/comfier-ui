@@ -32,7 +32,7 @@ Rails.application.routes.draw do
     get kind.path, to: 'studios#show', defaults: { kind: kind.key }, as: :"#{kind.key}_studio"
   end
 
-  post 'video/script', to: 'video_scripts#create', as: :video_script
+  resources :video_scripts, path: 'video/scripts', only: %i[create show destroy]
 
   get 'chat/notice', to: 'chat_conversations#notice_redirect', as: :chat_notice_link
 

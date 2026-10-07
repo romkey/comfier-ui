@@ -33,5 +33,10 @@ module Chat
       assert_equal GenerationKind.find(:video).default_duration,
                    VideoScript.new(prompt: 'x', workflow: @workflow).duration
     end
+
+    test 'cleans labels and code fences from a reply' do
+      assert_equal 'Waves at dusk.', VideoScript.clean("```text\n**Script:** Waves at dusk.\n```")
+      assert_equal 'Prompting is fun.', VideoScript.clean('  Prompting is fun. ')
+    end
   end
 end

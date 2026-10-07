@@ -9,9 +9,9 @@ All notable changes to this project are documented here. The format follows
 - **Audio**: **Create album art** on a finished audio result queues a square cover image from the track's
   description and lyrics, and the cover then shows in the track's player on its page, in Results, and on shared and
   public pages. Admins choose the image style and edit the prompt under Settings → Album art.
-- **Video**: **Write a script** under the description starts a chat that turns the idea into a shot-by-shot script
-  sized to the chosen length and shape, ending with a prompt ready to paste back. Admins edit the message it sends
-  under Settings → Chat.
+- **Video**: **Write a script** under the description asks Chat to turn the idea into a script sized to the chosen
+  length and shape, and writes it into the description without leaving the page. It shows progress with a Cancel
+  button, retries once if Chat fails, and offers Undo. Admins edit the message it sends under Settings → Chat.
 - **3D results**: Agent servers render a 1024×1024 preview image of a job's first 3D model and upload it with the
   results, so 3D work shows a picture in Results, on its page, and on shared and public pages instead of a file icon.
   The agent draws it on the CPU with `trimesh` (which ComfyUI's 3D nodes usually install) and skips it when that
