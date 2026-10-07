@@ -65,6 +65,19 @@ class VideoScriptsTest < ActionDispatch::IntegrationTest
     assert_predicate reply, :pending?
   end
 
+  test 'the studio form token is accepted by the script action' do
+    with_forgery_protection do
+      get '/video'
+      token = css_select('form.studio-form input[name=authenticity_token]').first['value']
+
+      assert_difference -> { ChatConversation.count } do
+        post video_script_path, params: { authenticity_token: token, generation: {
+          workflow_id: workflows(:wan_video).id, prompt: 'waves'
+        } }
+      end
+    end
+  end
+
   test 'asks for a description first' do
     assert_no_difference -> { ChatConversation.count } do
       post video_script_path, params: { generation: { workflow_id: workflows(:wan_video).id, prompt: ' ' } }
@@ -82,5 +95,15 @@ class VideoScriptsTest < ActionDispatch::IntegrationTest
     end
 
     assert_redirected_to video_studio_path
+  end
+
+  private
+
+  def with_forgery_protection
+    previous = ActionController::Base.allow_forgery_protection
+    ActionController::Base.allow_forgery_protection = true
+    yield
+  ensure
+    ActionController::Base.allow_forgery_protection = previous
   end
 end
