@@ -54,6 +54,10 @@ MAX_DETAIL = 2000
 MAX_TRACEBACK = 8000
 # How long a cancelled job waits for ComfyUI to report the interrupt before giving up on it.
 CANCEL_GRACE_S = 10
+# ComfyUI sends execution_success before it writes the prompt's history entry, and may unload every
+# model in between, so the entry can lag well behind a long job.
+HISTORY_WAIT_S = 120
+HISTORY_POLL_S = 0.5
 
 
 def output_kind(filename: str) -> str | None:
@@ -411,9 +415,10 @@ class JobManager:
 
             await self._execute_ws(ctx, timeout_s=timeout_s, timings=timings)
 
-            history = await self.comfy.history(ctx.prompt_id)
-            entry = history.get(ctx.prompt_id) or {}
+            entry = await self._finished_history(ctx.prompt_id)
             files, skipped = split_allowed(collect_output_files(entry.get("outputs") or {}))
+            if not files:
+                LOG.warning("prompt %s finished without any output files", ctx.prompt_id)
             uploaded_out = await self._upload_outputs(ctx, files, upload_url, auth)
 
             duration_ms = int((time.time() - t0) * 1000)
@@ -539,6 +544,16 @@ class JobManager:
                 raise JobCancelled()
             raise watch.job_error()
         timings.set_node_counts(total=len(watch.nodes | watch.cached), cached=len(watch.cached))
+
+    async def _finished_history(self, prompt_id: str) -> dict[str, Any]:
+        deadline = time.monotonic() + HISTORY_WAIT_S
+        while True:
+            entry = (await self.comfy.history(prompt_id)).get(prompt_id) or {}
+            if entry:
+                return entry
+            if time.monotonic() >= deadline:
+                raise JobError("outputs", f"ComfyUI never recorded history for prompt {prompt_id}")
+            await asyncio.sleep(HISTORY_POLL_S)
 
     async def _progress(self, ctx: JobContext, phase: str, progress: float, **extra) -> None:
         ctx.phase = phase

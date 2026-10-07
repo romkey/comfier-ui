@@ -61,6 +61,20 @@ module Agent
       assert_equal 1, PerfSample.where(backend: @backend).count
     end
 
+    test 'completion without outputs fails with the server warning but keeps the timings' do
+      gen = job_on(state: 'uploading', structure_hash: 'sd15')
+      event('job.completed', gen, outputs: [], warning: 'workflow produced no output files',
+                                  timings: { 'execute_ms' => 12_000 })
+      gen.reload
+
+      assert_predicate gen, :failed?
+      assert_equal 'failed', gen.agent_state
+      assert_includes gen.error_message, 'without saving any output'
+      assert_includes gen.error_message, 'workflow produced no output files'
+      assert_equal 'failed', gen.job_attempts.last.outcome
+      assert_equal 1, PerfSample.where(backend: @backend).count
+    end
+
     test 'duplicate and late events are harmless' do
       gen = job_on(state: 'accepted')
       event('job.accepted', gen)
