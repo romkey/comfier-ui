@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- **Code of Conduct**: The privacy notice now also asks everyone to agree to the PDX Hackerspace Code of Conduct. It
+  sums the code up in a few lines, links to the full PDF, and offers **I Understand and Agree** or **I Do Not Agree**,
+  which signs the user out and sends them to a page admins choose (Disney's home page by default). Admins set both
+  links under Settings → Code of Conduct & privacy. Upgrading replaces the notice's wording and asks everyone to agree
+  again.
 - **Audio**: **Create album art** on a finished audio result queues a square cover image from the track's
   description and lyrics, and the cover then shows in the track's player on its page, in Results, and on shared and
   public pages. Admins choose the image style and edit the prompt under Settings → Album art.

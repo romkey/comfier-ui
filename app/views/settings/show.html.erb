@@ -88,12 +88,12 @@
 <% end %>
 
 <div class="text-12 text-secondary mt-5">
-  <div class="h-section-label">Privacy</div>
+  <div class="h-section-label">Code of Conduct and privacy</div>
   <% if @user.privacy_accepted_at %>
-    <div>You agreed to the privacy notice <%= friendly_time(@user.privacy_accepted_at) %>.
+    <div>You agreed to the Code of Conduct and privacy notice <%= friendly_time(@user.privacy_accepted_at) %>.
       <%= link_to 'Read it again', privacy_path, class: 'link-secondary' %></div>
   <% else %>
-    <div><%= link_to 'Read the privacy notice', privacy_path, class: 'link-secondary' %></div>
+    <div><%= link_to 'Read the Code of Conduct and privacy notice', privacy_path, class: 'link-secondary' %></div>
   <% end %>
 </div>
 

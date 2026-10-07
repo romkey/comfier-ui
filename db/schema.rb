@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_07_190000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_07_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -450,6 +450,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_190000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "version", default: 1, null: false
+    t.string "code_of_conduct_url", default: "https://pdxhackerspace.org/code-of-conduct.pdf", null: false
+    t.string "decline_url", default: "https://www.disney.com", null: false
   end
 
   create_table "report_cases", force: :cascade do |t|

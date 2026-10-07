@@ -21,9 +21,11 @@ Open Comfier and choose **Sign in with Authentik**. You'll go to your organizati
 account is created the first time you sign in. If you're in the admin group in Authentik, you'll see the admin
 sections of Settings too.
 
-The first time you sign in (or after an admin updates the privacy notice and asks everyone to agree again), you'll
-see a short **Privacy notice**. Read it and choose **I agree** to continue. It explains that your prompts, reference
-images and results are stored here, that admins can see them, and that anything you share is visible to other members.
+The first time you sign in (or after an admin updates the notice and asks everyone to agree again), you'll see a short
+**Code of Conduct and privacy** page. It sums up the PDX Hackerspace Code of Conduct, with a link to the full version,
+and explains that your prompts, reference images and results are stored here, that admins and backend owners can see
+them, and that anything you share is visible to other members. Choose **I Understand and Agree** to continue, or
+**I Do Not Agree** to sign out and leave.
 
 ## Making things
 
@@ -350,10 +352,11 @@ choose **Prepare selected servers** to download everything they're missing ahead
    placeholders by hand, then choose **Save**.
 4. On the workflow's page, choose **Install N missing** for each backend that needs the models.
 
-### How to update the privacy notice (admins)
+### How to update the Code of Conduct and privacy notice (admins)
 
-1. Go to **Settings → Privacy notice**.
-2. Edit the text. Tick **Ask everyone to agree again** if the change is important enough that existing members
+1. Go to **Settings → Code of Conduct & privacy**.
+2. Edit the text, the link to the full Code of Conduct, and the page people are sent to when they choose
+   **I Do Not Agree** (Disney's home page by default). Tick **Ask everyone to agree again** if the change is important enough that existing members
    should re-read it; leave it unticked for minor wording fixes.
 3. Choose **Save**.
 

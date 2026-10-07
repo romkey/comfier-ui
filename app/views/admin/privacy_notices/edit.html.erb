@@ -1,14 +1,30 @@
-<% content_for :title, 'Privacy notice' %>
+<% content_for :title, 'Code of Conduct and privacy' %>
 
-<h1 class="h-page-title mb-3">Privacy notice</h1>
+<h1 class="h-page-title mb-3">Code of Conduct and privacy</h1>
 <p class="text-13 text-secondary mb-3">
   Version <%= @notice.version %>. New users must agree before they can use Comfier.
 </p>
 
 <%= form_with model: @notice, url: admin_privacy_notice_path, method: :patch, class: 'settings-form-wide' do |f| %>
+  <% if @notice.errors.any? %>
+    <div class="alert alert-danger py-2 text-13"><%= @notice.errors.full_messages.to_sentence %></div>
+  <% end %>
+
   <div class="mb-3">
-    <%= f.label :body, class: 'form-label' %>
-    <%= f.text_area :body, rows: 14, class: 'form-control form-control-sm' %>
+    <%= f.label :body, 'Notice', class: 'form-label' %>
+    <%= f.text_area :body, rows: 18, class: 'form-control form-control-sm' %>
+    <div class="form-text text-12">Shown above a link to the full Code of Conduct.</div>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :code_of_conduct_url, 'Code of Conduct link', class: 'form-label' %>
+    <%= f.url_field :code_of_conduct_url, class: 'form-control form-control-sm' %>
+  </div>
+
+  <div class="mb-3">
+    <%= f.label :decline_url, 'Send people who don\'t agree to', class: 'form-label' %>
+    <%= f.url_field :decline_url, class: 'form-control form-control-sm' %>
+    <div class="form-text text-12">Choosing <strong>I Do Not Agree</strong> signs them out and opens this page.</div>
   </div>
 
   <div class="form-check mb-3">

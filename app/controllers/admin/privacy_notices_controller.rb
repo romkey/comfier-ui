@@ -6,13 +6,14 @@ module Admin
 
     def update
       @notice = PrivacyNotice.current
-      body = params.expect(privacy_notice: [:body])[:body]
-      if params[:require_reacceptance] == '1'
-        @notice.update!(body:, version: @notice.version + 1)
+      attrs = params.expect(privacy_notice: %i[body code_of_conduct_url decline_url])
+      attrs[:version] = @notice.version + 1 if params[:require_reacceptance] == '1'
+      if @notice.update(attrs)
+        redirect_to edit_admin_privacy_notice_path, notice: 'Code of Conduct and privacy notice saved.',
+                                                    status: :see_other
       else
-        @notice.update!(body:)
+        render :edit, status: :unprocessable_content
       end
-      redirect_to edit_admin_privacy_notice_path, notice: 'Privacy notice saved.', status: :see_other
     end
   end
 end

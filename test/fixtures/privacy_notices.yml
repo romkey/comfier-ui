@@ -7,3 +7,5 @@ current:
     • Shared results are visible to every signed-in user.
     • Other users can see your name in the queue.
   version: 1
+  code_of_conduct_url: https://example.com/code-of-conduct.pdf
+  decline_url: https://example.com/goodbye

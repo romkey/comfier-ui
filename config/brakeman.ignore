@@ -4,6 +4,16 @@
       "warning_type": "Redirect",
       "fingerprint": "ac735e4168c8287dc270c4400aca5fa136c3ca2e95fe79ec32a2186b60846b26",
       "note": "Chat notice URL is admin-only and normalized in AppSetting#allowed_chat_notice_redirect_url before redirect."
+    },
+    {
+      "warning_type": "Redirect",
+      "fingerprint": "1112f58b01b8f95145d5e973b03ef8dd950e15e6d469c9ae218e6e43e60e95ab",
+      "note": "Decline URL is admin-only, validated as http(s), and normalized in PrivacyNotice.safe_url before redirect."
+    },
+    {
+      "warning_type": "Redirect",
+      "fingerprint": "8e73fe654abb6c558dd84d26a09b649fdb94f896fd3161cb7bae057dabd33dea",
+      "note": "Code of conduct URL is admin-only, validated as http(s), and normalized in PrivacyNotice.safe_url before redirect."
     }
   ]
 }

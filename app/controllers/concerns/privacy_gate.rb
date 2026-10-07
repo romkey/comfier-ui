@@ -19,6 +19,6 @@ module PrivacyGate
     return if current_user.privacy_current?
 
     session[:return_to] ||= request.fullpath if request.get? && !request.xhr?
-    redirect_to privacy_path, alert: 'Please read and agree to the privacy notice to continue.'
+    redirect_to privacy_path, alert: 'Please read and agree to the Code of Conduct and privacy notice to continue.'
   end
 end

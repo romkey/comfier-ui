@@ -1,13 +1,16 @@
-<% content_for :title, 'Privacy notice' %>
+<% content_for :title, 'Code of Conduct and privacy' %>
 
 <div class="auth-card mx-auto" style="max-width: 42rem;">
-  <h1 class="h-page-title mb-3">Privacy notice</h1>
-  <div class="text-13 mb-4"><%= simple_format @notice.body %></div>
+  <h1 class="h-page-title mb-3">Code of Conduct and privacy</h1>
+  <div class="text-13 mb-2"><%= simple_format @notice.body %></div>
+  <p class="text-13 mb-4">
+    <%= link_to 'Read the full Code of Conduct', code_of_conduct_path, target: '_blank', rel: 'noopener' %>
+  </p>
 
   <div class="d-flex gap-2">
-    <%= button_to 'I agree', accept_privacy_path, class: 'btn btn-primary btn-sm',
-                                                  form: { data: { turbo: false } } %>
-    <%= button_to 'Sign out', logout_path, method: :delete, class: 'btn btn-outline-secondary btn-sm',
-                                          form: { data: { turbo: false } } %>
+    <%= button_to 'I Understand and Agree', accept_privacy_path, class: 'btn btn-primary btn-sm',
+                                                                 form: { data: { turbo: false } } %>
+    <%= button_to 'I Do Not Agree', decline_privacy_path, class: 'btn btn-outline-secondary btn-sm',
+                                                          form: { data: { turbo: false } } %>
   </div>
 </div>
