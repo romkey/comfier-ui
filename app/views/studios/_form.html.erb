@@ -1,4 +1,7 @@
 <%= form_with model: generation, url: generations_path, class: 'studio-form card card-body', data: { turbo: false } do |f| %>
+  <%# Enter submits through the first submit button; keep that Generate, not Write a script further down. %>
+  <%= f.button 'Generate', type: 'submit', class: 'visually-hidden', tabindex: -1, aria: { hidden: true } %>
+
   <% if generation.errors.any? %>
     <div class="alert alert-danger py-2 text-13">
       <%= generation.errors.full_messages.to_sentence %>
