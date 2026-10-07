@@ -5,6 +5,8 @@ from __future__ import annotations
 import asyncio
 import logging
 
+from comfier_agent import __version__
+
 LOG = logging.getLogger("comfier_agent")
 
 _runtime = None
@@ -35,6 +37,7 @@ def status_payload(runtime) -> dict:
         cfg = load_config()
         return {
             "state": "not_running",
+            "agent_version": __version__,
             "idle_reason": cfg.idle_reason,
             "connection": {"state": "disabled", "connected": False},
             "backend_name": cfg.backend_name,
@@ -44,6 +47,7 @@ def status_payload(runtime) -> dict:
     snap = runtime.status.snapshot
     payload = {
         "state": snap.state,
+        "agent_version": __version__,
         "accepting": snap.accepting,
         "connected": runtime.connection.connected,
         "connection": runtime.connection.status_dict(),

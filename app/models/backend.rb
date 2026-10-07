@@ -95,6 +95,9 @@ class Backend < ApplicationRecord # rubocop:disable Metrics/ClassLength
 
   def online? = agent? ? Agent::Presence.online?(self) : last_check_ok != false
 
+  # :current, :outdated, :newer or :unknown, against the agent this build of Comfier ships.
+  def agent_version_status = Agent::Version.compare(agent_version)
+
   # Pings the server and records the outcome so admins can see which backends are reachable.
   # A reachable server also gets its model inventory and download options refreshed.
   def check!

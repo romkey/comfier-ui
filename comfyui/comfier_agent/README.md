@@ -39,7 +39,7 @@ ComfyUI, and uploads the results. It also downloads the models Comfier asks for 
 ## The Comfier panel
 
 ComfyUI's sidebar gets a **Comfier** tab. It shows whether the agent is connected, the server name, the Comfier URL,
-and whether it's taking jobs. When the connection fails, it says why: for example the key was revoked or replaced,
+the agent version, and whether it's taking jobs. When the connection fails, it says why: for example the key was revoked or replaced,
 another ComfyUI is using the same key, or the agent is too old for this Comfier.
 
 You can set the Comfier URL, API key, server name, and whether to share the queue from the panel. The saved key is
@@ -100,6 +100,13 @@ Every message follows [`protocol/agent-v1.schema.json`](../../protocol/agent-v1.
 If the connection drops, the agent reconnects with backoff and tells Comfier which jobs are still running, so they
 carry on. Finished and failed jobs that happened while disconnected are reported after reconnecting. Uploads that
 fail with a network error or a 5xx or 429 response are retried for up to `COMFIER_UPLOAD_RETRY_SECONDS`.
+
+## Versioning
+
+The agent reports `__version__` from `comfier_agent/__init__.py` in every hello, and logs it when ComfyUI starts.
+Comfier reads the same file from its own build and marks a server **Update available** when its agent is older, or
+**Newer than Comfier** when it's newer. Bump `__version__` with every change to the agent, or Comfier can't tell
+old agents from new ones. `pyproject.toml` takes its version from there.
 
 ## Sidecar mode
 

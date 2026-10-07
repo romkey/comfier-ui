@@ -40,7 +40,12 @@
               <%= link_to backend.name, server_path(backend), class: 'text-body fw-medium' %>
               <div class="text-12 text-secondary">Comfier Agent<%= " · #{backend.owner_user.display_name}" if backend.owner_user %></div>
             </td>
-            <td class="text-12 text-secondary"><%= gpu_line(backend) %></td>
+            <td class="text-12 text-secondary">
+              <%= gpu_line(backend) %>
+              <% unless %i[current unknown].include?(backend.agent_version_status) %>
+                <div>Agent <%= agent_version_line(backend) %></div>
+              <% end %>
+            </td>
             <td class="text-12 text-secondary"><%= friendly_time(backend.last_seen_at) || "—" %></td>
             <td></td>
           </tr>
