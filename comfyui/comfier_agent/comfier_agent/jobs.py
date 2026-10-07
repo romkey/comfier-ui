@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 import mimetypes
 import os
@@ -69,29 +70,37 @@ def output_kind(filename: str) -> str | None:
 
 
 async def render_preview(model_path: str, filename: str) -> str | None:
-    """A JPEG of the model, or None when it can't be drawn (no trimesh, unreadable file, too slow)."""
-    out = tempfile.NamedTemporaryFile(delete=False, suffix=".jpg")
-    out.close()
+    """A JPEG of the model, or None when it can't be drawn (no trimesh, unreadable file, too slow).
+    Never raises: the model is already uploaded, so a missing preview mustn't fail the job."""
+    out_path = None
     rendered = False
-    proc = await asyncio.create_subprocess_exec(
-        sys.executable, PREVIEW_SCRIPT, model_path, out.name,
-        stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.PIPE,
-    )
     try:
-        _, err = await asyncio.wait_for(proc.communicate(), PREVIEW_TIMEOUT_S)
-        rendered = proc.returncode == 0 and os.path.getsize(out.name) > 0
-        if not rendered:
-            detail = (err.decode(errors="replace").strip().splitlines() or ["no output"])[-1]
-            LOG.warning("no preview for %s: %s", filename, detail)
-    except asyncio.TimeoutError:
-        LOG.warning("no preview for %s: rendering took over %ss", filename, PREVIEW_TIMEOUT_S)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as out:
+            out_path = out.name
+        proc = await asyncio.create_subprocess_exec(
+            sys.executable, PREVIEW_SCRIPT, model_path, out_path,
+            stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.PIPE,
+        )
+        try:
+            _, err = await asyncio.wait_for(proc.communicate(), PREVIEW_TIMEOUT_S)
+            rendered = proc.returncode == 0 and os.path.getsize(out_path) > 0
+            if not rendered:
+                detail = (err.decode(errors="replace").strip().splitlines() or ["no output"])[-1]
+                LOG.warning("no preview for %s: %s", filename, detail)
+        except asyncio.TimeoutError:
+            LOG.warning("no preview for %s: rendering took over %ss", filename, PREVIEW_TIMEOUT_S)
+        finally:
+            if proc.returncode is None:
+                proc.kill()
+                await proc.wait()
+    except Exception as exc:
+        rendered = False
+        LOG.warning("no preview for %s: %s", filename, exc)
     finally:
-        if proc.returncode is None:
-            proc.kill()
-            await proc.wait()
-        if not rendered:
-            os.remove(out.name)
-    return out.name if rendered else None
+        if out_path and not rendered:
+            with contextlib.suppress(OSError):
+                os.remove(out_path)
+    return out_path if rendered else None
 
 
 def is_oom(*texts: str | None) -> bool:
@@ -574,8 +583,12 @@ class JobManager:
                 raise JobCancelled() from exc
             LOG.warning("preview %s not uploaded: %s", name, exc)
             return None
+        except Exception as exc:
+            LOG.warning("preview %s not uploaded: %s", name, exc)
+            return None
         finally:
-            os.remove(path)
+            with contextlib.suppress(OSError):
+                os.remove(path)
         return {
             "upload_id": resp["upload_id"],
             "node": fdesc["node"],
