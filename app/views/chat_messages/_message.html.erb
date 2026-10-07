@@ -21,4 +21,14 @@
       <div class="chat-message-text"><%= simple_format(h(message.display_content), {}, sanitize: false) %></div>
     <% end %>
   </div>
+  <% if message.succeeded? && message.content.present? %>
+    <div class="chat-message-actions" data-controller="clipboard"
+         data-clipboard-text-value="<%= message.display_content %>">
+      <button type="button" class="btn btn-link btn-sm text-secondary p-0" data-action="clipboard#copy"
+              title="<%= message.user? ? 'Copy prompt' : 'Copy response' %>"
+              aria-label="<%= message.user? ? 'Copy prompt' : 'Copy response' %>">
+        <i class="bi bi-clipboard" aria-hidden="true" data-clipboard-target="icon"></i>
+      </button>
+    </div>
+  <% end %>
 <% end %>
