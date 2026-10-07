@@ -48,5 +48,31 @@ module Admin
       assert_equal 'Try the full assistant', settings.chat_notice_text
       assert_equal 'https://chat.example.com', settings.chat_notice_url
     end
+
+    test 'admins can edit and reset the video script prompt' do
+      sign_in_as users(:admin)
+
+      get edit_admin_chat_setting_path
+
+      assert_select 'textarea[name="app_setting[video_script_prompt]"]', text: AppSetting.default_video_script_prompt
+
+      patch admin_chat_setting_path, params: { app_setting: { video_script_prompt: 'Script for {{prompt}}' } }
+
+      assert_equal 'Script for {{prompt}}', app_settings(:default).reload.video_script_prompt
+
+      patch admin_chat_setting_path,
+            params: { reset_video_script_prompt: '1', app_setting: { video_script_prompt: 'ignored' } }
+
+      assert_nil app_settings(:default).reload.video_script_prompt
+    end
+
+    test 'saving the unchanged default keeps following the built-in prompt' do
+      sign_in_as users(:admin)
+
+      patch admin_chat_setting_path,
+            params: { app_setting: { video_script_prompt: AppSetting.default_video_script_prompt.gsub("\n", "\r\n") } }
+
+      assert_predicate app_settings(:default).reload, :using_default_video_script_prompt?
+    end
   end
 end

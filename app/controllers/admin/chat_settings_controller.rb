@@ -8,7 +8,9 @@ module Admin
     def update
       @settings = AppSetting.current
       @chat_models = LiteLlm::Client.models
-      if @settings.update(settings_params)
+      attrs = settings_params
+      attrs[:video_script_prompt] = nil if params[:reset_video_script_prompt] == '1'
+      if @settings.update(attrs)
         redirect_to edit_admin_chat_setting_path, notice: 'Chat settings saved.', status: :see_other
       else
         render :edit, status: :unprocessable_content
@@ -18,7 +20,7 @@ module Admin
     private
 
     def settings_params
-      params.expect(app_setting: %i[chat_default_model chat_notice_text chat_notice_url])
+      params.expect(app_setting: %i[chat_default_model chat_notice_text chat_notice_url video_script_prompt])
     end
   end
 end

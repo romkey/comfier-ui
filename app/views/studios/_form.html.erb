@@ -65,6 +65,15 @@
       <%= f.label :prompt, 'Describe what you want', class: 'form-label' %>
       <%= f.text_area :prompt, rows: 5, class: 'form-control', required: true, autofocus: true,
                                placeholder: prompt_placeholder(kind) %>
+      <% if kind.key == 'video' && LiteLlm::Client.configured? %>
+        <div class="d-flex align-items-center gap-2 mt-2">
+          <%= f.button type: 'submit', formaction: video_script_path, formnovalidate: true,
+                       class: 'btn btn-outline-secondary btn-sm' do %>
+            <i class="bi bi-journal-text me-1" aria-hidden="true"></i>Write a script
+          <% end %>
+          <span class="text-12 text-secondary">Opens a chat that turns this idea into a shot-by-shot script.</span>
+        </div>
+      <% end %>
     </div>
   <% end %>
 

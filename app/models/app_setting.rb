@@ -16,6 +16,11 @@ class AppSetting < ApplicationRecord
   validates(*TIMEOUT_ATTRS.values, numericality: { only_integer: true, in: 1..1440 })
 
   normalizes :motd_text, with: ->(text) { text.to_s.strip.presence }
+  # Saving the built-in text unchanged keeps following the default, so later improvements to it apply.
+  normalizes :video_script_prompt, with: lambda { |text|
+    text = text.to_s.gsub("\r\n", "\n").strip
+    text.presence unless text == Chat::VideoScript::DEFAULT_TEMPLATE
+  }
 
   def motd? = motd_text.present?
 
@@ -71,6 +76,16 @@ class AppSetting < ApplicationRecord
 
   def using_default_placeholder_prompt?
     placeholder_prompt.blank?
+  end
+
+  def self.default_video_script_prompt = Chat::VideoScript.default_template
+
+  def video_script_prompt_or_default
+    video_script_prompt.presence || self.class.default_video_script_prompt
+  end
+
+  def using_default_video_script_prompt?
+    video_script_prompt.blank?
   end
 
   def invalidate_all_sessions!

@@ -6,6 +6,9 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- **Video**: **Write a script** under the description starts a chat that turns the idea into a shot-by-shot script
+  sized to the chosen length and shape, ending with a prompt ready to paste back. Admins edit the message it sends
+  under Settings → Chat.
 - **3D results**: Agent servers render a 1024×1024 preview image of a job's first 3D model and upload it with the
   results, so 3D work shows a picture in Results, on its page, and on shared and public pages instead of a file icon.
   The agent draws it on the CPU with `trimesh` (which ComfyUI's 3D nodes usually install) and skips it when that

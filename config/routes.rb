@@ -31,6 +31,8 @@ Rails.application.routes.draw do
     get kind.path, to: 'studios#show', defaults: { kind: kind.key }, as: :"#{kind.key}_studio"
   end
 
+  post 'video/script', to: 'video_scripts#create', as: :video_script
+
   get 'chat/notice', to: 'chat_conversations#notice_redirect', as: :chat_notice_link
 
   resources :chats, controller: 'chat_conversations', only: %i[index show create update destroy] do
