@@ -20,6 +20,7 @@ Rails.application.routes.draw do
   get 'p/:token', to: 'public_shares#show', as: :public_share
   get 'p/:token/outputs/:index', to: 'public_shares#output', as: :public_share_output
   get 'p/:token/cover', to: 'public_shares#cover', as: :public_share_cover
+  get 'p/:token/poster', to: 'public_shares#poster', as: :public_share_poster
   get 'queue', to: 'queue#index', as: :queue
   get 'shared', to: 'shared#index', as: :shared_index
   get 'shared/:id', to: 'shared#show', as: :shared
