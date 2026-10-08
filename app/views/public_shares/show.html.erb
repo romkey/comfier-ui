@@ -1,6 +1,7 @@
 <% content_for :title, 'Shared result' %>
 <% content_for :head do %>
   <meta name="robots" content="noindex">
+  <%= public_share_meta_tags(@generation) %>
 <% end %>
 
 <div class="mx-auto" style="max-width: 56rem;">
