@@ -38,6 +38,7 @@
     <div class="h-section-label">Admin</div>
     <%= settings_nav_item 'Log', admin_activity_logs_path, icon: 'bi-journal-text' %>
     <%= settings_nav_item 'Reports', admin_reports_path, icon: 'bi-exclamation-triangle', count: @nav_open_reports %>
+    <%= settings_nav_item 'Public links', admin_public_links_path, icon: 'bi-link-45deg' %>
     <%= settings_nav_item 'Users', admin_users_path, icon: 'bi-people', count: @nav_user_count %>
     <%= settings_nav_item 'Backends', admin_backends_path, icon: 'bi-hdd-network', count: @nav_backend_count %>
     <%= settings_nav_item 'Server overview', admin_server_overview_path, icon: 'bi-speedometer2' %>

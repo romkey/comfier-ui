@@ -1,0 +1,48 @@
+<% content_for :title, 'Public links' %>
+
+<div class="d-flex align-items-end justify-content-between mb-3">
+  <div>
+    <h1 class="h-page-title mb-0">Public links</h1>
+    <div class="text-13 text-secondary mt-1">
+      <span class="text-body num"><%= @pagy.count %></span> active public <%= 'link'.pluralize(@pagy.count) %>
+      · your own visits and other admins' aren't counted as views
+    </div>
+  </div>
+</div>
+
+<% if @generations.empty? %>
+  <div class="status-panel status-clear">
+    <p class="text-13 text-secondary mb-0">Nobody has made a public link.</p>
+  </div>
+<% else %>
+  <table class="table table-compact table-hover align-middle">
+    <thead>
+      <tr>
+        <th>Result</th>
+        <th>Owner</th>
+        <th>Link created</th>
+        <th class="text-end">Views</th>
+        <th>Last viewed</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @generations.each do |generation| %>
+        <tr>
+          <td>
+            <%= link_to generation.title, public_share_path(generation.public_token), class: 'text-body fw-medium',
+                                                                                     target: '_blank', rel: 'noopener' %>
+            <div class="text-12 text-secondary"><%= generation.kind_info.label %></div>
+          </td>
+          <td class="text-12"><%= generation.user.display_name %></td>
+          <td class="text-12 text-secondary"><%= friendly_time(generation.public_shared_at) %></td>
+          <td class="text-end num"><%= number_with_delimiter(generation.public_view_count) %></td>
+          <td class="text-12 text-secondary"><%= friendly_time(generation.public_last_viewed_at) || '—' %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <% if @pagy.last > 1 %>
+    <nav class="mt-3 d-flex justify-content-center" aria-label="Pages"><%== @pagy.series_nav(:bootstrap) %></nav>
+  <% end %>
+<% end %>

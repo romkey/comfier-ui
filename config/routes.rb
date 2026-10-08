@@ -116,6 +116,7 @@ Rails.application.routes.draw do
     resource :album_art_setting, only: %i[edit update]
 
     resources :activity_logs, only: %i[index show]
+    resources :public_links, only: :index
 
     resources :workflows, except: :show do
       member do

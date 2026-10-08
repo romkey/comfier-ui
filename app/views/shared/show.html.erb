@@ -10,6 +10,9 @@
     <h1 class="h-page-title mb-1 text-truncate"><%= @generation.title %></h1>
     <div class="text-13 text-secondary">
       Shared by <%= @generation.user.display_name %> · <%= @generation.style_name %> · <%= friendly_time(@generation.shared_at) %>
+      <% if @generation.publicly_linked? && (current_user.admin? || current_user.id == @generation.user_id) %>
+        · Public link: <%= public_view_summary(@generation) %>
+      <% end %>
     </div>
   </div>
   <div class="d-flex gap-2 align-items-center">

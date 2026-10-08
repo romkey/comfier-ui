@@ -29,4 +29,19 @@ class PublicLinksTest < ActionDispatch::IntegrationTest
     assert_not generations(:alice_done).reload.publicly_linked?
     assert_not generations(:alice_failed).reload.publicly_linked?
   end
+
+  test 'lists view counts and revoke all resets them' do
+    mine = generations(:alice_done)
+    mine.update!(status: :succeeded)
+    mine.create_public_link!
+    mine.update!(public_view_count: 1234, public_last_viewed_at: Time.current)
+
+    get public_links_path
+
+    assert_select 'td', text: /1,234 views/
+
+    delete public_links_path
+
+    assert_equal 0, mine.reload.public_view_count
+  end
 end
