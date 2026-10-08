@@ -10,9 +10,11 @@ class PublicSharesController < ApplicationController
   before_action :set_noindex_headers, only: :show
 
   # Link-preview fetchers and crawlers, which would otherwise count every time a link is pasted somewhere.
-  NON_VIEWER_AGENTS = %r{bot\b|crawl|spider|slurp|facebookexternalhit|embedly|preview|whatsapp|skype|vkshare|
-                       pinterest|bitly|mastodon|pleroma|akkoma|misskey|curl|wget|python|go-http-client|headless|
-                       okhttp|java/}ix
+  # WhatsApp's and Pinterest's fetchers are matched by how their agents start, because the apps' in-app browsers,
+  # which real people open links in, mention them later on (Skype's fetcher says SkypeUriPreview).
+  NON_VIEWER_AGENTS = %r{bot\b|crawl|spider|slurp|facebookexternalhit|embedly|preview|vkshare|bitly|mastodon|
+                       pleroma|akkoma|misskey|curl|wget|python|go-http-client|headless|okhttp|java/|
+                       \A(?:whatsapp|pinterest)/}ix
 
   def show
     @generation.record_public_view! if countable_view?
