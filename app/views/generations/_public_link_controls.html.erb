@@ -15,6 +15,7 @@
                          data: { clipboard_target: 'source' } %>
       <button type="button" class="btn btn-outline-secondary" data-action="clipboard#copy">Copy</button>
     </div>
+    <p class="text-12 text-secondary mb-2"><%= public_view_summary(generation) %></p>
     <div class="d-flex gap-2 align-items-center flex-wrap">
       <% if live %>
         <%= button_to 'Change link', public_link_generation_path(generation), class: 'btn btn-outline-secondary btn-sm',

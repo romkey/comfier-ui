@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_07_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_08_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -321,6 +321,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_200000) do
     t.string "prediction_confidence"
     t.integer "prediction_source"
     t.bigint "album_art_generation_id"
+    t.integer "public_view_count", default: 0, null: false
+    t.datetime "public_last_viewed_at"
     t.index ["album_art_generation_id"], name: "index_generations_on_album_art_generation_id"
     t.index ["backend_id", "agent_state"], name: "index_generations_on_backend_id_and_agent_state"
     t.index ["backend_id"], name: "index_generations_on_backend_id"

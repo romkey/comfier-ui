@@ -76,7 +76,8 @@ class User < ApplicationRecord
   end
 
   def revoke_all_public_links!
-    generations.publicly_linked.update_all(public_token: nil, public_shared_at: nil, updated_at: Time.current) # rubocop:disable Rails/SkipsModelValidations
+    generations.publicly_linked.update_all(public_token: nil, public_shared_at: nil, public_view_count: 0, # rubocop:disable Rails/SkipsModelValidations
+                                           public_last_viewed_at: nil, updated_at: Time.current)
   end
 
   private

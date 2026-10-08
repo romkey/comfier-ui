@@ -104,4 +104,65 @@ class PublicSharesTest < ActionDispatch::IntegrationTest
     assert_equal '5', response.headers['Content-Length']
     assert_equal '01234', response.body
   end
+
+  BROWSER = { 'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 15_0) AppleWebKit/605.1.15 Safari/605.1' }.freeze
+
+  test 'views from people opening the link are counted' do
+    freeze_time do
+      2.times { get public_share_path(@token), headers: BROWSER }
+
+      @generation.reload
+
+      assert_equal 2, @generation.public_view_count
+      assert_equal Time.current, @generation.public_last_viewed_at
+    end
+  end
+
+  test 'preview fetchers, prefetches, the owner, and admins are not counted' do
+    ['Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)',
+     'Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)',
+     'facebookexternalhit/1.1 Facebot Twitterbot/1.0',
+     'TelegramBot (like TwitterBot)', 'curl/8.7.1', ''].each do |agent|
+      get public_share_path(@token), headers: { 'User-Agent' => agent }
+    end
+    get public_share_path(@token), headers: BROWSER.merge('Sec-Purpose' => 'prefetch')
+
+    sign_in_as users(:alice)
+    get public_share_path(@token), headers: BROWSER
+    sign_in_as users(:admin)
+    get public_share_path(@token), headers: BROWSER
+
+    assert_equal 0, @generation.reload.public_view_count
+  end
+
+  test 'media requests are not counted as views' do
+    get public_share_output_path(@token, 0), headers: BROWSER
+
+    assert_equal 0, @generation.reload.public_view_count
+  end
+
+  test 'a new or revoked link starts counting from zero' do
+    get public_share_path(@token), headers: BROWSER
+
+    assert_equal 1, @generation.reload.public_view_count
+
+    @generation.create_public_link!
+
+    assert_equal 0, @generation.public_view_count
+    assert_nil @generation.public_last_viewed_at
+
+    get public_share_path(@generation.public_token), headers: BROWSER
+    @generation.reload.revoke_public_link!
+
+    assert_equal 0, @generation.public_view_count
+  end
+
+  test 'the owner sees the view count on the result page' do
+    @generation.update!(public_view_count: 3, public_last_viewed_at: Time.current)
+    sign_in_as users(:alice)
+
+    get generation_path(@generation)
+
+    assert_select '.public-link-controls', text: /3 views/
+  end
 end

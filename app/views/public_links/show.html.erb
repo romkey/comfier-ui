@@ -34,6 +34,7 @@
         <th class="w-status"></th>
         <th>Result</th>
         <th>Link created</th>
+        <th>Views</th>
         <th></th>
       </tr>
     </thead>
@@ -52,6 +53,7 @@
             <div class="text-12 text-secondary"><%= generation.kind_info.label %></div>
           </td>
           <td class="text-12 text-secondary"><%= friendly_time(generation.public_shared_at) %></td>
+          <td class="text-12 text-secondary"><%= public_view_summary(generation) %></td>
           <td class="text-end text-nowrap">
             <div class="input-group input-group-sm d-inline-flex w-auto me-1" data-controller="clipboard"
                  onclick="event.stopPropagation()">

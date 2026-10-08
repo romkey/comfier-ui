@@ -22,12 +22,23 @@ module GenerationSharing
     update!(shared_at: nil)
   end
 
+  # A new link starts counting views from zero; the old one stops working.
   def create_public_link!
-    update!(public_token: SecureRandom.urlsafe_base64(PUBLIC_TOKEN_BYTES), public_shared_at: Time.current)
+    update!(public_token: SecureRandom.urlsafe_base64(PUBLIC_TOKEN_BYTES), public_shared_at: Time.current,
+            public_view_count: 0, public_last_viewed_at: nil)
   end
 
   def revoke_public_link!
-    update!(public_token: nil, public_shared_at: nil)
+    update!(public_token: nil, public_shared_at: nil, public_view_count: 0, public_last_viewed_at: nil)
+  end
+
+  # Counted in SQL so concurrent views don't lose increments, and without touching updated_at or the
+  # update callbacks that redraw the result's pages.
+  def record_public_view!
+    now = Time.current
+    self.class.where(id:).update_all(['public_view_count = public_view_count + 1, public_last_viewed_at = ?', now]) # rubocop:disable Rails/SkipsModelValidations
+    self.public_view_count += 1
+    self.public_last_viewed_at = now
   end
 
   def share_when_done?
