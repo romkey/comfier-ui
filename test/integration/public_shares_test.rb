@@ -122,7 +122,10 @@ class PublicSharesTest < ActionDispatch::IntegrationTest
     ['Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)',
      'Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)',
      'facebookexternalhit/1.1 Facebot Twitterbot/1.0',
-     'TelegramBot (like TwitterBot)', 'curl/8.7.1', ''].each do |agent|
+     'TelegramBot (like TwitterBot)', 'curl/8.7.1', 'WhatsApp/2.23.20.0 A', 'WhatsApp/2.2329.9 i',
+     'Mozilla/5.0 (Windows NT 6.1; WOW64) SkypeUriPreview Preview/0.5',
+     'Pinterest/0.2 (+https://www.pinterest.com/bot.html)',
+     'Mozilla/5.0 (compatible; Pinterestbot/1.0; +http://www.pinterest.com/bot.html)', ''].each do |agent|
       get public_share_path(@token), headers: { 'User-Agent' => agent }
     end
     get public_share_path(@token), headers: BROWSER.merge('Sec-Purpose' => 'prefetch')
@@ -133,6 +136,21 @@ class PublicSharesTest < ActionDispatch::IntegrationTest
     get public_share_path(@token), headers: BROWSER
 
     assert_equal 0, @generation.reload.public_view_count
+  end
+
+  test 'views in apps\' in-app browsers are counted' do
+    ['Mozilla/5.0 (Linux; Android 14; Pixel 8 Build/AP2A; wv) AppleWebKit/537.36 (KHTML, like Gecko) ' \
+     'Version/4.0 Chrome/129.0.6668.81 Mobile Safari/537.36 WhatsApp/2.24.20.89',
+     'Mozilla/5.0 (Linux; Android 14; SM-S921B Build/UP1A; wv) AppleWebKit/537.36 (KHTML, like Gecko) ' \
+     'Version/4.0 Chrome/129.0.6668.81 Mobile Safari/537.36 [Pinterest/Android]',
+     'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) ' \
+     'Mobile/15E148 [Pinterest/iOS]',
+     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 ' \
+     'Safari/537.36 Skype/8.130'].each do |agent|
+      get public_share_path(@token), headers: { 'User-Agent' => agent }
+    end
+
+    assert_equal 4, @generation.reload.public_view_count
   end
 
   test 'media requests are not counted as views' do
