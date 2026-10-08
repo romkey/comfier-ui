@@ -25,7 +25,7 @@ gem 'omniauth', '~> 2.1'
 gem 'omniauth_openid_connect', '~> 0.8'
 gem 'omniauth-rails_csrf_protection', '~> 2.0'
 
-gem 'pagy', '~> 43.6'
+gem 'pagy', '~> 43.7'
 
 # Agent WebSocket endpoint (Rack hijack) and protocol validation against protocol/agent-v1.schema.json
 gem 'faye-websocket', '~> 0.11'
