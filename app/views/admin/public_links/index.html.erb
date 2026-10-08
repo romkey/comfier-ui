@@ -1,28 +1,47 @@
 <% content_for :title, 'Public links' %>
+<% sort_args = { sort: @sort, sort_dir: @sort_dir, kind: @kind } %>
 
 <div class="d-flex align-items-end justify-content-between mb-3">
   <div>
     <h1 class="h-page-title mb-0">Public links</h1>
     <div class="text-13 text-secondary mt-1">
       <span class="text-body num"><%= @pagy.count %></span> active public <%= 'link'.pluralize(@pagy.count) %>
+      <% if @kind %>· filtered<% end %>
       · your own visits and other admins' aren't counted as views
     </div>
   </div>
 </div>
 
+<div class="d-flex flex-wrap gap-2 mb-3">
+  <%= link_to admin_public_links_path(sort: params[:sort], dir: params[:dir]),
+              class: ['filter-chip', { active: @kind.nil? }] do %>
+    All <span class="num text-secondary"><%= @kind_counts.values.sum %></span>
+  <% end %>
+  <% GenerationKind.all.each do |kind| %>
+    <%= link_to admin_public_links_path(kind: kind.key, sort: params[:sort], dir: params[:dir]),
+                class: ['filter-chip', { active: @kind == kind.key }] do %>
+      <i class="bi <%= kind.icon %>" aria-hidden="true"></i><%= kind.label %>
+      <span class="num text-secondary"><%= @kind_counts.fetch(kind.key, 0) %></span>
+    <% end %>
+  <% end %>
+</div>
+
 <% if @generations.empty? %>
   <div class="status-panel status-clear">
-    <p class="text-13 text-secondary mb-0">Nobody has made a public link.</p>
+    <p class="text-13 text-secondary mb-0">
+      <%= @kind ? "No #{GenerationKind.find(@kind).noun} results have public links." : 'Nobody has made a public link.' %>
+    </p>
   </div>
 <% else %>
   <table class="table table-compact table-hover align-middle">
     <thead>
       <tr>
-        <th>Result</th>
-        <th>Owner</th>
-        <th>Link created</th>
-        <th class="text-end">Views</th>
-        <th>Last viewed</th>
+        <th><%= table_sort_link 'Result', 'result', default: 'asc', **sort_args %></th>
+        <th><%= table_sort_link 'Owner', 'owner', default: 'asc', **sort_args %></th>
+        <th><%= table_sort_link 'Type', 'kind', default: 'asc', **sort_args %></th>
+        <th><%= table_sort_link 'Shared', 'shared', **sort_args %></th>
+        <th class="text-end"><%= table_sort_link 'Views', 'views', **sort_args %></th>
+        <th><%= table_sort_link 'Last viewed', 'last_viewed', **sort_args %></th>
       </tr>
     </thead>
     <tbody>
@@ -31,9 +50,11 @@
           <td>
             <%= link_to generation.title, public_share_path(generation.public_token), class: 'text-body fw-medium',
                                                                                      target: '_blank', rel: 'noopener' %>
-            <div class="text-12 text-secondary"><%= generation.kind_info.label %></div>
           </td>
           <td class="text-12"><%= generation.user.display_name %></td>
+          <td class="text-12 text-secondary">
+            <i class="bi <%= generation.kind_info.icon %> me-1" aria-hidden="true"></i><%= generation.kind_info.label %>
+          </td>
           <td class="text-12 text-secondary"><%= friendly_time(generation.public_shared_at) %></td>
           <td class="text-end num"><%= number_with_delimiter(generation.public_view_count) %></td>
           <td class="text-12 text-secondary"><%= friendly_time(generation.public_last_viewed_at) || '—' %></td>
