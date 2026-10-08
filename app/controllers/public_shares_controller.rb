@@ -33,6 +33,13 @@ class PublicSharesController < ApplicationController
     serve_output(image)
   end
 
+  # A video's first frame or a 3D model's render, for link previews.
+  def poster
+    return head :not_found unless @generation.output_poster.attached?
+
+    serve_output(@generation.output_poster)
+  end
+
   private
 
   def set_generation
