@@ -61,4 +61,23 @@ class EngineDownloadsTest < ActionDispatch::IntegrationTest
     assert_equal 'completed', download.reload.agent_state
     assert_empty Agent::Availability.compute(@workflow, @mac.reload).models
   end
+
+  test 'an engine download failure reads as a sentence with the reason' do
+    post server_downloads_path(@mac, workflow_id: @workflow.id)
+    download = ModelDownload.last
+    agent_message(@mac, { 'type' => 'model.download.failed', 'download_id' => download.agent_download_id,
+                          'reason' => 'engine', 'detail' => 'ConnectError: no route' })
+
+    assert_equal "Mac Studio couldn't download z-image-turbo. ConnectError: no route", download.reload.error_message
+  end
+
+  test 'an MLX video style whose recipe names a model rather than a repo offers nothing to download' do
+    video = Workflow.new(name: 'Bad LTX', kind: 'video', engine: 'mlx_video',
+                         graph: { 'command' => 'mlx_video.ltx_2.generate', 'model' => 'z-image-turbo',
+                                  'prompt' => '{{prompt}}' })
+    video.save!(validate: false) # saved before recipes were checked for this
+
+    assert_nil video.recipe_model
+    assert_empty Agent::Availability.compute(video, @mac.reload).models
+  end
 end

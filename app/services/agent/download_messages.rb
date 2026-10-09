@@ -15,7 +15,8 @@ module Agent
       'hash_mismatch' => "%<file>s didn't match its expected checksum, so it was deleted.",
       'size_mismatch' => "%<file>s wasn't the expected size, so it was deleted.",
       'network' => 'Downloading %<file>s from %<host>s kept failing because of network errors.',
-      'cancelled_by_shutdown' => '%<server>s shut down during the download.'
+      'cancelled_by_shutdown' => '%<server>s shut down during the download.',
+      'engine' => "%<server>s couldn't download %<file>s."
     }.freeze
     AUTH_FAILURE = /\b40[13]\b/
 

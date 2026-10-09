@@ -18,6 +18,7 @@ module EngineRecipe
     'mlx_video' => 'an mlx-video module such as mlx_video.ltx_2.generate'
   }.freeze
   KEY = /\A[a-z][a-z0-9_]*\z/
+  HF_REPO = %r{\A[A-Za-z0-9][\w.-]*/[\w.-]+\z}
   # Options the agent sets itself; a recipe can't point them somewhere else.
   RESERVED_OPTIONS = %w[output output_path output_dir].freeze
   MAX_KEYS = 64
@@ -34,9 +35,24 @@ module EngineRecipe
     found = []
     found << command_problem(engine, recipe['command']) unless valid_command?(engine, recipe['command'])
     found << 'needs "model"' if engine == 'mflux' && !recipe['model'].is_a?(String)
+    found.concat(mlx_video_model_problems(recipe)) if engine == 'mlx_video'
     found << "has too many options (#{recipe.size})" if recipe.size > MAX_KEYS
     found
   end
+
+  # mlx-video has no --model: LTX loads model_repo (a Hugging Face owner/name), Wan a local model_dir.
+  def mlx_video_model_problems(recipe)
+    found = []
+    if recipe.key?('model')
+      found << 'can\'t use "model" for MLX video; name the Hugging Face repo with "model_repo" ' \
+               '(e.g. prince-canuma/LTX-2.3-distilled) or a converted Wan model with "model_dir"'
+    end
+    repo = recipe['model_repo']
+    found << "\"model_repo\" must be a Hugging Face repo (owner/name), not #{repo.inspect}" if repo && !repo?(repo)
+    found
+  end
+
+  def repo?(value) = value.is_a?(String) && value.match?(HF_REPO)
 
   def valid_command?(engine, command) = command.is_a?(String) && command.match?(COMMANDS.fetch(engine))
 
@@ -69,5 +85,13 @@ module EngineRecipe
 
   # The model a recipe loads, for availability and the server's model list: an mflux model name, or the
   # Hugging Face repo an mlx-video recipe loads. A local model_dir isn't something Comfier can check.
-  def model(recipe) = recipe.is_a?(Hash) ? (recipe['model'].presence || recipe['model_repo'].presence)&.to_s : nil
+  # mflux names its model with "model"; MLX video with "model_repo" (a local model_dir isn't something
+  # Comfier can check or download).
+  def model(recipe, engine = nil)
+    return unless recipe.is_a?(Hash)
+
+    key = engine.to_s == 'mlx_video' ? 'model_repo' : 'model'
+    key = 'model_repo' if engine.nil? && recipe['model'].blank?
+    recipe[key].presence&.to_s
+  end
 end

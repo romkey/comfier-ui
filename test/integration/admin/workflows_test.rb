@@ -405,6 +405,16 @@ module Admin
       assert_select 'select[name="workflow[engine]"] option[value="mlx_video"][data-kinds="video"]'
     end
 
+    test 'an engine workflow that no longer passes its checks is flagged in the list' do
+      video = Workflow.new(name: 'Bad LTX', kind: 'video', engine: 'mlx_video',
+                           graph: { 'command' => 'mlx_video.ltx_2.generate', 'model' => 'z-image-turbo' })
+      video.save!(validate: false)
+      get admin_workflows_path
+
+      assert_select 'tr', text: /Bad LTX.*Needs fixing/m
+      assert_select 'tr', text: /SD 1\.5.*Needs fixing/m, count: 0
+    end
+
     test 'MLX video offers only video presets' do
       get new_admin_workflow_path(engine: 'mlx_video')
 

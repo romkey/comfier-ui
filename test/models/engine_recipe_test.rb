@@ -21,6 +21,22 @@ class EngineRecipeTest < ActiveSupport::TestCase
     assert_match(/set Runs on to mflux/, problem)
   end
 
+  test 'MLX video recipes name a Hugging Face repo, not a model' do
+    ltx = { 'command' => 'mlx_video.ltx_2.generate', 'prompt' => '{{prompt}}' }
+
+    assert_match(/can't use "model" for MLX video/,
+                 EngineRecipe.problems('mlx_video', ltx.merge('model' => 'z-image-turbo')).join)
+    assert_match(/must be a Hugging Face repo/,
+                 EngineRecipe.problems('mlx_video', ltx.merge('model_repo' => 'z-image-turbo')).join)
+    assert_empty EngineRecipe.problems('mlx_video', ltx.merge('model_repo' => 'prince-canuma/LTX-2.3-distilled'))
+  end
+
+  test "an engine's model comes from its own key" do
+    assert_equal 'z-image-turbo', EngineRecipe.model({ 'model' => 'z-image-turbo' }, 'mflux')
+    assert_nil EngineRecipe.model({ 'model' => 'z-image-turbo' }, 'mlx_video')
+    assert_equal 'org/repo', EngineRecipe.model({ 'model_repo' => 'org/repo' }, 'mlx_video')
+  end
+
   test 'mflux recipes name their model' do
     assert_includes EngineRecipe.problems('mflux', RECIPE.except('model')), 'needs "model"'
   end

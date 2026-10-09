@@ -51,7 +51,7 @@ class Workflow < ApplicationRecord # rubocop:disable Metrics/ClassLength
   def comfyui? = engine.blank? || engine_comfyui?
 
   # For mflux and MLX video workflows: the model the recipe loads, and the memory it needs.
-  def recipe_model = comfyui? ? nil : EngineRecipe.model(graph)
+  def recipe_model = comfyui? ? nil : EngineRecipe.model(graph, engine)
   def min_memory_gb = comfyui? ? nil : EngineRecipe.min_memory_gb(graph)
 
   # The admin form edits the per-workflow time limit in minutes; blank means the server default.
