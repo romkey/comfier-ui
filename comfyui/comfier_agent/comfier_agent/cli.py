@@ -348,19 +348,24 @@ def cmd_pull(args) -> int:
     if not installed("mflux"):
         print("mflux isn't installed (pip install 'comfier-agent[mflux]').", file=sys.stderr)
         return 1
-    return subprocess.call([sys.executable, "-m", "comfier_agent.workers.mflux_worker", "--pull", args.model,
-                            *([args.command] if args.command else [])])
+    # The test image uses the GPU like a job does, so it takes the lock like one.
+    return run_locked([sys.executable, "-m", "comfier_agent.workers.mflux_worker", "--pull", args.model,
+                       *([args.command] if args.command else [])])
 
 
 def cmd_lock(args) -> int:
-    from comfier_agent.gpu_lock import GpuLock
-
     cmd = args.cmd[1:] if args.cmd[:1] == ["--"] else args.cmd
     if not cmd:
         print("usage: comfier-agent lock -- COMMAND [ARGS...]", file=sys.stderr)
         return 2
-    config = load_config(sidecar=True)
-    lock = GpuLock(config.gpu_lock_path)
+    return run_locked(cmd)
+
+
+def run_locked(cmd: list[str]) -> int:
+    """Run cmd holding the GPU lock, waiting for a running Comfier job to finish first."""
+    from comfier_agent.gpu_lock import GpuLock
+
+    lock = GpuLock(load_config(sidecar=True).gpu_lock_path)
     if not lock.acquire():
         print("Waiting for the Comfier job using the GPU to finish…", file=sys.stderr)
         lock.acquire(wait=True)

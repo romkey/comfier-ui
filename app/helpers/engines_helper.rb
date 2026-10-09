@@ -8,9 +8,12 @@ module EnginesHelper
 
   # Installs the agent as a standalone service on an Apple Silicon Mac, with mflux.
   def mac_install_snippet(key)
+    url = Agent::Dispatcher.base_url
+    # The agent refuses a plain-http Comfier unless told it's on purpose (local and LAN installs).
+    insecure = ' --allow-insecure' if url.start_with?('http://')
     <<~TEXT
       uv tool install --python 3.12 "comfier-agent[mac] @ #{AGENT_PACKAGE}"
-      comfier-agent setup --url #{Agent::Dispatcher.base_url} --key #{key}
+      comfier-agent setup --url #{url} --key #{key}#{insecure}
       comfier-agent service install
     TEXT
   end
