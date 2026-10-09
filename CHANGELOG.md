@@ -35,6 +35,8 @@ All notable changes to this project are documented here. The format follows
   out of date.
 
 ### Changed
+- **Servers**: The server page's Styles table is now **Workflows**, grouped under Image, Video, Audio and 3D Model
+  and sorted alphabetically within each. Its **Turn off**/**Turn on** buttons are now **Disable**/**Enable**.
 - **Settings**: `GENERATION_TIMEOUT_MINUTES` is removed; time limits are set under Settings instead.
 - **Servers**: The "Styles it runs" allowlist in server settings is replaced by the per-style toggles. Existing
   allowlists are converted to the equivalent turned-off styles, and styles added later now run everywhere by default.

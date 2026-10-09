@@ -282,14 +282,14 @@ class ServersTest < ActionDispatch::IntegrationTest
 
     get server_path(backend)
 
-    assert_select "#{row} button", text: 'Turn off'
+    assert_select "#{row} button", text: 'Disable'
 
     patch server_styles_path(backend), params: { workflow_id: workflow.id, enabled: '0' }
 
     assert_response :success
     assert_select "turbo-frame#server_styles_#{backend.id} #{row}" do
       assert_select '.badge', text: 'Off'
-      assert_select 'button', text: 'Turn on'
+      assert_select 'button', text: 'Enable'
     end
     assert_not backend.reload.allows_workflow?(workflow)
     assert_equal "Turned off #{workflow.name} on #{backend.name}",
@@ -318,7 +318,7 @@ class ServersTest < ActionDispatch::IntegrationTest
     get server_path(backend)
 
     assert_select "##{ActionView::RecordIdentifier.dom_id(workflow, :server_style)} .badge", text: 'Off'
-    assert_select 'button', text: 'Turn on', count: 0
+    assert_select 'button', text: 'Enable', count: 0
 
     patch server_styles_path(backend), params: { workflow_id: workflow.id, enabled: '1' }
 
