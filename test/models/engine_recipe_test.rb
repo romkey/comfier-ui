@@ -10,8 +10,15 @@ class EngineRecipeTest < ActiveSupport::TestCase
 
   test 'the command has to belong to the engine' do
     assert_match(/needs "command"/, EngineRecipe.problems('mflux', RECIPE.merge('command' => 'rm -rf /')).first)
-    assert_match(/needs "command"/, EngineRecipe.problems('mlx_video', RECIPE).first)
+    assert_match(/is for mflux/, EngineRecipe.problems('mlx_video', RECIPE).first)
     assert_empty EngineRecipe.problems('mlx_video', { 'command' => 'mlx_video.ltx_2.generate', 'prompt' => 'x' })
+  end
+
+  test 'a recipe for another engine says which' do
+    problem = EngineRecipe.problems('mlx_video', RECIPE).first
+
+    assert_match(/is for mflux/, problem)
+    assert_match(/set Runs on to mflux/, problem)
   end
 
   test 'mflux recipes name their model' do
