@@ -18,6 +18,11 @@ module GenerationsHelper # rubocop:disable Metrics/ModuleLength
 
   def prompt_placeholder(kind) = PROMPT_PLACEHOLDERS.fetch(kind.key, '')
 
+  # A studio field the chosen style needs but the form doesn't have yet (after switching styles).
+  def studio_field_class(field, needs_input)
+    needs_input.include?(field) ? 'mb-3 studio-needs-input' : 'mb-3'
+  end
+
   def reference_image_label(kind)
     { 'image' => 'Reference image', 'video' => 'Starting frame', 'model_3d' => 'Picture of the object' }
       .fetch(kind.key, 'Starting image')
