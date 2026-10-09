@@ -161,7 +161,7 @@ class Worker:
         runner = ADAPTERS.get(command) or command_class(module)
         if runner is None:
             self.unload()
-            self.emit({"event": "loading", "id": request["id"], "includes_generation": True})
+            self.emit({"event": "loaded", "id": request["id"]})
             run_main(module, command, request)
             return
 
@@ -175,7 +175,7 @@ class Worker:
                 if command not in ADAPTERS:
                     raise
                 print(f"comfier: {command} adapter doesn't fit this mflux ({exc}); running its main()", file=sys.stderr)
-                self.emit({"event": "loading", "id": request["id"], "includes_generation": True})
+                self.emit({"event": "loaded", "id": request["id"]})
                 run_main(module, command, request)
                 return
             self.model_key = key
