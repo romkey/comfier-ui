@@ -133,3 +133,12 @@ async def test_bad_recipe_fails_validation(agent, tmp_path):
     await agent.front.send(agent.assign("j_1", engine="fake", workflow={"steps": 4}, requires={}))
     failed = (await agent.front.wait_for_types("job.failed", timeout=5))[0]
     assert "prompt" in failed["error"]
+
+
+@pytest.mark.asyncio
+async def test_hello_and_inventory_report_engines(agent):
+    await agent.start()
+    hello = agent.front.of_type("hello")[-1]
+    assert hello["engines"] == {"comfyui": {}}
+    inv = (await agent.front.wait_for_types("inventory", timeout=5))[-1]
+    assert inv["engines"] == {"comfyui": {}}

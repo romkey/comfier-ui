@@ -165,6 +165,7 @@ class AgentRuntime:
             "model_downloads_enabled": self.config.allow_model_downloads,
             "max_concurrent_downloads": self.config.max_concurrent_downloads,
             "use_hf_cli": self.config.use_hf_cli,
+            "engines": {name: engine.info() for name, engine in self.jobs.engines.items()} if self.jobs else {},
         }
         await self.connection.send(msg)
 
@@ -181,7 +182,7 @@ class AgentRuntime:
 
     async def _rescan_inventory(self, force: bool = False) -> None:
         try:
-            snap = await scan_inventory(self.comfy)
+            snap = await scan_inventory(self.comfy, self.jobs.engines if self.jobs else None)
         except Exception as exc:
             LOG.warning("inventory scan failed: %s", exc)
             return

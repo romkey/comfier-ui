@@ -91,6 +91,17 @@ class Backend < ApplicationRecord # rubocop:disable Metrics/ClassLength
     names.uniq
   end
 
+  # Execution engines the agent reported, e.g. { 'comfyui' => {}, 'mflux' => { 'version' => …, 'models' => [...] } }.
+  # Legacy servers, and agents that haven't sent an inventory yet, run ComfyUI only.
+  def engines
+    reported = backend_inventory&.engines_json
+    reported.presence || { 'comfyui' => {} }
+  end
+
+  def runs_engine?(key) = engines.key?(key.to_s)
+  def engine_info(key) = engines[key.to_s] || {}
+  def engine_models(key) = Array(engine_info(key)['models']).map(&:to_s)
+
   def speed_index = backend_speed&.speed_index || 1.0
 
   def online? = agent? ? Agent::Presence.online?(self) : last_check_ok != false

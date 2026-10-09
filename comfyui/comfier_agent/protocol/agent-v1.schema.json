@@ -34,6 +34,20 @@
     { "$ref": "#/$defs/bye" }
   ],
   "$defs": {
+    "engines": {
+      "description": "Execution engines this server runs, by name (comfyui, mflux, mlx_video). An agent that sends none runs comfyui only.",
+      "type": "object",
+      "maxProperties": 16,
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "version": { "type": "string", "maxLength": 64 },
+          "models": { "type": "array", "maxItems": 1000, "items": { "type": "string", "maxLength": 256 } },
+          "loras": { "type": "array", "maxItems": 5000, "items": { "type": "string", "maxLength": 512 } }
+        },
+        "additionalProperties": true
+      }
+    },
     "hello": {
       "type": "object",
       "required": ["type", "protocol", "agent_version", "backend_name"],
@@ -49,7 +63,8 @@
         "active_downloads": { "type": "array" },
         "model_downloads_enabled": { "type": "boolean" },
         "max_concurrent_downloads": { "type": "integer" },
-        "use_hf_cli": { "type": "boolean" }
+        "use_hf_cli": { "type": "boolean" },
+        "engines": { "$ref": "#/$defs/engines" }
       },
       "additionalProperties": true
     },
@@ -88,7 +103,8 @@
           }
         },
         "node_types": { "type": "array", "maxItems": 20000, "items": { "type": "string", "maxLength": 256 } },
-        "object_info_hash": { "type": "string" }
+        "object_info_hash": { "type": "string" },
+        "engines": { "$ref": "#/$defs/engines" }
       },
       "additionalProperties": true
     },
@@ -197,6 +213,11 @@
         "type": { "const": "job.assign" },
         "request_id": { "type": "string" },
         "job_id": { "type": "string" },
+        "engine": {
+          "description": "Which engine runs the job; absent means comfyui. For other engines, workflow is that engine's recipe.",
+          "type": "string",
+          "maxLength": 32
+        },
         "workflow": { "type": "object" },
         "inputs": { "type": "array" },
         "upload_url": { "type": "string" },

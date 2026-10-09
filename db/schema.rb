@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_08_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_08_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -91,6 +91,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_120000) do
     t.string "object_info_hash"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "engines_json", default: {}, null: false
     t.index ["backend_id"], name: "index_backend_inventories_on_backend_id", unique: true
   end
 

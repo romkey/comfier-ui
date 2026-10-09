@@ -11,9 +11,16 @@ module Agent
         inventory = BackendInventory.find_or_initialize_by(backend_id: backend.id)
         inventory.update!(inventory_hash: message['hash'].to_s, models_json: models,
                           node_types_json: Array(message['node_types']),
-                          object_info_hash: message['object_info_hash'])
+                          object_info_hash: message['object_info_hash'],
+                          engines_json: engines(message))
         replace_models!(backend, models)
       end
+    end
+
+    # Agents older than the engines field run ComfyUI only.
+    def engines(message)
+      engines = message['engines']
+      engines.is_a?(Hash) && engines.any? ? engines : { 'comfyui' => {} }
     end
 
     def replace_models!(backend, models)
