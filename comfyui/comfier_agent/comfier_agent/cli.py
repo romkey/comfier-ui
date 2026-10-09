@@ -113,11 +113,15 @@ def cmd_run(args) -> int:
 
 # --- setup -------------------------------------------------------------------------------------------
 
-def ask(prompt: str, default: str | None = None, *, secret: bool = False) -> str:
+def ask(prompt: str, default: str | None = None) -> str:
     suffix = f" [{default}]" if default else ""
-    reader = getpass.getpass if secret else input
-    answer = reader(f"{prompt}{suffix}: ").strip()
+    answer = input(f"{prompt}{suffix}: ").strip()
     return answer or (default or "")
+
+
+def ask_secret(prompt: str) -> str:
+    """Read without echoing. Kept apart from ask() so nothing else read here is treated as a secret."""
+    return getpass.getpass(f"{prompt}: ").strip()
 
 
 def cmd_setup(args) -> int:
@@ -126,7 +130,7 @@ def cmd_setup(args) -> int:
     config = load_config(sidecar=True)
     interactive = not args.yes and sys.stdin.isatty()
     url = args.url or (ask("Comfier URL", config.frontend_url or None) if interactive else config.frontend_url)
-    key = args.key or (ask("Server key (from Servers → your server)", None, secret=True) if interactive else "")
+    key = args.key or (ask_secret("Server key (from Servers → your server)") if interactive else "")
     name = args.name or (ask("Server name", config.backend_name) if interactive else config.backend_name)
 
     detected = [n for n, pkg in MLX_PACKAGES.items() if installed(pkg)]

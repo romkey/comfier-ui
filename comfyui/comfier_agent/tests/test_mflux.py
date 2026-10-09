@@ -209,3 +209,27 @@ def test_disk_checks_cover_the_work_folder(comfier_home):
     work.mkdir(parents=True)
     labels = dict(_paths_for_disk_check(AgentConfig(work_dir=str(work))))
     assert any(label == "work" for label in labels) or str(work) in labels.values()
+
+
+@pytest.mark.parametrize("keep_outputs, left", [(False, False), (True, True)])
+def test_a_failed_jobs_files_go_unless_outputs_are_kept(comfier_home, keep_outputs, left):
+    from comfier_agent.engines.base import JobContext
+
+    engine = make_engine(work_dir=str(comfier_home / "work"), keep_outputs=keep_outputs)
+    ctx = JobContext(job_id="j_f", engine="mflux")
+    (engine.job_dir(ctx) / "inputs").mkdir()
+    (engine.job_dir(ctx) / "mflux_j_f.png").write_bytes(b"partial")
+    engine.forget(ctx)
+    assert (engine.job_path("j_f") / "mflux_j_f.png").exists() is left
+    assert not (engine.job_path("j_f") / "inputs").exists()
+
+
+def test_stale_work_folders_are_swept(comfier_home):
+    from comfier_agent.jobs import sweep_stale_work
+
+    old, new = comfier_home / "work" / "j_old", comfier_home / "work" / "j_new"
+    old.mkdir(parents=True)
+    new.mkdir()
+    os.utime(old, (0, 0))
+    sweep_stale_work(AgentConfig(work_dir=str(comfier_home / "work")))
+    assert not old.exists() and new.exists()

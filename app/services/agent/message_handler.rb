@@ -97,6 +97,7 @@ module Agent
       inventory = @backend.backend_inventory
       changed = inventory.nil? || inventory.inventory_hash != message['hash']
       InventoryStore.store!(@backend, message) if changed
+      ServerStyles.reroute_unsupported_engines!(@backend.reload) if changed
       route_parked_jobs! if changed
       request_object_info(message['object_info_hash'])
       RecomputeAvailabilityJob.perform_later(backend_id: @backend.id)
