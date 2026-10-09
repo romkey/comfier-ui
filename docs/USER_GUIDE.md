@@ -284,7 +284,8 @@ as JSON, with the same placeholders.
    the command's flags in snake_case: `"image_strength": 0.4` is `--image-strength 0.4`, `true` is a bare flag.
 3. Set `min_memory_gb` to what the model needs. Macs with less memory aren't offered the style.
 4. Save. The style only goes to Macs that run the engine. A Mac that hasn't downloaded the model yet still takes the
-   job; the first run is slower while it downloads (`comfier-agent pull MODEL` on the Mac avoids that).
+   job, but the first run is slower while it downloads. To avoid that, open the Mac's page under **Servers** and
+   choose **Download** next to the style (or **Download all**); progress shows under **Downloads**.
 
 To remove a workflow, open it (or use the **⋯** menu on the list) and choose **Delete**. Past results stay; they just
 lose the link back to this style.

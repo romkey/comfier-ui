@@ -14,7 +14,7 @@ module Agent
     # Admin- or owner-requested downloads. Returns the downloads created or reused.
     def manual!(backend, models, user:)
       planned = models.filter_map do |model|
-        next if model['url'].blank?
+        next if model['url'].blank? && model['engine'].blank?
 
         plan!(backend, model, user_id: user&.id, auto: false)
       end
@@ -37,6 +37,7 @@ module Agent
 
       ModelDownload.create!(
         backend:, directory: model['folder'], name: model['filename'], url: model['url'], sha256: model['sha256'],
+        engine: model['engine'],
         bytes_total: model['bytes'], agent_state: 'queued', agent_download_id: "d_#{SecureRandom.hex(8)}",
         requested_by_user_id: user_id, auto:, for_generation_ids: [generation_id].compact, status: :queued,
         via: 'agent'

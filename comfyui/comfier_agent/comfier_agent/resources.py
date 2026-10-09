@@ -154,9 +154,9 @@ def _paths_for_disk_check(config: AgentConfig) -> list[tuple[str, str]]:
 
     # mflux and mlx-video keep job files in work_dir and models in the Hugging Face cache.
     add("work", os.path.expanduser(config.work_dir))
-    add("hf_cache", os.path.expanduser(
-        os.environ.get("HF_HUB_CACHE") or os.path.join(os.environ.get("HF_HOME") or "~/.cache/huggingface", "hub")
-    ))
+    from comfier_agent.engines.mlx import hf_hub_cache
+
+    add("hf_cache", str(hf_hub_cache()))
 
     try:
         import folder_paths  # type: ignore

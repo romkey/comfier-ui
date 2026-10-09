@@ -102,7 +102,8 @@ class AgentRuntime:
             gpu_lock=self.gpu_lock,
             engine_available=self.engine_available,
         )
-        self.models = ModelDownloadManager(self.config, self.comfy.session, send, self._rescan_inventory)
+        self.models = ModelDownloadManager(self.config, self.comfy.session, send, self._rescan_inventory,
+                                           engines=self.engines)
 
         from comfier_agent.models import sweep_stale_part_files
 

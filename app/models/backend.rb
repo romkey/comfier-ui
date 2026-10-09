@@ -185,6 +185,15 @@ class Backend < ApplicationRecord # rubocop:disable Metrics/ClassLength
     workflows_for_server.flat_map { downloadable_models(it) }.uniq(&:path)
   end
 
+  # mflux and MLX video models this server's styles need, as downloads the engine fetches by name.
+  def downloadable_engine_models
+    return [] unless agent? && can_download_models?
+
+    engine_workflows = workflows_for_server.where.not(engine: 'comfyui')
+    models = engine_workflows.filter_map { Agent::Availability.compute(it, self).models.first }
+    models.uniq { [it['folder'], it['filename']] }
+  end
+
   def workflows_for_server
     scope = Workflow.enabled.ordered
     disabled_workflow_ids.empty? ? scope : scope.where.not(id: disabled_workflow_ids)

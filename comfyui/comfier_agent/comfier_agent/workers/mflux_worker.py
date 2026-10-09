@@ -13,10 +13,12 @@ any other command runs through its main() each time.
 
 `--inventory` prints mflux's version and the models already downloaded, then exits.
 `--pull MODEL [COMMAND]` makes a small test image with MODEL, which downloads it the way a job would.
+`--download MODEL [COMMAND]` only downloads MODEL's files, without loading them (see download_only).
 """
 
 from __future__ import annotations
 
+import contextlib
 import gc
 import importlib
 import importlib.metadata
@@ -310,12 +312,7 @@ def pull(model: str, command: str | None = None) -> int:
     image_flag = reference_flag(command_module(command).build_parser(), command)
     folder = tempfile.mkdtemp(prefix="comfier-pull-")
     output = os.path.join(folder, "test.png")
-    reference = []
-    if image_flag:
-        from PIL import Image
-
-        Image.new("RGB", (256, 256), (200, 60, 50)).save(os.path.join(folder, "reference.png"))
-        reference = [image_flag, os.path.join(folder, "reference.png")]
+    reference = [image_flag, _reference_image(folder)] if image_flag else []
     print(f"Downloading and testing {model} with {command} (this can take a while the first time)…")
 
     class Printer:
@@ -343,6 +340,100 @@ def pull(model: str, command: str | None = None) -> int:
     return 1 if getattr(printer, "failed", True) else 0
 
 
+class WeightsFetched(Exception):
+    """Raised where mflux would start putting weights into memory: everything is downloaded by then."""
+
+
+@contextlib.contextmanager
+def download_only(emit):
+    """Runs a model's normal load path so mflux fetches exactly the files it uses (each model family picks
+    its own), but reads none of them and stops where it would apply them. Every mflux model loads through
+    WeightLoader and WeightApplier; a tokenizer fetched after that point waits for the first job. Each
+    Hugging Face repo touched is reported as {"event": "repo"} so the agent can follow its size."""
+    from mflux.models.common.resolution import path_resolution
+    from mflux.models.common.tokenizer import tokenizer_loader
+    from mflux.models.common.weights.loading.weight_applier import WeightApplier
+    from mflux.models.common.weights.loading.weight_loader import WeightLoader
+
+    def skip_reading(*_args, **_kwargs):
+        return {}, None, None
+
+    def stop(*_args, **_kwargs):
+        raise WeightsFetched()
+
+    def announcing(original):
+        def snapshot_download(*args, **kwargs):
+            repo = kwargs.get("repo_id") or (args[0] if args else None)
+            if repo:  # cached ones too, so the model's size is reported either way
+                emit({"event": "repo", "repo": repo})
+            return original(*args, **kwargs)
+
+        return snapshot_download
+
+    patches = [
+        (WeightLoader, "_load_component", staticmethod(skip_reading)),
+        (WeightApplier, "apply_and_quantize", staticmethod(stop)),
+        (WeightApplier, "apply_and_quantize_single", staticmethod(stop)),
+        (path_resolution, "snapshot_download", announcing(path_resolution.snapshot_download)),
+        (tokenizer_loader, "snapshot_download", announcing(tokenizer_loader.snapshot_download)),
+    ]
+    saved = [(target, name, target.__dict__[name]) for target, name, _ in patches]
+    try:
+        for target, name, replacement in patches:
+            setattr(target, name, replacement)
+        yield
+    finally:
+        for target, name, original in saved:
+            setattr(target, name, original)
+
+
+def download(model: str, command: str | None = None, out=None) -> int:
+    """Download MODEL's files without loading it, reporting JSON events on `out` (stdout by default)."""
+    import tempfile
+
+    out = out or sys.stdout
+
+    def emit(event):
+        out.write(json.dumps(event) + "\n")
+        out.flush()
+
+    command = command or pull_command(model)
+    module = command_module(command)
+    folder = tempfile.mkdtemp(prefix="comfier-download-")
+    image_flag = reference_flag(module.build_parser(), command)
+    reference = [image_flag, _reference_image(folder)] if image_flag else []
+    request = {"id": "download", "output": os.path.join(folder, "unused.png"),
+               "argv": ["--model", model, "--prompt", "download", "--steps", "1", *reference]}
+    try:
+        with download_only(emit):
+            args = parse_args(module, command, request)
+            runner = ADAPTERS.get(command) or command_class(module)
+            try:
+                if runner is not None:
+                    runner.load(args)
+                else:
+                    run_main(module, command, request)
+            except WeightsFetched:
+                pass
+    except SystemExit as exc:
+        emit({"event": "error", "type": "InvalidOptions", "message": f"{command} rejected {model} (exit {exc.code})"})
+        return 1
+    except BaseException as exc:  # noqa: BLE001 - every failure has to reach the agent
+        emit({"event": "error", "type": type(exc).__name__, "message": str(exc) or type(exc).__name__,
+              "traceback": "".join(traceback.format_exc().splitlines(True)[-TRACEBACK_LINES:])})
+        return 1
+    emit({"event": "done"})
+    return 0
+
+
+def _reference_image(folder: str) -> str:
+    from PIL import Image
+
+    path = os.path.join(folder, "reference.png")
+    Image.new("RGB", (256, 256), (200, 60, 50)).save(path)
+    return path
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     if argv[:1] == ["--inventory"]:
@@ -350,6 +441,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if argv[:1] == ["--pull"] and len(argv) >= 2:
         return pull(argv[1], argv[2] if len(argv) > 2 else None)
+    if argv[:1] == ["--download"] and len(argv) >= 2:
+        return download(argv[1], argv[2] if len(argv) > 2 else None)
     # Keep the event stream to ourselves: anything else written to stdout goes to stderr.
     out = os.fdopen(os.dup(1), "w", buffering=1)
     os.dup2(2, 1)

@@ -128,6 +128,9 @@ class MfluxEngine(MlxEngine):
                 detail = self.worker.tail() or f"exit code {event.get('code')}"
                 raise JobError("execute", f"mflux stopped unexpectedly: {detail}")
 
+    def download_argv(self, model: str) -> list[str]:
+        return [*self.worker_argv, "--download", model]
+
     async def cancel(self, ctx: JobContext) -> bool:
         await self.worker.stop()
         return False

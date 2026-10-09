@@ -1,5 +1,6 @@
 # One model file being downloaded onto one backend, either by running the Comfier downloader node
-# as a tiny workflow or by queueing it in ComfyUI-Manager.
+# as a tiny workflow or by queueing it in ComfyUI-Manager. For the mflux and MLX video engines it's a whole
+# model, by name (directory is the engine, name the model), which the engine fetches itself: no url.
 class ModelDownload < ApplicationRecord
   enum :status, { queued: 'queued', running: 'running', succeeded: 'succeeded', failed: 'failed' },
        default: :queued, validate: true
@@ -22,8 +23,9 @@ class ModelDownload < ApplicationRecord
     agent? ? Agent::DownloadSender::PENDING.include?(agent_state) && agent_state != 'cancelling' : false
   end
 
-  validates :directory, :name, :url, presence: true
-  validate :requirement_is_valid
+  validates :directory, :name, presence: true
+  validates :url, presence: true, unless: :engine?
+  validate :requirement_is_valid, unless: :engine?
 
   scope :active, -> { where(status: %i[queued running]) }
   scope :finished, -> { where(agent_state: %w[completed failed cancelled]) }

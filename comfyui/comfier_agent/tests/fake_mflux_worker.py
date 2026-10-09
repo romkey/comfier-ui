@@ -10,7 +10,27 @@ import time
 
 if sys.argv[1:] == ["--inventory"]:
     print("mflux says hello")
-    print(json.dumps({"version": "9.9.9", "models": ["z-image-turbo"], "catalog": ["dev", "z-image-turbo"]}))
+    hub = os.environ.get("HF_HUB_CACHE") or ""
+    fetched = [d.removeprefix("models--fake--") for d in (os.listdir(hub) if os.path.isdir(hub) else [])]
+    print(json.dumps({"version": "9.9.9", "models": sorted({"z-image-turbo", *fetched}),
+                      "catalog": ["dev", "z-image-turbo"]}))
+    sys.exit(0)
+
+if sys.argv[1:2] == ["--download"]:
+    # Writes a fake model into HF_HUB_CACHE in two parts. "broken" fails, "slow" waits to be cancelled.
+    model = sys.argv[2]
+    repo = f"fake/{model}"
+    print(json.dumps({"event": "repo", "repo": repo}), flush=True)
+    if model == "broken":
+        print(json.dumps({"event": "error", "message": "ConnectError: no route to huggingface.co"}), flush=True)
+        sys.exit(1)
+    blobs = os.path.join(os.environ["HF_HUB_CACHE"], "models--" + repo.replace("/", "--"), "blobs")
+    os.makedirs(blobs, exist_ok=True)
+    for part in range(2):
+        with open(os.path.join(blobs, f"part{part}"), "wb") as f:
+            f.write(b"x" * 1000)
+        time.sleep(60 if model == "slow" else 0.1)
+    print(json.dumps({"event": "done"}), flush=True)
     sys.exit(0)
 
 out = sys.stdout

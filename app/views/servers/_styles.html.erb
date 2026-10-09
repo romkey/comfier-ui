@@ -9,8 +9,9 @@
     <div class="d-flex gap-2">
       <%= button_to 'Re-scan', rescan_server_styles_path(backend), class: 'btn btn-outline-secondary btn-sm',
                     form: { data: { turbo_frame: "server_styles_#{backend.id}" } } %>
-      <% if (all_missing = backend.downloadable_missing_models).any? %>
-        <%= button_to "Download all (#{all_missing.size})", server_downloads_path(backend),
+      <% all_missing = backend.downloadable_missing_models.size + backend.downloadable_engine_models.size %>
+      <% if all_missing.positive? %>
+        <%= button_to "Download all (#{all_missing})", server_downloads_path(backend),
                       params: { all: true }, class: 'btn btn-outline-secondary btn-sm' %>
       <% end %>
     </div>
@@ -41,7 +42,8 @@
         <td class="text-end text-nowrap">
           <% if can_manage %>
             <div class="d-inline-flex gap-2 align-items-center">
-              <% if !off && record&.needs_downloads? %>
+              <%# Engine styles stay ready without their model (it downloads on the first run) but offer it. %>
+              <% if !off && (record&.needs_downloads? || (record&.ready? && record.details['models'].present?)) %>
                 <%= button_to 'Download', server_downloads_path(backend, workflow_id: workflow.id),
                               class: 'btn btn-outline-secondary btn-sm' %>
               <% end %>

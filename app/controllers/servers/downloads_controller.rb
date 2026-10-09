@@ -12,8 +12,8 @@ module Servers
     end
 
     def create
-      requirements = selected_requirements
-      downloads = Backends::AgentRunner.new.download(@backend, requirements, user: current_user)
+      downloads = Backends::AgentRunner.new.download(@backend, selected_requirements, user: current_user)
+      downloads += Agent::DownloadPlanner.manual!(@backend, selected_engine_models, user: current_user)
       notice = downloads.any? ? "Queued #{downloads.size} download(s) on #{@backend.name}." : 'Nothing to download.'
       redirect_back_or_to server_path(@backend), notice:, status: :see_other
     end
@@ -62,8 +62,19 @@ module Servers
 
     def download_all? = ActiveModel::Type::Boolean.new.cast(params[:all])
 
+    # mflux and MLX video models, which the engine fetches by name.
+    def selected_engine_models
+      return @backend.downloadable_engine_models if download_all?
+      return [] if params[:workflow_id].blank?
+
+      workflow = Workflow.find(params[:workflow_id])
+      workflow.comfyui? ? [] : Agent::Availability.compute(workflow, @backend).models
+    end
+
     def workflow_requirements
       workflow = Workflow.find(params[:workflow_id])
+      return [] unless workflow.comfyui?
+
       Agent::Availability.compute(workflow, @backend).models.map do |model|
         ModelRequirement.new(directory: model['folder'], name: model['filename'], url: model['url'])
       end

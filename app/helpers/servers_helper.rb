@@ -76,14 +76,6 @@ module ServersHelper
     wait.positive? ? short_duration(wait * 1000) : tag.span('None', class: 'text-secondary')
   end
 
-  def download_line(download)
-    parts = ["#{human_bytes(download.bytes_done)} of #{human_bytes(download.bytes_total)}"]
-    parts << "#{human_bytes(download.speed_bps)}/s" if download.speed_bps.to_i.positive?
-    eta = download.agent_eta
-    parts << eta_phrase(eta) if eta && download.agent_state != 'queued'
-    parts.join(' · ')
-  end
-
   def availability_cell(record)
     return tag.span('—', class: 'text-secondary') unless record
 
