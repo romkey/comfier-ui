@@ -31,7 +31,7 @@
         <td><%= workflow.name %></td>
         <td>
           <% if off %>
-            <span class="badge text-bg-secondary fw-medium" title="Disabled on this server">Off</span>
+            <span class="status-dot status-danger" title="Disabled on this server" aria-label="Disabled"></span>
           <% else %>
             <%= availability_cell(record) %>
           <% end %>
