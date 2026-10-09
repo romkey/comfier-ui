@@ -24,9 +24,15 @@ def test_without_flock_the_gpu_lock_is_off_rather_than_an_import_error(monkeypat
 
 def test_disk_checks_count_folders_that_dont_exist_yet(tmp_path, monkeypatch):
     monkeypatch.setenv("HF_HUB_CACHE", str(tmp_path / "hf" / "hub"))
-    paths = dict(_paths_for_disk_check(AgentConfig(work_dir=str(tmp_path / "comfier" / "work"))))
+    paths = dict(_paths_for_disk_check(AgentConfig(engines=["mflux"], work_dir=str(tmp_path / "comfier" / "work"))))
     assert str(tmp_path) in paths.values()
     assert nearest_existing(str(tmp_path / "a" / "b")) == str(tmp_path)
+
+
+def test_a_comfyui_only_server_doesnt_check_the_mlx_folders(tmp_path, monkeypatch):
+    monkeypatch.setenv("HF_HUB_CACHE", str(tmp_path / "hf" / "hub"))
+    paths = _paths_for_disk_check(AgentConfig(engines=["comfyui"], work_dir=str(tmp_path / "work")))
+    assert not any(label in ("work", "hf_cache") for label, _ in paths)
 
 
 @pytest.fixture

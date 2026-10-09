@@ -207,7 +207,7 @@ def test_disk_checks_cover_the_work_folder(comfier_home):
 
     work = comfier_home / "work"
     work.mkdir(parents=True)
-    labels = dict(_paths_for_disk_check(AgentConfig(work_dir=str(work))))
+    labels = dict(_paths_for_disk_check(AgentConfig(engines=["mflux"], work_dir=str(work))))
     assert any(label == "work" for label in labels) or str(work) in labels.values()
 
 
