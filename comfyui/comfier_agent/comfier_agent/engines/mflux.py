@@ -47,7 +47,6 @@ class MfluxEngine(MlxEngine):
         the loaded model are left alone. At most every INVENTORY_MAX_AGE_S, or after a job."""
         if self._refreshed_at and time.monotonic() - self._refreshed_at < INVENTORY_MAX_AGE_S:
             return
-        self._refreshed_at = time.monotonic()
         probe = ChildProcess("mflux inventory")
         try:
             await probe.start([*self.worker_argv, "--inventory"], stdout=True)
@@ -61,21 +60,25 @@ class MfluxEngine(MlxEngine):
         self.version = data.get("version") or self.version
         self.models = sorted(data.get("models") or [])
         self.extra_info = {"catalog": sorted(data.get("catalog") or [])}
+        self._refreshed_at = time.monotonic()
 
     async def execute(self, ctx: JobContext, workflow: Any, *, timeout_s: int, progress: ProgressFn) -> list[dict]:
         self._cancel_idle_unload()
         out = self.job_dir(ctx) / f"mflux_{ctx.job_id}.png"
         request = {"op": "generate", "id": ctx.job_id, "command": workflow["command"],
                    "argv": recipe_argv(workflow), "output": str(out)}
-        async with self._lock:
-            await self._ensure_worker()
-            await self._send(request)
-            ctx.timings.mark_prompt()
-            ctx.phase = "loading_model"
-            await progress(ctx, "loading_model", 0.0)
-            await self._follow(ctx, timeout_s=timeout_s, progress=progress)
-        self._schedule_idle_unload()
-        self._refreshed_at = None  # the job may have downloaded a model
+        try:
+            async with self._lock:
+                await self._ensure_worker()
+                await self._send(request)
+                ctx.timings.mark_prompt()
+                ctx.phase = "loading_model"
+                await progress(ctx, "loading_model", 0.0)
+                await self._follow(ctx, timeout_s=timeout_s, progress=progress)
+        finally:
+            # After a failure too: an errored worker keeps its model until something unloads it.
+            self._schedule_idle_unload()
+            self._refreshed_at = None  # the job may have downloaded a model
         return self.outputs(ctx, out)
 
     async def _follow(self, ctx: JobContext, *, timeout_s: int, progress: ProgressFn) -> None:
@@ -96,7 +99,10 @@ class MfluxEngine(MlxEngine):
             if generation != self._generation:
                 continue
             kind = event.get("event")
-            if kind == "loaded":
+            if kind == "loading" and event.get("includes_generation"):
+                # main() loads and generates in one go, so allow for both.
+                deadline += timeout_s
+            elif kind == "loaded":
                 ctx.phase = "running"
                 ctx.timings.mark_execution_start()
                 deadline = time.monotonic() + timeout_s
@@ -155,12 +161,16 @@ class MfluxEngine(MlxEngine):
 
         async def unload_later() -> None:
             await asyncio.sleep(minutes * 60)
-            LOG.info("mflux idle for %s min; unloading its model", minutes)
-            await self.worker.stop()
+            # Under the lock and past the point of cancelling, so a job never gets a half-stopped worker.
+            async with self._lock:
+                self._idle_task = None
+                LOG.info("mflux idle for %s min; unloading its model", minutes)
+                await self.worker.stop()
 
         self._idle_task = asyncio.create_task(unload_later())
 
     def _cancel_idle_unload(self) -> None:
-        if self._idle_task and not self._idle_task.done():
+        """Called before a job takes the lock; an unload already under way finishes first."""
+        if self._idle_task and not self._idle_task.done() and not self._lock.locked():
             self._idle_task.cancel()
         self._idle_task = None
