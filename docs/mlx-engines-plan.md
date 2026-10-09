@@ -12,9 +12,9 @@ Goals:
 - No new server type to manage: a Mac is just another agent server.
 - Installing and updating on a Mac takes a few commands, and the agent runs as a launchd service.
 
-The video tool hasn't been chosen yet. It's the MLX video generator recommended in an earlier
-discussion. Below it's called `mlx_video`; replace that with the real name when it's chosen. Nothing
-before phase 6 depends on which tool it is.
+The video tool is [mlx-video](https://github.com/Blaizzy/mlx-video), called `mlx_video` below. It
+runs LTX-2 / LTX-2.3 (text, image and audio to video) and Wan 2.1 / 2.2 (text and image to video,
+with LoRAs) natively on MLX.
 
 ---
 
@@ -244,11 +244,19 @@ The ComfyUI custom-node install is unchanged for Linux and GPU servers.
 
 ## Phase 6 — MLX video engine
 
-Once the tool is chosen, add `MlxVideoEngine` and its worker, built the same way as phase 4: the
-same JSON-lines worker, memory handoff, cancel by kill, and HF-cache inventory. Map its options
-(text-to-video, image-to-video, frames, fps, resolution) to a recipe schema, and register `video`
-as its allowed kind. If the tool only has a CLI, the worker can shell out per job and give up
-keeping the model loaded. Check how long it takes to load before deciding.
+Add `MlxVideoEngine` for [mlx-video](https://github.com/Blaizzy/mlx-video), built the same way as
+phase 4: memory handoff, cancel by kill, and HF-cache inventory. It runs one `mlx_video` CLI process
+per job (`python -m mlx_video.ltx_2.generate`, `python -m mlx_video.wan_2.generate`), because its
+Python API isn't stable yet. A crash or CLI change then only fails video jobs. Map its options
+(model family, text-to-video, image-to-video, frames, fps, resolution) to a recipe schema, and
+register `video` as its allowed kind.
+
+mlx-video is installed from GitHub, not PyPI, so the `video` extra pins a commit and
+`comfier-agent doctor` checks that it imports.
+
+Memory decides which models a Mac can run. LTX-2 is 19B and needs about 64 GB for useful clips.
+Wan2.2 TI2V 5B fits on 32 GB. Recipes declare `min_memory_gb`, and the frontend treats a server with
+less RAM than that as blocked, using the RAM the agent already reports.
 
 ---
 
@@ -268,7 +276,6 @@ Bump the agent `__version__` in every PR that touches `comfyui/comfier_agent`.
 
 ## Open questions
 
-- Which MLX video tool? (Phase 6.)
 - Should a Mac with both ComfyUI and mflux prefer mflux for image styles that exist in both forms,
   or should admins pick per workflow? This plan assumes per workflow: two styles, routed by engine.
 - Does the Mac host stay a single-user machine, or should the GPU lock be on by default?
