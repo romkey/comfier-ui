@@ -1,5 +1,6 @@
 # Starting recipes for mflux and MLX video workflows, offered on the admin workflow form. Memory
-# figures are rough guides for 8-bit weights; edit `min_memory_gb` in the recipe to match your Macs.
+# figures are rough guides (LTX-2.3 is a 22B video model plus a 12B Gemma text encoder, in bf16); edit
+# `min_memory_gb` in the recipe to match your Macs.
 class EnginePreset
   Preset = Data.define(:engine, :key, :label, :kind, :recipe) do
     def to_json_text = JSON.pretty_generate(recipe)
@@ -37,27 +38,30 @@ class EnginePreset
                  'steps' => '{{steps}}', 'guidance' => '{{cfg}}', 'prompt' => '{{prompt}}',
                  'image_paths' => ['{{image}}'], 'seed' => '{{seed}}', 'min_memory_gb' => 48
                }),
-    Preset.new(engine: 'mlx_video', key: 'ltx-2.3-distilled', label: 'LTX-2.3 distilled (fast, 64 GB)', kind: 'video',
+    Preset.new(engine: 'mlx_video', key: 'ltx-2.3-distilled', label: 'LTX-2.3 distilled (fast, 96 GB)', kind: 'video',
                recipe: {
                  'command' => 'mlx_video.ltx_2.generate', 'pipeline' => 'distilled',
-                 'model_repo' => 'prince-canuma/LTX-2.3-distilled', 'prompt' => '{{prompt}}',
+                 'model_repo' => 'prince-canuma/LTX-2.3-distilled', 'text_encoder_repo' => EngineRecipe::LTX_TEXT_ENCODER,
+                 'prompt' => '{{prompt}}',
                  'width' => '{{width}}', 'height' => '{{height}}', 'num_frames' => '{{frames}}', 'fps' => 24,
-                 'seed' => '{{seed}}', 'min_memory_gb' => 64
+                 'seed' => '{{seed}}', 'min_memory_gb' => 96
                }),
-    Preset.new(engine: 'mlx_video', key: 'ltx-2.3-distilled-i2v', label: 'LTX-2.3 distilled, from an image (64 GB)',
+    Preset.new(engine: 'mlx_video', key: 'ltx-2.3-distilled-i2v', label: 'LTX-2.3 distilled, from an image (96 GB)',
                kind: 'video', recipe: {
                  'command' => 'mlx_video.ltx_2.generate', 'pipeline' => 'distilled',
-                 'model_repo' => 'prince-canuma/LTX-2.3-distilled', 'prompt' => '{{prompt}}', 'image' => '{{image}}',
+                 'model_repo' => 'prince-canuma/LTX-2.3-distilled', 'text_encoder_repo' => EngineRecipe::LTX_TEXT_ENCODER,
+                 'prompt' => '{{prompt}}', 'image' => '{{image}}',
                  'width' => '{{width}}', 'height' => '{{height}}', 'num_frames' => '{{frames}}', 'fps' => 24,
-                 'seed' => '{{seed}}', 'min_memory_gb' => 64
+                 'seed' => '{{seed}}', 'min_memory_gb' => 96
                }),
-    Preset.new(engine: 'mlx_video', key: 'ltx-2.3-dev', label: 'LTX-2.3 dev (higher quality, 64 GB)', kind: 'video',
+    Preset.new(engine: 'mlx_video', key: 'ltx-2.3-dev', label: 'LTX-2.3 dev (higher quality, 96 GB)', kind: 'video',
                recipe: {
                  'command' => 'mlx_video.ltx_2.generate', 'pipeline' => 'dev',
-                 'model_repo' => 'prince-canuma/LTX-2.3-dev', 'prompt' => '{{prompt}}',
+                 'model_repo' => 'prince-canuma/LTX-2.3-dev', 'text_encoder_repo' => EngineRecipe::LTX_TEXT_ENCODER,
+                 'prompt' => '{{prompt}}',
                  'negative_prompt' => '{{negative_prompt}}', 'cfg_scale' => '{{cfg}}', 'steps' => '{{steps}}',
                  'width' => '{{width}}', 'height' => '{{height}}', 'num_frames' => '{{frames}}', 'fps' => 24,
-                 'seed' => '{{seed}}', 'min_memory_gb' => 64
+                 'seed' => '{{seed}}', 'min_memory_gb' => 96
                }),
     Preset.new(engine: 'mlx_video', key: 'wan-2.2-ti2v-5b', label: 'Wan2.2 TI2V 5B (converted weights, 32 GB)',
                kind: 'video', recipe: {

@@ -180,8 +180,14 @@ isn't on PyPI.
 - LTX recipes name a Hugging Face repo (`model_repo`, for example `prince-canuma/LTX-2.3-distilled`),
   which downloads on the first run. Wan needs weights converted to MLX first (see mlx-video's README);
   point `model_dir` at them.
-- Memory matters: LTX-2 is a 19B model, so plan on 64 GB or more. Wan2.2 TI2V 5B fits in 32 GB. Set
-  `min_memory_gb` in the recipe and Comfier only sends the style to Macs with that much.
+- LTX-2.3 conversions don't include their text encoder, so LTX recipes also name one with
+  `text_encoder_repo` (the presets use `mlx-community/gemma-3-12b-it-bf16`, about 26 GB). Comfier offers it
+  for download alongside the model. Don't use `Lightricks/LTX-2` there: mlx-video then loads the wrong
+  tokenizer and every prompt gives the same video.
+- Memory matters: LTX-2.3 is a 22B video model plus the 12B text encoder, so plan on 96 GB. Wan2.2 TI2V 5B
+  fits in 32 GB. Set `min_memory_gb` in the recipe and Comfier only sends the style to Macs with that much.
+- The agent works around an mlx-video bug that makes LTX videos come out black on some Macs
+  ([Blaizzy/mlx-video#55](https://github.com/Blaizzy/mlx-video/issues/55)).
 - The one-job-at-a-time rule, the GPU lock and the memory handover with ComfyUI and mflux apply to video
   jobs too.
 

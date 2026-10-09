@@ -73,8 +73,20 @@ module Agent
       result = Availability.compute(video, @backend.reload)
 
       assert_predicate result, :ready?
-      assert_match(%r{prince-canuma/LTX-2.3-distilled isn't downloaded}, result.hints.first)
+      assert_match(%r{prince-canuma/LTX-2.3-distilled and mlx-community/gemma-3-12b-it-bf16 aren't downloaded},
+                   result.hints.first)
+      assert_equal %w[prince-canuma/LTX-2.3-distilled mlx-community/gemma-3-12b-it-bf16],
+                   result.models.pluck('filename')
       assert_predicate Availability.compute(@workflow, @backend), :blocked?
+    end
+
+    test 'an MLX video style asks only for the part that is missing' do
+      video = engine_workflow!(name: 'LTX', preset: 'ltx-2.3-distilled')
+      bring_mac_online!(@backend, engines: { mlx_video: { models: %w[prince-canuma/LTX-2.3-distilled] } },
+                                  ram_gb: 128)
+
+      assert_equal [EngineRecipe::LTX_TEXT_ENCODER],
+                   Availability.compute(video, @backend.reload).models.pluck('filename')
     end
 
     test 'the memory check outlives the hello cache' do

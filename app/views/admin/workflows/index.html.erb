@@ -51,6 +51,11 @@
             <td>
               <%= link_to workflow.name, edit_admin_workflow_path(workflow), class: 'text-body fw-medium' %>
               <% unless workflow.comfyui? %><span class="ms-1"><%= engine_badge(workflow.engine) %></span><% end %>
+              <%# Saved before a check it now fails (e.g. an MLX video recipe naming "model"): say so. %>
+              <% unless workflow.comfyui? || workflow.valid? %>
+                <span class="badge text-bg-warning-subtle fw-medium ms-1"
+                      title="<%= workflow.errors.full_messages.to_sentence %>">Needs fixing</span>
+              <% end %>
               <% unless workflow.enabled? %><span class="badge text-bg-secondary-subtle ms-1">Disabled</span><% end %>
               <% if workflow.description.present? %>
                 <div class="text-12 text-secondary text-truncate"><%= workflow.description %></div>

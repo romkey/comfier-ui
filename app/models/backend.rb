@@ -190,7 +190,7 @@ class Backend < ApplicationRecord # rubocop:disable Metrics/ClassLength
     return [] unless agent? && can_download_models?
 
     engine_workflows = workflows_for_server.where.not(engine: 'comfyui')
-    models = engine_workflows.filter_map { Agent::Availability.compute(it, self).models.first }
+    models = engine_workflows.flat_map { Agent::Availability.compute(it, self).models }
     models.uniq { [it['folder'], it['filename']] }
   end
 

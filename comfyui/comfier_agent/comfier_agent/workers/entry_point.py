@@ -22,11 +22,41 @@ def find(command: str):
     raise SystemExit(f"{command} isn't installed in {sys.executable}")
 
 
+def fix_ltx_text_encoder_mask() -> None:
+    """mlx-video's Gemma text encoder masks padding with an additive bf16 finfo.min, which on some Macs makes
+    MLX's attention return NaN for the padded rows at its 1024-token length, so every LTX video decodes
+    black (Blaizzy/mlx-video#55). A boolean mask, which mx.fast.scaled_dot_product_attention takes as is,
+    doesn't. Drop this once mlx-video ships the fix."""
+    try:
+        import mlx.core as mx
+        from mlx_video.models.ltx_2.text_encoder import LanguageModel
+    except ImportError:
+        return
+    if not hasattr(LanguageModel, "_create_causal_mask_with_padding"):
+        return
+
+    def boolean_mask(self, seq_len, attention_mask, dtype):
+        causal = mx.tril(mx.ones((seq_len, seq_len), dtype=mx.bool_))
+        if attention_mask is None:
+            return causal[None, None, :, :]
+        combined = causal[None, :, :] & attention_mask.astype(mx.bool_)[:, None, :]
+        return combined[:, None, :, :]
+
+    LanguageModel._create_causal_mask_with_padding = boolean_mask
+
+
+# Fixes applied before running a command, by command prefix.
+FIXES = {"mlx_video.ltx_2.": fix_ltx_text_encoder_mask}
+
+
 def main() -> None:
     if len(sys.argv) < 2:
         raise SystemExit("usage: python -m comfier_agent.workers.entry_point COMMAND [ARGS...]")
     command = sys.argv[1]
     func = find(command)
+    for prefix, fix in FIXES.items():
+        if command.startswith(prefix):
+            fix()
     sys.argv = [command, *sys.argv[2:]]
     result = func()
     sys.exit(result if isinstance(result, int) else 0)
