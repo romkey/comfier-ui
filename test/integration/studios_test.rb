@@ -39,6 +39,51 @@ class StudiosTest < ActionDispatch::IntegrationTest
     assert_select 'textarea[name="generation[negative_prompt]"]', count: 0
   end
 
+  test 'switching styles carries the settings over' do
+    carry = { prompt: 'a red fox', aspect_ratio: '16:9', negative_prompt: 'blurry', seed: '42' }
+    get '/image', params: { workflow_id: workflows(:sd_image).id, carry: }
+
+    assert_select 'textarea[name="generation[prompt]"]', text: 'a red fox'
+    assert_select 'input[name="generation[aspect_ratio]"][value="16:9"][checked]'
+    assert_select 'textarea[name="generation[negative_prompt]"]', text: 'blurry'
+    assert_select 'input[name="generation[seed]"][value="42"]'
+    assert_select '.studio-needs-input', count: 0
+  end
+
+  test 'switching to a style that needs more points out what is missing' do
+    img2img = engine_workflow!(name: 'FLUX img2img', preset: 'flux1-dev-img2img')
+    get '/image', params: { workflow_id: img2img.id, carry: { prompt: '', denoise: '40' } }
+
+    assert_select '.studio-needs-input input[type=file][name="generation[input_image]"]'
+    assert_select '.studio-needs-input textarea[name="generation[prompt]"]'
+    assert_select '[data-style-switch-target="note"]', text: /highlighted fields/
+    assert_select 'input[name="generation[denoise]"][value="40"]'
+  end
+
+  test 'a fresh page highlights nothing' do
+    get '/image'
+
+    assert_select '.studio-needs-input', count: 0
+    assert_select '[data-style-switch-target="note"]', count: 0
+  end
+
+  test 'style chips switch in place and keep the result being tweaked' do
+    source = generations(:alice_done)
+    get '/image', params: { from: source.id }
+
+    assert_select ".filter-chip[data-action='style-switch#switch'][href*='from=#{source.id}']", minimum: 1
+    assert_select 'form.studio-form[data-controller="style-switch"]'
+  end
+
+  test 'a server picked for the previous style is dropped if it cannot run this one' do
+    legacy = Backend.create!(name: 'Old box', connection_kind: 'legacy', base_url: 'http://comfy.test:8188',
+                             enabled: true)
+    mflux = engine_workflow!
+    get '/image', params: { workflow_id: mflux.id, carry: { prompt: 'x', pinned_backend_id: legacy.id } }
+
+    assert_select 'select[name="generation[pinned_backend_id]"] option[selected][value]', count: 0
+  end
+
   test 'the video page asks for a length' do
     get '/video'
 

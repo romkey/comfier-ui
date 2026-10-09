@@ -136,3 +136,18 @@ tr.row-link { cursor: pointer; }
 .chat-composer textarea { resize: vertical; min-height: 4rem; }
 .chat-model-select { max-width: 14rem; }
 .chat-image-preview-thumb { max-height: 4rem; border-radius: var(--bs-border-radius-sm); margin-right: 0.5rem; }
+
+/* A field the newly chosen studio style needs and the previous one didn't fill in. */
+.studio-needs-input {
+  border-left: 3px solid var(--bs-warning-border-subtle);
+  background: var(--bs-warning-bg-subtle);
+  border-radius: var(--bs-border-radius);
+  padding: .5rem .75rem;
+}
+.studio-needs-input::after {
+  content: "Needed for this style";
+  display: block;
+  margin-top: .25rem;
+  font-size: 12px;
+  color: var(--bs-warning-text-emphasis);
+}

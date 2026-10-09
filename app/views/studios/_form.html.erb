@@ -1,4 +1,6 @@
-<%= form_with model: generation, url: generations_path, class: 'studio-form card card-body', data: { turbo: false } do |f| %>
+<% needs_input = local_assigns[:needs_input] || @needs_input || [] %>
+<%= form_with model: generation, url: generations_path, class: 'studio-form card card-body',
+              data: { turbo: false, controller: 'style-switch' } do |f| %>
   <% if generation.errors.any? %>
     <div class="alert alert-danger py-2 text-13">
       <%= generation.errors.full_messages.to_sentence %>
@@ -11,12 +13,20 @@
     <div class="mb-3">
       <div class="form-label">Style</div>
       <div class="d-flex flex-wrap gap-2">
+        <% source_id = (local_assigns[:source_generation] || @source_generation)&.id %>
         <% workflows.each do |choice| %>
-          <%= link_to choice.name, "#{kind.path}?workflow_id=#{choice.id}",
+          <%= link_to choice.name, "#{kind.path}?#{{ workflow_id: choice.id, from: source_id }.compact.to_query}",
                       class: ['filter-chip', { active: choice == workflow }],
-                      title: choice.description %>
+                      title: choice.description,
+                      data: { action: 'style-switch#switch' } %>
         <% end %>
       </div>
+      <% if needs_input.any? %>
+        <div class="text-12 text-warning mt-2" role="status" data-style-switch-target="note">
+          Your settings carried over. Fill in the highlighted <%= 'field'.pluralize(needs_input.size) %> this style
+          also needs.
+        </div>
+      <% end %>
     </div>
   <% elsif workflow.description.present? %>
     <p class="text-13 text-secondary"><%= workflow.description %></p>
@@ -26,7 +36,7 @@
     <% source_generation = local_assigns[:source_generation] || @source_generation %>
     <% reference_sources = local_assigns[:reference_sources] || @reference_sources %>
     <% reference_source = local_assigns[:reference_source] || @reference_source %>
-    <div class="mb-3">
+    <div class="<%= studio_field_class(:image, needs_input) %>" data-style-switch-target="image">
       <% if source_generation && reference_sources&.any? %>
         <% if reference_sources.many? %>
           <div class="form-label"><%= reference_image_label(kind) %></div>
@@ -62,7 +72,7 @@
 
   <% if workflow.uses?(:prompt) %>
     <% scriptable = kind.key == 'video' && LiteLlm::Client.configured? %>
-    <div class="mb-3" <%= tag.attributes(data: { controller: 'video-script', video_script_url_value: video_scripts_path }) if scriptable %>>
+    <div class="<%= studio_field_class(:prompt, needs_input) %>" <%= tag.attributes(data: { controller: 'video-script', video_script_url_value: video_scripts_path }) if scriptable %>>
       <%= f.label :prompt, 'Describe what you want', class: 'form-label' %>
       <%= f.text_area :prompt, rows: 5, class: 'form-control', required: true, autofocus: true,
                                placeholder: prompt_placeholder(kind),
@@ -88,7 +98,7 @@
   <% end %>
 
   <% if workflow.uses?(:lyrics) %>
-    <div class="mb-3">
+    <div class="<%= studio_field_class(:lyrics, needs_input) %>">
       <%= f.label :lyrics, 'Lyrics', class: 'form-label' %>
       <%= f.text_area :lyrics, rows: 4, class: 'form-control', required: true,
                                placeholder: 'Verse and chorus…' %>
@@ -185,7 +195,7 @@
         <% if workflow.uses?(:seed) %>
           <div>
             <%= f.label :seed, class: 'form-label text-13' %>
-            <%= f.number_field :seed, value: nil, min: 0, max: Generation::MAX_SEED,
+            <%= f.number_field :seed, value: generation.seed, min: 0, max: Generation::MAX_SEED,
                                       class: 'form-control form-control-sm num', placeholder: 'Random' %>
             <div class="form-text text-12">Use the same seed and prompt to get the same result again.</div>
           </div>
