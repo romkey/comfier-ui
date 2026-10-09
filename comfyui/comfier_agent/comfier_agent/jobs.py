@@ -12,24 +12,22 @@ import sys
 import tempfile
 import time
 import traceback
-from dataclasses import dataclass, field
 from typing import Any
 
 from comfier_agent.config import AgentConfig
-from comfier_agent.job_timings import JobTimings
-from comfier_agent.protocol import compact, find_unreplaced_placeholders, replace_input_refs
+from comfier_agent.engines.base import Engine, JobCancelled, JobContext, JobError
+from comfier_agent.engines.comfyui import (  # noqa: F401  (re-exported for callers and tests)
+    ComfyUIEngine,
+    collect_output_files,
+    find_missing_models,
+    validate_workflow,
+    validation_error_text,
+)
+from comfier_agent.protocol import compact, replace_input_refs
 from comfier_agent.status import ComfierJobStatus
 from comfier_agent.transfer import UploadError, download_to_file, same_origin, upload_file_multipart
 
 LOG = logging.getLogger("comfier_agent")
-
-# Folders ComfyUI treats as the same; matches Agent::ModelMatcher on the frontend.
-FOLDER_ALIASES = {
-    "unet": ("diffusion_models",),
-    "diffusion_models": ("unet",),
-    "clip": ("text_encoders",),
-    "text_encoders": ("clip",),
-}
 
 SANITIZE = re.compile(r"[^A-Za-z0-9._-]+")
 
@@ -54,12 +52,6 @@ OUTPUT_KINDS = {
 OOM = re.compile(r"OutOfMemory|out of memory|CUDA error: out of memory", re.I)
 MAX_DETAIL = 2000
 MAX_TRACEBACK = 8000
-# How long a cancelled job waits for ComfyUI to report the interrupt before giving up on it.
-CANCEL_GRACE_S = 10
-# ComfyUI sends execution_success before it writes the prompt's history entry, and may unload every
-# model in between, so the entry can lag well behind a long job.
-HISTORY_WAIT_S = 120
-HISTORY_POLL_S = 0.5
 # Still image of a 3D result, rendered in its own process so a bad mesh can't take ComfyUI down with it.
 PREVIEW_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "preview.py")
 PREVIEW_TIMEOUT_S = 120
@@ -113,48 +105,6 @@ def mime_for(filename: str) -> str:
         return MIME_EXTRA[ext]
     guessed, _ = mimetypes.guess_type(filename)
     return guessed or "application/octet-stream"
-
-
-def collect_output_files(outputs: dict[str, Any], *, include_temp_if_empty: bool = True) -> list[dict[str, str]]:
-    """Walk history outputs and collect file descriptors."""
-
-    files: list[dict[str, str]] = []
-
-    def walk(node_id: str, value: Any) -> None:
-        if isinstance(value, list):
-            for item in value:
-                if isinstance(item, dict) and "filename" in item:
-                    files.append(
-                        {
-                            "node": node_id,
-                            "filename": item["filename"],
-                            "subfolder": item.get("subfolder") or "",
-                            "type": item.get("type") or "output",
-                        }
-                    )
-                else:
-                    walk(node_id, item)
-        elif isinstance(value, dict):
-            for v in value.values():
-                walk(node_id, v)
-
-    for node_id, node_out in outputs.items():
-        walk(str(node_id), node_out)
-
-    output_only = [f for f in files if f.get("type") == "output"]
-    if output_only:
-        return output_only
-    if include_temp_if_empty and files:
-        return [f for f in files if f.get("type") == "temp"]
-    return files if not include_temp_if_empty else []
-
-
-def validate_workflow(workflow: Any) -> None:
-    if not isinstance(workflow, dict):
-        raise ValueError("workflow must be an object")
-    for node_id, node in workflow.items():
-        if not isinstance(node, dict) or "class_type" not in node or "inputs" not in node:
-            raise ValueError(f"node {node_id} missing class_type/inputs")
 
 
 def sanitize_filename(name: str) -> str:
@@ -212,52 +162,33 @@ def sweep_stale_inputs(config: AgentConfig, max_age_s: int = 86400) -> None:
 
 
 
-def find_missing_models(required: dict[str, list[str]], installed: dict[str, list[str]]) -> list[str]:
-    """Required models not installed. A folder's aliases count, and "unknown" matches any folder by path or basename."""
-    missing: list[str] = []
-    for folder, names in required.items():
-        if folder == "unknown":
-            paths = {n for files in installed.values() for n in files}
-            bases = {os.path.basename(n) for n in paths}
-            missing += [
-                f"{folder}/{name}" for name in names if name not in paths and os.path.basename(name) not in bases
-            ]
-            continue
-        have = set()
-        for f in (folder, *FOLDER_ALIASES.get(folder, ())):
-            have.update(installed.get(f) or [])
-        missing += [f"{folder}/{name}" for name in names if name not in have]
-    return missing
-
-@dataclass
-class JobContext:
-    job_id: str
-    request_id: str | None = None
-    prompt_id: str | None = None
-    phase: str = "inputs"
-    progress: float = 0.0
-    node: str | None = None
-    cancel_requested: bool = False
-    cancel_requested_at: float | None = None
-    finished: bool = False
-    started_at: float = field(default_factory=time.time)
-    ws_state: dict[str, Any] = field(default_factory=dict)
-    timings: JobTimings = field(default_factory=JobTimings)
-
 
 class JobManager:
-    def __init__(self, config: AgentConfig, comfy, send, inventory_snap, on_terminal=None):
+    """One job slot shared by every engine: Comfier assigns a job only when this server asked for one,
+    so ComfyUI, mflux and mlx-video never run Comfier jobs at the same time."""
+
+    def __init__(self, config: AgentConfig, comfy, send, inventory_snap, on_terminal=None, engines=None):
         self.config = config
         self.comfy = comfy
         self.send = send
         self.inventory_snap = inventory_snap
         self.on_terminal = on_terminal
+        self.engines: dict[str, Engine] = engines if engines is not None else {"comfyui": ComfyUIEngine(comfy)}
         self.active: JobContext | None = None
-        self.prompt_ids: set[str] = set()
         self.open_request_id: str | None = None
+        # The engine that last ran a job, and so may still hold models in memory.
+        self.warm_engine: str | None = None
         self._request_counter = 0
         self._progress_last: dict[str, float] = {}
         self._terminal_buffer: list[dict] = []
+
+    @property
+    def prompt_ids(self) -> set[str]:
+        """ComfyUI prompt ids of Comfier's own jobs, so the status can tell them from local use."""
+        ids: set[str] = set()
+        for engine in self.engines.values():
+            ids |= engine.active_ids()
+        return ids
 
     def drain_terminal_buffer(self) -> list[dict]:
         out = list(self._terminal_buffer)
@@ -292,50 +223,37 @@ class JobManager:
         # The frontend consumes its open request when it assigns, whichever id it used.
         self.void_request()
         if not matched:
-            await self.send({
-                "type": "job.rejected",
-                "job_id": job_id,
-                "reason": "busy",
-                "detail": "no open job request",
-            })
+            await self._reject(job_id, "busy", "no open job request")
             return
 
         if not accepting or self.active is not None:
             reason = "busy"
-            detail = accepting_reason
             if accepting_reason and "disk" in accepting_reason.lower():
                 reason = "disk_full"
-            await self.send({
-                "type": "job.rejected",
-                "job_id": job_id,
-                "reason": reason,
-                **({"detail": detail[:MAX_DETAIL]} if detail else {}),
-            })
+            await self._reject(job_id, reason, accepting_reason)
             return
 
-        requires = msg.get("requires") or {}
-        missing_nodes = [n for n in requires.get("node_types") or [] if n not in inventory.node_types]
-        if missing_nodes:
-            await self.send({
-                "type": "job.rejected",
-                "job_id": job_id,
-                "reason": "missing_nodes",
-                "detail": ", ".join(missing_nodes)[:MAX_DETAIL],
-            })
+        engine_name = msg.get("engine") or "comfyui"
+        engine = self.engines.get(engine_name)
+        if engine is None:
+            await self._reject(job_id, "missing_engine", f"this server doesn't run {engine_name}")
             return
-        missing_models = find_missing_models(requires.get("models") or {}, inventory.models)
-        if missing_models:
-            await self.send({
-                "type": "job.rejected",
-                "job_id": job_id,
-                "reason": "missing_models",
-                "detail": ", ".join(missing_models)[:MAX_DETAIL],
-            })
+        problem = engine.check_requirements(msg.get("requires") or {}, inventory)
+        if problem:
+            await self._reject(job_id, *problem)
             return
 
-        self.active = JobContext(job_id=job_id, request_id=request_id)
+        self.active = JobContext(job_id=job_id, request_id=request_id, engine=engine_name)
         await self.send({"type": "job.accepted", "job_id": job_id})
         asyncio.create_task(self._run_job(msg))
+
+    async def _reject(self, job_id: str, reason: str, detail: str | None = None) -> None:
+        await self.send({
+            "type": "job.rejected",
+            "job_id": job_id,
+            "reason": reason,
+            **({"detail": detail[:MAX_DETAIL]} if detail else {}),
+        })
 
     async def handle_cancel(self, job_id: str) -> None:
         if self.active is None or self.active.job_id != job_id:
@@ -348,49 +266,42 @@ class JobManager:
         if ctx.phase == "inputs":
             await self._finish_cancel(ctx)
             return
-        if ctx.prompt_id and ctx.phase in ("queued", "running"):
-            if await self._stop_prompt(ctx.prompt_id) == "pending":
-                await self._finish_cancel(ctx)
-        # Otherwise execution_interrupted ends the watch, or it gives up after CANCEL_GRACE_S.
-
-    async def _stop_prompt(self, prompt_id: str) -> str | None:
-        """Takes the prompt out of ComfyUI wherever it is, going by ComfyUI's own queue rather than our
-        WebSocket view of it, which can be stale. Returns "pending", "running" or None if it's gone."""
-        try:
-            queue = await self.comfy.queue()
-        except Exception:
-            LOG.warning("couldn't read the ComfyUI queue to cancel %s; interrupting", prompt_id, exc_info=True)
-            queue = {}
-        pending = {item[1] for item in queue.get("queue_pending") or [] if len(item) > 1}
-        running = {item[1] for item in queue.get("queue_running") or [] if len(item) > 1}
-        try:
-            if prompt_id in pending:
-                await self.comfy.delete_queue([prompt_id])
-                return "pending"
-            if prompt_id in running or not queue:
-                await self.comfy.interrupt(prompt_id)
-                return "running"
-        except Exception:
-            LOG.warning("couldn't stop prompt %s", prompt_id, exc_info=True)
-        return None
+        if await self.engines[ctx.engine].cancel(ctx):
+            await self._finish_cancel(ctx)
 
     async def _finish_cancel(self, ctx: JobContext) -> None:
         if ctx.finished:
             return
         ctx.finished = True
-        delete_job_inputs(self.config, ctx.job_id)
-        self.prompt_ids.discard(ctx.prompt_id or "")
-        if self.active is ctx:
-            self.active = None
+        self._release(ctx)
         msg = {"type": "job.cancelled", "job_id": ctx.job_id}
         await self.send(msg)
         self._terminal_buffer.append(msg)
         if self.on_terminal:
             await self.on_terminal()
 
+    def _release(self, ctx: JobContext) -> None:
+        delete_job_inputs(self.config, ctx.job_id)
+        forget = getattr(self.engines.get(ctx.engine), "forget", None)
+        if forget:
+            forget(ctx)
+        if self.active is ctx:
+            self.active = None
+
+    async def _make_room_for(self, engine_name: str) -> None:
+        """Unified memory is shared, so before one engine loads models the others let theirs go."""
+        if self.warm_engine == engine_name:
+            return
+        # Before the first job we don't know who's warm (someone may have used ComfyUI directly).
+        for name, engine in self.engines.items():
+            if name != engine_name and self.warm_engine in (None, name):
+                await engine.free_memory()
+        self.warm_engine = engine_name
+
     async def _run_job(self, assign: dict[str, Any]) -> None:
         ctx = self.active
         assert ctx is not None
+        engine = self.engines[ctx.engine]
         job_id = ctx.job_id
         workflow = assign["workflow"]
         upload_url = assign["upload_url"]
@@ -399,10 +310,7 @@ class JobManager:
         t0 = time.time()
         timings = ctx.timings
         try:
-            validate_workflow(workflow)
-            placeholders = find_unreplaced_placeholders(workflow)
-            if placeholders:
-                raise JobError("validate", f"unreplaced placeholders: {', '.join(placeholders)}")
+            engine.validate(workflow)
 
             mapping: dict[str, str] = {}
             max_bytes = self.config.max_download_mb * 1024 * 1024
@@ -426,10 +334,7 @@ class JobManager:
                     )
                     timings.input_bytes += size
                     fname = f"{job_id}_{item['id']}_{sanitize_filename(item.get('filename') or 'input')}"
-                    uploaded = await self.comfy.upload_image(tmp.name, fname)
-                    sub = uploaded.get("subfolder") or ""
-                    name = uploaded.get("name") or fname
-                    mapping[item["id"]] = f"{sub}/{name}" if sub else name
+                    mapping[item["id"]] = await engine.stage_input(ctx, tmp.name, fname)
                 finally:
                     if os.path.exists(tmp.name):
                         os.remove(tmp.name)
@@ -440,24 +345,9 @@ class JobManager:
                 raise JobCancelled()
             await self._progress(ctx, "inputs", 1.0)
 
-            result = await self.comfy.submit_prompt(workflow, job_id=job_id)
-            timings.mark_prompt()
-            if result.get("error"):
-                error = validation_error_text(result["error"])
-                raise JobError("validate", error, node_errors=result.get("node_errors"))
-
-            ctx.prompt_id = result.get("prompt_id")
-            if ctx.prompt_id:
-                self.prompt_ids.add(ctx.prompt_id)
-            ctx.phase = "queued"
-            await self._progress(ctx, "queued", 0.0, queue_position=result.get("number"))
-
-            await self._execute_ws(ctx, timeout_s=timeout_s, timings=timings)
-
-            entry = await self._finished_history(ctx.prompt_id)
-            files, skipped = split_allowed(collect_output_files(entry.get("outputs") or {}))
-            if not files:
-                LOG.warning("prompt %s finished without any output files", ctx.prompt_id)
+            await self._make_room_for(ctx.engine)
+            outputs = await engine.execute(ctx, workflow, timeout_s=timeout_s, progress=self._progress)
+            files, skipped = split_allowed(outputs)
             previews = "3d" in (assign.get("previews") or [])
             uploaded_out = await self._upload_outputs(ctx, files, upload_url, auth, previews=previews)
 
@@ -475,9 +365,7 @@ class JobManager:
                 msg["warning"] = warning
             await self._terminal(compact(msg), ctx)
         except JobCancelled:
-            # A cancel that landed mid-submit, or one ComfyUI never confirmed, can leave the prompt behind.
-            if ctx.prompt_id:
-                await self._stop_prompt(ctx.prompt_id)
+            await engine.abandon(ctx)
             await self._finish_cancel(ctx)
         except JobError as exc:
             await self._fail(
@@ -513,7 +401,7 @@ class JobManager:
             if ctx.cancel_requested:
                 raise JobCancelled()
             await self._progress(ctx, "uploading", idx / len(files))
-            path = await self._download_output_file(fdesc)
+            path = await self.engines[ctx.engine].fetch_output(fdesc)
             name = fdesc["filename"]
             kind, mime = output_kind(name), mime_for(name)
             preview_path = None
@@ -599,56 +487,6 @@ class JobManager:
             "bytes": file_bytes,
         }
 
-    async def _download_output_file(self, fdesc: dict[str, str]) -> str:
-        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(fdesc["filename"])[1])
-        tmp.close()
-        async with await self.comfy.stream_view(fdesc["filename"], fdesc["subfolder"], fdesc["type"]) as resp:
-            resp.raise_for_status()
-            with open(tmp.name, "wb") as out:
-                async for chunk in resp.content.iter_chunked(1024 * 1024):
-                    out.write(chunk)
-        return tmp.name
-
-    async def _execute_ws(self, ctx: JobContext, *, timeout_s: int, timings: JobTimings) -> None:
-        watch = ExecutionWatch(ctx, timings)
-        self.comfy.add_ws_handler(watch.on_event)
-        try:
-            await self.comfy.ensure_ws()
-            deadline = time.time() + timeout_s
-            while not watch.done.is_set():
-                if ctx.finished:
-                    raise JobCancelled()
-                if ctx.cancel_requested and time.time() - (ctx.cancel_requested_at or 0) >= CANCEL_GRACE_S:
-                    # ComfyUI never said it stopped (it may already be done, or we missed the event).
-                    raise JobCancelled()
-                if time.time() >= deadline:
-                    await self.comfy.interrupt(ctx.prompt_id)
-                    raise JobError("execute", "timeout")
-                await self._progress(ctx, ctx.phase, watch.fraction(), node=watch.current_node)
-                try:
-                    await asyncio.wait_for(watch.done.wait(), timeout=0.5)
-                except asyncio.TimeoutError:
-                    pass
-        finally:
-            self.comfy.remove_ws_handler(watch.on_event)
-        if watch.interrupted and ctx.cancel_requested:
-            raise JobCancelled()
-        if watch.error:
-            if ctx.cancel_requested:
-                raise JobCancelled()
-            raise watch.job_error()
-        timings.set_node_counts(total=len(watch.nodes | watch.cached), cached=len(watch.cached))
-
-    async def _finished_history(self, prompt_id: str) -> dict[str, Any]:
-        deadline = time.monotonic() + HISTORY_WAIT_S
-        while True:
-            entry = (await self.comfy.history(prompt_id)).get(prompt_id) or {}
-            if entry:
-                return entry
-            if time.monotonic() >= deadline:
-                raise JobError("outputs", f"ComfyUI never recorded history for prompt {prompt_id}")
-            await asyncio.sleep(HISTORY_POLL_S)
-
     async def _progress(self, ctx: JobContext, phase: str, progress: float, **extra) -> None:
         ctx.phase = phase
         ctx.progress = progress
@@ -670,10 +508,7 @@ class JobManager:
         if ctx.finished:
             return
         ctx.finished = True
-        delete_job_inputs(self.config, ctx.job_id)
-        self.prompt_ids.discard(ctx.prompt_id or "")
-        if self.active is ctx:
-            self.active = None
+        self._release(ctx)
         await self.send(msg)
         self._terminal_buffer.append(msg)
         if self.on_terminal:
@@ -693,13 +528,6 @@ class JobManager:
         if not self.active:
             return []
         return [{"job_id": self.active.job_id, "prompt_id": self.active.prompt_id, "state": self.active.phase}]
-
-
-def validation_error_text(error: Any) -> str:
-    """ComfyUI's /prompt 400 body: {"error": {"message", "details"}, "node_errors": {...}}."""
-    if isinstance(error, dict):
-        return ": ".join(str(error[k]) for k in ("message", "details") if error.get(k)) or "invalid prompt"
-    return str(error) if error not in (None, True) else "invalid prompt"
 
 
 def split_allowed(files: list[dict[str, str]]) -> tuple[list[dict[str, str]], list[str]]:
@@ -741,89 +569,3 @@ def failure_message(job_id: str, stage: str, error: str, timings: dict, **extra)
         "node_errors": node_errors if isinstance(node_errors, dict) and node_errors else None,
         "traceback_tail": tail[-MAX_TRACEBACK:] if tail else None,
     })
-
-
-class ExecutionWatch:
-    """Follows one prompt through ComfyUI's WebSocket events."""
-
-    def __init__(self, ctx: JobContext, timings: JobTimings):
-        self.ctx = ctx
-        self.timings = timings
-        self.done = asyncio.Event()
-        self.error: dict | None = None
-        self.interrupted = False
-        self.nodes: set[str] = set()
-        self.cached: set[str] = set()
-        self.current_node: str | None = None
-        self.node_progress = 0.0
-
-    def on_event(self, data: dict) -> None:
-        if data.get("prompt_id") and data["prompt_id"] != self.ctx.prompt_id:
-            return
-        handler = getattr(self, f"_on_{data.get('type') or data.get('event')}", None)
-        if handler:
-            handler(data)
-
-    def fraction(self) -> float:
-        active = [n for n in self.nodes if n not in self.cached]
-        finished = len(active) - (1 if self.current_node in active else 0)
-        return min(0.99, (finished + self.node_progress) / max(len(active), 1))
-
-    def job_error(self) -> JobError:
-        error = self.error or {}
-        return JobError(
-            "execute",
-            error.get("exception_message") or "execution error",
-            node=error.get("node_id"),
-            exception_type=error.get("exception_type"),
-            traceback_tail="\n".join((error.get("traceback") or [])[-20:]),
-        )
-
-    def _on_execution_start(self, _data: dict) -> None:
-        self.ctx.phase = "running"
-        self.timings.mark_execution_start()
-
-    def _on_executing(self, data: dict) -> None:
-        if data.get("node") is None:
-            return
-        self.current_node = str(data["node"])
-        self.node_progress = 0.0
-        self.ctx.node = self.current_node
-        self.nodes.add(self.current_node)
-        self.ctx.ws_state["executing_prompt"] = self.ctx.prompt_id
-
-    def _on_progress(self, data: dict) -> None:
-        max_v = float(data.get("max") or 1)
-        self.node_progress = float(data.get("value") or 0) / max_v if max_v else 0.0
-
-    def _on_execution_cached(self, data: dict) -> None:
-        self.cached.update(str(n) for n in data.get("nodes") or [])
-
-    def _on_execution_success(self, _data: dict) -> None:
-        self.timings.mark_execution_end()
-        self.done.set()
-
-    def _on_execution_error(self, data: dict) -> None:
-        self.error = data
-        self.done.set()
-
-    def _on_execution_interrupted(self, _data: dict) -> None:
-        self.interrupted = True
-        if not self.ctx.cancel_requested:
-            self.error = {"exception_message": "interrupted"}
-        self.done.set()
-
-
-class JobError(Exception):
-    def __init__(self, stage: str, message: str, **extra):
-        super().__init__(message)
-        self.stage = stage
-        self.message = message
-        self.node_errors = extra.get("node_errors")
-        self.node = extra.get("node")
-        self.exception_type = extra.get("exception_type")
-        self.traceback_tail = extra.get("traceback_tail")
-
-
-class JobCancelled(Exception):
-    pass

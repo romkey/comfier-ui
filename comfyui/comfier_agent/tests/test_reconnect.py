@@ -4,6 +4,7 @@ import pytest
 
 import comfier_agent
 from comfier_agent.connection import CLOSE_REASONS, TERMINAL_BUFFER_MAX, FrontendConnection
+from comfier_agent.engines import comfyui as comfyui_engine
 from comfier_agent.models import DownloadState
 from comfier_agent.routes import apply_config, status_payload
 
@@ -183,9 +184,8 @@ async def test_cancel_interrupts_a_running_prompt_without_a_websocket_hint(agent
 
 @pytest.mark.asyncio
 async def test_cancel_gives_up_when_comfyui_never_confirms(agent, monkeypatch):
-    from comfier_agent import jobs
 
-    monkeypatch.setattr(jobs, "CANCEL_GRACE_S", 0.3)
+    monkeypatch.setattr(comfyui_engine, "CANCEL_GRACE_S", 0.3)
     runtime = await agent.start()
     await agent.run_to_execution("j_9")
     start = len(agent.front.messages)
