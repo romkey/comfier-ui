@@ -1,12 +1,40 @@
 <div class="row g-4">
   <div class="col-xl-8">
     <%= form_with model: [:admin, workflow], class: 'settings-form-wide', multipart: true,
-                  data: { turbo: true } do |f| %>
+                  data: { turbo: true, controller: 'engine-form' } do |f| %>
       <% if workflow.errors.any? %>
         <div class="alert alert-danger py-2 text-13"><%= workflow.errors.full_messages.to_sentence %></div>
       <% end %>
 
       <div class="mb-3">
+        <%= f.label :engine, 'Runs on', class: 'form-label' %>
+        <%= f.select :engine, WorkflowEngine.all.map { [it.label, it.key] }, {},
+                     class: 'form-select form-select-sm w-auto',
+                     data: { engine_form_target: 'engine', action: 'engine-form#toggle' } %>
+        <div class="form-text text-12">
+          mflux (images) and MLX video run natively on Apple Silicon Macs whose agent has those engines.
+        </div>
+      </div>
+
+      <div class="mb-3 <%= 'd-none' if workflow.comfyui? %>" data-engine-form-target="recipe">
+        <%= label_tag 'engine_preset', 'Start from a preset', class: 'form-label' %>
+        <select id="engine_preset" class="form-select form-select-sm"
+                data-engine-form-target="preset" data-action="engine-form#applyPreset">
+          <option value="">Choose a preset…</option>
+          <% EnginePreset.all.each do |preset| %>
+            <option value="<%= preset.key %>" data-engine="<%= preset.engine %>" data-kind="<%= preset.kind %>"
+                    data-recipe="<%= preset.to_json_text %>"><%= preset.label %></option>
+          <% end %>
+        </select>
+        <div class="form-text text-12">
+          A recipe is the command to run and its options, as JSON. Keys are the command's flags in snake_case
+          (<code>"image_strength"</code> is <code>--image-strength</code>) and take the same
+          <code>{{placeholders}}</code> as ComfyUI workflows. <code>min_memory_gb</code> keeps the style off Macs
+          with less memory. The agent sets the output path.
+        </div>
+      </div>
+
+      <div class="mb-3 <%= 'd-none' unless workflow.comfyui? %>" data-engine-form-target="comfyui">
         <div class="h-section-label mb-2">ComfyUI exports</div>
         <p class="text-12 text-secondary mb-2">
           Upload both files at once, then choose Save or <strong>Suggest placeholders</strong>. Comfier detects
@@ -35,7 +63,8 @@
         </div>
         <div class="col-sm-4">
           <%= f.label :kind, 'Page', class: 'form-label' %>
-          <%= f.select :kind, GenerationKind.all.map { [it.label, it.key] }, {}, class: 'form-select form-select-sm' %>
+          <%= f.select :kind, GenerationKind.all.map { [it.label, it.key] }, {}, class: 'form-select form-select-sm',
+                                                                                data: { engine_form_target: 'kind' } %>
         </div>
       </div>
 
@@ -46,7 +75,9 @@
       </div>
 
       <%= render 'graph_json_section', workflow:, form: f %>
-      <%= render 'placeholder_suggestion', suggestion: local_assigns[:placeholder_suggestion] %>
+      <div class="<%= 'd-none' unless workflow.comfyui? %>" data-engine-form-target="comfyui">
+        <%= render 'placeholder_suggestion', suggestion: local_assigns[:placeholder_suggestion] %>
+      </div>
 
       <div class="row g-3 mb-3">
         <div class="col-sm-3">
@@ -92,7 +123,7 @@
         </div>
       </div>
 
-      <div class="mb-3">
+      <div class="mb-3 <%= 'd-none' unless workflow.comfyui? %>" data-engine-form-target="comfyui">
         <%= f.label :required_models_text, 'Models', class: 'form-label' %>
         <%= f.text_area :required_models_text, rows: 4, class: 'form-control form-control-sm font-monospace text-12',
                                                spellcheck: false,

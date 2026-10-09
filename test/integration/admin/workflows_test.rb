@@ -381,6 +381,39 @@ module Admin
       assert_nil generations(:alice_done).reload.workflow
     end
 
+    test 'the form offers engines and their presets' do
+      get new_admin_workflow_path(engine: 'mflux')
+
+      assert_response :success
+      assert_select 'select[name="workflow[engine]"] option[selected][value="mflux"]'
+      assert_select '#engine_preset option[data-engine="mflux"][value="z-image-turbo"]'
+      assert_select '#engine_preset option[data-engine="mlx_video"]'
+      assert_select 'label[for="workflow_graph_json"]', 'Recipe (JSON)'
+    end
+
+    test 'adding an mflux workflow from a recipe' do
+      recipe = EnginePreset::ALL.find { it.key == 'z-image-turbo' }
+
+      post admin_workflows_path, params: { workflow: { name: 'Z-Image', kind: 'image', engine: 'mflux',
+                                                       graph_json: recipe.to_json_text } }
+
+      workflow = Workflow.find_by!(name: 'Z-Image')
+
+      assert_equal 'mflux', workflow.engine
+      assert_equal 'mflux-generate-z-image-turbo', workflow.graph['command']
+      get admin_workflows_path
+
+      assert_select 'td', text: /z-image-turbo/
+    end
+
+    test 'a bad recipe re-renders with the reason' do
+      post admin_workflows_path, params: { workflow: { name: 'Bad', kind: 'image', engine: 'mflux',
+                                                       graph_json: '{"model": "dev"}' } }
+
+      assert_response :unprocessable_content
+      assert_select '.alert-danger', /Recipe needs "command"/
+    end
+
     private
 
     # The SD fixture with its prompt, size and seed written out as the literals a fresh export has.

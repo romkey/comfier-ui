@@ -11,7 +11,8 @@ module Admin
     end
 
     def new
-      @workflow = Workflow.new(kind: params[:kind].presence_in(GenerationKind.keys) || 'image')
+      @workflow = Workflow.new(kind: params[:kind].presence_in(GenerationKind.keys) || 'image',
+                               engine: params[:engine].presence_in(WorkflowEngine.keys) || 'comfyui')
     end
 
     def edit
@@ -126,7 +127,7 @@ module Admin
 
     # The models file is applied after the text list so its download links fill in what's typed.
     def assign_workflow
-      permitted = params.expect(workflow: %i[name kind description graph_json graph_file enabled position
+      permitted = params.expect(workflow: %i[name kind engine description graph_json graph_file enabled position
                                              base_resolution frame_rate steps guidance timeout_minutes
                                              required_models_text models_file])
       exports = WorkflowExportRouter.route(

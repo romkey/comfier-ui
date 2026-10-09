@@ -1,4 +1,5 @@
-# A ComfyUI workflow in API format, with {{placeholders}} where user input goes.
+# A ComfyUI workflow in API format, with {{placeholders}} where user input goes. Workflows for the
+# mflux and MLX video engines keep a recipe (EngineRecipe) in `graph` instead, with the same placeholders.
 # The placeholders a workflow contains decide which fields its studio form shows.
 class Workflow < ApplicationRecord # rubocop:disable Metrics/ClassLength
   PLACEHOLDER = /\{\{\s*(\w+)\s*\}\}/
@@ -21,6 +22,7 @@ class Workflow < ApplicationRecord # rubocop:disable Metrics/ClassLength
   UI_EXPORT_NEEDED = 'must be the regular export (Workflow → Export), not Export (API)'.freeze
 
   enum :kind, GenerationKind.enum_values, validate: true
+  enum :engine, WorkflowEngine.enum_values, prefix: :engine, validate: true
 
   has_many :generations, dependent: :nullify
   has_many :workflow_models, -> { order(:folder, :filename) }, dependent: :delete_all, inverse_of: :workflow
@@ -34,7 +36,9 @@ class Workflow < ApplicationRecord # rubocop:disable Metrics/ClassLength
   validates :steps, numericality: { only_integer: true, in: 1..150 }
   validates :guidance, numericality: { greater_than: 0, less_than_or_equal_to: 30 }
   validates :default_timeout_s, numericality: { only_integer: true, in: 60..86_400 }, allow_nil: true
-  validate :graph_is_api_format
+  validate :graph_is_api_format, if: :comfyui?
+  validate :recipe_is_valid, unless: :comfyui?
+  validate :engine_runs_kind
   validate :placeholders_are_known
   validate :model_list_is_valid
   before_validation :drop_models_the_graph_provides
@@ -43,6 +47,12 @@ class Workflow < ApplicationRecord # rubocop:disable Metrics/ClassLength
   scope :ordered, -> { order(:position, :name) }
 
   def kind_info = GenerationKind.find(kind)
+  def engine_info = WorkflowEngine.find(engine)
+  def comfyui? = engine.blank? || engine_comfyui?
+
+  # For mflux and MLX video workflows: the model the recipe loads, and the memory it needs.
+  def recipe_model = comfyui? ? nil : EngineRecipe.model(graph)
+  def min_memory_gb = comfyui? ? nil : EngineRecipe.min_memory_gb(graph)
 
   # The admin form edits the per-workflow time limit in minutes; blank means the server default.
   def timeout_minutes = default_timeout_s && (default_timeout_s / 60)
@@ -87,6 +97,8 @@ class Workflow < ApplicationRecord # rubocop:disable Metrics/ClassLength
   # Every model file this workflow needs: the admin's list first (it carries download links),
   # then anything the graph's loader nodes reference that the list doesn't mention.
   def required_models
+    return [] unless comfyui?
+
     @required_models ||= WorkflowModels.merge(extra_models.map { ModelRequirement.from_h(it) },
                                               WorkflowModels.infer(graph))
   end
@@ -131,12 +143,14 @@ class Workflow < ApplicationRecord # rubocop:disable Metrics/ClassLength
   private
 
   def requirements_inputs_changed?
-    %w[graph ui_graph extra_models].any? { saved_change_to_attribute?(it) } || structure_hash.blank?
+    %w[graph ui_graph extra_models engine].any? { saved_change_to_attribute?(it) } || structure_hash.blank?
   end
 
   # The models textarea shows what the graph needs too; keeping those lines unless they add a
   # link would leave stale entries behind after the graph stops using a model.
   def drop_models_the_graph_provides
+    return unless comfyui?
+
     inferred = WorkflowModels.infer(graph).map(&:key)
     self.extra_models = extra_models.reject { it['url'].blank? && inferred.include?([it['directory'], it['name']]) }
   end
@@ -160,6 +174,18 @@ class Workflow < ApplicationRecord # rubocop:disable Metrics/ClassLength
     return errors.add(:graph_json, UI_FORMAT_MESSAGE) if graph.key?('nodes') && graph.key?('links')
 
     errors.add(:graph_json, 'must contain nodes with class_type and inputs') unless graph.values.all? { api_node?(it) }
+  end
+
+  def recipe_is_valid
+    return errors.add(:base, "Recipe isn't valid JSON: #{@graph_json_error}") if @graph_json_error
+
+    EngineRecipe.problems(engine, graph).each { errors.add(:base, "Recipe #{it}") }
+  end
+
+  def engine_runs_kind
+    return unless WorkflowEngine::BY_KEY.key?(engine) && GenerationKind::BY_KEY.key?(kind)
+
+    errors.add(:engine, "can't make #{kind_info.noun.pluralize}") unless engine_info.allows_kind?(kind)
   end
 
   def api_node?(node) = node.is_a?(Hash) && node['class_type'].is_a?(String) && node['inputs'].is_a?(Hash)

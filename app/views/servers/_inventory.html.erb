@@ -16,6 +16,17 @@
         </ul>
       </details>
     <% end %>
+    <% backend.engines.except('comfyui').sort.each do |key, info| %>
+      <% models = Array(info['models']) + Array(info['loras']) %>
+      <details class="mb-1" data-filter-list-target="group">
+        <summary class="text-13"><%= WorkflowEngine.label_for(key) %> <span class="text-secondary num"><%= models.size %></span></summary>
+        <ul class="list-unstyled text-12 ps-3 mb-1">
+          <% models.sort.each do |model| %>
+            <li data-filter-list-target="item" data-text="<%= "#{key}/#{model}".downcase %>"><%= model %></li>
+          <% end %>
+        </ul>
+      </details>
+    <% end %>
     <details class="mb-1" data-filter-list-target="group">
       <summary class="text-13">Node types <span class="text-secondary num"><%= inventory.node_type_count %></span></summary>
       <ul class="list-unstyled text-12 ps-3 mb-1">

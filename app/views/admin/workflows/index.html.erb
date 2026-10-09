@@ -17,8 +17,8 @@
 </div>
 
 <p class="text-13 text-secondary">
-  Each workflow is a ComfyUI graph exported with <strong>Export (API)</strong>, with
-  <code>{{placeholders}}</code> where user input goes. Users see them as "styles" on each page.
+  Each workflow is a ComfyUI graph exported with <strong>Export (API)</strong>, or an mflux or MLX video recipe
+  for Macs, with <code>{{placeholders}}</code> where user input goes. Users see them as "styles" on each page.
 </p>
 
 <% GenerationKind.all.each do |kind| %>
@@ -50,6 +50,7 @@
             </td>
             <td>
               <%= link_to workflow.name, edit_admin_workflow_path(workflow), class: 'text-body fw-medium' %>
+              <% unless workflow.comfyui? %><span class="ms-1"><%= engine_badge(workflow.engine) %></span><% end %>
               <% unless workflow.enabled? %><span class="badge text-bg-secondary-subtle ms-1">Disabled</span><% end %>
               <% if workflow.description.present? %>
                 <div class="text-12 text-secondary text-truncate"><%= workflow.description %></div>
@@ -58,7 +59,9 @@
             <td class="text-12 text-secondary"><%= workflow.placeholders.sort.join(', ').presence || 'none' %></td>
             <% lacking = @backends.select { it.missing_models(workflow).any? } %>
             <td class="text-12">
-              <% if lacking.any? %>
+              <% if !workflow.comfyui? %>
+                <span class="text-secondary"><%= workflow.recipe_model || '—' %></span>
+              <% elsif lacking.any? %>
                 <span class="text-warning" title="Missing on <%= lacking.map(&:name).to_sentence %>">
                   Missing on <%= lacking.one? ? lacking.first.name : "#{lacking.size} backends" %>
                 </span>

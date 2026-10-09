@@ -60,7 +60,7 @@ module Agent
         next if request_id.blank? || (@request_id && @request_id != request_id)
         next if Generation.exists?(backend_id: @backend.id, agent_state: ACTIVE)
 
-        job = self.class.ordered_queue(@backend).first
+        job = runnable(self.class.ordered_queue(@backend)).first
         next unless job&.agent_transition!(from: 'queued', to: 'dispatched', dispatched_at: Time.current,
                                            dispatch_request_id: request_id,
                                            agent_attempt: job.agent_attempt + 1)
@@ -70,7 +70,16 @@ module Agent
       end
     end
 
+    # Routing already sends jobs only to servers that run their engine; this guards against a server
+    # that stopped reporting one since.
+    def runnable(queue)
+      supported = Workflow.where(engine: @backend.engines.keys).select(:id)
+      queue.merge(Generation.where(workflow_id: nil).or(Generation.where(workflow_id: supported)))
+    end
+
     def assign_message(job, request_id)
+      return engine_assign_message(job, request_id) unless job.workflow.nil? || job.workflow.comfyui?
+
       requirements = Requirements.for(job.workflow)
       {
         'type' => 'job.assign', 'request_id' => request_id, 'job_id' => job.agent_job_id,
@@ -83,6 +92,17 @@ module Agent
         },
         'timeout_s' => timeout_s(job),
         'previews' => %w[3d]
+      }
+    end
+
+    # mflux and MLX video jobs: the filled recipe stands in for the graph, and the agent checks nothing up front.
+    def engine_assign_message(job, request_id)
+      {
+        'type' => 'job.assign', 'request_id' => request_id, 'job_id' => job.agent_job_id,
+        'engine' => job.workflow.engine, 'workflow' => job.filled_workflow_json,
+        'inputs' => job.generation_inputs.map { input_entry(job, it) },
+        'upload_url' => "#{base_url}/api/agent/jobs/#{job.agent_job_id}/outputs",
+        'requires' => {}, 'timeout_s' => timeout_s(job)
       }
     end
 

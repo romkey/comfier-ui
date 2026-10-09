@@ -36,6 +36,34 @@ ComfyUI, and uploads the results. It also downloads the models Comfier asks for 
    or in the **Comfier** panel (below).
 4. Restart ComfyUI. The server's setup page in Comfier updates when it connects.
 
+## Install on a Mac (mflux, no ComfyUI needed)
+
+On an Apple Silicon Mac the agent can run on its own, as a login service, and run image jobs with
+[mflux](https://github.com/filipstrand/mflux), with or without ComfyUI. You need
+[uv](https://docs.astral.sh/uv/) (`brew install uv`).
+
+```bash
+uv tool install --python 3.12 "comfier-agent[mac] @ git+https://github.com/romkey/comfier-ui.git#subdirectory=comfyui/comfier_agent"
+comfier-agent setup            # Comfier's URL, this server's key, and whether this Mac runs ComfyUI too
+comfier-agent service install  # starts now and at every login; restarts if it stops
+```
+
+The server's setup page in Comfier shows these lines with your URL and key filled in.
+
+| Command | What it does |
+|---|---|
+| `comfier-agent setup` | Asks for Comfier's URL, the key, the server name, ComfyUI's URL (`none` if there isn't one) and the engines, and saves them to `~/.comfier/agent.json`. Takes `--url`, `--key`, `--name`, `--comfyui-url`, `--engines` and `-y` to skip the questions. |
+| `comfier-agent service install` | Installs a launchd agent (`~/Library/LaunchAgents/com.comfier.agent.plist`) that starts at login and restarts on a crash. |
+| `comfier-agent service status \| start \| stop \| restart \| uninstall` | Manages it. |
+| `comfier-agent logs [-f]` | Shows `~/Library/Logs/comfier-agent.log`. |
+| `comfier-agent doctor` | Checks the settings, Comfier and ComfyUI connections, the engines and their versions, memory and disk. |
+| `comfier-agent pull MODEL` | Downloads an mflux model (for example `z-image-turbo`) by making a small test image, so the first real job doesn't wait for the download. |
+| `comfier-agent lock -- COMMAND` | Runs a command while holding the GPU lock, so no Comfier job runs alongside it. |
+| `comfier-agent run` | Runs in the foreground, which is what the service does. |
+
+To update: `uv tool upgrade comfier-agent && comfier-agent service restart`. Comfier marks the server
+**Update available** when there's a newer agent.
+
 ## The Comfier panel
 
 ComfyUI's sidebar gets a **Comfier** tab. It shows whether the agent is connected, the server name, the Comfier URL,
@@ -76,6 +104,12 @@ Environment variables override `comfier_agent.json`.
 | `HF_PROXY_TOKEN_HEADER` | `X-Proxy-Token` | Header name for `HF_PROXY_TOKEN`. |
 | `COMFIER_USE_HF_CLI` | `true` | Use the `hf` / `huggingface-cli` tool for Hub `/resolve/` links (falls back to HTTP). |
 | `COMFIER_MAX_CONCURRENT_DOWNLOADS` | `1` | Parallel model downloads (`0` = no limit). |
+| `COMFIER_ENGINES` | detected | Comma-separated engines to run: `comfyui`, `mflux`, `mlx_video`. Default: ComfyUI plus whichever of mflux and mlx-video are installed. Leave out `comfyui` on a Mac that doesn't run it. |
+| `COMFIER_WORK_DIR` | `~/.comfier/work` | Where mflux and mlx-video jobs keep their inputs and results while they run. |
+| `COMFIER_MLX_IDLE_UNLOAD_MINUTES` | `10` | Unload mflux's model after this long without a job (`0` keeps it loaded). |
+| `COMFIER_MLX_LOAD_TIMEOUT_SECONDS` | `3600` | How long loading an mflux or mlx-video model may take, including its first download. The job's time limit starts after. |
+| `COMFIER_GPU_LOCK` | `true` | Hold `~/.comfier/gpu.lock` while a job runs, and take no jobs while another program holds it. |
+| `COMFIER_HOME` | `~/.comfier` | Where a standalone agent keeps its settings (`agent.json`), work files and lock. |
 
 `comfier_agent.json` also accepts `max_model_download_gb` (50), `min_free_disk_gb` (10), `max_concurrent_downloads`
 (1), `use_hf_cli` (true), and `allow_pickle_formats` (true). When free space on a job or model volume falls below
@@ -108,13 +142,55 @@ Comfier reads the same file from its own build and marks a server **Update avail
 **Newer than Comfier** when it's newer. Bump `__version__` with every change to the agent, or Comfier can't tell
 old agents from new ones. `pyproject.toml` takes its version from there.
 
+## mflux on Apple Silicon
+
+On a Mac the agent can run image jobs with [mflux](https://github.com/filipstrand/mflux) instead of
+ComfyUI. It's faster and avoids ComfyUI's Mac problems. Install mflux next to the agent
+(`pip install "comfier-agent[mflux]"`), and the agent reports the `mflux` engine to Comfier. Admins
+then add mflux workflows (**Settings → Workflows → Runs on: mflux**), which only go to servers with
+mflux and enough memory.
+
+- **One job at a time.** A server runs one Comfier job whichever engine it's on.
+- **Memory is handed over.** On Apple Silicon, ComfyUI and mflux share memory. Before an mflux job the
+  agent asks ComfyUI to unload its models, and before a ComfyUI job it stops mflux. mflux also unloads
+  after `COMFIER_MLX_IDLE_UNLOAD_MINUTES` without a job.
+- **The model stays loaded.** mflux runs in a worker process that keeps the last model loaded, so only
+  the first job with a model pays to load it. Cancelling a job ends the worker; the next job starts a
+  new one.
+- **Models download on first use.** mflux fetches weights from Hugging Face the first time a model is
+  used, so that job takes longer. The agent reports which models are already downloaded.
+- **The GPU lock.** While a job runs the agent holds `~/.comfier/gpu.lock` (an `flock` lock). If another
+  program holds it, the agent takes no jobs until it's released, so your own scripts can keep Comfier
+  jobs off the GPU while they run.
+
+To run mflux without ComfyUI at all, set `COMFIER_ENGINES=mflux` and run the agent as a sidecar (below).
+
+## MLX video on Apple Silicon
+
+Video jobs can run with [mlx-video](https://github.com/Blaizzy/mlx-video), which runs LTX-2 / LTX-2.3
+(text, image and audio to video) and Wan2.1 / Wan2.2 natively. The `[mac]` install includes it; on its own
+it's `pip install "comfier-agent[video]"`. It's installed from a pinned GitHub commit, because mlx-video
+isn't on PyPI.
+
+- Each job runs mlx-video's command-line tool (`mlx_video.ltx_2.generate` or `mlx_video.wan_2.generate`)
+  with the recipe's flags, so its model loads once per job. That's small next to generating a video, and
+  a crash or an mlx-video change only affects that job. Progress comes from the tool's denoising bar.
+- LTX recipes name a Hugging Face repo (`model_repo`, for example `prince-canuma/LTX-2.3-distilled`),
+  which downloads on the first run. Wan needs weights converted to MLX first (see mlx-video's README);
+  point `model_dir` at them.
+- Memory matters: LTX-2 is a 19B model, so plan on 64 GB or more. Wan2.2 TI2V 5B fits in 32 GB. Set
+  `min_memory_gb` in the recipe and Comfier only sends the style to Macs with that much.
+- The one-job-at-a-time rule, the GPU lock and the memory handover with ComfyUI and mflux apply to video
+  jobs too.
+
 ## Sidecar mode
 
-The agent can also run as its own process next to ComfyUI instead of inside it:
+The agent can also run as its own process next to ComfyUI instead of inside it (on a Mac, the
+service above does this):
 
 ```bash
-pip install aiohttp
-python -m comfier_agent --comfyui-url http://127.0.0.1:8188
+pip install ./comfyui/comfier_agent
+comfier-agent run --comfyui-url http://127.0.0.1:8188
 ```
 
 Set `COMFIER_INPUT_DIR`, `COMFIER_OUTPUT_DIR` and `COMFIER_MODELS_DIR` if it can't find ComfyUI's folders.

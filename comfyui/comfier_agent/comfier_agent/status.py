@@ -66,7 +66,9 @@ class StatusTracker:
         active_job: ComfierJobStatus | None,
         downloads: list[dict[str, Any]],
         comfy_reachable: bool,
+        gpu_busy_elsewhere: bool = False,
     ) -> None:
+        """`comfy` is None when this server doesn't run ComfyUI (only mflux or mlx-video)."""
         snap = self.snapshot
         snap.downloads = downloads
         snap.uptime_s = int(time.time() - self.started_at)
@@ -88,7 +90,7 @@ class StatusTracker:
 
         stats: dict[str, Any] = {}
         try:
-            stats = await comfy.system_stats()
+            stats = await comfy.system_stats() if comfy else {}
             snap.resources = build_resources(stats, config=self.config)
             snap.comfyui_version = snap.resources.get("comfyui_version")
             devices = stats.get("devices") or []
@@ -102,7 +104,7 @@ class StatusTracker:
 
         disk_ok, disk_reason = disk_acceptance(self.config)
 
-        queue = await comfy.queue()
+        queue = await comfy.queue() if comfy else {}
         running = queue.get("queue_running") or []
         pending = queue.get("queue_pending") or []
 
@@ -130,6 +132,8 @@ class StatusTracker:
             snap.state = "disk_low"
         elif active_job:
             snap.state = "busy"
+        elif gpu_busy_elsewhere:
+            snap.state = "busy_local"
         elif fr > 0 or fp > 0:
             if not self.config.accept_when_local_busy:
                 snap.state = "busy_local"
@@ -144,10 +148,13 @@ class StatusTracker:
             and not snap.paused
             and comfy_reachable
             and active_job is None
+            and not gpu_busy_elsewhere
             and (self.config.accept_when_local_busy or (fr == 0 and fp == 0))
         )
         if not disk_ok:
             snap.accepting_reason = disk_reason
+        elif snap.state == "busy_local" and gpu_busy_elsewhere:
+            snap.accepting_reason = "Another program on this machine holds the GPU lock"
         elif snap.state == "busy_local":
             snap.accepting_reason = "Local ComfyUI queue has work (share queue is off)"
         elif snap.state == "busy":
@@ -186,7 +193,8 @@ class StatusTracker:
         }
         if s.accepting_reason:
             msg["accepting_reason"] = s.accepting_reason
-        return msg
+        # Without ComfyUI there's no ComfyUI version or VRAM reading to send.
+        return {k: v for k, v in msg.items() if not (k in ("comfyui_version", "vram_free") and v is None)}
 
 
 def _int(value: Any) -> int | None:

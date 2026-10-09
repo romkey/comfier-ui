@@ -174,5 +174,30 @@ module Agent
 
       assert_equal 45 * 60, @socket.last_of_type('job.assign')['timeout_s']
     end
+
+    test 'an mflux job goes out with its engine and recipe, and nothing to check up front' do
+      mac = create_agent_backend!(owner: @alice, name: 'Mac Studio')
+      socket = bring_mac_online!(mac, engines: { mflux: { models: %w[z-image-turbo] } })
+      workflow = engine_workflow!
+      recipe = workflow.graph.merge('prompt' => 'a cat', 'width' => 1024, 'height' => 1024, 'seed' => 7)
+      gen = queued_job(workflow:, backend: mac, filled_workflow_json: recipe)
+      agent_request(mac, 'r_mac')
+
+      assert_equal 'dispatched', gen.reload.agent_state
+      assign = socket.last_of_type('job.assign')
+
+      assert_equal 'mflux', assign['engine']
+      assert_equal 'a cat', assign.dig('workflow', 'prompt')
+      assert_empty(assign['requires'])
+      assert_nil assign['previews']
+    end
+
+    test 'a server never gets a job for an engine it stopped reporting' do
+      gen = queued_job(workflow: engine_workflow!)
+      agent_request(@backend, 'r_1')
+
+      assert_equal 'queued', gen.reload.agent_state
+      assert_empty @socket.of_type('job.assign')
+    end
   end
 end

@@ -62,11 +62,14 @@ module AgentTestHelpers
     socket
   end
 
-  def agent_inventory(backend, models: {}, node_types: [], hash: nil, object_info_hash: nil)
+  # extra: object_info_hash:, engines: ({ mflux: { models: [...] } })
+  def agent_inventory(backend, models: {}, node_types: [], hash: nil, **extra)
     models = models.transform_keys(&:to_s)
-    message = { 'type' => 'inventory', 'hash' => hash || Digest::SHA256.hexdigest([models, node_types].to_json),
-                'models' => models, 'node_types' => node_types }
-    message['object_info_hash'] = object_info_hash if object_info_hash
+    engines = extra[:engines]&.deep_stringify_keys
+    message = { 'type' => 'inventory', 'models' => models, 'node_types' => node_types,
+                'hash' => hash || Digest::SHA256.hexdigest([models, node_types, engines].to_json) }
+    message['object_info_hash'] = extra[:object_info_hash] if extra[:object_info_hash]
+    message['engines'] = engines if engines
     agent_message(backend, message)
   end
 

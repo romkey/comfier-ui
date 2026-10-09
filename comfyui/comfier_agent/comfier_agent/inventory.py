@@ -25,6 +25,8 @@ class InventorySnapshot:
     def __init__(self) -> None:
         self.models: dict[str, list[str]] = {}
         self.node_types: list[str] = []
+        # What each engine reports: {"comfyui": {...}, "mflux": {"version": ..., "models": [...]}}.
+        self.engines: dict[str, dict[str, Any]] = {}
         self.hash: str = ""
         self.object_info_hash: str = ""
         self._object_info: dict[str, Any] | None = None
@@ -34,8 +36,12 @@ class InventorySnapshot:
         return self._object_info
 
 
-async def scan_inventory(comfy) -> InventorySnapshot:
+async def scan_inventory(comfy, engines: dict[str, Any] | None = None) -> InventorySnapshot:
     snap = InventorySnapshot()
+    snap.engines = {name: engine.info() for name, engine in (engines or {}).items()}
+    if comfy is None:
+        snap.hash = canonical_hash({"models": {}, "node_types": [], "engines": snap.engines})
+        return snap
     folders = await comfy.models_folders()
     if folders:
         for folder in folders:
@@ -49,6 +55,7 @@ async def scan_inventory(comfy) -> InventorySnapshot:
     snap.hash = canonical_hash({
         "models": {k: sorted(v) for k, v in sorted(snap.models.items())},
         "node_types": sorted(snap.node_types),
+        "engines": snap.engines,
     })
     return snap
 
@@ -94,4 +101,5 @@ def inventory_message(snap: InventorySnapshot) -> dict[str, Any]:
         "models": snap.models,
         "node_types": snap.node_types,
         "object_info_hash": snap.object_info_hash,
+        "engines": snap.engines,
     }

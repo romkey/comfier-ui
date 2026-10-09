@@ -23,6 +23,7 @@ from comfier_agent.engines.comfyui import (  # noqa: F401  (re-exported for call
     validate_workflow,
     validation_error_text,
 )
+from comfier_agent.gpu_lock import GpuLock
 from comfier_agent.protocol import compact, replace_input_refs
 from comfier_agent.status import ComfierJobStatus
 from comfier_agent.transfer import UploadError, download_to_file, same_origin, upload_file_multipart
@@ -55,6 +56,8 @@ MAX_TRACEBACK = 8000
 # Still image of a 3D result, rendered in its own process so a bad mesh can't take ComfyUI down with it.
 PREVIEW_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "preview.py")
 PREVIEW_TIMEOUT_S = 120
+# How long a job waits for another program to let go of the GPU lock.
+GPU_WAIT_S = 600
 
 
 def output_kind(filename: str) -> str | None:
@@ -167,19 +170,21 @@ class JobManager:
     """One job slot shared by every engine: Comfier assigns a job only when this server asked for one,
     so ComfyUI, mflux and mlx-video never run Comfier jobs at the same time."""
 
-    def __init__(self, config: AgentConfig, comfy, send, inventory_snap, on_terminal=None, engines=None):
+    def __init__(self, config: AgentConfig, comfy, send, inventory_snap, on_terminal=None, engines=None,
+                 gpu_lock: GpuLock | None = None):
         self.config = config
         self.comfy = comfy
         self.send = send
         self.inventory_snap = inventory_snap
         self.on_terminal = on_terminal
         self.engines: dict[str, Engine] = engines if engines is not None else {"comfyui": ComfyUIEngine(comfy)}
+        self.gpu_lock = gpu_lock or GpuLock(config.gpu_lock_path, enabled=False)
         self.active: JobContext | None = None
         self.open_request_id: str | None = None
         # The engine that last ran a job, and so may still hold models in memory.
         self.warm_engine: str | None = None
         self._request_counter = 0
-        self._progress_last: dict[str, float] = {}
+        self._progress_last: dict[str, tuple[float, str | None]] = {}
         self._terminal_buffer: list[dict] = []
 
     @property
@@ -281,12 +286,24 @@ class JobManager:
             await self.on_terminal()
 
     def _release(self, ctx: JobContext) -> None:
+        self.gpu_lock.release()
         delete_job_inputs(self.config, ctx.job_id)
         forget = getattr(self.engines.get(ctx.engine), "forget", None)
         if forget:
             forget(ctx)
         if self.active is ctx:
             self.active = None
+
+    async def _take_gpu(self, ctx: JobContext) -> None:
+        """Wait while another program on this machine holds the GPU lock."""
+        deadline = time.monotonic() + GPU_WAIT_S
+        while not self.gpu_lock.acquire():
+            if ctx.cancel_requested:
+                raise JobCancelled()
+            if time.monotonic() >= deadline:
+                raise JobError("execute", f"another program held {self.gpu_lock.path} for {GPU_WAIT_S // 60} min")
+            await self._progress(ctx, "waiting_for_gpu", 0.0)
+            await asyncio.sleep(1)
 
     async def _make_room_for(self, engine_name: str) -> None:
         """Unified memory is shared, so before one engine loads models the others let theirs go."""
@@ -345,6 +362,7 @@ class JobManager:
                 raise JobCancelled()
             await self._progress(ctx, "inputs", 1.0)
 
+            await self._take_gpu(ctx)
             await self._make_room_for(ctx.engine)
             outputs = await engine.execute(ctx, workflow, timeout_s=timeout_s, progress=self._progress)
             files, skipped = split_allowed(outputs)
@@ -491,10 +509,11 @@ class JobManager:
         ctx.phase = phase
         ctx.progress = progress
         now = time.time()
-        last = self._progress_last.get(ctx.job_id, 0)
-        if now - last < 0.5 and phase not in ("queued", "uploading"):
+        last, last_phase = self._progress_last.get(ctx.job_id, (0, None))
+        # A new phase always goes out; progress within a phase at most twice a second.
+        if now - last < 0.5 and phase == last_phase and phase not in ("queued", "uploading"):
             return
-        self._progress_last[ctx.job_id] = now
+        self._progress_last[ctx.job_id] = (now, phase)
         msg = {"type": "job.progress", "job_id": ctx.job_id, "phase": phase, "progress": progress}
         msg.update({k: v for k, v in extra.items() if v is not None})
         if ctx.node:

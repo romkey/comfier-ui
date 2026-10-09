@@ -16,6 +16,8 @@ module Agent
 
       # Prefer the live API graph over cached requirements_json (stale after graph edits).
       def node_types_for(workflow)
+        return [] unless workflow.comfyui?
+
         graph = workflow.graph || {}
         from_graph = graph.values.filter_map { |node| node['class_type'].to_s.strip if node.is_a?(Hash) }.uniq.sort
         from_graph.presence || Array(workflow.requirements_json&.dig('node_types'))

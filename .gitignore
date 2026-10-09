@@ -42,3 +42,6 @@ __pycache__/
 __pycache__/
 .pytest_cache/
 .ruff_cache/
+
+# Left by pip installs of the agent from a local path
+comfyui/comfier_agent/build/

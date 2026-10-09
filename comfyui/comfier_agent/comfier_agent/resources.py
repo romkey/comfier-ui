@@ -68,6 +68,20 @@ def _normalize_devices(raw: list[Any] | None) -> list[dict[str, Any]]:
     return devices
 
 
+def apple_silicon_devices(ram_total: int | None) -> list[dict[str, Any]]:
+    """Without ComfyUI to describe the GPU, an Apple Silicon Mac reports its chip, which shares the RAM."""
+    if sys.platform != "darwin" or platform.machine() != "arm64":
+        return []
+    try:
+        import subprocess
+
+        name = subprocess.check_output(["sysctl", "-n", "machdep.cpu.brand_string"], text=True).strip()
+    except (OSError, subprocess.SubprocessError):
+        name = "Apple Silicon"
+    return [{"name": name or "Apple Silicon", "type": "mps", "index": 0, "vram_total_bytes": ram_total,
+             "vram_free_bytes": None}]
+
+
 def machine_type_label(devices: list[dict[str, Any]]) -> str:
     if not devices:
         return "cpu"
@@ -99,6 +113,8 @@ def build_resources(stats: dict[str, Any] | None, *, config: AgentConfig | None 
             ram_available = host_avail
 
     comfyui_version = system.get("comfyui_version") or stats.get("comfyui_version")
+    if not devices and not stats:
+        devices = apple_silicon_devices(ram_total)
 
     platform_info = {
         "os": system.get("os") or platform.system().lower(),
@@ -135,6 +151,12 @@ def _paths_for_disk_check(config: AgentConfig) -> list[tuple[str, str]]:
         add("output", config.comfyui_output_dir)
     if config.comfyui_models_dir:
         add("models", config.comfyui_models_dir)
+
+    # mflux and mlx-video keep job files in work_dir and models in the Hugging Face cache.
+    add("work", os.path.expanduser(config.work_dir))
+    add("hf_cache", os.path.expanduser(
+        os.environ.get("HF_HUB_CACHE") or os.path.join(os.environ.get("HF_HOME") or "~/.cache/huggingface", "hub")
+    ))
 
     try:
         import folder_paths  # type: ignore

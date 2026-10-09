@@ -19,6 +19,16 @@ from comfier_agent.config import AgentConfig  # noqa: E402
 from comfier_agent.runtime import AgentRuntime  # noqa: E402
 
 
+@pytest.fixture(autouse=True)
+def comfier_home(tmp_path, monkeypatch):
+    """Settings, work files and the GPU lock go under the test's own folder, never ~/.comfier."""
+    home = tmp_path / "comfier-home"
+    monkeypatch.setenv("COMFIER_HOME", str(home))
+    for name in ("COMFIER_ENGINES", "COMFIER_WORK_DIR", "COMFIER_GPU_LOCK"):
+        monkeypatch.delenv(name, raising=False)
+    return home
+
+
 @pytest.fixture
 def folder_paths_stub(tmp_path, monkeypatch):
     models = tmp_path / "models"
@@ -46,7 +56,8 @@ class AgentHarness:
         self.runtime: AgentRuntime | None = None
         self._task: asyncio.Task | None = None
 
-    async def start(self, **overrides) -> AgentRuntime:
+    async def start(self, wait_for_request: bool = True, **overrides) -> AgentRuntime:
+        overrides.setdefault("engines", ["comfyui"])
         cfg = AgentConfig(
             frontend_url=self.front.base_url,
             api_key="test-key",
@@ -59,7 +70,7 @@ class AgentHarness:
         )
         self.runtime = AgentRuntime(cfg)
         self._task = asyncio.create_task(self.runtime.run(sidecar=True))
-        await self.front.wait_for_types("hello", "job.request", timeout=8)
+        await self.front.wait_for_types("hello", *(() if wait_for_request is False else ("job.request",)), timeout=8)
         return self.runtime
 
     async def stop(self) -> None:

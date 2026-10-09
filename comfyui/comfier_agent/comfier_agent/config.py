@@ -62,18 +62,32 @@ def detect_comfyui_url() -> str:
         return "http://127.0.0.1:8188"
 
 
+def comfier_home() -> Path:
+    """Where a standalone agent keeps its settings, work files and lock (~/.comfier)."""
+    return Path(os.environ.get("COMFIER_HOME") or Path.home() / ".comfier")
+
+
 def default_config_path() -> Path:
     try:
         import folder_paths  # type: ignore
 
         user = getattr(folder_paths, "get_user_directory", None)
         if user:
-            base = Path(user())
-        else:
-            base = Path(__file__).resolve().parent.parent
+            return Path(user()) / "comfier_agent.json"
     except Exception:
-        base = Path(__file__).resolve().parent.parent
-    return base / "comfier_agent.json"
+        pass
+    # Older sidecar installs kept the file next to the package.
+    legacy = Path(__file__).resolve().parent.parent / "comfier_agent.json"
+    if legacy.is_file():
+        return legacy
+    return comfier_home() / "agent.json"
+
+
+def _parse_engines(raw: Any) -> list[str] | None:
+    if raw is None:
+        return None
+    names = raw.split(",") if isinstance(raw, str) else list(raw)
+    return [n.strip().lower() for n in names if str(n).strip()] or None
 
 
 def _validate_url(url: str, allow_insecure: bool) -> str | None:
@@ -122,6 +136,13 @@ class AgentConfig:
     hf_endpoint: str | None = None
     hf_proxy_token: str | None = None
     hf_proxy_token_header: str = "X-Proxy-Token"
+    # Engines to run: comfyui, mflux, mlx_video. None runs ComfyUI plus whichever MLX tools are installed.
+    engines: list[str] | None = None
+    work_dir: str = field(default_factory=lambda: str(comfier_home() / "work"))
+    mlx_idle_unload_minutes: float = 10.0
+    mlx_load_timeout_s: int = 3600
+    gpu_lock: bool = True
+    gpu_lock_path: str = field(default_factory=lambda: str(comfier_home() / "gpu.lock"))
     agent_version: str = __version__
     config_path: Path | None = None
 
@@ -176,6 +197,11 @@ def _merge_file(data: dict[str, Any], cfg: AgentConfig) -> None:
         "max_concurrent_downloads": "max_concurrent_downloads",
         "use_hf_cli": "use_hf_cli",
         "allow_pickle_formats": "allow_pickle_formats",
+        "engines": "engines",
+        "work_dir": "work_dir",
+        "mlx_idle_unload_minutes": "mlx_idle_unload_minutes",
+        "mlx_load_timeout_s": "mlx_load_timeout_s",
+        "gpu_lock": "gpu_lock",
     }
     for key, attr in mapping.items():
         if key in data and data[key] is not None:
@@ -235,6 +261,14 @@ def load_config(*, sidecar: bool = False, overrides: dict[str, Any] | None = Non
     cfg.inventory_poll_seconds = _env_int("COMFIER_INVENTORY_POLL_SECONDS", cfg.inventory_poll_seconds)
     cfg.max_download_mb = _env_int("COMFIER_MAX_DOWNLOAD_MB", cfg.max_download_mb)
     cfg.upload_retry_s = _env_int("COMFIER_UPLOAD_RETRY_SECONDS", cfg.upload_retry_s)
+    if os.environ.get("COMFIER_ENGINES"):
+        cfg.engines = os.environ["COMFIER_ENGINES"]
+    cfg.engines = _parse_engines(cfg.engines)
+    if os.environ.get("COMFIER_WORK_DIR"):
+        cfg.work_dir = os.environ["COMFIER_WORK_DIR"]
+    cfg.mlx_idle_unload_minutes = _env_float("COMFIER_MLX_IDLE_UNLOAD_MINUTES", cfg.mlx_idle_unload_minutes)
+    cfg.mlx_load_timeout_s = _env_int("COMFIER_MLX_LOAD_TIMEOUT_SECONDS", cfg.mlx_load_timeout_s)
+    cfg.gpu_lock = _env_bool("COMFIER_GPU_LOCK", cfg.gpu_lock)
     if os.environ.get("HF_ENDPOINT"):
         cfg.hf_endpoint = os.environ["HF_ENDPOINT"].strip()
     if os.environ.get("HF_PROXY_TOKEN"):
