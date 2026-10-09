@@ -9,7 +9,7 @@ import pytest
 
 from comfier_agent import cli
 from comfier_agent.gpu_lock import GpuLock
-from comfier_agent.workers.mflux_worker import PULL_COMMANDS
+from comfier_agent.workers.mflux_worker import pull_command
 
 
 def test_no_subcommand_still_runs_the_agent(monkeypatch):
@@ -66,12 +66,16 @@ def test_doctor_reports_without_crashing(comfier_home, capsys):
     assert code == 1  # no URL or key in a fresh home
 
 
-@pytest.mark.parametrize("model, command", [
-    ("z-image-turbo", "mflux-generate-z-image-turbo"), ("flux2-klein-4b", "mflux-generate-flux2"),
-    ("qwen-image", "mflux-generate-qwen"), ("dev", "mflux-generate"), ("schnell", "mflux-generate"),
+@pytest.mark.parametrize("model, command, image_flag", [
+    ("z-image-turbo", "mflux-generate-z-image-turbo", None), ("flux2-klein-4b", "mflux-generate-flux2", None),
+    ("qwen-image", "mflux-generate-qwen", None), ("qwen-image-edit", "mflux-generate-qwen-edit", "--image-paths"),
+    ("qwen-image-edit-2511", "mflux-generate-qwen-edit", "--image-paths"),
+    ("qwen-image-2.1", "mflux-generate-qwen-2.1", None), ("dev-kontext", "mflux-generate-kontext", "--image-path"),
+    ("fibo-edit", "mflux-generate-fibo-edit", "--image-path"), ("dev", "mflux-generate", None),
+    ("schnell", "mflux-generate", None),
 ])
-def test_pull_picks_the_command_for_a_model(model, command):
-    assert next(cmd for prefix, cmd in PULL_COMMANDS if model.startswith(prefix)) == command
+def test_pull_picks_the_command_for_a_model(model, command, image_flag):
+    assert pull_command(model) == (command, image_flag)
 
 
 def test_the_module_runs_the_cli():

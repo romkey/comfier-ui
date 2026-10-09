@@ -127,8 +127,12 @@ class MlxEngine(Engine):
         return fdesc["path"]
 
     def forget(self, ctx: JobContext) -> None:
-        """Inputs go once the job ends; results go after upload unless keep_outputs."""
+        """The job's folder goes when it ends, including partial results of a failed or cancelled run.
+        With keep_outputs only the inputs go."""
         path = self.job_path(ctx.job_id)
+        if not self.config.keep_outputs:
+            shutil.rmtree(path, ignore_errors=True)
+            return
         shutil.rmtree(path / "inputs", ignore_errors=True)
         with contextlib.suppress(OSError):
             path.rmdir()

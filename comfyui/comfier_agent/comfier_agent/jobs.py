@@ -8,6 +8,7 @@ import logging
 import mimetypes
 import os
 import re
+import shutil
 import sys
 import tempfile
 import time
@@ -148,6 +149,21 @@ def delete_job_inputs(config: AgentConfig, job_id: str) -> None:
             path = os.path.join(base, name)
             if os.path.isfile(path):
                 os.remove(path)
+
+
+def sweep_stale_work(config: AgentConfig, max_age_s: int = 86400) -> None:
+    """Job folders mflux and mlx-video left behind (the agent stopped mid-job), unless keep_outputs."""
+    base = os.path.expanduser(config.work_dir)
+    if config.keep_outputs or not os.path.isdir(base):
+        return
+    cutoff = time.time() - max_age_s
+    for name in os.listdir(base):
+        path = os.path.join(base, name)
+        try:
+            if os.path.isdir(path) and os.path.getmtime(path) < cutoff:
+                shutil.rmtree(path, ignore_errors=True)
+        except OSError:
+            pass
 
 
 def sweep_stale_inputs(config: AgentConfig, max_age_s: int = 86400) -> None:

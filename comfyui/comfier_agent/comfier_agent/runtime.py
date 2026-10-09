@@ -17,7 +17,7 @@ from comfier_agent.connection import FrontendConnection
 from comfier_agent.engines import build_engines
 from comfier_agent.gpu_lock import GpuLock
 from comfier_agent.inventory import inventory_message, scan_inventory
-from comfier_agent.jobs import JobManager, sweep_stale_inputs
+from comfier_agent.jobs import JobManager, sweep_stale_inputs, sweep_stale_work
 from comfier_agent.models import ModelDownloadManager
 from comfier_agent.protocol import PROTOCOL_VERSION, encode_object_info
 from comfier_agent.resources import build_resources
@@ -317,6 +317,7 @@ class AgentRuntime:
     async def _sweep_loop(self) -> None:
         while True:
             sweep_stale_inputs(self.config)
+            sweep_stale_work(self.config)
             await asyncio.sleep(3600)
 
 

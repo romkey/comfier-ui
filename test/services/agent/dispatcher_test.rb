@@ -192,6 +192,21 @@ module Agent
       assert_nil assign['previews']
     end
 
+    test 'jobs waiting on a server for an engine it stops reporting route elsewhere' do
+      mac = create_agent_backend!(owner: @alice, name: 'Mac Studio')
+      bring_mac_online!(mac, engines: { mflux: { models: [] } })
+      other = create_agent_backend!(owner: @alice, name: 'Mac mini')
+      bring_mac_online!(other, engines: { mflux: { models: [] } })
+      gen = queued_job(workflow: engine_workflow!, backend: mac)
+
+      agent_inventory(mac, engines: { comfyui: {} })
+
+      gen.reload
+
+      assert_equal other.id, gen.backend_id
+      assert_includes gen.excluded_backend_ids, mac.id
+    end
+
     test 'a server never gets a job for an engine it stopped reporting' do
       gen = queued_job(workflow: engine_workflow!)
       agent_request(@backend, 'r_1')
