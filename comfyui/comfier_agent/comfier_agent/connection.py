@@ -230,7 +230,8 @@ class FrontendConnection:
             self.last_error = (
                 f"The frontend rejected the API key (HTTP {status}). Check the key on this server's page in Comfier."
             )
-            LOG.warning("frontend HTTP auth failed (%s); backing off 5 minutes", status)
+            LOG.warning("Comfier refused key %s (HTTP %s); retrying in 5 minutes. `comfier-agent doctor` says why.",
+                        f"{self.config.api_key[:12]}…" if self.config.api_key else "(none)", status)
             return 300.0
         self.last_error = f"The frontend refused the connection (HTTP {status})."
         self._rate_log(f"connection error: HTTP {status}")

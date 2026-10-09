@@ -1,6 +1,7 @@
 """comfier-agent's commands."""
 
 import argparse
+import io
 import json
 import plistlib
 import subprocess
@@ -22,6 +23,7 @@ def test_no_subcommand_still_runs_the_agent(monkeypatch):
 
 def test_setup_without_questions_saves_the_settings(comfier_home, monkeypatch):
     monkeypatch.setattr(cli, "check_comfier", lambda url: (True, "ok"))
+    monkeypatch.setattr(cli, "check_key", lambda url, key: (True, "ok"))
     code = cli.main(["setup", "-y", "--url", "https://comfier.example/", "--key", "cmf_secret",
                      "--name", "studio", "--comfyui-url", "none", "--engines", "mflux"])
     assert code == 0
@@ -120,3 +122,66 @@ def test_pull_holds_the_gpu_lock(comfier_home, monkeypatch):
     assert seen["cmd"][-2:] == ["--pull", "z-image-turbo"]
     assert seen["held"] is True
     assert not GpuLock(str(comfier_home / "gpu.lock")).held_elsewhere()
+
+
+@pytest.mark.parametrize("saved, detected, default", [
+    ({"engines": ["comfyui", "mflux"], "comfyui_url": "http://studio:8190"}, ["mflux"], "http://studio:8190"),
+    ({"engines": ["comfyui"]}, ["mflux"], "http://127.0.0.1:8188"),
+    ({"engines": ["mflux"], "comfyui_url": "http://studio:8190"}, ["mflux"], "none"),
+    ({}, ["mflux"], "none"),
+    ({}, [], "http://127.0.0.1:8188"),
+])
+def test_setup_offers_the_comfyui_url_it_saved_before(saved, detected, default):
+    assert cli.comfyui_default(saved, detected) == default
+
+
+def test_setup_again_keeps_comfyui_and_the_key(comfier_home, monkeypatch):
+    monkeypatch.setattr(cli, "check_comfier", lambda url: (True, "ok"))
+    monkeypatch.setattr(cli, "check_key", lambda url, key: (True, "ok"))
+    cli.main(["setup", "-y", "--url", "https://c.example", "--key", "cmf_first",
+              "--comfyui-url", "http://studio:8190", "--engines", "comfyui,mflux"])
+    assert cli.main(["setup", "-y", "--url", "https://c.example"]) == 0
+    saved = json.loads((comfier_home / "agent.json").read_text())
+    assert saved["api_key"] == "cmf_first"
+    assert saved["comfyui_url"] == "http://studio:8190"
+    assert "comfyui" in saved["engines"]
+
+
+def test_setup_refuses_something_that_isnt_a_key(comfier_home):
+    assert cli.main(["setup", "-y", "--url", "https://c.example", "--key", "abc123"]) == 2
+
+
+class FakeResponse(io.BytesIO):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        return False
+
+
+def test_check_key_reports_the_server_it_belongs_to(monkeypatch):
+    seen = {}
+
+    def urlopen(request, timeout):
+        seen["auth"] = request.headers["Authorization"]
+        return FakeResponse(b'{"server": "Mac Studio", "key": "cmf_abcd1234\\u2026"}')
+
+    monkeypatch.setattr(cli.urllib.request, "urlopen", urlopen)
+    ok, detail = cli.check_key("https://c.example", "cmf_abcd1234secret")
+    assert ok is True and "Mac Studio" in detail and "cmf_abcd1234…" in detail
+    assert seen["auth"] == "Bearer cmf_abcd1234secret"
+
+
+@pytest.mark.parametrize("code, body, ok, text", [
+    (401, b'{"error": "This key was revoked."}', False, "revoked"),
+    (404, b"Not Found", None, "older than the agent"),
+])
+def test_check_key_explains_a_refusal(monkeypatch, code, body, ok, text):
+    def urlopen(request, timeout):
+        raise cli.urllib.error.HTTPError(request.full_url, code, "x", {}, io.BytesIO(body))
+
+    monkeypatch.setattr(cli.urllib.request, "urlopen", urlopen)
+    result, detail = cli.check_key("https://c.example", "cmf_abcd1234secret")
+    assert result is ok and text in detail
+    if ok is False:
+        assert "cmf_abcd1234…" in detail and "secret" not in detail

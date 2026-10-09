@@ -138,6 +138,7 @@ Rails.application.routes.draw do
     namespace :agent do
       get 'jobs/:job_id/inputs/:input_id', to: 'jobs#input', as: :job_input
       post 'jobs/:job_id/outputs', to: 'jobs#outputs', as: :job_outputs
+      get 'key', to: 'keys#show', as: :key
     end
   end
 
