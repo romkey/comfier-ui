@@ -1,6 +1,6 @@
 <div class="d-flex align-items-end justify-content-between mt-4 mb-2">
   <div>
-    <div class="h-section-label mb-0">Styles</div>
+    <div class="h-section-label mb-0">Workflows</div>
     <% if local_assigns[:rescan_requested] %>
       <div class="text-12 text-secondary mt-1">Re-scanning <%= backend.name %>… this table updates when it reports back.</div>
     <% end %>
@@ -17,23 +17,28 @@
     </div>
   <% end %>
 </div>
-<table class="table table-compact align-middle">
+<% by_kind = workflows.group_by(&:kind) %>
+<% GenerationKind.all.each do |kind| %>
+  <% kind_workflows = Array(by_kind[kind.key]).sort_by { |w| w.name.downcase } %>
+  <% next if kind_workflows.empty? %>
+  <div class="text-13 fw-semibold text-secondary mt-3 mb-1"><%= kind.label %></div>
+  <table class="table table-compact align-middle">
   <tbody>
-    <% workflows.each do |workflow| %>
+    <% kind_workflows.each do |workflow| %>
       <% record = availability[workflow.id] %>
       <% off = backend.workflow_disabled?(workflow) %>
       <tr id="<%= dom_id(workflow, :server_style) %>" class="<%= 'style-off' if off %>">
-        <td><%= workflow.name %> <span class="text-12 text-secondary"><%= workflow.kind_info.label %></span></td>
+        <td><%= workflow.name %></td>
         <td>
           <% if off %>
-            <span class="badge text-bg-secondary fw-medium" title="Turned off on this server">Off</span>
+            <span class="status-dot status-danger" title="Disabled on this server" aria-label="Disabled"></span>
           <% else %>
             <%= availability_cell(record) %>
           <% end %>
         </td>
         <td class="text-12 text-secondary">
           <% if off %>
-            Jobs for this style won't run here.
+            Jobs for this workflow won't run here.
           <% else %>
             <%= Array(record&.details&.dig('reasons')).first %>
             <% Array(record&.details&.dig('hints')).each do |hint| %><div class="text-warning"><%= hint %></div><% end %>
@@ -47,14 +52,15 @@
                 <%= button_to 'Download', server_downloads_path(backend, workflow_id: workflow.id),
                               class: 'btn btn-outline-secondary btn-sm' %>
               <% end %>
-              <%= button_to off ? 'Turn on' : 'Turn off', server_styles_path(backend), method: :patch,
+              <%= button_to off ? 'Enable' : 'Disable', server_styles_path(backend), method: :patch,
                             params: { workflow_id: workflow.id, enabled: off ? '1' : '0' },
                             class: 'btn btn-outline-secondary btn-sm',
-                            aria: { label: "#{off ? 'Turn on' : 'Turn off'} #{workflow.name} on #{backend.name}" } %>
+                            aria: { label: "#{off ? 'Enable' : 'Disable'} #{workflow.name} on #{backend.name}" } %>
             </div>
           <% end %>
         </td>
       </tr>
     <% end %>
   </tbody>
-</table>
+  </table>
+<% end %>

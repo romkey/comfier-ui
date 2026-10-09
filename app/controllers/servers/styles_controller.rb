@@ -30,7 +30,7 @@ module Servers
 
     def audit_toggle(workflow, enabled)
       ActivityLog.record(kind: :server_updated, user: current_user, subject: @backend, request:,
-                         message: "Turned #{enabled ? 'on' : 'off'} #{workflow.name} on #{@backend.name}",
+                         message: "#{enabled ? 'Enabled' : 'Disabled'} #{workflow.name} on #{@backend.name}",
                          details: { workflow_id: workflow.id, enabled: })
     end
 
