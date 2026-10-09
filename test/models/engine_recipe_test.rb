@@ -31,6 +31,10 @@ class EngineRecipeTest < ActiveSupport::TestCase
     assert_equal 16, EngineRecipe.min_memory_gb(RECIPE.merge('min_memory_gb' => 16))
     assert_nil EngineRecipe.min_memory_gb(RECIPE.merge('min_memory_gb' => 'lots'))
     assert_equal 'z-image-turbo', EngineRecipe.model(RECIPE)
+    assert_equal 'prince-canuma/LTX-2.3-distilled',
+                 EngineRecipe.model({ 'command' => 'mlx_video.ltx_2.generate',
+                                      'model_repo' => 'prince-canuma/LTX-2.3-distilled' })
+    assert_nil EngineRecipe.model({ 'command' => 'mlx_video.wan_2.generate', 'model_dir' => '~/wan' })
   end
 
   test 'every preset is a valid workflow for its page' do

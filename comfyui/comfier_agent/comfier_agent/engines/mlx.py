@@ -4,6 +4,7 @@ and child processes that can be killed to cancel a job or give its memory back."
 from __future__ import annotations
 
 import asyncio
+import codecs
 import collections
 import contextlib
 import logging
@@ -24,6 +25,7 @@ RESERVED_OPTIONS = frozenset({"output", "output_path", "output_dir"})
 # Recipe keys that describe the job rather than being passed to the command.
 META_KEYS = frozenset({"command", "min_memory_gb"})
 FLAG_KEY = re.compile(r"^[a-z][a-z0-9_]*$")
+ANSI = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
 STDERR_LINES = 40
 KILL_GRACE_S = 5
 # The folder holding the comfier_agent package. Inside ComfyUI it's only on sys.path in-process, so
@@ -35,6 +37,10 @@ def child_env() -> dict[str, str]:
     env = dict(os.environ)
     env["PYTHONPATH"] = os.pathsep.join(p for p in (PACKAGE_ROOT, env.get("PYTHONPATH")) if p)
     env.setdefault("PYTHONUNBUFFERED", "1")
+    # Ask rich to draw progress bars even without a terminal, so their percentages can be read.
+    env.setdefault("TTY_INTERACTIVE", "1")
+    env.setdefault("TTY_COMPATIBLE", "1")
+    env.setdefault("COLUMNS", "160")
     return env
 
 
@@ -49,10 +55,16 @@ def recipe_argv(recipe: dict[str, Any]) -> list[str]:
         if value is True:
             argv.append(flag)
         elif isinstance(value, list):
-            argv += [flag, *(str(v) for v in value)]
+            argv += [flag, *(arg_text(v) for v in value)]
         else:
-            argv += [flag, str(value)]
+            argv += [flag, arg_text(value)]
     return argv
+
+
+def arg_text(value: Any) -> str:
+    """No shell runs the command, so a home-relative path ("~/models/x") is expanded here."""
+    text = str(value)
+    return os.path.expanduser(text) if text.startswith("~/") else text
 
 
 def work_root(config) -> Path:
@@ -130,8 +142,9 @@ class MlxEngine(Engine):
 class ChildProcess:
     """A child process whose stderr is logged and whose last lines explain a failure."""
 
-    def __init__(self, name: str):
+    def __init__(self, name: str, on_line=None):
         self.name = name
+        self.on_line = on_line
         self.proc: asyncio.subprocess.Process | None = None
         self.stderr_tail: collections.deque[str] = collections.deque(maxlen=STDERR_LINES)
         self._stderr_task: asyncio.Task | None = None
@@ -140,25 +153,43 @@ class ChildProcess:
     def running(self) -> bool:
         return self.proc is not None and self.proc.returncode is None
 
-    async def start(self, argv: list[str], *, stdin: bool = False, stdout: bool = False) -> None:
+    async def start(self, argv: list[str], *, stdin: bool = False, stdout: bool = False,
+                    merged: bool = False) -> None:
+        """stdout: a pipe the caller reads. merged: stdout joins stderr, both logged and passed to on_line."""
         self.stderr_tail.clear()
         self.proc = await asyncio.create_subprocess_exec(
             *argv,
             stdin=asyncio.subprocess.PIPE if stdin else asyncio.subprocess.DEVNULL,
-            stdout=asyncio.subprocess.PIPE if stdout else asyncio.subprocess.DEVNULL,
-            stderr=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE if stdout or merged else asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.STDOUT if merged else asyncio.subprocess.PIPE,
             start_new_session=True,
             env=child_env(),
         )
-        self._stderr_task = asyncio.create_task(self._read_stderr(self.proc))
+        stream = self.proc.stdout if merged else self.proc.stderr
+        self._stderr_task = asyncio.create_task(self._read_lines(stream))
 
-    async def _read_stderr(self, proc) -> None:
-        async for raw in proc.stderr:
-            # tqdm and rich redraw with \r; keep the last state of each line.
-            line = raw.decode(errors="replace").rstrip().split("\r")[-1].strip()
-            if line:
-                self.stderr_tail.append(line)
-                LOG.debug("%s: %s", self.name, line)
+    async def _read_lines(self, stream) -> None:
+        # Progress bars redraw with \r and no newline, so split on both.
+        decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
+        pending = ""
+        while chunk := await stream.read(4096):
+            pending += decoder.decode(chunk)
+            *lines, pending = re.split(r"[\r\n]", pending)
+            for line in lines:
+                self._line(line)
+            # A progress bar's latest state has no line end yet; let on_line see it now.
+            if pending and self.on_line:
+                self.on_line(ANSI.sub("", pending).strip())
+        self._line(pending)
+
+    def _line(self, raw: str) -> None:
+        line = ANSI.sub("", raw).strip()
+        if not line:
+            return
+        self.stderr_tail.append(line)
+        LOG.debug("%s: %s", self.name, line)
+        if self.on_line:
+            self.on_line(line)
 
     def tail(self, lines: int = 12) -> str:
         return "\n".join(list(self.stderr_tail)[-lines:])

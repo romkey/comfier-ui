@@ -11,7 +11,7 @@ module EngineTestHelpers
     socket
   end
 
-  def mflux_workflow!(name: 'Z-Image', preset: 'z-image-turbo', **attrs)
+  def engine_workflow!(name: 'Z-Image', preset: 'z-image-turbo', **attrs)
     recipe = EnginePreset.all.find { it.key == preset }
     Workflow.create!({ name:, kind: recipe.kind, engine: recipe.engine, graph_json: recipe.to_json_text }.merge(attrs))
   end

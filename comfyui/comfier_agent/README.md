@@ -104,10 +104,10 @@ Environment variables override `comfier_agent.json`.
 | `HF_PROXY_TOKEN_HEADER` | `X-Proxy-Token` | Header name for `HF_PROXY_TOKEN`. |
 | `COMFIER_USE_HF_CLI` | `true` | Use the `hf` / `huggingface-cli` tool for Hub `/resolve/` links (falls back to HTTP). |
 | `COMFIER_MAX_CONCURRENT_DOWNLOADS` | `1` | Parallel model downloads (`0` = no limit). |
-| `COMFIER_ENGINES` | detected | Comma-separated engines to run: `comfyui`, `mflux`. Default: ComfyUI plus mflux if it's installed. Leave out `comfyui` on a Mac that only runs mflux. |
-| `COMFIER_WORK_DIR` | `~/.comfier/work` | Where mflux jobs keep their inputs and results while they run. |
+| `COMFIER_ENGINES` | detected | Comma-separated engines to run: `comfyui`, `mflux`, `mlx_video`. Default: ComfyUI plus whichever of mflux and mlx-video are installed. Leave out `comfyui` on a Mac that doesn't run it. |
+| `COMFIER_WORK_DIR` | `~/.comfier/work` | Where mflux and mlx-video jobs keep their inputs and results while they run. |
 | `COMFIER_MLX_IDLE_UNLOAD_MINUTES` | `10` | Unload mflux's model after this long without a job (`0` keeps it loaded). |
-| `COMFIER_MLX_LOAD_TIMEOUT_SECONDS` | `3600` | How long loading a model may take, including its first download. The job's time limit starts after. |
+| `COMFIER_MLX_LOAD_TIMEOUT_SECONDS` | `3600` | How long loading an mflux or mlx-video model may take, including its first download. The job's time limit starts after. |
 | `COMFIER_GPU_LOCK` | `true` | Hold `~/.comfier/gpu.lock` while a job runs, and take no jobs while another program holds it. |
 | `COMFIER_HOME` | `~/.comfier` | Where a standalone agent keeps its settings (`agent.json`), work files and lock. |
 
@@ -164,6 +164,24 @@ mflux and enough memory.
   jobs off the GPU while they run.
 
 To run mflux without ComfyUI at all, set `COMFIER_ENGINES=mflux` and run the agent as a sidecar (below).
+
+## MLX video on Apple Silicon
+
+Video jobs can run with [mlx-video](https://github.com/Blaizzy/mlx-video), which runs LTX-2 / LTX-2.3
+(text, image and audio to video) and Wan2.1 / Wan2.2 natively. The `[mac]` install includes it; on its own
+it's `pip install "comfier-agent[video]"`. It's installed from a pinned GitHub commit, because mlx-video
+isn't on PyPI.
+
+- Each job runs mlx-video's command-line tool (`mlx_video.ltx_2.generate` or `mlx_video.wan_2.generate`)
+  with the recipe's flags, so its model loads once per job. That's small next to generating a video, and
+  a crash or an mlx-video change only affects that job. Progress comes from the tool's denoising bar.
+- LTX recipes name a Hugging Face repo (`model_repo`, for example `prince-canuma/LTX-2.3-distilled`),
+  which downloads on the first run. Wan needs weights converted to MLX first (see mlx-video's README);
+  point `model_dir` at them.
+- Memory matters: LTX-2 is a 19B model, so plan on 64 GB or more. Wan2.2 TI2V 5B fits in 32 GB. Set
+  `min_memory_gb` in the recipe and Comfier only sends the style to Macs with that much.
+- The one-job-at-a-time rule, the GPU lock and the memory handover with ComfyUI and mflux apply to video
+  jobs too.
 
 ## Sidecar mode
 

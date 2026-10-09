@@ -159,7 +159,7 @@ class WorkflowTest < ActiveSupport::TestCase
   end
 
   test 'an mflux workflow keeps a recipe instead of a graph' do
-    workflow = mflux_workflow!
+    workflow = engine_workflow!
 
     assert_not workflow.comfyui?
     assert_equal 'z-image-turbo', workflow.recipe_model
@@ -177,7 +177,7 @@ class WorkflowTest < ActiveSupport::TestCase
   end
 
   test 'an engine only makes the kinds it can' do
-    workflow = mflux_workflow!
+    workflow = engine_workflow!
     workflow.kind = 'video'
 
     assert_not workflow.valid?

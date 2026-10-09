@@ -5,7 +5,7 @@ require 'test_helper'
 module Agent
   class EngineAvailabilityTest < ActiveSupport::TestCase
     setup do
-      @workflow = mflux_workflow!
+      @workflow = engine_workflow!
       @backend = create_agent_backend!(owner: users(:alice))
     end
 
@@ -47,6 +47,16 @@ module Agent
                                enabled: true)
 
       assert_equal ['Old box runs ComfyUI only'], Availability.compute(@workflow, legacy).reasons
+    end
+
+    test 'an MLX video style is ready on a Mac with mlx-video, and hints until its repo is downloaded' do
+      video = engine_workflow!(name: 'LTX', preset: 'ltx-2.3-distilled')
+      bring_mac_online!(@backend, engines: { mlx_video: { models: [] } }, ram_gb: 128)
+      result = Availability.compute(video, @backend.reload)
+
+      assert_predicate result, :ready?
+      assert_match(%r{prince-canuma/LTX-2.3-distilled isn't downloaded}, result.hints.first)
+      assert_predicate Availability.compute(@workflow, @backend), :blocked?
     end
   end
 end

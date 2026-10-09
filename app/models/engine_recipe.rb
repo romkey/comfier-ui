@@ -57,6 +57,7 @@ module EngineRecipe
     value.is_a?(Numeric) && value.positive? ? value : nil
   end
 
-  # The model a recipe loads, for availability and the server's model list.
-  def model(recipe) = recipe.is_a?(Hash) ? recipe['model'].presence&.to_s : nil
+  # The model a recipe loads, for availability and the server's model list: an mflux model name, or the
+  # Hugging Face repo an mlx-video recipe loads. A local model_dir isn't something Comfier can check.
+  def model(recipe) = recipe.is_a?(Hash) ? (recipe['model'].presence || recipe['model_repo'].presence)&.to_s : nil
 end

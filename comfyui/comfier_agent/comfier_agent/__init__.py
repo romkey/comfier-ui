@@ -1,4 +1,4 @@
 """Comfier agent core package."""
 
 # Bump on every agent change: Comfier compares the version each server reports with the one it ships.
-__version__ = "0.3.1"
+__version__ = "0.4.0"

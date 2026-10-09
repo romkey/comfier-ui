@@ -268,10 +268,10 @@ location /api/agent/ws {
 Web and Sidekiq talk to connected agents through Redis, so both need the same `REDIS_URL`. Sidekiq also runs the
 periodic jobs in `config/schedule.yml` (sidekiq-cron), which mark silent servers offline and recover their jobs.
 
-**Macs.** On Apple Silicon the agent can run image jobs with [mflux](https://github.com/filipstrand/mflux) instead of
-ComfyUI, installed as a login service with `uv tool install` and `comfier-agent service install` (the setup page shows
-the commands). A Mac can run mflux alone or alongside ComfyUI; either way it runs one job at a time and hands memory
-between the two. Admins add mflux styles under **Settings → Workflows → Runs on**. See
+**Macs.** On Apple Silicon the agent can run image jobs with [mflux](https://github.com/filipstrand/mflux) and video
+jobs with [mlx-video](https://github.com/Blaizzy/mlx-video) instead of ComfyUI, installed as a login service with `uv tool install` and `comfier-agent service install` (the setup page shows
+the commands). A Mac can run these alone or alongside ComfyUI; either way it runs one job at a time and hands memory
+between them. Admins add mflux and MLX video styles under **Settings → Workflows → Runs on**. See
 [docs/mlx-engines-plan.md](docs/mlx-engines-plan.md) for the design.
 
 Directly connected servers (added by URL under **Settings → Backends**) keep working. An admin can convert one with

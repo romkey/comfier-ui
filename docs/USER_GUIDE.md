@@ -172,7 +172,8 @@ The key can also be pasted into the **Comfier** tab in ComfyUI's sidebar, which 
 connected and, if not, why.
 
 **On an Apple Silicon Mac** you don't need ComfyUI: the setup page also shows three commands that install the
-agent as a service with **mflux**, which makes images natively on the Mac. It can run alongside ComfyUI too.
+agent as a service with **mflux** (images) and **mlx-video** (video), which run natively on the Mac. They can run
+alongside ComfyUI too.
 `comfier-agent doctor` checks the setup and `comfier-agent logs -f` shows what it's doing.
 
 The server's **Status** card shows which agent version it runs. **Update available** means this Comfier comes with

@@ -41,8 +41,9 @@ def build_engines(config, comfy) -> dict:
 
             engines[name] = MfluxEngine(config)
         elif name == "mlx_video":
-            LOG.warning("mlx_video isn't supported by this agent version yet")
-            continue
+            from comfier_agent.engines.mlx_video import MlxVideoEngine
+
+            engines[name] = MlxVideoEngine(config)
         if name in MLX_PACKAGES and not installed(MLX_PACKAGES[name]):
             LOG.warning("%s is enabled but the %s package isn't installed; its jobs will fail", name,
                         MLX_PACKAGES[name])
