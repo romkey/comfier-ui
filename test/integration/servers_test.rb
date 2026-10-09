@@ -36,7 +36,7 @@ class ServersTest < ActionDispatch::IntegrationTest
 
     key = response.body[/cmf_[0-9A-Za-z]{43}/]
 
-    assert_select 'pre', text: /comfier-agent setup --url \S+ --key #{key}/
+    assert_select 'pre', text: %r{comfier-agent setup --url http://\S+ --key #{key} --allow-insecure}
     assert_select 'pre', text: /comfier-agent service install/
   end
 

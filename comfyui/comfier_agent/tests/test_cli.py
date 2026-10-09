@@ -78,3 +78,21 @@ def test_the_module_runs_the_cli():
     out = subprocess.run([sys.executable, "-m", "comfier_agent", "version"], capture_output=True, text=True,
                          cwd=str(cli.Path(cli.__file__).resolve().parents[1]), check=True)
     assert out.stdout.strip() == cli.__version__
+
+
+def test_pull_holds_the_gpu_lock(comfier_home, monkeypatch):
+    import comfier_agent.engines as engines
+
+    seen = {}
+    monkeypatch.setattr(engines, "installed", lambda pkg: True)
+
+    def call(cmd):
+        seen["cmd"] = cmd
+        seen["held"] = GpuLock(str(comfier_home / "gpu.lock")).held_elsewhere()
+        return 0
+
+    monkeypatch.setattr(cli.subprocess, "call", call)
+    assert cli.main(["pull", "z-image-turbo"]) == 0
+    assert seen["cmd"][-2:] == ["--pull", "z-image-turbo"]
+    assert seen["held"] is True
+    assert not GpuLock(str(comfier_home / "gpu.lock")).held_elsewhere()
