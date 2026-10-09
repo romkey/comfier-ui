@@ -104,7 +104,7 @@ class Backend < ApplicationRecord # rubocop:disable Metrics/ClassLength
 
   # Memory the agent reported in its last hello. On Apple Silicon the GPU shares it.
   def ram_total
-    bytes = Agent::Presence.hello(self)&.dig('resources', 'ram', 'total_bytes').to_i
+    bytes = system_json&.dig('ram_total_bytes').to_i
     bytes.positive? ? bytes : nil
   end
 
