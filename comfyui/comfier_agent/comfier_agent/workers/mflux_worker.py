@@ -12,6 +12,7 @@ command with a load/generate class (most mflux CLIs have one) keeps its model lo
 any other command runs through its main() each time.
 
 `--inventory` prints mflux's version and the models already downloaded, then exits.
+`--pull MODEL [COMMAND]` makes a small test image with MODEL, which downloads it the way a job would.
 """
 
 from __future__ import annotations
@@ -271,11 +272,56 @@ def inventory() -> dict[str, Any]:
     }
 
 
+# The command that runs a model, for `--pull` without one. First match wins.
+PULL_COMMANDS = (
+    ("z-image-turbo", "mflux-generate-z-image-turbo"), ("z-image", "mflux-generate-z-image"),
+    ("flux2-", "mflux-generate-flux2"), ("qwen-image-2", "mflux-generate-qwen-2.1"),
+    ("qwen-image", "mflux-generate-qwen"), ("fibo", "mflux-generate-fibo"), ("krea-2", "mflux-generate-krea2"),
+    ("krea2", "mflux-generate-krea2"), ("ernie-image-turbo", "mflux-generate-ernie-image-turbo"),
+    ("ernie-image", "mflux-generate-ernie-image"), ("", "mflux-generate"),
+)
+
+
+def pull(model: str, command: str | None = None) -> int:
+    """Download a model by making a 256×256, two-step image with it."""
+    import tempfile
+
+    command = command or next(cmd for prefix, cmd in PULL_COMMANDS if model.startswith(prefix))
+    output = os.path.join(tempfile.mkdtemp(prefix="comfier-pull-"), "test.png")
+    print(f"Downloading and testing {model} with {command} (this can take a while the first time)…")
+
+    class Printer:
+        def write(self, text):
+            event = json.loads(text)
+            if event["event"] == "loading":
+                print("Loading the model (downloading it if needed)…", flush=True)
+            elif event["event"] == "loaded":
+                print("Loaded; making a test image…", flush=True)
+            elif event["event"] == "done":
+                print(f"✓ {model} works. Test image: {output}")
+            elif event["event"] == "error":
+                print(f"✗ {event['message']}\n{event.get('traceback') or ''}", file=sys.stderr)
+            self.failed = event["event"] == "error"
+
+        def flush(self):
+            pass
+
+    printer = Printer()
+    Worker(printer).generate_safely({
+        "id": "pull", "command": command, "output": output,
+        "argv": ["--model", model, "--prompt", "a red apple on a table", "--width", "256", "--height", "256",
+                 "--steps", "2", "--seed", "1"],
+    })
+    return 1 if getattr(printer, "failed", True) else 0
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     if argv[:1] == ["--inventory"]:
         print(json.dumps(inventory()))
         return 0
+    if argv[:1] == ["--pull"] and len(argv) >= 2:
+        return pull(argv[1], argv[2] if len(argv) > 2 else None)
     # Keep the event stream to ourselves: anything else written to stdout goes to stderr.
     out = os.fdopen(os.dup(1), "w", buffering=1)
     os.dup2(2, 1)

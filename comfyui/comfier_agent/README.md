@@ -36,6 +36,34 @@ ComfyUI, and uploads the results. It also downloads the models Comfier asks for 
    or in the **Comfier** panel (below).
 4. Restart ComfyUI. The server's setup page in Comfier updates when it connects.
 
+## Install on a Mac (mflux, no ComfyUI needed)
+
+On an Apple Silicon Mac the agent can run on its own, as a login service, and run image jobs with
+[mflux](https://github.com/filipstrand/mflux), with or without ComfyUI. You need
+[uv](https://docs.astral.sh/uv/) (`brew install uv`).
+
+```bash
+uv tool install --python 3.12 "comfier-agent[mac] @ git+https://github.com/romkey/comfier-ui.git#subdirectory=comfyui/comfier_agent"
+comfier-agent setup            # Comfier's URL, this server's key, and whether this Mac runs ComfyUI too
+comfier-agent service install  # starts now and at every login; restarts if it stops
+```
+
+The server's setup page in Comfier shows these lines with your URL and key filled in.
+
+| Command | What it does |
+|---|---|
+| `comfier-agent setup` | Asks for Comfier's URL, the key, the server name, ComfyUI's URL (`none` if there isn't one) and the engines, and saves them to `~/.comfier/agent.json`. Takes `--url`, `--key`, `--name`, `--comfyui-url`, `--engines` and `-y` to skip the questions. |
+| `comfier-agent service install` | Installs a launchd agent (`~/Library/LaunchAgents/com.comfier.agent.plist`) that starts at login and restarts on a crash. |
+| `comfier-agent service status \| start \| stop \| restart \| uninstall` | Manages it. |
+| `comfier-agent logs [-f]` | Shows `~/Library/Logs/comfier-agent.log`. |
+| `comfier-agent doctor` | Checks the settings, Comfier and ComfyUI connections, the engines and their versions, memory and disk. |
+| `comfier-agent pull MODEL` | Downloads an mflux model (for example `z-image-turbo`) by making a small test image, so the first real job doesn't wait for the download. |
+| `comfier-agent lock -- COMMAND` | Runs a command while holding the GPU lock, so no Comfier job runs alongside it. |
+| `comfier-agent run` | Runs in the foreground, which is what the service does. |
+
+To update: `uv tool upgrade comfier-agent && comfier-agent service restart`. Comfier marks the server
+**Update available** when there's a newer agent.
+
 ## The Comfier panel
 
 ComfyUI's sidebar gets a **Comfier** tab. It shows whether the agent is connected, the server name, the Comfier URL,
@@ -139,11 +167,12 @@ To run mflux without ComfyUI at all, set `COMFIER_ENGINES=mflux` and run the age
 
 ## Sidecar mode
 
-The agent can also run as its own process next to ComfyUI instead of inside it:
+The agent can also run as its own process next to ComfyUI instead of inside it (on a Mac, the
+service above does this):
 
 ```bash
-pip install aiohttp
-python -m comfier_agent --comfyui-url http://127.0.0.1:8188
+pip install ./comfyui/comfier_agent
+comfier-agent run --comfyui-url http://127.0.0.1:8188
 ```
 
 Set `COMFIER_INPUT_DIR`, `COMFIER_OUTPUT_DIR` and `COMFIER_MODELS_DIR` if it can't find ComfyUI's folders.

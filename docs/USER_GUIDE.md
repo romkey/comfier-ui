@@ -171,6 +171,10 @@ a home network without opening a port. Members can add their own unless an admin
 The key can also be pasted into the **Comfier** tab in ComfyUI's sidebar, which shows whether the agent is
 connected and, if not, why.
 
+**On an Apple Silicon Mac** you don't need ComfyUI: the setup page also shows three commands that install the
+agent as a service with **mflux**, which makes images natively on the Mac. It can run alongside ComfyUI too.
+`comfier-agent doctor` checks the setup and `comfier-agent logs -f` shows what it's doing.
+
 The server's **Status** card shows which agent version it runs. **Update available** means this Comfier comes with
 a newer agent: reinstall it on the server from the steps above. **Newer than Comfier** means the server's agent is
 newer than this Comfier, so Comfier itself needs updating.
@@ -267,6 +271,19 @@ Under **Settings → Album art**, choose which image style **Create album art** 
 image style that works from a prompt alone) and edit the prompt it sends. `{{prompt}}` is the track's description and
 `{{lyrics}}` its lyrics, with section markers such as `[verse]` removed and long lyrics shortened; text between
 `{{#lyrics}}` and `{{/lyrics}}` is left out for tracks without lyrics.
+
+#### mflux and MLX video workflows (Macs)
+
+A workflow can **Run on** mflux (images) or MLX video instead of ComfyUI. These run natively on Apple Silicon Macs
+whose agent has the engine. There's no node graph; the workflow is a **recipe**: the command to run and its options,
+as JSON, with the same placeholders.
+
+1. In **Add workflow**, set **Runs on** to **mflux** or **MLX video**.
+2. Pick a preset under **Start from a preset** (for example Z-Image Turbo or FLUX.1 dev), then adjust it. Keys are
+   the command's flags in snake_case: `"image_strength": 0.4` is `--image-strength 0.4`, `true` is a bare flag.
+3. Set `min_memory_gb` to what the model needs. Macs with less memory aren't offered the style.
+4. Save. The style only goes to Macs that run the engine. A Mac that hasn't downloaded the model yet still takes the
+   job; the first run is slower while it downloads (`comfier-agent pull MODEL` on the Mac avoids that).
 
 To remove a workflow, open it (or use the **⋯** menu on the list) and choose **Delete**. Past results stay; they just
 lose the link back to this style.

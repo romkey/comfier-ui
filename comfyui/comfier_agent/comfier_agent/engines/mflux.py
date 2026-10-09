@@ -109,8 +109,13 @@ class MfluxEngine(MlxEngine):
                 ctx.timings.mark_execution_end()
                 return
             elif kind == "error":
-                raise JobError("execute", event.get("message") or "mflux failed",
-                               exception_type=event.get("type"), traceback_tail=event.get("traceback"))
+                message = event.get("message") or "mflux failed"
+                if event.get("type") == "InvalidOptions":
+                    await asyncio.sleep(0.2)  # argparse's reason is on stderr, a moment behind
+                    reason = next((line for line in reversed(self.worker.stderr_tail) if "error:" in line), None)
+                    message = f"{message}: {reason.split('error:', 1)[1].strip()}" if reason else message
+                raise JobError("execute", message, exception_type=event.get("type"),
+                               traceback_tail=event.get("traceback"))
             elif kind == "exit":
                 if ctx.cancel_requested:
                     raise JobCancelled()

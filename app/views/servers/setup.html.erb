@@ -39,6 +39,18 @@
 
     <div class="h-section-label mt-3">3. Restart ComfyUI</div>
     <p class="text-13 mb-0">This page updates when the server connects.</p>
+
+    <div class="h-section-label mt-4">On an Apple Silicon Mac</div>
+    <p class="text-13 mb-2">
+      Macs can run image jobs with <strong>mflux</strong> instead of ComfyUI: faster, and no ComfyUI needed. Install
+      the agent as its own service with <a href="https://docs.astral.sh/uv/" target="_blank" rel="noopener">uv</a>:
+    </p>
+    <pre class="text-12 bg-body-tertiary p-2 rounded"><%= mac_install_snippet(@new_key || 'cmf_…your key…') %></pre>
+    <p class="text-12 text-secondary mb-0">
+      <code>setup</code> asks whether this Mac also runs ComfyUI. <code>comfier-agent doctor</code> checks everything,
+      and <code>comfier-agent logs -f</code> shows what it's doing. Admins add mflux styles under
+      Settings → Workflows → Runs on.
+    </p>
   </div>
 
   <div class="col-lg-5">

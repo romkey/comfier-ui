@@ -30,6 +30,16 @@ class ServersTest < ActionDispatch::IntegrationTest
     assert_no_match key, response.body
   end
 
+  test 'the setup page shows how to install the agent on a Mac with the new key' do
+    sign_in_as @alice
+    register!
+
+    key = response.body[/cmf_[0-9A-Za-z]{43}/]
+
+    assert_select 'pre', text: /comfier-agent setup --url \S+ --key #{key}/
+    assert_select 'pre', text: /comfier-agent service install/
+  end
+
   test 'registration can be turned off' do
     AppSetting.current.update!(allow_user_backends: false)
     sign_in_as @alice
