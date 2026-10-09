@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 import platform
 import sys
@@ -25,6 +26,12 @@ from comfier_agent.status import StatusTracker
 LOG = logging.getLogger("comfier_agent")
 # Well under Comfier's 30 s offline window, so a slow ComfyUI never holds up the heartbeat.
 STATUS_REFRESH_TIMEOUT_S = 5
+# How often the agent checks on ComfyUI while it's down, and while it's up.
+COMFY_RETRY_S = 5
+COMFY_CHECK_S = 15
+# ComfyUI is only taken as gone after this many refused connections in a row; a busy ComfyUI that's
+# slow to answer mid-step isn't gone.
+COMFY_DOWN_AFTER = 3
 
 
 class AgentRuntime:
@@ -43,21 +50,38 @@ class AgentRuntime:
         self.models: ModelDownloadManager | None = None
         self._tasks: list[asyncio.Task] = []
         self._comfy_ok = False
+        self._comfy_failures = 0
         self.loop: asyncio.AbstractEventLoop | None = None
+
+    @property
+    def comfy_ready(self) -> bool:
+        return self.uses_comfy and self._comfy_ok
+
+    def engine_available(self, name: str) -> bool:
+        return name in self.engines and (name != "comfyui" or self.comfy_ready)
+
+    def available_engines(self) -> dict:
+        """What this server can run right now: ComfyUI drops out while it's unreachable."""
+        return {name: engine for name, engine in self.engines.items() if self.engine_available(name)}
 
     async def run(self, *, sidecar: bool = False) -> None:
         self.loop = asyncio.get_running_loop()
         await self.comfy.start()
-        if not self.uses_comfy:
-            self._comfy_ok = True
-        elif sidecar:
-            await self._wait_comfy_forever()
-        else:
+        if self.uses_comfy and not sidecar:
+            # Inside ComfyUI it's still starting up in this same process; give it a moment.
             try:
                 await asyncio.wait_for(self.comfy.wait_ready(), timeout=120)
                 self._comfy_ok = True
             except asyncio.TimeoutError:
-                LOG.warning("ComfyUI not ready after 120s; continuing in error state")
+                LOG.warning("ComfyUI not ready after 120s; connecting anyway")
+        elif self.uses_comfy:
+            # A standalone agent asks once but never waits for ComfyUI before connecting: it would look
+            # offline, and mflux and mlx-video jobs don't need it. The watch loop picks it up later.
+            with contextlib.suppress(Exception):
+                await asyncio.wait_for(self.comfy.system_stats(), STATUS_REFRESH_TIMEOUT_S)
+                self._comfy_ok = True
+            if not self._comfy_ok:
+                LOG.warning("ComfyUI isn't answering at %s; connecting without it", self.config.comfyui_url)
 
         async def send(msg: dict) -> None:
             await self.connection.send(msg)
@@ -76,6 +100,7 @@ class AgentRuntime:
             on_terminal=after_job_terminal,
             engines=self.engines,
             gpu_lock=self.gpu_lock,
+            engine_available=self.engine_available,
         )
         self.models = ModelDownloadManager(self.config, self.comfy.session, send, self._rescan_inventory)
 
@@ -93,6 +118,8 @@ class AgentRuntime:
             asyncio.create_task(self._sweep_loop()),
         ]
         if self.uses_comfy:
+            self._tasks.append(asyncio.create_task(self._comfy_watch_loop()))
+        if self.comfy_ready:
             await self.comfy.ensure_ws()
         while True:
             await asyncio.sleep(3600)
@@ -106,14 +133,36 @@ class AgentRuntime:
         self.gpu_lock.release()
         await self.comfy.close()
 
-    async def _wait_comfy_forever(self) -> None:
+    async def _comfy_watch_loop(self) -> None:
         while True:
-            try:
-                await self.comfy.wait_ready(timeout=3600)
-                self._comfy_ok = True
-                return
-            except asyncio.TimeoutError:
-                self._comfy_ok = False
+            await asyncio.sleep(COMFY_CHECK_S if self._comfy_ok else COMFY_RETRY_S)
+            await self._check_comfy()
+
+    async def _check_comfy(self) -> None:
+        try:
+            await asyncio.wait_for(self.comfy.system_stats(), STATUS_REFRESH_TIMEOUT_S)
+            reachable = True
+        except asyncio.TimeoutError:
+            return  # busy, not gone
+        except Exception:
+            reachable = False
+        self._comfy_failures = 0 if reachable else self._comfy_failures + 1
+        if reachable and not self._comfy_ok:
+            LOG.info("ComfyUI is reachable at %s", self.config.comfyui_url)
+            await self._set_comfy_ok(True)
+        elif self._comfy_ok and self._comfy_failures >= COMFY_DOWN_AFTER:
+            LOG.warning("ComfyUI stopped answering at %s; taking only %s jobs", self.config.comfyui_url,
+                        ", ".join(n for n in self.engines if n != "comfyui") or "no")
+            await self._set_comfy_ok(False)
+
+    async def _set_comfy_ok(self, ok: bool) -> None:
+        self._comfy_ok = ok
+        if ok:
+            with contextlib.suppress(Exception):
+                await self.comfy.ensure_ws()
+        # The engines this server reports changed, so Comfier routes ComfyUI jobs accordingly.
+        await self._rescan_inventory(force=True)
+        await self._publish_status(force=True)
 
     async def _on_frontend_message(self, msg: dict[str, Any]) -> None:
         typ = msg.get("type")
@@ -161,7 +210,7 @@ class AgentRuntime:
     async def _send_hello(self) -> None:
         stats = {}
         try:
-            if self.uses_comfy:
+            if self.comfy_ready:
                 stats = await self.comfy.system_stats()
         except Exception:
             pass
@@ -183,7 +232,7 @@ class AgentRuntime:
             "model_downloads_enabled": self.config.allow_model_downloads,
             "max_concurrent_downloads": self.config.max_concurrent_downloads,
             "use_hf_cli": self.config.use_hf_cli,
-            "engines": {name: engine.info() for name, engine in self.engines.items()},
+            "engines": {name: engine.info() for name, engine in self.available_engines().items()},
         }
         if msg["comfyui_version"] is None:
             del msg["comfyui_version"]
@@ -204,7 +253,7 @@ class AgentRuntime:
         try:
             for engine in self.engines.values():
                 await engine.refresh()
-            snap = await scan_inventory(self.comfy if self.uses_comfy else None, self.engines)
+            snap = await scan_inventory(self.comfy if self.comfy_ready else None, self.available_engines())
         except Exception as exc:
             LOG.warning("inventory scan failed: %s", exc)
             return
@@ -220,14 +269,14 @@ class AgentRuntime:
         accepting_before = self.status.snapshot.accepting
         active_job = self.jobs.active_job_status() if self.jobs else None
         try:
-            self._comfy_ok = True
             await asyncio.wait_for(
                 self.status.refresh(
-                    self.comfy if self.uses_comfy else None,
+                    self.comfy if self.comfy_ready else None,
                     comfier_prompt_ids=self.jobs.prompt_ids if self.jobs else set(),
                     active_job=active_job,
                     downloads=self.models.status_entries() if self.models else [],
-                    comfy_reachable=self._comfy_ok,
+                    # Only an error when ComfyUI is all this server runs.
+                    comfy_reachable=bool(self.available_engines()),
                     gpu_busy_elsewhere=self.gpu_lock.held_elsewhere(),
                 ),
                 timeout=STATUS_REFRESH_TIMEOUT_S,
@@ -238,7 +287,7 @@ class AgentRuntime:
             LOG.info("ComfyUI took over %ss to report its status", STATUS_REFRESH_TIMEOUT_S)
             self.status.mark_unresponsive(active_job)
         except Exception:
-            self._comfy_ok = False
+            LOG.warning("couldn't refresh status", exc_info=True)
             self.status.snapshot.state = "error"
             self.status.snapshot.accepting = False
 

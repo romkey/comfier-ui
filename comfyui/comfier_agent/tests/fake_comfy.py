@@ -46,10 +46,11 @@ class FakeComfy:
         self.reject_prompt: dict | None = None
         self.stats_delay_s = 0.0
 
-    async def start(self) -> str:
+    async def start(self, port: int = 0) -> str:
+        """port: reuse a port, to bring ComfyUI back where the agent expects it."""
         self.runner = web.AppRunner(self.app)
         await self.runner.setup()
-        self.site = web.TCPSite(self.runner, "127.0.0.1", 0)
+        self.site = web.TCPSite(self.runner, "127.0.0.1", port)
         await self.site.start()
         port = self.site._server.sockets[0].getsockname()[1]  # noqa: SLF001
         self.base_url = f"http://127.0.0.1:{port}"

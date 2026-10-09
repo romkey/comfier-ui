@@ -79,7 +79,7 @@ class StatusTracker:
         if not comfy_reachable:
             snap.state = "error"
             snap.accepting = False
-            snap.accepting_reason = "ComfyUI is unreachable"
+            snap.accepting_reason = f"ComfyUI is unreachable at {self.config.comfyui_url}"
             return
 
         if self.config.enabled is False or snap.paused:

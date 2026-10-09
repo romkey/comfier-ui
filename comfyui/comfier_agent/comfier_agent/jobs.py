@@ -187,7 +187,7 @@ class JobManager:
     so ComfyUI, mflux and mlx-video never run Comfier jobs at the same time."""
 
     def __init__(self, config: AgentConfig, comfy, send, inventory_snap, on_terminal=None, engines=None,
-                 gpu_lock: GpuLock | None = None):
+                 gpu_lock: GpuLock | None = None, engine_available=None):
         self.config = config
         self.comfy = comfy
         self.send = send
@@ -195,6 +195,8 @@ class JobManager:
         self.on_terminal = on_terminal
         self.engines: dict[str, Engine] = engines if engines is not None else {"comfyui": ComfyUIEngine(comfy)}
         self.gpu_lock = gpu_lock or GpuLock(config.gpu_lock_path, enabled=False)
+        # Whether an engine can take a job right now (ComfyUI may be down while mflux is fine).
+        self.engine_available = engine_available or (lambda name: name in self.engines)
         self.active: JobContext | None = None
         self.open_request_id: str | None = None
         # The engine that last ran a job, and so may still hold models in memory.
@@ -258,6 +260,9 @@ class JobManager:
         engine = self.engines.get(engine_name)
         if engine is None:
             await self._reject(job_id, "missing_engine", f"this server doesn't run {engine_name}")
+            return
+        if not self.engine_available(engine_name):
+            await self._reject(job_id, "missing_engine", f"{engine_name} isn't reachable on this server right now")
             return
         problem = engine.check_requirements(msg.get("requires") or {}, inventory)
         if problem:
