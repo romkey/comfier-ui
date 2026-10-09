@@ -92,10 +92,10 @@ class Backend < ApplicationRecord # rubocop:disable Metrics/ClassLength
   end
 
   # Execution engines the agent reported, e.g. { 'comfyui' => {}, 'mflux' => { 'version' => …, 'models' => [...] } }.
-  # Legacy servers, and agents that haven't sent an inventory yet, run ComfyUI only.
+  # Empty while nothing it runs is available (say ComfyUI is down on a ComfyUI-only server). Legacy servers, and
+  # agents that haven't sent an inventory yet, run ComfyUI only.
   def engines
-    reported = backend_inventory&.engines_json
-    reported.presence || { 'comfyui' => {} }
+    backend_inventory ? backend_inventory.engines_json : { 'comfyui' => {} }
   end
 
   def runs_engine?(key) = engines.key?(key.to_s)

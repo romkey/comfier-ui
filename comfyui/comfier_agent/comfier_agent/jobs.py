@@ -245,6 +245,17 @@ class JobManager:
         matched = self.open_request_id is not None and request_id == self.open_request_id
         # The frontend consumes its open request when it assigns, whichever id it used.
         self.void_request()
+
+        # Checked first: "busy" sends the job back to this server, "missing_engine" sends it elsewhere.
+        engine_name = msg.get("engine") or "comfyui"
+        engine = self.engines.get(engine_name)
+        if engine is None:
+            await self._reject(job_id, "missing_engine", f"this server doesn't run {engine_name}")
+            return
+        if not self.engine_available(engine_name):
+            await self._reject(job_id, "missing_engine", f"{engine_name} isn't reachable on this server right now")
+            return
+
         if not matched:
             await self._reject(job_id, "busy", "no open job request")
             return
@@ -256,14 +267,6 @@ class JobManager:
             await self._reject(job_id, reason, accepting_reason)
             return
 
-        engine_name = msg.get("engine") or "comfyui"
-        engine = self.engines.get(engine_name)
-        if engine is None:
-            await self._reject(job_id, "missing_engine", f"this server doesn't run {engine_name}")
-            return
-        if not self.engine_available(engine_name):
-            await self._reject(job_id, "missing_engine", f"{engine_name} isn't reachable on this server right now")
-            return
         problem = engine.check_requirements(msg.get("requires") or {}, inventory)
         if problem:
             await self._reject(job_id, *problem)
