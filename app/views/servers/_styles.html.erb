@@ -17,13 +17,16 @@
     </div>
   <% end %>
 </div>
+<%# One table so the status and action columns line up across every type. %>
 <% by_kind = workflows.group_by(&:kind) %>
-<% GenerationKind.all.each do |kind| %>
+<table class="table table-compact align-middle">
+  <% GenerationKind.all.each do |kind| %>
   <% kind_workflows = Array(by_kind[kind.key]).sort_by { |w| w.name.downcase } %>
   <% next if kind_workflows.empty? %>
-  <div class="text-13 fw-semibold text-secondary mt-3 mb-1"><%= kind.label %></div>
-  <table class="table table-compact align-middle">
   <tbody>
+    <tr>
+      <th colspan="4" scope="colgroup" class="text-13 fw-semibold text-secondary pt-3 pb-1"><%= kind.label %></th>
+    </tr>
     <% kind_workflows.each do |workflow| %>
       <% record = availability[workflow.id] %>
       <% off = backend.workflow_disabled?(workflow) %>
@@ -62,5 +65,5 @@
       </tr>
     <% end %>
   </tbody>
-  </table>
-<% end %>
+  <% end %>
+</table>
