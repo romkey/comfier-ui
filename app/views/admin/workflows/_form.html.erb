@@ -8,7 +8,7 @@
 
       <div class="mb-3">
         <%= f.label :engine, 'Runs on', class: 'form-label' %>
-        <%= f.select :engine, WorkflowEngine.all.map { [it.label, it.key] }, {},
+        <%= f.select :engine, WorkflowEngine.all.map { [it.label, it.key, { data: { kinds: it.kinds&.join(',') } }] }, {},
                      class: 'form-select form-select-sm w-auto',
                      data: { engine_form_target: 'engine', action: 'engine-form#toggle' } %>
         <div class="form-text text-12">
@@ -18,14 +18,15 @@
 
       <div class="mb-3 <%= 'd-none' if workflow.comfyui? %>" data-engine-form-target="recipe">
         <%= label_tag 'engine_preset', 'Start from a preset', class: 'form-label' %>
+        <%# Only this engine's presets are in the list; the template holds them all for switching engines. %>
         <select id="engine_preset" class="form-select form-select-sm"
                 data-engine-form-target="preset" data-action="engine-form#applyPreset">
           <option value="">Choose a preset…</option>
-          <% EnginePreset.all.each do |preset| %>
-            <option value="<%= preset.key %>" data-engine="<%= preset.engine %>" data-kind="<%= preset.kind %>"
-                    data-recipe="<%= preset.to_json_text %>"><%= preset.label %></option>
-          <% end %>
+          <%= render partial: 'engine_preset_option', collection: EnginePreset.for_engine(workflow.engine), as: :preset %>
         </select>
+        <template data-engine-form-target="presets">
+          <%= render partial: 'engine_preset_option', collection: EnginePreset.all, as: :preset %>
+        </template>
         <div class="form-text text-12">
           A recipe is the command to run and its options, as JSON. Keys are the command's flags in snake_case
           (<code>"image_strength"</code> is <code>--image-strength</code>) and take the same

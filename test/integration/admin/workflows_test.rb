@@ -400,8 +400,28 @@ module Admin
       assert_response :success
       assert_select 'select[name="workflow[engine]"] option[selected][value="mflux"]'
       assert_select '#engine_preset option[data-engine="mflux"][value="z-image-turbo"]'
-      assert_select '#engine_preset option[data-engine="mlx_video"]'
+      assert_select '#engine_preset option[data-engine="mlx_video"]', count: 0
       assert_select 'label[for="workflow_graph_json"]', 'Recipe (JSON)'
+      assert_select 'select[name="workflow[engine]"] option[value="mlx_video"][data-kinds="video"]'
+    end
+
+    test 'MLX video offers only video presets' do
+      get new_admin_workflow_path(engine: 'mlx_video')
+
+      assert_select '#engine_preset option[data-engine]', count: EnginePreset.for_engine('mlx_video').size
+      assert_select '#engine_preset option[value="z-image-turbo"]', count: 0
+      # The rest wait in a template for switching engines.
+      assert_select 'template[data-engine-form-target="presets"]'
+    end
+
+    test 'an mflux recipe under MLX video says which engine it belongs to' do
+      recipe = EnginePreset::ALL.find { it.key == 'z-image-turbo' }
+
+      post admin_workflows_path, params: { workflow: { name: 'z2', kind: 'video', engine: 'mlx_video',
+                                                       graph_json: recipe.to_json_text } }
+
+      assert_response :unprocessable_content
+      assert_select '.alert-danger', /is for mflux \(mflux-generate-z-image-turbo\); set Runs on to mflux/
     end
 
     test 'adding an mflux workflow from a recipe' do

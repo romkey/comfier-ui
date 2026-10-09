@@ -32,13 +32,23 @@ module EngineRecipe
 
   def required_problems(engine, recipe)
     found = []
-    found << "needs \"command\": #{COMMAND_HINTS.fetch(engine)}" unless valid_command?(engine, recipe['command'])
+    found << command_problem(engine, recipe['command']) unless valid_command?(engine, recipe['command'])
     found << 'needs "model"' if engine == 'mflux' && !recipe['model'].is_a?(String)
     found << "has too many options (#{recipe.size})" if recipe.size > MAX_KEYS
     found
   end
 
   def valid_command?(engine, command) = command.is_a?(String) && command.match?(COMMANDS.fetch(engine))
+
+  # A recipe for another engine (say an mflux preset under Runs on: MLX video) says which one it's for.
+  def command_problem(engine, command)
+    other = COMMANDS.keys.find { it != engine && valid_command?(it, command) }
+    return "needs \"command\": #{COMMAND_HINTS.fetch(engine)}" unless other
+
+    label = WorkflowEngine.label_for(other)
+    "is for #{label} (#{command}); set Runs on to #{label}, or choose from the " \
+      "#{WorkflowEngine.label_for(engine)} presets"
+  end
 
   def option_problems(recipe)
     recipe.except('command').flat_map do |key, value|
