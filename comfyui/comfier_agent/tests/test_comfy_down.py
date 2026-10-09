@@ -45,9 +45,12 @@ async def test_comfyui_going_away_takes_it_out_of_the_engines(agent, quick_check
     runtime = await agent.start(engines=["comfyui", "mflux"], work_dir=str(comfier_home / "work"))
     assert "comfyui" in agent.front.of_type("inventory")[-1]["engines"]
 
+    models = agent.front.of_type("inventory")[-1]["models"]
     await agent.comfy.stop()
     await agent.front.wait_for(lambda: "comfyui" not in agent.front.of_type("inventory")[-1]["engines"], timeout=5)
     assert agent.front.of_type("status")[-1]["accepting"] is True
+    # An outage doesn't wipe ComfyUI's models from Comfier; only the engine goes.
+    assert agent.front.of_type("inventory")[-1]["models"] == models != {}
     await runtime.engines["mflux"].close()
 
 
@@ -60,3 +63,18 @@ async def test_a_comfyui_only_agent_still_connects_and_says_why_it_cant_work(age
     assert agent.front.of_type("hello")
     assert status["accepting"] is False and status["state"] == "error"
     assert "ComfyUI is unreachable" in status["accepting_reason"]
+    # An empty map, so Comfier stops routing ComfyUI jobs here.
+    assert agent.front.of_type("inventory")[-1]["engines"] == {}
+
+    # A ComfyUI job that arrives anyway is sent elsewhere, not back here as "busy".
+    assert agent.front.of_type("job.request") == []
+    await agent.front.send(_assign_without_request(agent))
+    rejected = (await agent.front.wait_for_types("job.rejected", timeout=5))[0]
+    assert rejected["reason"] == "missing_engine"
+
+
+def _assign_without_request(agent):
+    base = agent.front.base_url
+    return {"type": "job.assign", "request_id": "r_none", "job_id": "j_1",
+            "workflow": {"3": {"class_type": "LoadImage", "inputs": {}}}, "inputs": [],
+            "upload_url": f"{base}/api/agent/jobs/j_1/outputs", "requires": {}}

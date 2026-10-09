@@ -17,10 +17,10 @@ module Agent
       end
     end
 
-    # Agents older than the engines field run ComfyUI only.
+    # Agents older than the engines field run ComfyUI only. A reported empty map means nothing is available.
     def engines(message)
       engines = message['engines']
-      engines.is_a?(Hash) && engines.any? ? engines : { 'comfyui' => {} }
+      engines.is_a?(Hash) ? engines : { 'comfyui' => {} }
     end
 
     def replace_models!(backend, models)

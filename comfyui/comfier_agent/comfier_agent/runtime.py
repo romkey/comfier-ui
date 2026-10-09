@@ -253,7 +253,9 @@ class AgentRuntime:
         try:
             for engine in self.engines.values():
                 await engine.refresh()
-            snap = await scan_inventory(self.comfy if self.comfy_ready else None, self.available_engines())
+            # While ComfyUI is down its last models and nodes stay reported; only the engines change.
+            previous = self.inventory if self.uses_comfy and not self.comfy_ready else None
+            snap = await scan_inventory(self.comfy if self.comfy_ready else None, self.available_engines(), previous)
         except Exception as exc:
             LOG.warning("inventory scan failed: %s", exc)
             return

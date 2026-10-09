@@ -36,11 +36,17 @@ class InventorySnapshot:
         return self._object_info
 
 
-async def scan_inventory(comfy, engines: dict[str, Any] | None = None) -> InventorySnapshot:
+async def scan_inventory(comfy, engines: dict[str, Any] | None = None,
+                         previous: InventorySnapshot | None = None) -> InventorySnapshot:
+    """comfy is None when ComfyUI isn't in use or is down. While it's down, `previous` keeps its models and
+    node types reported (the engines leave ComfyUI out), so an outage doesn't wipe them from Comfier."""
     snap = InventorySnapshot()
     snap.engines = {name: engine.info() for name, engine in (engines or {}).items()}
     if comfy is None:
-        snap.hash = canonical_hash({"models": {}, "node_types": [], "engines": snap.engines})
+        if previous is not None:
+            snap.models, snap.node_types = previous.models, previous.node_types
+            snap.object_info_hash, snap._object_info = previous.object_info_hash, previous.object_info
+        snap.hash = _hash(snap)
         return snap
     folders = await comfy.models_folders()
     if folders:
@@ -52,12 +58,16 @@ async def scan_inventory(comfy, engines: dict[str, Any] | None = None) -> Invent
     snap.object_info_hash = canonical_hash(obj)
     if not folders:
         snap.models = models_from_object_info(obj)
-    snap.hash = canonical_hash({
+    snap.hash = _hash(snap)
+    return snap
+
+
+def _hash(snap: InventorySnapshot) -> str:
+    return canonical_hash({
         "models": {k: sorted(v) for k, v in sorted(snap.models.items())},
         "node_types": sorted(snap.node_types),
         "engines": snap.engines,
     })
-    return snap
 
 
 def models_from_object_info(obj: dict[str, Any]) -> dict[str, list[str]]:

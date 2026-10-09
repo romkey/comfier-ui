@@ -33,5 +33,20 @@ module Agent
       assert_equal %w[qwen-image], @backend.engine_models('mflux')
       assert_equal '0.9.0', @backend.engine_info(:mflux)['version']
     end
+
+    test 'an empty engines map means nothing is available, and waiting jobs go elsewhere' do
+      other = create_agent_backend!(owner: users(:alice), name: 'Other box')
+      bring_online_for!(other, workflows(:sd_image))
+      gen = Generation.create!(user: users(:alice), workflow: workflows(:sd_image), prompt: 'x', kind: :image,
+                               status: :queued, backend: @backend, agent_state: 'queued',
+                               filled_workflow_json: { '1' => {} }, queued_at: Time.current)
+
+      agent_inventory(@backend, models: { 'checkpoints' => ['a.safetensors'] }, node_types: %w[CLIPLoader],
+                                engines: {})
+
+      assert_empty @backend.reload.engines
+      assert_not @backend.runs_engine?(:comfyui)
+      assert_equal other.id, gen.reload.backend_id
+    end
   end
 end
