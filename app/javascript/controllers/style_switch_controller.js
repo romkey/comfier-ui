@@ -10,21 +10,32 @@ const CARRIED = ["prompt", "negative_prompt", "aspect_ratio", "duration", "quali
 export default class extends Controller {
   static targets = ["image", "note"]
 
+  disconnect() {
+    this.request?.abort()
+  }
+
   async switch(event) {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return
     event.preventDefault()
     // currentTarget is gone once the event has been handled, so the link is read before awaiting.
     const href = event.currentTarget.href
     const url = this.carryUrl(href)
+    // A second click wins: the first request is dropped rather than racing it into the page.
+    this.request?.abort()
+    const request = new AbortController()
+    this.request = request
     try {
-      const response = await fetch(url, { headers: { Accept: "text/html" }, credentials: "same-origin" })
+      const response = await fetch(url, { headers: { Accept: "text/html" }, credentials: "same-origin",
+                                          signal: request.signal })
       if (!response.ok) throw new Error(`HTTP ${response.status}`)
       const page = new DOMParser().parseFromString(await response.text(), "text/html")
+      if (request.signal.aborted || !this.element.isConnected) return
       const replacement = page.querySelector("form.studio-form")
       if (!replacement) throw new Error("no form in response")
       this.swapIn(replacement)
       window.history.replaceState({}, "", href)
-    } catch (_error) {
+    } catch (error) {
+      if (error.name === "AbortError" || request.signal.aborted) return
       window.location.assign(url)
     }
   }

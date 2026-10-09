@@ -15,5 +15,8 @@ module AgentTiming
   HELLO_TIMEOUT_S = 10
   MAX_MESSAGE_BYTES = 1.megabyte
   MAX_MESSAGES_PER_SECOND = 50
+  # Messages an agent may send at once on top of the rate: a reconnect sends hello, inventory, object_info
+  # chunks, status and up to 50 buffered job and download results back to back.
+  MAX_MESSAGE_BURST = 150
   MIN_FREE_DISK_GB = 10
 end

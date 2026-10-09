@@ -5,15 +5,19 @@ agent's job to finish, and the agent takes no jobs while it runs."""
 from __future__ import annotations
 
 import contextlib
-import fcntl
 import os
 from pathlib import Path
+
+try:
+    import fcntl
+except ImportError:  # Windows: no flock, so no GPU lock (it's for Macs running mflux and mlx-video)
+    fcntl = None
 
 
 class GpuLock:
     def __init__(self, path: str, enabled: bool = True):
         self.path = Path(os.path.expanduser(path))
-        self.enabled = enabled
+        self.enabled = enabled and fcntl is not None
         self._fd: int | None = None
 
     def _open(self) -> int:

@@ -23,6 +23,7 @@ import plistlib
 import shutil
 import subprocess
 import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -276,18 +277,19 @@ def cmd_service(args) -> int:
         comfier_home().mkdir(parents=True, exist_ok=True)
         LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
         path.parent.mkdir(parents=True, exist_ok=True)
-        if service_loaded():
-            launchctl("bootout", f"{domain()}/{LABEL}")
+        unload_service()
         with path.open("wb") as f:
             plistlib.dump(service_plist(), f)
         result = launchctl("bootstrap", domain(), str(path))
+        if result.returncode != 0:  # launchd may still be finishing the unload
+            time.sleep(2)
+            result = launchctl("bootstrap", domain(), str(path))
         if result.returncode != 0:
             print(f"launchctl bootstrap failed: {result.stderr.strip()}", file=sys.stderr)
             return 1
         print(f"Installed and started. It starts at login; logs are in {LOG_PATH}")
     elif action == "uninstall":
-        if service_loaded():
-            launchctl("bootout", f"{domain()}/{LABEL}")
+        unload_service()
         path.unlink(missing_ok=True)
         print("Stopped and removed the service.")
     elif action in ("start", "restart"):
@@ -296,9 +298,13 @@ def cmd_service(args) -> int:
             return 1
         if not service_loaded():
             launchctl("bootstrap", domain(), str(path))
-        else:
+            print("Started.")
+        elif action == "restart":
             launchctl("kickstart", "-k", f"{domain()}/{LABEL}")
-        print("Started.")
+            print("Restarted.")
+        else:
+            # kickstart -k would kill it, and any job it's running.
+            print("Already running. `comfier-agent service restart` restarts it.")
     elif action == "stop":
         launchctl("bootout", f"{domain()}/{LABEL}")
         print("Stopped until the next login or `comfier-agent service start`.")
@@ -316,6 +322,16 @@ def cmd_service(args) -> int:
                     if line.strip().startswith("pid =")), None)
         print(f"Installed, {state}" + (f" (pid {pid})" if pid else ""))
     return 0
+
+
+def unload_service(timeout_s: float = 10.0) -> None:
+    """Unload the service and wait until launchd has: bootout returns before the unload finishes."""
+    if not service_loaded():
+        return
+    launchctl("bootout", f"{domain()}/{LABEL}")
+    deadline = time.monotonic() + timeout_s
+    while service_loaded() and time.monotonic() < deadline:
+        time.sleep(0.25)
 
 
 def cmd_logs(args) -> int:

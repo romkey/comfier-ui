@@ -170,22 +170,26 @@ module Agent
       def wrap(&) = Rails.application.executor.wrap(&)
     end
 
-    # Messages wait on the reactor while earlier ones are handled, so timing them on the wall clock
-    # would spread a burst over however long handling takes, and a flood to a busy server would
-    # never trip the limit. The clock here stops while this connection's messages are handled.
+    # A token bucket: `burst` messages at once (a reconnect replays its buffered results back to back),
+    # refilled at `rate` a second. Messages wait on the reactor while earlier ones are handled, so timing
+    # them on the wall clock would spread a burst over however long handling takes, and a flood to a busy
+    # server would never trip the limit. The clock here stops while this connection's messages are handled.
     class RateLimiter
-      def initialize(limit: AgentTiming::MAX_MESSAGES_PER_SECOND)
-        @limit = limit
-        @timestamps = []
+      def initialize(rate: AgentTiming::MAX_MESSAGES_PER_SECOND, burst: AgentTiming::MAX_MESSAGE_BURST)
+        @rate = rate
+        @burst = burst
         @handling_s = 0.0
+        @tokens = burst.to_f
+        @last = clock
       end
 
       def allowed?
         now = clock
-        @timestamps.reject! { it < now - 1 }
-        return false if @timestamps.size >= @limit
+        @tokens = [@burst, @tokens + ((now - @last) * @rate)].min
+        @last = now
+        return false if @tokens < 1
 
-        @timestamps << now
+        @tokens -= 1
         true
       end
 

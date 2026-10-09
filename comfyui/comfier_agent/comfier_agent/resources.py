@@ -138,6 +138,14 @@ def build_resources(stats: dict[str, Any] | None, *, config: AgentConfig | None 
     }
 
 
+def nearest_existing(path: str) -> str:
+    """path, or the closest folder above it that exists."""
+    current = os.path.abspath(path)
+    while not os.path.isdir(current) and os.path.dirname(current) != current:
+        current = os.path.dirname(current)
+    return current
+
+
 def _paths_for_disk_check(config: AgentConfig) -> list[tuple[str, str]]:
     paths: list[tuple[str, str]] = []
 
@@ -152,11 +160,16 @@ def _paths_for_disk_check(config: AgentConfig) -> list[tuple[str, str]]:
     if config.comfyui_models_dir:
         add("models", config.comfyui_models_dir)
 
-    # mflux and mlx-video keep job files in work_dir and models in the Hugging Face cache.
-    add("work", os.path.expanduser(config.work_dir))
-    from comfier_agent.engines.mlx import hf_hub_cache
+    # mflux and mlx-video keep job files in work_dir and models in the Hugging Face cache. Neither may
+    # exist yet on a fresh machine; the disk they'll be created on is what counts. A ComfyUI-only server
+    # uses neither, so a small home disk mustn't stop it.
+    from comfier_agent.engines import MLX_PACKAGES, engine_names
 
-    add("hf_cache", str(hf_hub_cache()))
+    if any(name in MLX_PACKAGES for name in engine_names(config)):
+        from comfier_agent.engines.mlx import hf_hub_cache
+
+        add("work", nearest_existing(os.path.expanduser(config.work_dir)))
+        add("hf_cache", nearest_existing(str(hf_hub_cache())))
 
     try:
         import folder_paths  # type: ignore
