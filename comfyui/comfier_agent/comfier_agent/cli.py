@@ -128,30 +128,38 @@ def cmd_setup(args) -> int:
     from comfier_agent.engines import KNOWN, MLX_PACKAGES, installed
 
     config = load_config(sidecar=True)
+    saved = saved_settings(config)
     interactive = not args.yes and sys.stdin.isatty()
     url = args.url or (ask("Comfier URL", config.frontend_url or None) if interactive else config.frontend_url)
-    key = args.key or (ask_secret("Server key (from Servers → your server)") if interactive else "")
+    key = args.key
+    if key is None and interactive:
+        keep = " (Enter keeps the saved key)" if config.api_key else ""
+        key = ask_secret(f"Server key from this server's page in Comfier{keep}")
+    key = (key or "").strip()
     name = args.name or (ask("Server name", config.backend_name) if interactive else config.backend_name)
 
     detected = [n for n, pkg in MLX_PACKAGES.items() if installed(pkg)]
     comfyui_url = args.comfyui_url
     if comfyui_url is None and interactive:
-        comfyui_url = ask("ComfyUI URL ('none' if this machine doesn't run ComfyUI)",
-                          "none" if detected else config.comfyui_url)
+        comfyui_url = ask("ComfyUI URL ('none' if this machine doesn't run ComfyUI)", comfyui_default(saved, detected))
     engines = args.engines
     if engines is None:
-        engines = ",".join(([] if (comfyui_url or "").lower() == "none" else ["comfyui"]) + detected)
+        uses_comfyui = (comfyui_url or comfyui_default(saved, detected)).lower() != "none"
+        engines = ",".join((["comfyui"] if uses_comfyui else []) + detected)
         if interactive:
             engines = ask(f"Engines ({', '.join(KNOWN)})", engines)
 
     if not url or not (key or config.api_key):
         print("Comfier's URL and this server's key are both needed.", file=sys.stderr)
         return 2
+    if key and not key.startswith("cmf_"):
+        print("That isn't a Comfier server key; they start with cmf_.", file=sys.stderr)
+        return 2
     if url.startswith("http://") and not (args.allow_insecure or config.allow_insecure):
         print("Comfier's URL must use https (add --allow-insecure only for local testing).", file=sys.stderr)
         return 2
     updates = {"frontend_url": url.rstrip("/"), "api_key": key or None, "backend_name": name,
-               "engines": [e.strip() for e in engines.split(",") if e.strip()]}
+               "engines": [e.strip().lower() for e in engines.split(",") if e.strip()]}
     if comfyui_url and comfyui_url.lower() != "none":
         updates["comfyui_url"] = comfyui_url
     if args.allow_insecure:
@@ -161,9 +169,53 @@ def cmd_setup(args) -> int:
     print(f"Saved {config.config_path}")
     reachable, detail = check_comfier(url)
     print(("✓ " if reachable else "✗ ") + detail)
-    if sys.platform == "darwin":
-        print("Next: comfier-agent service install")
-    return 0 if reachable else 1
+    key_ok = None
+    if reachable:
+        key_ok, detail = check_key(url, key or config.api_key)
+        print({True: "✓ ", False: "✗ ", None: "· "}[key_ok] + detail)
+    if sys.platform == "darwin" and reachable and key_ok is not False:
+        print("Next: comfier-agent service install (or service restart if it's installed)")
+    return 0 if reachable and key_ok is not False else 1
+
+
+def saved_settings(config) -> dict:
+    """What's in the settings file itself, as opposed to defaults."""
+    path = config.config_path or default_config_path()
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+def comfyui_default(saved: dict, detected: list[str]) -> str:
+    """The ComfyUI answer setup offers: what was set up before, else none on a Mac with MLX tools."""
+    if "engines" in saved:
+        if "comfyui" not in [str(e).strip().lower() for e in saved["engines"] or []]:
+            return "none"
+        return saved.get("comfyui_url") or "http://127.0.0.1:8188"
+    if saved.get("comfyui_url"):
+        return saved["comfyui_url"]
+    return "none" if detected else "http://127.0.0.1:8188"
+
+
+def check_key(url: str, key: str | None) -> tuple[bool | None, str]:
+    """Asks Comfier whether the key is good, without connecting (which would replace a running agent)."""
+    request = urllib.request.Request(f"{url.rstrip('/')}/api/agent/key", headers={"Authorization": f"Bearer {key}"})
+    try:
+        with urllib.request.urlopen(request, timeout=10) as resp:
+            body = json.load(resp)
+            # The key's display comes from Comfier's answer; nothing of the key itself is printed.
+            return True, f"Comfier accepts the key ({body.get('key')}) for server {body.get('server')}"
+    except urllib.error.HTTPError as exc:
+        if exc.code == 404:
+            return None, "Couldn't check the key: this Comfier is older than the agent"
+        try:
+            reason = json.load(exc).get("error")
+        except ValueError:
+            reason = None
+        return False, f"Comfier refused the saved key (HTTP {exc.code}). {reason or ''}".strip()
+    except Exception as exc:  # noqa: BLE001
+        return False, f"Couldn't check the key: {exc}"
 
 
 def check_comfier(url: str) -> tuple[bool, str]:
@@ -301,7 +353,10 @@ def cmd_doctor(_args) -> int:
     config = load_config(sidecar=True)
     report(config.ok, f"Settings in {config.config_path}" + ("" if config.ok else f": {config.idle_reason}"))
     if config.frontend_url:
-        report(*check_comfier(config.frontend_url))
+        reachable, detail = check_comfier(config.frontend_url)
+        report(reachable, detail)
+        if reachable and config.api_key:
+            report(*check_key(config.frontend_url, config.api_key))
 
     names = engine_names(config)
     report(bool(names), f"Engines: {', '.join(names) or 'none'}")

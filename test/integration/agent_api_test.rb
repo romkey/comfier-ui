@@ -213,4 +213,33 @@ class AgentApiTest < ActionDispatch::IntegrationTest
     assert_equal 'nosniff', response.headers['X-Content-Type-Options']
     assert_match 'sandbox', response.headers['Content-Security-Policy']
   end
+
+  test 'a key can be checked without connecting' do
+    key = @backend.backend_keys.first
+    key.update!(last_ip: '10.0.0.5', last_used_at: 1.day.ago)
+    get '/api/agent/key', headers: auth
+
+    assert_response :success
+    assert_equal '10.0.0.5', key.reload.last_ip
+    assert_operator key.last_used_at, :<, 1.hour.ago
+    assert_equal @backend.name, response.parsed_body['server']
+    assert_equal "#{@token[0, 12]}…", response.parsed_body['key']
+  end
+
+  test 'a refused key says why' do
+    get '/api/agent/key', headers: auth('cmf_nope')
+
+    assert_response :unauthorized
+    assert_match(/doesn’t recognize/, response.parsed_body['error'])
+
+    @backend.backend_keys.update_all(revoked_at: Time.current) # rubocop:disable Rails/SkipsModelValidations
+    get '/api/agent/key', headers: auth
+
+    assert_match(/revoked/, response.parsed_body['error'])
+
+    @backend.update!(deleted_at: Time.current)
+    get '/api/agent/key', headers: auth
+
+    assert_match(/was deleted/, response.parsed_body['error'])
+  end
 end

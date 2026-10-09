@@ -8,20 +8,24 @@ module Agent
 
     class AuthenticationError < StandardError; end
 
-    def self.from_header(authorization, ip: nil) = new(authorization, ip:).authenticate!
+    # touch: false checks the key without recording a use (the key check `comfier-agent setup` makes).
+    def self.from_header(authorization, ip: nil, touch: true) = new(authorization, ip:, touch:).authenticate!
 
-    def initialize(authorization, ip: nil)
+    def initialize(authorization, ip: nil, touch: true)
       @authorization = authorization.to_s
       @ip = ip
+      @touch = touch
     end
 
     def authenticate!
       key = matching_key
-      reject!(key, 'revoked') if key.revoked?
-      reject!(key, 'expired') if key.expired?
+      # Before revoked: deleting a server revokes its keys, and "deleted" is the reason worth telling.
       raise AuthenticationError, 'server deleted' if key.backend.deleted_at
 
-      key.touch_used!(ip: @ip)
+      reject!(key, 'revoked') if key.revoked?
+      reject!(key, 'expired') if key.expired?
+
+      key.touch_used!(ip: @ip) if @touch
       Result.new(backend: key.backend, backend_key: key)
     end
 
