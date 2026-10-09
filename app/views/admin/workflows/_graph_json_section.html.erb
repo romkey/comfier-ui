@@ -1,15 +1,18 @@
 <div id="workflow_graph_json_section" class="mb-3">
   <% field_id = 'workflow_graph_json' %>
+  <% label = workflow.comfyui? ? 'Workflow (API format JSON)' : 'Recipe (JSON)' %>
   <% if form %>
-    <%= form.label :graph_json, 'Workflow (API format JSON)', class: 'form-label' %>
-    <%= form.text_area :graph_json, rows: 18, id: field_id,
+    <%= form.label :graph_json, label, class: 'form-label', data: { engine_form_target: 'jsonLabel' } %>
+    <%= form.text_area :graph_json, rows: 18, id: field_id, data: { engine_form_target: 'json' },
                        class: 'form-control form-control-sm font-monospace text-12', spellcheck: false %>
   <% else %>
-    <%= label_tag field_id, 'Workflow (API format JSON)', class: 'form-label' %>
+    <%= label_tag field_id, label, class: 'form-label', data: { engine_form_target: 'jsonLabel' } %>
     <%= text_area_tag 'workflow[graph_json]', workflow.graph_json, rows: 18, id: field_id,
+                      data: { engine_form_target: 'json' },
                       class: 'form-control form-control-sm font-monospace text-12', spellcheck: false %>
   <% end %>
-  <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
+  <div class="d-flex align-items-center gap-2 mt-2 flex-wrap <%= 'd-none' unless workflow.comfyui? %>"
+       data-engine-form-target="comfyui">
     <%= button_tag type: 'submit', name: 'suggest_placeholders', value: '1',
                    formnovalidate: true, class: 'btn btn-outline-secondary btn-sm',
                    data: { turbo_submits_with: 'Suggesting…' } do %>

@@ -157,4 +157,30 @@ class WorkflowTest < ActiveSupport::TestCase
     assert_not workflow.valid?
     assert_match(/isn't valid JSON/, workflow.errors[:models_file].join)
   end
+
+  test 'an mflux workflow keeps a recipe instead of a graph' do
+    workflow = mflux_workflow!
+
+    assert_not workflow.comfyui?
+    assert_equal 'z-image-turbo', workflow.recipe_model
+    assert_equal 16, workflow.min_memory_gb
+    assert_empty workflow.required_models
+    assert_equal %w[height prompt seed width], workflow.placeholders.sort
+  end
+
+  test 'a recipe is checked as a recipe, not as a ComfyUI graph' do
+    workflow = Workflow.new(name: 'Bad', kind: 'image', engine: 'mflux', graph_json: API_GRAPH.to_json)
+
+    assert_not workflow.valid?
+    assert_includes workflow.errors[:base].join, 'needs "command"'
+    assert_empty workflow.errors[:graph_json]
+  end
+
+  test 'an engine only makes the kinds it can' do
+    workflow = mflux_workflow!
+    workflow.kind = 'video'
+
+    assert_not workflow.valid?
+    assert_includes workflow.errors[:engine], "can't make videos"
+  end
 end

@@ -12,10 +12,10 @@ module Agent
     end
 
     class << self
-      def compute(workflow, backend) = new(workflow, backend).compute
+      def compute(workflow, backend) = (workflow.comfyui? ? self : EngineAvailability).new(workflow, backend).compute
 
       def store!(workflow, backend)
-        result = new(workflow, backend).compute
+        result = compute(workflow, backend)
         record = WorkflowAvailability.find_or_initialize_by(workflow_id: workflow.id, backend_id: backend.id)
         record.update!(status: result.status.to_s, details: details(result, Requirements.for(workflow).models.size))
         result
