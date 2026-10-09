@@ -2,7 +2,8 @@ import asyncio
 
 import pytest
 
-from comfier_agent import jobs, runtime
+from comfier_agent import runtime
+from comfier_agent.engines import comfyui as comfyui_engine
 from comfier_agent.jobs import failure_message, output_kind, split_allowed, validation_error_text
 from comfier_agent.transfer import UploadError, upload_file_multipart
 
@@ -67,7 +68,7 @@ async def test_completed_job_sends_kind_and_skips_unsupported_outputs(agent):
 
 @pytest.mark.asyncio
 async def test_waits_for_history_written_after_execution_success(agent, monkeypatch):
-    monkeypatch.setattr(jobs, "HISTORY_POLL_S", 0.05)
+    monkeypatch.setattr(comfyui_engine, "HISTORY_POLL_S", 0.05)
     await agent.start()
     prompt_id = await agent.run_to_execution()
     agent.comfy.output_files["clip.mp4"] = b"MP4"
@@ -84,8 +85,8 @@ async def test_waits_for_history_written_after_execution_success(agent, monkeypa
 
 @pytest.mark.asyncio
 async def test_history_that_never_appears_fails_at_outputs(agent, monkeypatch):
-    monkeypatch.setattr(jobs, "HISTORY_POLL_S", 0.05)
-    monkeypatch.setattr(jobs, "HISTORY_WAIT_S", 0.2)
+    monkeypatch.setattr(comfyui_engine, "HISTORY_POLL_S", 0.05)
+    monkeypatch.setattr(comfyui_engine, "HISTORY_WAIT_S", 0.2)
     await agent.start()
     prompt_id = await agent.run_to_execution()
     await agent.comfy.push_ws({"type": "execution_success", "prompt_id": prompt_id})

@@ -21,6 +21,7 @@ class FakeComfy:
         self.app.router.add_post("/prompt", self.prompt)
         self.app.router.add_post("/queue", self.queue_post)
         self.app.router.add_post("/interrupt", self.interrupt)
+        self.app.router.add_post("/free", self.free)
         self.app.router.add_get("/history/{prompt_id}", self.history)
         self.app.router.add_get("/view", self.view)
         self.app.router.add_get("/ws", self.ws)
@@ -33,6 +34,7 @@ class FakeComfy:
         self.history: dict[str, Any] = {}
         self.last_prompt: dict | None = None
         self.interrupts: list[str | None] = []
+        self.frees: list[dict] = []
         self.ws_clients: list[web.WebSocketResponse] = []
         self.object_info_data = {
             "KSampler": {"input": {"required": {"ckpt_name": (["sd.safetensors"],)}}},
@@ -127,6 +129,10 @@ class FakeComfy:
     async def interrupt(self, request):
         body = await request.json() if request.can_read_body else {}
         self.interrupts.append(body.get("prompt_id"))
+        return web.json_response({"ok": True})
+
+    async def free(self, request):
+        self.frees.append(await request.json())
         return web.json_response({"ok": True})
 
     async def history(self, request):

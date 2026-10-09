@@ -135,6 +135,13 @@ class ComfyClient:
         async with self.session.post(f"{self.base_url}/interrupt", json=payload or None) as resp:
             resp.raise_for_status()
 
+    async def free_memory(self) -> None:
+        """Unload every model so another engine on this machine has the (unified) memory."""
+        async with self.session.post(
+            f"{self.base_url}/free", json={"unload_models": True, "free_memory": True}
+        ) as resp:
+            resp.raise_for_status()
+
     def add_ws_handler(self, handler: Callable[[dict], None]) -> None:
         self._ws_handlers.append(handler)
 
