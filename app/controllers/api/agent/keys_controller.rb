@@ -6,7 +6,8 @@ module Api
     # the running agent's connection. Says which server the key belongs to, or why it was refused.
     class KeysController < ActionController::API
       def show
-        result = ::Agent::Authenticator.from_header(request.authorization)
+        # Not a use of the key: the agent's last connection time and IP stay as they were.
+        result = ::Agent::Authenticator.from_header(request.authorization, touch: false)
         render json: { server: result.backend.name, key: result.backend_key.display }
       rescue ::Agent::Authenticator::AuthenticationError => e
         render json: { error: refusal(e.message) }, status: :unauthorized

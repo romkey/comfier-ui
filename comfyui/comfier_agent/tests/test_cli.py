@@ -130,6 +130,7 @@ def test_pull_holds_the_gpu_lock(comfier_home, monkeypatch):
     ({"engines": ["mflux"], "comfyui_url": "http://studio:8190"}, ["mflux"], "none"),
     ({}, ["mflux"], "none"),
     ({}, [], "http://127.0.0.1:8188"),
+    ({"engines": ["ComfyUI", "mflux"], "comfyui_url": "http://studio:8190"}, ["mflux"], "http://studio:8190"),
 ])
 def test_setup_offers_the_comfyui_url_it_saved_before(saved, detected, default):
     assert cli.comfyui_default(saved, detected) == default
@@ -168,7 +169,7 @@ def test_check_key_reports_the_server_it_belongs_to(monkeypatch):
 
     monkeypatch.setattr(cli.urllib.request, "urlopen", urlopen)
     ok, detail = cli.check_key("https://c.example", "cmf_abcd1234secret")
-    assert ok is True and "Mac Studio" in detail and "cmf_abcd1234…" in detail
+    assert ok is True and "Mac Studio" in detail and "cmf_abcd1234…" in detail  # Comfier's display
     assert seen["auth"] == "Bearer cmf_abcd1234secret"
 
 
@@ -183,5 +184,4 @@ def test_check_key_explains_a_refusal(monkeypatch, code, body, ok, text):
     monkeypatch.setattr(cli.urllib.request, "urlopen", urlopen)
     result, detail = cli.check_key("https://c.example", "cmf_abcd1234secret")
     assert result is ok and text in detail
-    if ok is False:
-        assert "cmf_abcd1234…" in detail and "secret" not in detail
+    assert "cmf_abcd" not in detail and "secret" not in detail

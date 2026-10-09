@@ -133,7 +133,7 @@ def cmd_setup(args) -> int:
     url = args.url or (ask("Comfier URL", config.frontend_url or None) if interactive else config.frontend_url)
     key = args.key
     if key is None and interactive:
-        keep = f" (Enter keeps {key_display(config.api_key)})" if config.api_key else ""
+        keep = " (Enter keeps the saved key)" if config.api_key else ""
         key = ask_secret(f"Server key from this server's page in Comfier{keep}")
     key = (key or "").strip()
     name = args.name or (ask("Server name", config.backend_name) if interactive else config.backend_name)
@@ -159,7 +159,7 @@ def cmd_setup(args) -> int:
         print("Comfier's URL must use https (add --allow-insecure only for local testing).", file=sys.stderr)
         return 2
     updates = {"frontend_url": url.rstrip("/"), "api_key": key or None, "backend_name": name,
-               "engines": [e.strip() for e in engines.split(",") if e.strip()]}
+               "engines": [e.strip().lower() for e in engines.split(",") if e.strip()]}
     if comfyui_url and comfyui_url.lower() != "none":
         updates["comfyui_url"] = comfyui_url
     if args.allow_insecure:
@@ -190,19 +190,12 @@ def saved_settings(config) -> dict:
 def comfyui_default(saved: dict, detected: list[str]) -> str:
     """The ComfyUI answer setup offers: what was set up before, else none on a Mac with MLX tools."""
     if "engines" in saved:
-        if "comfyui" not in saved["engines"]:
+        if "comfyui" not in [str(e).strip().lower() for e in saved["engines"] or []]:
             return "none"
         return saved.get("comfyui_url") or "http://127.0.0.1:8188"
     if saved.get("comfyui_url"):
         return saved["comfyui_url"]
     return "none" if detected else "http://127.0.0.1:8188"
-
-
-def key_display(key: str | None) -> str:
-    """The key as Comfier shows it on the server's page (cmf_ and its first 8 characters)."""
-    if not key:
-        return "no key"
-    return f"{key[:12]}…" if key.startswith("cmf_") else "a key that doesn't start with cmf_"
 
 
 def check_key(url: str, key: str | None) -> tuple[bool | None, str]:
@@ -211,7 +204,8 @@ def check_key(url: str, key: str | None) -> tuple[bool | None, str]:
     try:
         with urllib.request.urlopen(request, timeout=10) as resp:
             body = json.load(resp)
-            return True, f"Comfier accepts key {body.get('key') or key_display(key)} for server {body.get('server')}"
+            # The key's display comes from Comfier's answer; nothing of the key itself is printed.
+            return True, f"Comfier accepts the key ({body.get('key')}) for server {body.get('server')}"
     except urllib.error.HTTPError as exc:
         if exc.code == 404:
             return None, "Couldn't check the key: this Comfier is older than the agent"
@@ -219,7 +213,7 @@ def check_key(url: str, key: str | None) -> tuple[bool | None, str]:
             reason = json.load(exc).get("error")
         except ValueError:
             reason = None
-        return False, f"Comfier refused key {key_display(key)} (HTTP {exc.code}). {reason or ''}".strip()
+        return False, f"Comfier refused the saved key (HTTP {exc.code}). {reason or ''}".strip()
     except Exception as exc:  # noqa: BLE001
         return False, f"Couldn't check the key: {exc}"
 
