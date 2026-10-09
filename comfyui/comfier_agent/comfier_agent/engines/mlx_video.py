@@ -61,7 +61,6 @@ class MlxVideoEngine(MlxEngine):
     async def refresh(self) -> None:
         if self._refreshed_at and time.monotonic() - self._refreshed_at < PROBE_MAX_AGE_S:
             return
-        self._refreshed_at = time.monotonic()
         probe = ChildProcess("mlx-video inventory")
         try:
             await probe.start(self.probe_argv, stdout=True)
@@ -74,6 +73,7 @@ class MlxVideoEngine(MlxEngine):
             return
         self.version = data.get("version") or self.version
         self.models = sorted(data.get("models") or [])
+        self._refreshed_at = time.monotonic()
 
     async def execute(self, ctx: JobContext, workflow: Any, *, timeout_s: int, progress: ProgressFn) -> list[dict]:
         out = self.job_dir(ctx) / f"mlx_video_{ctx.job_id}.mp4"

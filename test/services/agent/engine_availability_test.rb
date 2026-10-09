@@ -58,5 +58,21 @@ module Agent
       assert_match(%r{prince-canuma/LTX-2.3-distilled isn't downloaded}, result.hints.first)
       assert_predicate Availability.compute(@workflow, @backend), :blocked?
     end
+
+    test 'the memory check outlives the hello cache' do
+      @workflow.update!(graph_json: @workflow.graph.merge('min_memory_gb' => 48).to_json)
+      bring_mac_online!(@backend, engines: { mflux: { models: %w[z-image-turbo] } }, ram_gb: 32)
+      Agent::Store.delete("hello:#{@backend.id}")
+
+      assert_predicate Availability.compute(@workflow, @backend.reload), :blocked?
+    end
+
+    test 'a Mac that only runs MLX engines is never picked for ComfyUI styles' do
+      bring_mac_online!(@backend, engines: { mflux: { models: [] } }, comfyui: false)
+      result = Availability.compute(workflows(:sd_image), @backend.reload)
+
+      assert_predicate result, :blocked?
+      assert_includes result.reasons, "#{@backend.name} doesn't run ComfyUI"
+    end
   end
 end

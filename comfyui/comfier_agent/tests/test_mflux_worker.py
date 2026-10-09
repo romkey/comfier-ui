@@ -133,7 +133,8 @@ def test_a_command_without_a_load_class_runs_its_main(worker, tmp_path):
     module.main = main
     w.generate_safely(request(tmp_path))
     assert seen["argv"][0] == "mflux-generate-z-image-turbo"
-    assert [e["event"] for e in events(out)] == ["loaded", "done"]
+    assert [e["event"] for e in events(out)] == ["loading", "done"]
+    assert events(out)[0]["includes_generation"] is True
 
 
 def test_flux1_is_handled_by_the_adapter():
@@ -156,4 +157,4 @@ def test_an_adapter_that_no_longer_fits_mflux_falls_back_to_main(worker, tmp_pat
 
     module.main = main
     w.generate_safely(request(tmp_path))
-    assert [e["event"] for e in events(out)] == ["loading", "loaded", "done"]
+    assert [e["event"] for e in events(out)] == ["loading", "loading", "done"]

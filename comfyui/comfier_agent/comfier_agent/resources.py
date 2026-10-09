@@ -152,6 +152,12 @@ def _paths_for_disk_check(config: AgentConfig) -> list[tuple[str, str]]:
     if config.comfyui_models_dir:
         add("models", config.comfyui_models_dir)
 
+    # mflux and mlx-video keep job files in work_dir and models in the Hugging Face cache.
+    add("work", os.path.expanduser(config.work_dir))
+    add("hf_cache", os.path.expanduser(
+        os.environ.get("HF_HUB_CACHE") or os.path.join(os.environ.get("HF_HOME") or "~/.cache/huggingface", "hub")
+    ))
+
     try:
         import folder_paths  # type: ignore
 

@@ -159,3 +159,53 @@ async def test_idle_worker_is_unloaded(comfier_home):
             break
         await asyncio.sleep(0.05)
     assert not engine.worker.running
+
+
+@pytest.mark.asyncio
+async def test_a_failed_inventory_probe_is_retried_next_time(tmp_path):
+    engine = MfluxEngine(AgentConfig(), worker_argv=[sys.executable, str(tmp_path / "missing.py")])
+    await engine.refresh()
+    assert engine.info()["models"] == []
+    engine.worker_argv = [sys.executable, FAKE_WORKER]
+    await engine.refresh()
+    assert engine.info()["models"] == ["z-image-turbo"]
+
+
+@pytest.mark.asyncio
+async def test_a_failed_job_still_unloads_when_idle(mflux_agent):
+    agent, _runtime, engine = mflux_agent
+    await run(agent, prompt="boom")
+    await agent.front.wait_for_types("job.failed", timeout=10)
+    assert engine._idle_task is not None
+
+
+@pytest.mark.asyncio
+async def test_a_job_arriving_during_idle_unload_waits_for_a_fresh_worker(comfier_home):
+    import asyncio
+
+    from comfier_agent.engines.base import JobContext
+
+    engine = make_engine(work_dir=str(comfier_home / "work"), mlx_idle_unload_minutes=0.0005)
+    await engine._ensure_worker()
+    old = engine.worker.proc.pid
+    engine._schedule_idle_unload()
+    await asyncio.sleep(0.04)  # the unload has begun
+    progress = []
+
+    async def record(_ctx, phase, fraction, **_kw):
+        progress.append(phase)
+
+    files = await engine.execute(JobContext(job_id="j_9", engine="mflux"), dict(RECIPE), timeout_s=30,
+                                 progress=record)
+    assert files[0]["filename"] == "mflux_j_9.png"
+    assert engine.worker.proc.pid != old
+    await engine.close()
+
+
+def test_disk_checks_cover_the_work_folder(comfier_home):
+    from comfier_agent.resources import _paths_for_disk_check
+
+    work = comfier_home / "work"
+    work.mkdir(parents=True)
+    labels = dict(_paths_for_disk_check(AgentConfig(work_dir=str(work))))
+    assert any(label == "work" for label in labels) or str(work) in labels.values()
