@@ -28,7 +28,19 @@ class EngineRecipeTest < ActiveSupport::TestCase
                  EngineRecipe.problems('mlx_video', ltx.merge('model' => 'z-image-turbo')).join)
     assert_match(/must be a Hugging Face repo/,
                  EngineRecipe.problems('mlx_video', ltx.merge('model_repo' => 'z-image-turbo')).join)
-    assert_empty EngineRecipe.problems('mlx_video', ltx.merge('model_repo' => 'prince-canuma/LTX-2.3-distilled'))
+    assert_empty EngineRecipe.problems('mlx_video', ltx.merge('model_repo' => 'prince-canuma/LTX-2.3-distilled',
+                                                              'text_encoder_repo' => EngineRecipe::LTX_TEXT_ENCODER))
+  end
+
+  test 'LTX-2.3 recipes name a working text encoder' do
+    ltx = { 'command' => 'mlx_video.ltx_2.generate', 'model_repo' => 'prince-canuma/LTX-2.3-distilled' }
+
+    assert_match(/needs "text_encoder_repo"/, EngineRecipe.problems('mlx_video', ltx).join)
+    assert_match(/every prompt gives the same video/,
+                 EngineRecipe.problems('mlx_video', ltx.merge('text_encoder_repo' => 'Lightricks/LTX-2')).join)
+    assert_empty EngineRecipe.problems('mlx_video', ltx.merge('text_encoder_repo' => EngineRecipe::LTX_TEXT_ENCODER))
+    assert_equal ['prince-canuma/LTX-2.3-distilled', EngineRecipe::LTX_TEXT_ENCODER],
+                 EngineRecipe.models(ltx.merge('text_encoder_repo' => EngineRecipe::LTX_TEXT_ENCODER), 'mlx_video')
   end
 
   test "an engine's model comes from its own key" do

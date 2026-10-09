@@ -15,15 +15,16 @@ module Agent
     def compute
       reason = blocking_reason
       return result(:blocked, reasons: [reason]) if reason
-      return result(:ready) if model_present?
 
-      result(:ready, models: @backend.can_download_models? ? [download] : [], hints: model_hints)
+      missing = missing_models
+      return result(:ready) if missing.empty?
+
+      downloads = @backend.can_download_models? ? missing.map { download(it) } : []
+      result(:ready, models: downloads, hints: [model_hint(missing)])
     end
 
-    # The model as a download: directory is the engine, name the model it fetches.
-    def download
-      { 'folder' => @engine, 'filename' => @workflow.recipe_model, 'engine' => @engine }
-    end
+    # A model as a download: directory is the engine, name the model (or repo) it fetches.
+    def download(model) = { 'folder' => @engine, 'filename' => model, 'engine' => @engine }
 
     private
 
@@ -48,16 +49,16 @@ module Agent
       Availability::Result.new(status:, models:, total_bytes: nil, reasons:, hints:)
     end
 
-    # Reported by the engine, or just downloaded (the engine's next inventory will list it).
-    def model_present?
-      model = @workflow.recipe_model
-      model.blank? || @backend.engine_models(@engine).include?(model) ||
-        @backend.backend_models.exists?(folder: @engine, filename: model)
+    # Not reported by the engine and not just downloaded (the engine's next inventory will list those).
+    def missing_models
+      reported = @backend.engine_models(@engine)
+      just_downloaded = @backend.backend_models.where(folder: @engine).pluck(:filename)
+      @workflow.recipe_models - reported - just_downloaded
     end
 
-    def model_hints
-      ["#{@workflow.recipe_model} isn't downloaded on #{@backend.name} yet; the first run downloads it, " \
-       'so it takes longer']
+    def model_hint(missing)
+      "#{missing.to_sentence} #{missing.one? ? "isn't" : "aren't"} downloaded on #{@backend.name} yet; " \
+        'the first run downloads it, so it takes longer'
     end
   end
 end

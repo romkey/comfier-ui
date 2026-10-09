@@ -7,8 +7,8 @@ import importlib.metadata
 import json
 import re
 
-# Repos mlx-video loads with --model-repo (LTX-2 and its MLX conversions).
-VIDEO_REPO = re.compile(r"ltx|wan", re.I)
+# Repos mlx-video loads: --model-repo (LTX-2 and its MLX conversions) and --text-encoder-repo (Gemma).
+VIDEO_REPO = re.compile(r"ltx|wan|gemma", re.I)
 
 
 def probe() -> dict:

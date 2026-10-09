@@ -97,3 +97,23 @@ async def test_cancel_stops_the_tool(video_agent):
     await agent.front.send({"type": "job.cancel", "job_id": "j_1"})
     await agent.front.wait_for_types("job.cancelled", timeout=10)
     assert not engine.process.running
+
+
+def test_ltx_commands_get_the_text_encoder_mask_fix(monkeypatch):
+    from comfier_agent.workers import entry_point
+
+    applied, ran = [], []
+    monkeypatch.setitem(entry_point.FIXES, "mlx_video.ltx_2.", lambda: applied.append(True))
+    monkeypatch.setattr(entry_point, "find", lambda command: lambda: ran.append(command))
+    for command in ("mlx_video.ltx_2.generate", "mlx_video.wan_2.generate"):
+        monkeypatch.setattr(sys, "argv", ["entry_point", command])
+        with pytest.raises(SystemExit):
+            entry_point.main()
+    assert ran == ["mlx_video.ltx_2.generate", "mlx_video.wan_2.generate"]
+    assert applied == [True]
+
+
+def test_the_mask_fix_is_harmless_without_mlx_video():
+    from comfier_agent.workers.entry_point import fix_ltx_text_encoder_mask
+
+    fix_ltx_text_encoder_mask()  # mlx-video isn't installed here: nothing to patch, no error

@@ -18,6 +18,9 @@ module EngineRecipe
     'mlx_video' => 'an mlx-video module such as mlx_video.ltx_2.generate'
   }.freeze
   KEY = /\A[a-z][a-z0-9_]*\z/
+  # The Gemma 3 text encoder LTX-2.3 is known to work with in mlx-video.
+  LTX_TEXT_ENCODER = 'mlx-community/gemma-3-12b-it-bf16'.freeze
+  BROKEN_TEXT_ENCODER = 'Lightricks/LTX-2'.freeze
   HF_REPO = %r{\A[A-Za-z0-9][\w.-]*/[\w.-]+\z}
   # Options the agent sets itself; a recipe can't point them somewhere else.
   RESERVED_OPTIONS = %w[output output_path output_dir].freeze
@@ -47,10 +50,30 @@ module EngineRecipe
       found << 'can\'t use "model" for MLX video; name the Hugging Face repo with "model_repo" ' \
                '(e.g. prince-canuma/LTX-2.3-distilled) or a converted Wan model with "model_dir"'
     end
-    repo = recipe['model_repo']
-    found << "\"model_repo\" must be a Hugging Face repo (owner/name), not #{repo.inspect}" if repo && !repo?(repo)
-    found
+    %w[model_repo text_encoder_repo].each do |key|
+      repo = recipe[key]
+      found << "\"#{key}\" must be a Hugging Face repo (owner/name), not #{repo.inspect}" if repo && !repo?(repo)
+    end
+    found.concat(ltx_text_encoder_problems(recipe))
   end
+
+  # LTX-2.3 conversions ship without their Gemma text encoder, so mlx-video needs one named. Lightricks/LTX-2
+  # loads the wrong tokenizer and every prompt gives the same video (Blaizzy/mlx-video#26).
+  def ltx_text_encoder_problems(recipe)
+    return [] unless recipe['command'].to_s.start_with?('mlx_video.ltx_2.')
+
+    encoder = recipe['text_encoder_repo']
+    if encoder.to_s.casecmp?(BROKEN_TEXT_ENCODER)
+      ["can't use #{BROKEN_TEXT_ENCODER} as \"text_encoder_repo\" (every prompt gives the same video); " \
+       "use #{LTX_TEXT_ENCODER}"]
+    elsif encoder.blank? && ltx_23?(recipe)
+      ["needs \"text_encoder_repo\": LTX-2.3 doesn't include its text encoder (use #{LTX_TEXT_ENCODER})"]
+    else
+      []
+    end
+  end
+
+  def ltx_23?(recipe) = recipe['model_repo'].to_s.match?(/LTX-2\.3/i)
 
   def repo?(value) = value.is_a?(String) && value.match?(HF_REPO)
 
@@ -93,5 +116,13 @@ module EngineRecipe
     key = engine.to_s == 'mlx_video' ? 'model_repo' : 'model'
     key = 'model_repo' if engine.nil? && recipe['model'].blank?
     recipe[key].presence&.to_s
+  end
+
+  # Everything the recipe needs downloaded: the model, and for MLX video its text encoder.
+  def models(recipe, engine)
+    return [] unless recipe.is_a?(Hash)
+
+    extra = engine.to_s == 'mlx_video' ? recipe['text_encoder_repo'].presence&.to_s : nil
+    [model(recipe, engine), extra].compact.uniq
   end
 end
