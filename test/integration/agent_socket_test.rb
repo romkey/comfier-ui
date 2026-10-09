@@ -128,7 +128,7 @@ class AgentSocketTest < ActionDispatch::IntegrationTest
   test 'flooding closes with 1008' do
     client = connect
     hello(client)
-    (AgentTiming::MAX_MESSAGES_PER_SECOND + 10).times { client.send_json(type: 'status', state: 'idle', accepting: true) }
+    (AgentTiming::MAX_MESSAGE_BURST + 10).times { client.send_json(type: 'status', state: 'idle', accepting: true) }
 
     assert_equal [1008, 'rate limit'], client.wait_closed
   end

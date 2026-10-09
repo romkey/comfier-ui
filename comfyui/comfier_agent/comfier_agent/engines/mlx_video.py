@@ -93,15 +93,16 @@ class MlxVideoEngine(MlxEngine):
         self.process = ChildProcess("mlx-video", on_line=on_line)
         argv = [*self.runner_argv, workflow["command"], *recipe_argv(workflow), "--output-path", str(out)]
         ctx.timings.mark_prompt()
-        await self.process.start(argv, merged=True)
-        ctx.phase = "loading_model"
-        await progress(ctx, "loading_model", 0.0)
         try:
+            await self.process.start(argv, merged=True)
+            ctx.phase = "loading_model"
+            await progress(ctx, "loading_model", 0.0)
             await self._follow(ctx, state, timeout_s=timeout_s, progress=progress)
         finally:
+            # Whatever happened, the tool doesn't outlive the job, and a model it fetched is reported.
             await self.process.stop()
+            self._refreshed_at = None
         ctx.timings.mark_execution_end()
-        self._refreshed_at = None  # the job may have downloaded a model
         return self.outputs(ctx, out)
 
     async def _follow(self, ctx: JobContext, state: dict, *, timeout_s: int, progress: ProgressFn) -> None:
