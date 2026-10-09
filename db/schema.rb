@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_09_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_09_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -367,7 +367,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_140000) do
     t.datetime "started_at"
     t.string "status", default: "queued", null: false
     t.datetime "updated_at", null: false
-    t.text "url", null: false
+    t.text "url"
     t.string "via"
     t.string "agent_download_id"
     t.string "agent_state"
@@ -381,6 +381,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_140000) do
     t.boolean "auto", default: false, null: false
     t.jsonb "for_generation_ids", default: [], null: false
     t.datetime "sent_at"
+    t.string "engine"
     t.index ["agent_download_id"], name: "index_model_downloads_on_agent_download_id", unique: true, where: "(agent_download_id IS NOT NULL)"
     t.index ["backend_id", "directory", "name"], name: "index_model_downloads_one_active_per_file", unique: true, where: "((status)::text = ANY (ARRAY[('queued'::character varying)::text, ('running'::character varying)::text]))"
     t.index ["backend_id"], name: "index_model_downloads_on_backend_id"

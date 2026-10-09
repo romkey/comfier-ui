@@ -157,8 +157,10 @@ mflux and enough memory.
 - **The model stays loaded.** mflux runs in a worker process that keeps the last model loaded, so only
   the first job with a model pays to load it. Cancelling a job ends the worker; the next job starts a
   new one.
-- **Models download on first use.** mflux fetches weights from Hugging Face the first time a model is
-  used, so that job takes longer. The agent reports which models are already downloaded.
+- **Models download ahead, or on first use.** On the server's page in Comfier, a style whose model isn't
+  on the Mac yet has a **Download** button (and **Download all** covers every style), which fetches
+  exactly the files mflux uses without loading the model. Otherwise mflux fetches it during the first
+  job, which then takes longer. The agent reports which models are already downloaded.
 - **The GPU lock.** While a job runs the agent holds `~/.comfier/gpu.lock` (an `flock` lock). If another
   program holds it, the agent takes no jobs until it's released, so your own scripts can keep Comfier
   jobs off the GPU while they run.

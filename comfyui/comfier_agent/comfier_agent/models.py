@@ -18,6 +18,7 @@ from urllib.parse import urlparse
 import aiohttp
 
 from comfier_agent.config import AgentConfig
+from comfier_agent.engines.mlx import DownloadFailed
 from comfier_agent.hf_cli import (
     HfCliCancelled,
     HfCliError,
@@ -70,8 +71,10 @@ class DownloadState:
 
 
 class ModelDownloadManager:
-    def __init__(self, config: AgentConfig, session: aiohttp.ClientSession, send, rescan_inventory):
+    def __init__(self, config: AgentConfig, session: aiohttp.ClientSession, send, rescan_inventory, engines=None):
         self.config = config
+        # mflux and mlx-video fetch their own models (model.download with "engine").
+        self.engines = engines or {}
         self.session = session
         self.send = send
         self.rescan_inventory = rescan_inventory
@@ -145,6 +148,9 @@ class ModelDownloadManager:
         self._terminal_buffer.append(msg)
 
     async def _run(self, msg: dict[str, Any]) -> None:
+        if msg.get("engine"):
+            await self._run_engine(msg)
+            return
         download_id = msg["download_id"]
         try:
             reason = await self._validate(msg)
@@ -309,6 +315,38 @@ class ModelDownloadManager:
         finally:
             self.active.pop(download_id, None)
             self.paths_in_progress.pop(download_id, None)
+            self._drain_wait_queue()
+
+    async def _run_engine(self, msg: dict[str, Any]) -> None:
+        """A whole mflux or mlx-video model, fetched by its engine the way a job would, without loading it."""
+        download_id, name, model = msg["download_id"], msg["engine"], msg.get("model") or ""
+        state = self.active.get(download_id)
+        engine = self.engines.get(name)
+        started, start_time = None, time.time()
+
+        async def progress(done: int) -> None:
+            nonlocal started
+            started = done if started is None else started
+            await self._progress(download_id, done, None, done - started, start_time)
+
+        try:
+            if not self.config.allow_model_downloads:
+                await self._failed(download_id, "disabled", "model downloads are turned off")
+                return
+            if engine is None or not hasattr(engine, "download"):
+                await self._failed(download_id, "invalid", f"this server doesn't run {name}")
+                return
+            if not model:
+                await self._failed(download_id, "invalid", "no model named")
+                return
+            size = await engine.download(model, progress=progress, cancelled=lambda: bool(state and state.cancel))
+            await self._complete(download_id, name, model, size, None, False)
+        except asyncio.CancelledError:
+            await self._cancelled(download_id)
+        except DownloadFailed as exc:
+            await self._failed(download_id, "network" if "connect" in str(exc).lower() else "engine", str(exc))
+        finally:
+            self.active.pop(download_id, None)
             self._drain_wait_queue()
 
     async def _download_via_hf_cli(

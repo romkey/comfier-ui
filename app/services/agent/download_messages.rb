@@ -34,6 +34,8 @@ module Agent
     end
 
     def host_of(url)
+      return 'Hugging Face' if url.blank? # engine downloads come from the Hugging Face hub
+
       URI.parse(url.to_s).host || 'the source'
     rescue URI::InvalidURIError
       'the source'

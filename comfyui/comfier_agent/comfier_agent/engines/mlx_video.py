@@ -37,6 +37,10 @@ def default_probe_argv() -> list[str]:
     return [sys.executable, "-m", "comfier_agent.workers.mlx_video_probe"]
 
 
+def default_download_argv() -> list[str]:
+    return [sys.executable, "-m", "comfier_agent.workers.hf_download"]
+
+
 def denoising_fraction(line: str) -> float | None:
     if not DENOISING.search(line):
         return None
@@ -51,10 +55,12 @@ class MlxVideoEngine(MlxEngine):
     name = "mlx_video"
     command = re.compile(r"^mlx_video(\.[a-z0-9_]+)+$")
 
-    def __init__(self, config, runner_argv: list[str] | None = None, probe_argv: list[str] | None = None):
+    def __init__(self, config, runner_argv: list[str] | None = None, probe_argv: list[str] | None = None,
+                 download_argv: list[str] | None = None):
         super().__init__(config)
         self.runner_argv = runner_argv or default_runner_argv()
         self.probe_argv = probe_argv or default_probe_argv()
+        self._download_argv = download_argv or default_download_argv()
         self.process: ChildProcess | None = None
         self._refreshed_at: float | None = None
 
@@ -129,6 +135,10 @@ class MlxVideoEngine(MlxEngine):
         if code != 0:
             raise JobError("execute", f"mlx-video exited with code {code}: {self.process.tail()}",
                            traceback_tail=self.process.tail(30))
+
+    def download_argv(self, model: str) -> list[str]:
+        # mlx-video recipes name a Hugging Face repo (model_repo); it's fetched whole, as mlx-video would.
+        return [*self._download_argv, model]
 
     async def cancel(self, ctx: JobContext) -> bool:
         if self.process:

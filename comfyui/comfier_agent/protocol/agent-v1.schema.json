@@ -236,11 +236,18 @@
       "properties": { "type": { "const": "job.cancel" }, "job_id": { "type": "string" } }
     },
     "model_download": {
+      "description": "A file from url into folder/filename, or (with engine) a whole model that engine fetches itself.",
       "type": "object",
-      "required": ["type", "download_id", "url", "folder", "filename"],
+      "required": ["type", "download_id"],
+      "anyOf": [
+        { "required": ["url", "folder", "filename"] },
+        { "required": ["engine", "model"] }
+      ],
       "properties": {
         "type": { "const": "model.download" },
         "download_id": { "type": "string" },
+        "engine": { "type": "string", "maxLength": 32 },
+        "model": { "type": "string", "maxLength": 256 },
         "url": { "type": "string" },
         "folder": { "type": "string" },
         "filename": { "type": "string" },

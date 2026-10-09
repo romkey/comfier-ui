@@ -38,15 +38,25 @@ module Agent
       reason = disk_problem(backend, download)
       return DownloadLifecycle.fail!(download, 'disk_full', reason) if reason
 
-      message = {
+      message = download.engine? ? engine_message(download) : file_message(download, backend)
+      download.update!(agent_state: 'sent', status: :running, sent_at: Time.current, started_at: Time.current)
+      Commands.send_message(backend.id, message)
+      true
+    end
+
+    # The engine fetches its model's files itself.
+    def engine_message(download)
+      { 'type' => 'model.download', 'download_id' => download.agent_download_id, 'engine' => download.engine,
+        'model' => download.name }
+    end
+
+    def file_message(download, backend)
+      {
         'type' => 'model.download', 'download_id' => download.agent_download_id, 'url' => download.url,
         'folder' => download.directory, 'filename' => download.name, 'sha256' => download.sha256,
         'bytes' => download.bytes_total, 'headers' => CredentialHeaders.for_url(download.url, backend:),
         'overwrite' => false
       }.compact
-      download.update!(agent_state: 'sent', status: :running, sent_at: Time.current, started_at: Time.current)
-      Commands.send_message(backend.id, message)
-      true
     end
 
     def disk_problem(backend, download)

@@ -17,12 +17,30 @@ module Agent
       assert_empty result.hints
     end
 
-    test "a model the Mac hasn't downloaded yet is a hint, not a blocker" do
+    test "a model the Mac hasn't downloaded yet is a hint and a download, not a blocker" do
       bring_mac_online!(@backend, engines: { mflux: { models: [] } })
       result = Availability.compute(@workflow, @backend.reload)
 
       assert_predicate result, :ready?
       assert_match(/first run downloads it/, result.hints.first)
+      assert_equal [{ 'folder' => 'mflux', 'filename' => 'z-image-turbo', 'engine' => 'mflux' }], result.models
+    end
+
+    test 'nothing is offered for download when the server does not allow downloads' do
+      @backend.update!(model_downloads_enabled: false)
+      bring_mac_online!(@backend, engines: { mflux: { models: [] } })
+      @backend.update!(model_downloads_enabled: false)
+
+      assert_empty Availability.compute(@workflow, @backend.reload).models
+    end
+
+    test 'a model downloaded a moment ago counts before the next inventory' do
+      bring_mac_online!(@backend, engines: { mflux: { models: [] } })
+      BackendModel.create!(backend: @backend, folder: 'mflux', filename: 'z-image-turbo')
+      result = Availability.compute(@workflow, @backend.reload)
+
+      assert_empty result.models
+      assert_empty result.hints
     end
 
     test 'a server without the engine is blocked' do

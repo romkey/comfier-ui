@@ -7,6 +7,7 @@ import asyncio
 import codecs
 import collections
 import contextlib
+import json
 import logging
 import os
 import re
@@ -28,6 +29,7 @@ FLAG_KEY = re.compile(r"^[a-z][a-z0-9_]*$")
 ANSI = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
 STDERR_LINES = 40
 KILL_GRACE_S = 5
+DOWNLOAD_POLL_S = 2
 # The folder holding the comfier_agent package. Inside ComfyUI it's only on sys.path in-process, so
 # child processes get it through PYTHONPATH.
 PACKAGE_ROOT = str(Path(__file__).resolve().parents[2])
@@ -71,6 +73,28 @@ def work_root(config) -> Path:
     return Path(os.path.expanduser(config.work_dir))
 
 
+def hf_hub_cache() -> Path:
+    """Where huggingface_hub keeps downloaded repos (HF_HUB_CACHE, else HF_HOME/hub)."""
+    if os.environ.get("HF_HUB_CACHE"):
+        return Path(os.path.expanduser(os.environ["HF_HUB_CACHE"]))
+    return Path(os.path.expanduser(os.environ.get("HF_HOME") or "~/.cache/huggingface")) / "hub"
+
+
+def repo_bytes(repo: str) -> int:
+    """Bytes a Hugging Face repo takes in the cache so far, partial downloads included."""
+    root = hf_hub_cache() / ("models--" + repo.replace("/", "--")) / "blobs"
+    total = 0
+    with contextlib.suppress(OSError):
+        for entry in os.scandir(root):
+            with contextlib.suppress(OSError):
+                total += entry.stat(follow_symlinks=False).st_size
+    return total
+
+
+class DownloadFailed(Exception):
+    pass
+
+
 class MlxEngine(Engine):
     """Subclasses set name, command (a regex for the recipe's "command"), and implement execute."""
 
@@ -78,6 +102,7 @@ class MlxEngine(Engine):
 
     def __init__(self, config):
         self.config = config
+        self._refreshed_at: float | None = None
         self.version: str | None = None
         self.models: list[str] = []
         self.extra_info: dict[str, Any] = {}
@@ -136,6 +161,45 @@ class MlxEngine(Engine):
         shutil.rmtree(path / "inputs", ignore_errors=True)
         with contextlib.suppress(OSError):
             path.rmdir()
+
+    def download_argv(self, model: str) -> list[str]:
+        """The command that fetches a model's files without loading it, reporting JSON events
+        (repo, done, error) on stdout."""
+        raise NotImplementedError
+
+    async def download(self, model: str, *, progress, cancelled) -> int:
+        """Fetch a model ahead of its first job. progress(bytes_done) is called every couple of seconds;
+        returns the bytes the model's repos take in the cache. Raises DownloadFailed, or
+        asyncio.CancelledError when cancelled() turns true."""
+        proc = ChildProcess(f"{self.name} download")
+        repos: list[str] = []
+        await proc.start(self.download_argv(model), stdout=True)
+        try:
+            while True:
+                if cancelled():
+                    raise asyncio.CancelledError()
+                try:
+                    line = await asyncio.wait_for(proc.proc.stdout.readline(), DOWNLOAD_POLL_S)
+                except asyncio.TimeoutError:
+                    await progress(sum(repo_bytes(r) for r in repos))
+                    continue
+                if not line:
+                    code = await proc.wait()
+                    raise DownloadFailed(proc.tail() or f"the download stopped (exit {code})")
+                try:
+                    event = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if event.get("event") == "repo" and event.get("repo") not in repos:
+                    repos.append(event["repo"])
+                elif event.get("event") == "error":
+                    raise DownloadFailed(event.get("message") or "the download failed")
+                elif event.get("event") == "done":
+                    break
+        finally:
+            await proc.stop()
+        self._refreshed_at = None  # report the model as downloaded on the next inventory
+        return sum(repo_bytes(r) for r in repos)
 
     def outputs(self, ctx: JobContext, path: Path) -> list[dict[str, Any]]:
         if not path.is_file() or path.stat().st_size == 0:

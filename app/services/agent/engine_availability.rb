@@ -2,8 +2,9 @@
 
 module Agent
   # Availability for mflux and MLX video workflows: the server has to run the engine and have the
-  # memory the recipe asks for. A model that isn't on the server yet doesn't block the style; the
-  # engine downloads it on the first run, so that's a hint rather than a reason.
+  # memory the recipe asks for. A model that isn't on the server yet doesn't block the style (the engine
+  # downloads it on the first run), so it stays ready, with a hint and the model offered as a download
+  # (`models`) that can be fetched ahead from the server's page.
   class EngineAvailability
     def initialize(workflow, backend)
       @workflow = workflow
@@ -13,9 +14,15 @@ module Agent
 
     def compute
       reason = blocking_reason
-      status = reason ? :blocked : :ready
-      Availability::Result.new(status:, models: [], total_bytes: nil, reasons: [reason].compact,
-                               hints: reason ? [] : model_hints)
+      return result(:blocked, reasons: [reason]) if reason
+      return result(:ready) if model_present?
+
+      result(:ready, models: @backend.can_download_models? ? [download] : [], hints: model_hints)
+    end
+
+    # The model as a download: directory is the engine, name the model it fetches.
+    def download
+      { 'folder' => @engine, 'filename' => @workflow.recipe_model, 'engine' => @engine }
     end
 
     private
@@ -37,11 +44,20 @@ module Agent
         "#{@workflow.name} needs about #{needed} GB"
     end
 
-    def model_hints
-      model = @workflow.recipe_model
-      return [] if model.blank? || @backend.engine_models(@engine).include?(model)
+    def result(status, models: [], reasons: [], hints: [])
+      Availability::Result.new(status:, models:, total_bytes: nil, reasons:, hints:)
+    end
 
-      ["#{model} isn't downloaded on #{@backend.name} yet; the first run downloads it, so it takes longer"]
+    # Reported by the engine, or just downloaded (the engine's next inventory will list it).
+    def model_present?
+      model = @workflow.recipe_model
+      model.blank? || @backend.engine_models(@engine).include?(model) ||
+        @backend.backend_models.exists?(folder: @engine, filename: model)
+    end
+
+    def model_hints
+      ["#{@workflow.recipe_model} isn't downloaded on #{@backend.name} yet; the first run downloads it, " \
+       'so it takes longer']
     end
   end
 end
