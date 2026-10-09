@@ -381,6 +381,19 @@ module Admin
       assert_nil generations(:alice_done).reload.workflow
     end
 
+    test 'removing a workflow that has timing data keeps the data for its structure' do
+      workflow = workflows(:sd_image)
+      backend = backends(:gpu)
+      sample = PerfSample.create!(backend:, workflow:, structure_hash: 'abc', completed_at: Time.current)
+      stat = PerfStat.create!(backend:, workflow:, structure_hash: 'abc')
+
+      assert_difference('Workflow.count', -1) { delete admin_workflow_path(workflow) }
+      assert_redirected_to admin_workflows_path
+      assert_nil sample.reload.workflow_id
+      assert_equal 'abc', stat.reload.structure_hash
+      assert_nil stat.workflow_id
+    end
+
     test 'the form offers engines and their presets' do
       get new_admin_workflow_path(engine: 'mflux')
 

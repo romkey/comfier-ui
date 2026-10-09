@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_09_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_09_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -640,9 +640,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_120000) do
   add_foreign_key "model_downloads", "users", column: "requested_by_user_id"
   add_foreign_key "perf_samples", "backends"
   add_foreign_key "perf_samples", "job_attempts"
-  add_foreign_key "perf_samples", "workflows"
+  add_foreign_key "perf_samples", "workflows", on_delete: :nullify
   add_foreign_key "perf_stats", "backends"
-  add_foreign_key "perf_stats", "workflows"
+  add_foreign_key "perf_stats", "workflows", on_delete: :nullify
   add_foreign_key "prediction_logs", "backends"
   add_foreign_key "prediction_logs", "generations"
   add_foreign_key "report_cases", "generations"
