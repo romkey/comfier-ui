@@ -1,5 +1,6 @@
 """comfier-agent's commands."""
 
+import argparse
 import json
 import plistlib
 import subprocess
@@ -9,7 +10,7 @@ import pytest
 
 from comfier_agent import cli
 from comfier_agent.gpu_lock import GpuLock
-from comfier_agent.workers.mflux_worker import pull_command
+from comfier_agent.workers.mflux_worker import pull_command, reference_flag
 
 
 def test_no_subcommand_still_runs_the_agent(monkeypatch):
@@ -66,16 +67,35 @@ def test_doctor_reports_without_crashing(comfier_home, capsys):
     assert code == 1  # no URL or key in a fresh home
 
 
-@pytest.mark.parametrize("model, command, image_flag", [
-    ("z-image-turbo", "mflux-generate-z-image-turbo", None), ("flux2-klein-4b", "mflux-generate-flux2", None),
-    ("qwen-image", "mflux-generate-qwen", None), ("qwen-image-edit", "mflux-generate-qwen-edit", "--image-paths"),
-    ("qwen-image-edit-2511", "mflux-generate-qwen-edit", "--image-paths"),
-    ("qwen-image-2.1", "mflux-generate-qwen-2.1", None), ("dev-kontext", "mflux-generate-kontext", "--image-path"),
-    ("fibo-edit", "mflux-generate-fibo-edit", "--image-path"), ("dev", "mflux-generate", None),
-    ("schnell", "mflux-generate", None),
+@pytest.mark.parametrize("model, command", [
+    ("z-image-turbo", "mflux-generate-z-image-turbo"), ("flux2-klein-4b", "mflux-generate-flux2"),
+    ("qwen-image", "mflux-generate-qwen"), ("qwen-image-edit", "mflux-generate-qwen-edit"),
+    ("qwen-image-edit-2511", "mflux-generate-qwen-edit"), ("qwen-image-2.1", "mflux-generate-qwen-2.1"),
+    ("dev-kontext", "mflux-generate-kontext"), ("fibo-edit", "mflux-generate-fibo-edit"),
+    ("dev", "mflux-generate"), ("schnell", "mflux-generate"),
 ])
-def test_pull_picks_the_command_for_a_model(model, command, image_flag):
-    assert pull_command(model) == (command, image_flag)
+def test_pull_picks_the_command_for_a_model(model, command):
+    assert pull_command(model) == command
+
+
+def parser_with(*options, require_init_image=False):
+    parser = argparse.ArgumentParser()
+    for option in options:
+        parser.add_argument(option)
+    parser.require_init_image = require_init_image
+    return parser
+
+
+@pytest.mark.parametrize("parser, command, flag", [
+    (parser_with("--image-paths"), "mflux-generate-qwen-edit", "--image-paths"),
+    (parser_with("--image-paths"), "my-custom-edit", "--image-paths"),
+    (parser_with("--image-path", require_init_image=True), "mflux-generate-kontext", "--image-path"),
+    (parser_with("--image-path"), "mflux-generate-fibo-edit", "--image-path"),
+    (parser_with("--image-path"), "mflux-generate", None),
+    (parser_with("--prompt"), "mflux-generate-lens", None),
+])
+def test_pull_reads_the_reference_image_flag_from_the_command(parser, command, flag):
+    assert reference_flag(parser, command) == flag
 
 
 def test_the_module_runs_the_cli():

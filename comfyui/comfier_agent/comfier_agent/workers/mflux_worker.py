@@ -272,37 +272,42 @@ def inventory() -> dict[str, Any]:
     }
 
 
-# The command that runs a model for `--pull` without one, and the flag its reference image goes in (edit
-# models need one). Most specific prefix first; the first match wins.
+# The command that runs a model, for `--pull` without one. Most specific prefix first; first match wins.
 PULL_COMMANDS = (
-    ("z-image-turbo", "mflux-generate-z-image-turbo", None), ("z-image", "mflux-generate-z-image", None),
-    ("flux2-", "mflux-generate-flux2", None),
-    ("qwen-image-edit", "mflux-generate-qwen-edit", "--image-paths"),
-    ("qwen-edit", "mflux-generate-qwen-edit", "--image-paths"),
-    ("qwen-image-2.1", "mflux-generate-qwen-2.1", None), ("qwen-image-21", "mflux-generate-qwen-2.1", None),
-    ("qwen-2.1", "mflux-generate-qwen-2.1", None), ("qwen", "mflux-generate-qwen", None),
-    ("fibo-edit", "mflux-generate-fibo-edit", "--image-path"),
-    ("fiboedit", "mflux-generate-fibo-edit", "--image-path"),
-    ("fibo", "mflux-generate-fibo", None), ("dev-kontext", "mflux-generate-kontext", "--image-path"),
-    ("krea-2", "mflux-generate-krea2", None), ("krea2", "mflux-generate-krea2", None),
-    ("ernie-image-turbo", "mflux-generate-ernie-image-turbo", None),
-    ("ernie-image", "mflux-generate-ernie-image", None),
-    ("", "mflux-generate", None),
+    ("z-image-turbo", "mflux-generate-z-image-turbo"), ("z-image", "mflux-generate-z-image"),
+    ("flux2-", "mflux-generate-flux2"),
+    ("qwen-image-edit", "mflux-generate-qwen-edit"), ("qwen-edit", "mflux-generate-qwen-edit"),
+    ("qwen-image-2.1", "mflux-generate-qwen-2.1"), ("qwen-image-21", "mflux-generate-qwen-2.1"),
+    ("qwen-2.1", "mflux-generate-qwen-2.1"), ("qwen", "mflux-generate-qwen"),
+    ("fibo-edit", "mflux-generate-fibo-edit"), ("fiboedit", "mflux-generate-fibo-edit"),
+    ("fibo", "mflux-generate-fibo"), ("dev-kontext", "mflux-generate-kontext"),
+    ("krea-2", "mflux-generate-krea2"), ("krea2", "mflux-generate-krea2"),
+    ("ernie-image-turbo", "mflux-generate-ernie-image-turbo"), ("ernie-image", "mflux-generate-ernie-image"),
+    ("", "mflux-generate"),
 )
 
 
-def pull_command(model: str) -> tuple[str, str | None]:
-    return next((cmd, image_flag) for prefix, cmd, image_flag in PULL_COMMANDS if model.startswith(prefix))
+def pull_command(model: str) -> str:
+    return next(cmd for prefix, cmd in PULL_COMMANDS if model.startswith(prefix))
+
+
+def reference_flag(parser, command: str) -> str | None:
+    """The flag an edit command takes its reference image in, read from the command's own parser, so a
+    command given to --pull by hand gets one too. None when the command doesn't need an image."""
+    options = {opt for action in parser._actions for opt in action.option_strings}  # noqa: SLF001
+    if "--image-paths" in options:
+        return "--image-paths"
+    if "--image-path" in options and (getattr(parser, "require_init_image", False) or "edit" in command):
+        return "--image-path"
+    return None
 
 
 def pull(model: str, command: str | None = None) -> int:
     """Download a model by making a 256×256, two-step image with it."""
     import tempfile
 
-    guessed, image_flag = pull_command(model)
-    if command and command != guessed:
-        image_flag = None
-    command = command or guessed
+    command = command or pull_command(model)
+    image_flag = reference_flag(command_module(command).build_parser(), command)
     folder = tempfile.mkdtemp(prefix="comfier-pull-")
     output = os.path.join(folder, "test.png")
     reference = []
