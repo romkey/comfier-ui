@@ -78,6 +78,9 @@ module Agent
       }.compact
       system = (message['system'] || {}).deep_dup
       system['model_download'] = download_settings if download_settings.any?
+      # Kept with the server (the hello cache expires) so memory checks keep working while it stays connected.
+      ram = message.dig('resources', 'ram', 'total_bytes')
+      system['ram_total_bytes'] = ram if ram
       system
     end
 

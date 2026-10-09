@@ -3,7 +3,7 @@
 module Agent
   # Whether a workflow can run on a server: ready, needs_downloads (every missing model has a link
   # and fits on disk), or blocked (with reasons). Results are cached in workflow_availabilities.
-  class Availability
+  class Availability # rubocop:disable Metrics/ClassLength
     Result = Data.define(:status, :models, :total_bytes, :reasons, :hints) do
       def ready? = status == :ready
       def needs_downloads? = status == :needs_downloads
@@ -45,6 +45,7 @@ module Agent
     def compute
       @backend.ensure_routing_inventory! if @backend.legacy?
       return blocked(["#{@backend.name} hasn't reported its models yet"]) unless @backend.backend_inventory
+      return blocked(["#{@backend.name} doesn't run ComfyUI"]) unless @backend.runs_engine?('comfyui')
 
       missing = missing_models
       hints = hints_for(missing)
