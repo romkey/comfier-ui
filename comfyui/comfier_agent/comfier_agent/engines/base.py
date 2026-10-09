@@ -56,6 +56,9 @@ class Engine:
     async def available(self) -> bool:
         return True
 
+    async def refresh(self) -> None:
+        """Re-read what info() reports (version, downloaded models). Called before each inventory scan."""
+
     def info(self) -> dict[str, Any]:
         """What hello and inventory report for this engine: version, models, and so on."""
         return {}

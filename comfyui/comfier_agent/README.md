@@ -76,6 +76,12 @@ Environment variables override `comfier_agent.json`.
 | `HF_PROXY_TOKEN_HEADER` | `X-Proxy-Token` | Header name for `HF_PROXY_TOKEN`. |
 | `COMFIER_USE_HF_CLI` | `true` | Use the `hf` / `huggingface-cli` tool for Hub `/resolve/` links (falls back to HTTP). |
 | `COMFIER_MAX_CONCURRENT_DOWNLOADS` | `1` | Parallel model downloads (`0` = no limit). |
+| `COMFIER_ENGINES` | detected | Comma-separated engines to run: `comfyui`, `mflux`. Default: ComfyUI plus mflux if it's installed. Leave out `comfyui` on a Mac that only runs mflux. |
+| `COMFIER_WORK_DIR` | `~/.comfier/work` | Where mflux jobs keep their inputs and results while they run. |
+| `COMFIER_MLX_IDLE_UNLOAD_MINUTES` | `10` | Unload mflux's model after this long without a job (`0` keeps it loaded). |
+| `COMFIER_MLX_LOAD_TIMEOUT_SECONDS` | `3600` | How long loading a model may take, including its first download. The job's time limit starts after. |
+| `COMFIER_GPU_LOCK` | `true` | Hold `~/.comfier/gpu.lock` while a job runs, and take no jobs while another program holds it. |
+| `COMFIER_HOME` | `~/.comfier` | Where a standalone agent keeps its settings (`agent.json`), work files and lock. |
 
 `comfier_agent.json` also accepts `max_model_download_gb` (50), `min_free_disk_gb` (10), `max_concurrent_downloads`
 (1), `use_hf_cli` (true), and `allow_pickle_formats` (true). When free space on a job or model volume falls below
@@ -107,6 +113,29 @@ The agent reports `__version__` from `comfier_agent/__init__.py` in every hello,
 Comfier reads the same file from its own build and marks a server **Update available** when its agent is older, or
 **Newer than Comfier** when it's newer. Bump `__version__` with every change to the agent, or Comfier can't tell
 old agents from new ones. `pyproject.toml` takes its version from there.
+
+## mflux on Apple Silicon
+
+On a Mac the agent can run image jobs with [mflux](https://github.com/filipstrand/mflux) instead of
+ComfyUI. It's faster and avoids ComfyUI's Mac problems. Install mflux next to the agent
+(`pip install "comfier-agent[mflux]"`), and the agent reports the `mflux` engine to Comfier. Admins
+then add mflux workflows (**Settings → Workflows → Runs on: mflux**), which only go to servers with
+mflux and enough memory.
+
+- **One job at a time.** A server runs one Comfier job whichever engine it's on.
+- **Memory is handed over.** On Apple Silicon, ComfyUI and mflux share memory. Before an mflux job the
+  agent asks ComfyUI to unload its models, and before a ComfyUI job it stops mflux. mflux also unloads
+  after `COMFIER_MLX_IDLE_UNLOAD_MINUTES` without a job.
+- **The model stays loaded.** mflux runs in a worker process that keeps the last model loaded, so only
+  the first job with a model pays to load it. Cancelling a job ends the worker; the next job starts a
+  new one.
+- **Models download on first use.** mflux fetches weights from Hugging Face the first time a model is
+  used, so that job takes longer. The agent reports which models are already downloaded.
+- **The GPU lock.** While a job runs the agent holds `~/.comfier/gpu.lock` (an `flock` lock). If another
+  program holds it, the agent takes no jobs until it's released, so your own scripts can keep Comfier
+  jobs off the GPU while they run.
+
+To run mflux without ComfyUI at all, set `COMFIER_ENGINES=mflux` and run the agent as a sidecar (below).
 
 ## Sidecar mode
 

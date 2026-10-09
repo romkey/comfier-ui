@@ -13,6 +13,8 @@ from comfier_agent import __version__
 from comfier_agent.comfy_client import ComfyClient
 from comfier_agent.config import AgentConfig
 from comfier_agent.connection import FrontendConnection
+from comfier_agent.engines import build_engines
+from comfier_agent.gpu_lock import GpuLock
 from comfier_agent.inventory import inventory_message, scan_inventory
 from comfier_agent.jobs import JobManager, sweep_stale_inputs
 from comfier_agent.models import ModelDownloadManager
@@ -29,7 +31,11 @@ class AgentRuntime:
     def __init__(self, config: AgentConfig):
         self.config = config
         self.started_at = time.time()
-        self.comfy = ComfyClient(config.comfyui_url)
+        self.comfy = ComfyClient(config.comfyui_url or "")
+        self.engines = build_engines(config, self.comfy)
+        # Without ComfyUI (an mflux/mlx-video-only Mac) there's nothing to wait for or poll.
+        self.uses_comfy = "comfyui" in self.engines
+        self.gpu_lock = GpuLock(config.gpu_lock_path, enabled=config.gpu_lock)
         self.connection = FrontendConnection(config)
         self.status = StatusTracker(config, self.started_at)
         self.inventory = None
@@ -42,7 +48,9 @@ class AgentRuntime:
     async def run(self, *, sidecar: bool = False) -> None:
         self.loop = asyncio.get_running_loop()
         await self.comfy.start()
-        if sidecar:
+        if not self.uses_comfy:
+            self._comfy_ok = True
+        elif sidecar:
             await self._wait_comfy_forever()
         else:
             try:
@@ -66,12 +74,17 @@ class AgentRuntime:
             send,
             lambda: self.inventory,
             on_terminal=after_job_terminal,
+            engines=self.engines,
+            gpu_lock=self.gpu_lock,
         )
         self.models = ModelDownloadManager(self.config, self.comfy.session, send, self._rescan_inventory)
 
         from comfier_agent.models import sweep_stale_part_files
 
         sweep_stale_part_files(self.config)
+        # So the first hello already carries each engine's version.
+        for engine in self.engines.values():
+            await engine.refresh()
 
         await self.connection.start(self._on_frontend_message)
         self._tasks = [
@@ -79,7 +92,8 @@ class AgentRuntime:
             asyncio.create_task(self._inventory_loop()),
             asyncio.create_task(self._sweep_loop()),
         ]
-        await self.comfy.ensure_ws()
+        if self.uses_comfy:
+            await self.comfy.ensure_ws()
         while True:
             await asyncio.sleep(3600)
 
@@ -87,6 +101,9 @@ class AgentRuntime:
         for task in self._tasks:
             task.cancel()
         await self.connection.close()
+        for engine in self.engines.values():
+            await engine.close()
+        self.gpu_lock.release()
         await self.comfy.close()
 
     async def _wait_comfy_forever(self) -> None:
@@ -144,7 +161,8 @@ class AgentRuntime:
     async def _send_hello(self) -> None:
         stats = {}
         try:
-            stats = await self.comfy.system_stats()
+            if self.uses_comfy:
+                stats = await self.comfy.system_stats()
         except Exception:
             pass
         resources = self.status.snapshot.resources or build_resources(stats, config=self.config)
@@ -158,15 +176,17 @@ class AgentRuntime:
             "system": {
                 "os": platform.platform(),
                 "python": sys.version.split()[0],
-                "devices": stats.get("devices") or [],
+                "devices": stats.get("devices") or resources.get("gpus") or [],
             },
             "active_jobs": self.jobs.active_jobs_for_hello() if self.jobs else [],
             "active_downloads": self.models.active_for_hello() if self.models else [],
             "model_downloads_enabled": self.config.allow_model_downloads,
             "max_concurrent_downloads": self.config.max_concurrent_downloads,
             "use_hf_cli": self.config.use_hf_cli,
-            "engines": {name: engine.info() for name, engine in self.jobs.engines.items()} if self.jobs else {},
+            "engines": {name: engine.info() for name, engine in self.engines.items()},
         }
+        if msg["comfyui_version"] is None:
+            del msg["comfyui_version"]
         await self.connection.send(msg)
 
     async def _send_object_info(self) -> None:
@@ -182,7 +202,9 @@ class AgentRuntime:
 
     async def _rescan_inventory(self, force: bool = False) -> None:
         try:
-            snap = await scan_inventory(self.comfy, self.jobs.engines if self.jobs else None)
+            for engine in self.engines.values():
+                await engine.refresh()
+            snap = await scan_inventory(self.comfy if self.uses_comfy else None, self.engines)
         except Exception as exc:
             LOG.warning("inventory scan failed: %s", exc)
             return
@@ -201,11 +223,12 @@ class AgentRuntime:
             self._comfy_ok = True
             await asyncio.wait_for(
                 self.status.refresh(
-                    self.comfy,
+                    self.comfy if self.uses_comfy else None,
                     comfier_prompt_ids=self.jobs.prompt_ids if self.jobs else set(),
                     active_job=active_job,
                     downloads=self.models.status_entries() if self.models else [],
                     comfy_reachable=self._comfy_ok,
+                    gpu_busy_elsewhere=self.gpu_lock.held_elsewhere(),
                 ),
                 timeout=STATUS_REFRESH_TIMEOUT_S,
             )

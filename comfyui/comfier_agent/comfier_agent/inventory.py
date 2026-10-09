@@ -39,6 +39,9 @@ class InventorySnapshot:
 async def scan_inventory(comfy, engines: dict[str, Any] | None = None) -> InventorySnapshot:
     snap = InventorySnapshot()
     snap.engines = {name: engine.info() for name, engine in (engines or {}).items()}
+    if comfy is None:
+        snap.hash = canonical_hash({"models": {}, "node_types": [], "engines": snap.engines})
+        return snap
     folders = await comfy.models_folders()
     if folders:
         for folder in folders:
