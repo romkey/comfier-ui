@@ -102,10 +102,12 @@ module Agent
         return close(CLOSE_TOO_BIG, 'message too big') if raw.to_s.bytesize > AgentTiming::MAX_MESSAGE_BYTES
         return close(CLOSE_POLICY, 'rate limit') unless @rate_limiter.allowed?
 
-        message = JSON.parse(raw)
-        return unless handshake_ok?(message)
+        @rate_limiter.handling do
+          message = JSON.parse(raw)
+          next unless handshake_ok?(message)
 
-        wrap { handle(message) }
+          wrap { handle(message) }
+        end
       rescue JSON::ParserError
         Rails.logger.warn("[Agent] invalid JSON from backend #{@backend.id}")
       rescue StandardError => e
@@ -168,20 +170,37 @@ module Agent
       def wrap(&) = Rails.application.executor.wrap(&)
     end
 
+    # Messages wait on the reactor while earlier ones are handled, so timing them on the wall clock
+    # would spread a burst over however long handling takes, and a flood to a busy server would
+    # never trip the limit. The clock here stops while this connection's messages are handled.
     class RateLimiter
       def initialize(limit: AgentTiming::MAX_MESSAGES_PER_SECOND)
         @limit = limit
         @timestamps = []
+        @handling_s = 0.0
       end
 
       def allowed?
-        now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        now = clock
         @timestamps.reject! { it < now - 1 }
         return false if @timestamps.size >= @limit
 
         @timestamps << now
         true
       end
+
+      def handling
+        started = monotonic
+        yield
+      ensure
+        @handling_s += monotonic - started
+      end
+
+      private
+
+      def clock = monotonic - @handling_s
+
+      def monotonic = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     end
   end
 end
