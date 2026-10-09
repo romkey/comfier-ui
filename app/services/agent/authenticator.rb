@@ -19,9 +19,11 @@ module Agent
 
     def authenticate!
       key = matching_key
+      # Before revoked: deleting a server revokes its keys, and "deleted" is the reason worth telling.
+      raise AuthenticationError, 'server deleted' if key.backend.deleted_at
+
       reject!(key, 'revoked') if key.revoked?
       reject!(key, 'expired') if key.expired?
-      raise AuthenticationError, 'server deleted' if key.backend.deleted_at
 
       key.touch_used!(ip: @ip) if @touch
       Result.new(backend: key.backend, backend_key: key)

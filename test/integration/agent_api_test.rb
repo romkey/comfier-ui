@@ -236,5 +236,10 @@ class AgentApiTest < ActionDispatch::IntegrationTest
     get '/api/agent/key', headers: auth
 
     assert_match(/revoked/, response.parsed_body['error'])
+
+    @backend.update!(deleted_at: Time.current)
+    get '/api/agent/key', headers: auth
+
+    assert_match(/was deleted/, response.parsed_body['error'])
   end
 end
