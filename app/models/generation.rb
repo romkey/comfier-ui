@@ -36,7 +36,7 @@ class Generation < ApplicationRecord # rubocop:disable Metrics/ClassLength
   has_many_attached :outputs
   has_one_attached :input_image
 
-  store_accessor :parameters, :seed, :aspect_ratio, :width, :height, :duration, :frames,
+  store_accessor :parameters, :seed, :aspect_ratio, :width, :height, :duration, :frames, :fps,
                  :quality, :cfg_level, :denoise, :lyrics, :batch_size, :steps, :cfg, :share_when_done
 
   validates :workflow, presence: true, on: :create
@@ -86,7 +86,7 @@ class Generation < ApplicationRecord # rubocop:disable Metrics/ClassLength
   def placeholder_values(image: nil)
     {
       'prompt' => prompt.to_s, 'negative_prompt' => negative_prompt.to_s, 'seed' => seed,
-      'width' => width, 'height' => height, 'duration' => duration, 'frames' => frames, 'image' => image,
+      'width' => width, 'height' => height, 'duration' => duration, 'frames' => frames, 'fps' => fps, 'image' => image,
       'steps' => steps, 'cfg' => cfg, 'denoise' => denoise, 'lyrics' => lyrics.to_s, 'batch_size' => batch_size
     }.compact
   end

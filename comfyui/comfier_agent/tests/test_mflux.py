@@ -44,7 +44,8 @@ async def next_request(agent, runtime):
 
 def test_recipe_options_become_flags():
     argv = recipe_argv({"command": "mflux-generate", "model": "dev", "image_strength": 0.4, "vae_tiling": True,
-                        "low_ram": False, "image": ["/in.png", 0.6], "negative_prompt": None, "min_memory_gb": 24})
+                        "low_ram": False, "image": ["/in.png", 0.6], "negative_prompt": None, "guidance": "",
+                        "min_memory_gb": 24})
     assert argv == ["--model", "dev", "--image-strength", "0.4", "--vae-tiling", "--image", "/in.png", "0.6"]
 
 

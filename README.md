@@ -383,6 +383,7 @@ form only shows fields for the placeholders a workflow uses.
 | `{{seed}}` | The user's seed, or a random one |
 | `{{width}}`, `{{height}}` | The chosen shape at the workflow's base resolution, rounded to multiples of 64 |
 | `{{duration}}`, `{{frames}}` | Seconds requested, and seconds × frame rate + 1 |
+| `{{fps}}` | The workflow's frame rate, so a video is written at the rate its frames were counted for |
 | `{{image}}` | The name of the uploaded input image on the backend |
 
 A string that is exactly one placeholder (`"{{seed}}"`) becomes the typed value (an integer here), so numeric
