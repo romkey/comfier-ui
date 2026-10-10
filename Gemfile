@@ -49,5 +49,8 @@ group :development do
 end
 
 group :test do
+  # System tests that play real video in Chrome (test/system, bin/rails test:system).
+  gem 'capybara'
+  gem 'selenium-webdriver'
   gem 'webmock'
 end

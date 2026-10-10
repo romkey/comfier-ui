@@ -201,4 +201,15 @@ class GenerationOutputsTest < ActionDispatch::IntegrationTest
     assert_select "video[data-video-player-target='video'][preload='auto']"
     assert_select "div.video-player-notice[hidden] button[data-action='video-player#reload']"
   end
+
+  test 'a file missing from storage is not found, not an error' do
+    blob = @output.blob
+    FileUtils.rm_f(blob.service.path_for(blob.key))
+    sign_in_as users(:alice)
+
+    get @path
+
+    assert_response :not_found
+    assert_equal 'no-store', response.headers['Cache-Control']
+  end
 end

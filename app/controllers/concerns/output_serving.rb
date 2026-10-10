@@ -23,6 +23,9 @@ module OutputServing
       stream_output_blob(blob, disposition)
     end
     forget_failure
+  rescue ActiveStorage::FileNotFoundError
+    head :not_found
+    forget_failure
   end
 
   # Only a file is cached for good; a 404 or 416 must not be, or it would stick after the file comes back.

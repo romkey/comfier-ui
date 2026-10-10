@@ -193,6 +193,19 @@ docker compose -f docker-compose.test.yml run --rm e2e
 
 Logs from each process land in `tmp/e2e/`.
 
+Browser tests in `test/system` play a real H.264 clip in Chromium every way a viewer reaches a video: from Results,
+after Back and Forward, after the page refreshes itself, on Shared, and from a public link. They also check a
+video that won't load shows **Reload** and is logged. Chromium runs in its own container
+(`selenium/standalone-chromium`); in CI the runner's Chrome is used instead:
+
+```bash
+docker compose -f docker-compose.test.yml run --rm system
+```
+
+Screenshots of failures land in `tmp/screenshots/`. The first run builds clips with ffmpeg into
+`tmp/video_fixtures/`. If tests that need ffmpeg are skipped, rebuild the image with
+`docker compose -f docker-compose.test.yml build test`.
+
 ## Linting
 
 ```bash
