@@ -281,6 +281,10 @@ the file from disk, so a playing video doesn't hold one of Puma's threads (`RAIL
   ```
 
 - **With Puma facing the network directly**, leave `SENDFILE_HEADER` empty and raise `RAILS_MAX_THREADS` to 5.
+- **Finished videos** are made browser-safe on arrival: H.264 (yuv420p) with AAC in an MP4 whose index comes first.
+  A file that only has the wrong container or its index at the end is remuxed without re-encoding; anything else
+  is re-encoded at CRF 18. Set `VIDEO_NORMALIZE=remux` to never re-encode, or `off` to keep files exactly as they
+  arrive. Sidekiq needs `ffmpeg` and `ffprobe`, which the Docker image includes.
 - **Any proxy in front** must pass `Range` through and answer it with `206`. Buffering is fine; turning a range
   request into a full `200` stops video in Chrome. Check from a machine outside, with a session cookie copied from
   the browser and the URL of a video result's file (its **Download** link without `?download=1`):

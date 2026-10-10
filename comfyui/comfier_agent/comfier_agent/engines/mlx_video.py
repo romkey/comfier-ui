@@ -9,9 +9,12 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 import re
+import shutil
 import sys
 import time
+from pathlib import Path
 from typing import Any
 
 from comfier_agent.engines.base import JobCancelled, JobContext, JobError, ProgressFn
@@ -20,6 +23,7 @@ from comfier_agent.engines.mlx import ChildProcess, MlxEngine, recipe_argv
 LOG = logging.getLogger("comfier_agent")
 
 PROBE_TIMEOUT_S = 120
+FASTSTART_TIMEOUT_S = 300
 PROBE_MAX_AGE_S = 600
 POLL_S = 0.5
 PERCENT = re.compile(r"(\d{1,3})%")
@@ -39,6 +43,33 @@ def default_probe_argv() -> list[str]:
 
 def default_download_argv() -> list[str]:
     return [sys.executable, "-m", "comfier_agent.workers.hf_download"]
+
+
+async def faststart(path: Path) -> bool:
+    """Moves the MP4's index (moov) ahead of the media so browsers can start playing before the whole file has
+    arrived. mlx-video writes it at the end. Only the container changes; the picture and sound are copied. The file
+    is left as it was when ffmpeg is missing or fails, and Comfier fixes it on arrival instead."""
+    ffmpeg = shutil.which(os.environ.get("FFMPEG", "ffmpeg"))
+    if not ffmpeg or not path.is_file():
+        return False
+    tmp = path.with_name(f"{path.stem}.faststart{path.suffix}")
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            ffmpeg, "-hide_banner", "-loglevel", "error", "-y", "-i", str(path), "-map", "0", "-c", "copy",
+            "-movflags", "+faststart", str(tmp),
+            stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.PIPE)
+        _out, err = await asyncio.wait_for(proc.communicate(), FASTSTART_TIMEOUT_S)
+    except (OSError, asyncio.TimeoutError) as exc:
+        LOG.warning("couldn't move %s's index to the front: %s", path.name, exc)
+        tmp.unlink(missing_ok=True)
+        return False
+    if proc.returncode != 0 or not tmp.is_file() or tmp.stat().st_size == 0:
+        LOG.warning("couldn't move %s's index to the front: %s", path.name,
+                    (err or b"").decode(errors="replace").strip().splitlines()[-1:] or "ffmpeg failed")
+        tmp.unlink(missing_ok=True)
+        return False
+    tmp.replace(path)
+    return True
 
 
 def denoising_fraction(line: str) -> float | None:
@@ -103,6 +134,7 @@ class MlxVideoEngine(MlxEngine):
             await self.process.stop()
             self._refreshed_at = None
         ctx.timings.mark_execution_end()
+        await faststart(out)
         return self.outputs(ctx, out)
 
     async def _follow(self, ctx: JobContext, state: dict, *, timeout_s: int, progress: ProgressFn) -> None:

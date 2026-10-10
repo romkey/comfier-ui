@@ -8,6 +8,9 @@
   </label>
   <div class="result-media">
     <%= result_media_preview(generation) %>
+    <% if (length = video_result_with_poster?(generation, output) && video_duration_label(output)) %>
+      <span class="result-duration text-11 num"><%= length %></span>
+    <% end %>
     <% if output && generation.outputs.size > 1 %>
       <span class="result-count text-11">+<%= generation.outputs.size - 1 %></span>
     <% end %>

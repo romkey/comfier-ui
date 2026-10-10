@@ -188,6 +188,8 @@ isn't on PyPI.
   fits in 32 GB. Set `min_memory_gb` in the recipe and Comfier only sends the style to Macs with that much.
 - The agent works around an mlx-video bug that makes LTX videos come out black on some Macs
   ([Blaizzy/mlx-video#55](https://github.com/Blaizzy/mlx-video/issues/55)).
+- Before uploading, the agent moves the MP4's index to the front with `ffmpeg -c copy -movflags +faststart` (no
+  re-encoding), so browsers can start playing right away. Without ffmpeg the file goes as is and Comfier fixes it.
 - The one-job-at-a-time rule, the GPU lock and the memory handover with ComfyUI and mflux apply to video
   jobs too.
 
