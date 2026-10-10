@@ -87,20 +87,31 @@ class VideoPlaybackTest < ApplicationSystemTestCase
     assert_plays
   end
 
+  # With forgery protection on, as in production, so the report has to carry the page's CSRF token.
   test 'a video that will not load says so, offers Reload, and is logged' do
     blob = @generation.outputs.first.blob
     FileUtils.rm_f(blob.service.path_for(blob.key))
     sign_in_as users(:alice)
 
-    visit generation_path(@generation)
-    execute_script("document.querySelector('video.output-media').play().catch(() => {})")
+    with_forgery_protection do
+      visit generation_path(@generation)
+      execute_script("document.querySelector('video.output-media').play().catch(() => {})")
 
-    assert_selector '.video-player-notice', text: "didn't load"
-    assert_button 'Reload'
-    assert_eventually { ActivityLog.media_failed.exists?(subject: @generation) }
+      assert_selector '.video-player-notice', text: "didn't load"
+      assert_button 'Reload'
+      assert_eventually { ActivityLog.media_failed.exists?(subject: @generation) }
+    end
   end
 
   private
+
+  def with_forgery_protection
+    previous = ActionController::Base.allow_forgery_protection
+    ActionController::Base.allow_forgery_protection = true
+    yield
+  ensure
+    ActionController::Base.allow_forgery_protection = previous
+  end
 
   def assert_plays
     assert_selector 'video.output-media[data-video-player-target]', visible: :all
