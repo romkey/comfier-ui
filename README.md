@@ -265,6 +265,32 @@ location /api/agent/ws {
 }
 ```
 
+### Serving results
+
+Result files are served by Comfier itself at `/results/:id/outputs/...`, to people allowed to see the result, at
+URLs that don't expire, with byte ranges (browsers fetch video in pieces). The Docker image runs
+[Thruster](https://github.com/basecamp/thruster) in front of Puma: Rails answers with `X-Sendfile` and Thruster sends
+the file from disk, so a playing video doesn't hold one of Puma's threads (`RAILS_MAX_THREADS`, default 3).
+
+- **Behind nginx without Thruster**, set `SENDFILE_HEADER=X-Accel-Redirect` and map the storage folder:
+
+  ```nginx
+  proxy_set_header X-Sendfile-Type X-Accel-Redirect;
+  proxy_set_header X-Accel-Mapping /rails/storage/=/_storage/;
+  location /_storage/ { internal; alias /path/to/storage/; }
+  ```
+
+- **With Puma facing the network directly**, leave `SENDFILE_HEADER` empty and raise `RAILS_MAX_THREADS` to 5.
+- **Any proxy in front** must pass `Range` through and answer it with `206`. Buffering is fine; turning a range
+  request into a full `200` stops video in Chrome. Check from a machine outside, with a session cookie copied from
+  the browser and the URL of a video result's file (its **Download** link without `?download=1`):
+
+  ```bash
+  curl -sI -H "Cookie: $COOKIE" "$URL"                          # 200, Accept-Ranges: bytes, video/mp4
+  curl -sI -H "Cookie: $COOKIE" -H 'Range: bytes=0-1' "$URL"    # 206, Content-Range: bytes 0-1/<size>
+  curl -sI -H "Cookie: $COOKIE" -H 'Range: bytes=-1024' "$URL"  # 206
+  ```
+
 Web and Sidekiq talk to connected agents through Redis, so both need the same `REDIS_URL`. Sidekiq also runs the
 periodic jobs in `config/schedule.yml` (sidekiq-cron), which mark silent servers offline and recover their jobs.
 

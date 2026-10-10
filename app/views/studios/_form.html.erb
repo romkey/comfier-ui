@@ -58,8 +58,7 @@
       <% end %>
       <% if generation.input_image.attached? %>
         <div class="mb-2">
-          <%= image_tag rails_blob_path(generation.input_image, disposition: 'inline'), class: 'output-media',
-                                                                                       alt: 'Reference' %>
+          <%= image_tag input_image_url(generation), class: 'output-media', alt: 'Reference' %>
         </div>
       <% end %>
       <%= f.file_field :input_image, accept: 'image/*', class: 'form-control',

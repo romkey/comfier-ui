@@ -55,10 +55,30 @@ module GenerationsHelper # rubocop:disable Metrics/ModuleLength
     end
   end
 
+  # Result files go through GenerationOutputsController, whose URLs don't expire. Stills that can be replaced
+  # carry their blob in the query, so a cached copy never outlives the file.
+  def output_file_path(attachment, download: false)
+    output_generation_path(attachment.record_id, attachment.id, filename: attachment.filename.to_s,
+                                                                download: (1 if download))
+  end
+
   def output_poster_url(generation)
     return unless generation.output_poster.attached?
 
-    rails_blob_path(generation.output_poster, disposition: 'inline')
+    poster_generation_path(generation, v: generation.output_poster.blob_id)
+  end
+
+  def input_image_url(generation)
+    return unless generation.input_image.attached?
+    return rails_blob_path(generation.input_image, disposition: 'inline') unless generation.persisted?
+
+    input_image_generation_path(generation, v: generation.input_image.blob_id)
+  end
+
+  # A small picture for lists: the first image output, else the video's or 3D model's still.
+  def result_thumbnail_url(generation)
+    image = generation.outputs.find { it.content_type.to_s.start_with?('image/') }
+    image ? output_file_path(image) : output_poster_url(generation)
   end
 
   # The still that goes with one output: a video's first frame, or the preview of the 3D model it shows.
@@ -100,7 +120,7 @@ module GenerationsHelper # rubocop:disable Metrics/ModuleLength
   end
 
   def output_preview(attachment, controls: false, poster_url: nil, cover_url: nil)
-    url = rails_blob_path(attachment, disposition: 'inline')
+    url = output_file_path(attachment)
     case attachment.content_type
     when %r{\Aimage/} then image_tag(url, alt: attachment.filename.to_s, class: 'output-media', loading: 'lazy')
     when %r{\Avideo/}
@@ -123,7 +143,7 @@ module GenerationsHelper # rubocop:disable Metrics/ModuleLength
 
   def album_art_url(generation)
     image = generation.album_art_image
-    rails_blob_path(image, disposition: 'inline') if image
+    cover_generation_path(generation, v: image.blob_id) if image
   end
 
   def model_preview(attachment, poster_url)

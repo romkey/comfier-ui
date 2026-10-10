@@ -31,6 +31,9 @@ module ComfierUi
     config.time_zone = ENV.fetch('TIME_ZONE', 'UTC')
 
     config.active_job.queue_adapter = :sidekiq
+    # Anything that still links a file with rails_blob_path gets a permanent, range-capable URL instead of a
+    # redirect to one that expires after five minutes (which left video players blank).
+    config.active_storage.resolve_model_to_route = :rails_storage_proxy
 
     # Backend auth tokens are encrypted at rest. Production must supply real keys
     # (generate them with `bin/rails db:encryption:init`); dev/test override these.

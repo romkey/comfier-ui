@@ -44,6 +44,11 @@ All notable changes to this project are documented here. The format follows
   allowlists are converted to the equivalent turned-off styles, and styles added later now run everywhere by default.
 
 ### Fixed
+- **Video**: Videos no longer go blank when you press play. Result files now come from Comfier at URLs that
+  don't expire and are only served to people who may see the result. Active Storage's links stopped working five
+  minutes after a video was first viewed, so playing, seeking, or looping after that showed the page background.
+  The Docker image now runs Thruster in front of Puma so streaming video doesn't tie up the web server; see
+  "Serving results" in the README for nginx and `SENDFILE_HEADER`.
 - Agreeing to the Code of Conduct and privacy notice from a stale copy of the page, such as going Back after
   **I Do Not Agree** signed you out, showed a 422 error. It now shows the notice again, and the page is no longer
   kept for the Back button.

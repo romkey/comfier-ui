@@ -52,5 +52,11 @@ COPY --chown=rails:rails --from=build /rails /rails
 
 ENTRYPOINT ["/rails/bin/docker-entrypoint"]
 
+# Thruster listens on 3000 and runs Puma behind it on 3001. It serves result files from disk when Rails answers
+# with X-Sendfile, so long video streams don't tie up Puma's threads.
+ENV HTTP_PORT="3000" \
+    TARGET_PORT="3001" \
+    SENDFILE_HEADER="X-Sendfile"
+
 EXPOSE 3000
-CMD ["./bin/rails", "server"]
+CMD ["./bin/thrust", "./bin/rails", "server"]

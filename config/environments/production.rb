@@ -24,6 +24,10 @@ Rails.application.configure do
   # Local disk — web and sidekiq must share the same storage mount (see docker-compose.production.yml).
   config.active_storage.service = :local
 
+  # Let the server in front send result files from disk. The Docker image runs Thruster and sets X-Sendfile; nginx
+  # takes X-Accel-Redirect. Leave it unset when Puma faces the network directly, or files go out empty.
+  config.action_dispatch.x_sendfile_header = ENV['SENDFILE_HEADER'].presence
+
   # Assume all access to the app is happening through a SSL-terminating reverse proxy.
   config.assume_ssl = ENV.fetch('ASSUME_SSL', 'true') == 'true'
 
