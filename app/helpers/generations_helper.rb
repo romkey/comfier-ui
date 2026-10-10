@@ -122,18 +122,29 @@ module GenerationsHelper # rubocop:disable Metrics/ModuleLength
     result_placeholder_preview(generation)
   end
 
+  # Public link viewers aren't signed in, so stills come from the token routes. Each URL carries its blob, because
+  # files are cached for good.
   def public_output_preview(generation, attachment, index, controls: false)
     url = public_share_output_path(generation.public_token, index)
-    poster = output_poster_for(generation, attachment)
+    poster = (public_poster_url(generation) if output_poster_for(generation, attachment))
     case attachment.content_type
     when %r{\Aimage/} then image_tag(url, alt: '', class: 'output-media', loading: 'lazy')
     when %r{\Avideo/}
       video_tag(url, class: 'output-media', controls:, poster:, muted: !controls, loop: true, playsinline: true,
                      preload: 'metadata', **video_dimensions(attachment))
     when %r{\Aaudio/}
-      audio_player(url, cover_url: (public_share_cover_path(generation.public_token) if generation.album_art_image))
+      audio_player(url, cover_url: public_cover_url(generation))
     else poster ? model_preview(attachment, poster) : file_output(attachment)
     end
+  end
+
+  def public_poster_url(generation)
+    public_share_poster_path(generation.public_token, v: generation.output_poster.blob_id)
+  end
+
+  def public_cover_url(generation)
+    image = generation.album_art_image
+    public_share_cover_path(generation.public_token, v: image.blob_id) if image
   end
 
   def output_preview(attachment, controls: false, poster_url: nil, cover_url: nil)
