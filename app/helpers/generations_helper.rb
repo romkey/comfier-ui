@@ -55,11 +55,28 @@ module GenerationsHelper # rubocop:disable Metrics/ModuleLength
     end
   end
 
-  # Result files go through GenerationOutputsController, whose URLs don't expire. Stills that can be replaced
-  # carry their blob in the query, so a cached copy never outlives the file.
+  # Result files go through GenerationOutputsController, whose URLs don't expire. Each URL carries its blob, so a
+  # cached copy never outlives a file that was replaced (a normalized video, a new poster).
   def output_file_path(attachment, download: false)
     output_generation_path(attachment.record_id, attachment.id, filename: attachment.filename.to_s,
-                                                                download: (1 if download))
+                                                                v: attachment.blob_id, download: (1 if download))
+  end
+
+  # Width and height ProcessVideoOutputJob recorded, so the player has its shape before anything loads.
+  def video_dimensions(attachment)
+    meta = attachment.blob.metadata
+    width, height = meta.values_at('width', 'height').map(&:to_i)
+    width.positive? && height.positive? ? { width:, height: } : {}
+  end
+
+  def video_duration_label(attachment)
+    return unless attachment
+
+    seconds = attachment.blob.metadata['duration'].to_f
+    return unless seconds.positive?
+
+    total = seconds.round
+    format('%<m>d:%<s>02d', m: total / 60, s: total % 60)
   end
 
   def output_poster_url(generation)
@@ -112,7 +129,7 @@ module GenerationsHelper # rubocop:disable Metrics/ModuleLength
     when %r{\Aimage/} then image_tag(url, alt: '', class: 'output-media', loading: 'lazy')
     when %r{\Avideo/}
       video_tag(url, class: 'output-media', controls:, poster:, muted: !controls, loop: true, playsinline: true,
-                     preload: 'metadata')
+                     preload: 'metadata', **video_dimensions(attachment))
     when %r{\Aaudio/}
       audio_player(url, cover_url: (public_share_cover_path(generation.public_token) if generation.album_art_image))
     else poster ? model_preview(attachment, poster) : file_output(attachment)
@@ -125,7 +142,7 @@ module GenerationsHelper # rubocop:disable Metrics/ModuleLength
     when %r{\Aimage/} then image_tag(url, alt: attachment.filename.to_s, class: 'output-media', loading: 'lazy')
     when %r{\Avideo/}
       video_tag(url, class: 'output-media', controls:, poster: poster_url, muted: !controls, loop: true,
-                     playsinline: true, preload: 'metadata')
+                     playsinline: true, preload: 'metadata', **video_dimensions(attachment))
     when %r{\Aaudio/} then audio_player(url, cover_url:)
     else poster_url ? model_preview(attachment, poster_url) : file_output(attachment)
     end

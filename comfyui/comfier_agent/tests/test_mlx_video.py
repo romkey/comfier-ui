@@ -117,3 +117,44 @@ def test_the_mask_fix_is_harmless_without_mlx_video():
     from comfier_agent.workers.entry_point import fix_ltx_text_encoder_mask
 
     fix_ltx_text_encoder_mask()  # mlx-video isn't installed here: nothing to patch, no error
+
+
+def make_clip(path, faststart_flag):
+    import subprocess
+    subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-f", "lavfi", "-i",
+                    "testsrc=size=64x48:rate=10:duration=1", "-c:v", "libx264", "-pix_fmt", "yuv420p",
+                    *(["-movflags", "+faststart"] if faststart_flag else []), str(path)], check=True)
+
+
+def index_first(path):
+    with open(path, "rb") as f:
+        while header := f.read(8):
+            size, kind = int.from_bytes(header[:4], "big"), header[4:]
+            if kind in (b"moov", b"mdat"):
+                return kind == b"moov"
+            f.seek(size - 8, 1)
+    return None
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(not __import__("shutil").which("ffmpeg"), reason="ffmpeg required")
+async def test_faststart_moves_the_index_ahead_of_the_media(tmp_path):
+    from comfier_agent.engines.mlx_video import faststart
+    clip = tmp_path / "clip.mp4"
+    make_clip(clip, faststart_flag=False)
+    assert index_first(clip) is False
+
+    assert await faststart(clip) is True
+    assert index_first(clip) is True
+    assert not list(tmp_path.glob("*.faststart.*"))
+
+
+@pytest.mark.asyncio
+async def test_faststart_leaves_a_file_it_cannot_read(tmp_path):
+    from comfier_agent.engines.mlx_video import faststart
+    clip = tmp_path / "clip.mp4"
+    clip.write_bytes(b"not really a video")
+
+    assert await faststart(clip) is False
+    assert clip.read_bytes() == b"not really a video"
+    assert not list(tmp_path.glob("*.faststart.*"))

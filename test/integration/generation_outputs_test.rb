@@ -11,6 +11,7 @@ class GenerationOutputsTest < ActionDispatch::IntegrationTest
                                identify: false)
     @output = @generation.outputs.last
     @path = output_generation_path(@generation, @output.id, filename: 'clip.mp4')
+    @src = output_generation_path(@generation, @output.id, filename: 'clip.mp4', v: @output.blob_id)
   end
 
   test 'the owner gets the whole file with headers a video player needs' do
@@ -175,7 +176,7 @@ class GenerationOutputsTest < ActionDispatch::IntegrationTest
 
     get generation_path(@generation)
 
-    assert_select "video[src='#{@path}']"
+    assert_select "video[src='#{@src}']"
     assert_no_match %r{/rails/active_storage/}, response.body
 
     get generations_path
@@ -184,7 +185,7 @@ class GenerationOutputsTest < ActionDispatch::IntegrationTest
 
     get shared_path(@generation)
 
-    assert_select "video[src='#{@path}']"
+    assert_select "video[src='#{@src}']"
     assert_no_match %r{/rails/active_storage/}, response.body
   end
 end

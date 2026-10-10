@@ -13,6 +13,7 @@ require 'rails/test_help'
 require 'webmock/minitest'
 require_relative 'support/agent_test_helpers'
 require_relative 'support/engine_test_helpers'
+require_relative 'support/video_fixtures'
 
 Rails.application.routes.default_url_options[:host] = 'www.example.com'
 
@@ -23,6 +24,7 @@ module ActiveSupport
   class TestCase
     include AgentTestHelpers
     include EngineTestHelpers
+    include VideoFixtures
 
     parallelize(workers: :number_of_processors)
 

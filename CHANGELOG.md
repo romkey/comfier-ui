@@ -49,6 +49,11 @@ All notable changes to this project are documented here. The format follows
   minutes after a video was first viewed, so playing, seeking, or looping after that showed the page background.
   The Docker image now runs Thruster in front of Puma so streaming video doesn't tie up the web server; see
   "Serving results" in the README for nginx and `SENDFILE_HEADER`.
+- **Video**: Finished videos are checked when they arrive and made playable in every browser: H.264 with AAC in an
+  MP4 that can start playing before it has fully downloaded. Files that only need their index moved are remuxed
+  without re-encoding; others are re-encoded. `VIDEO_NORMALIZE` (`transcode`, `remux`, `off`) controls it. Video
+  players now have their final shape before they load, and video cards in Results show the clip's length. Agent
+  0.4.9 moves mlx-video's index to the front before uploading.
 - Agreeing to the Code of Conduct and privacy notice from a stale copy of the page, such as going Back after
   **I Do Not Agree** signed you out, showed a 422 error. It now shows the notice again, and the page is no longer
   kept for the Back button.
