@@ -125,7 +125,7 @@ module GenerationsHelper # rubocop:disable Metrics/ModuleLength
   # Public link viewers aren't signed in, so stills come from the token routes. Each URL carries its blob, because
   # files are cached for good.
   def public_output_preview(generation, attachment, index, controls: false)
-    url = public_share_output_path(generation.public_token, index)
+    url = public_share_output_path(generation.public_token, index, v: attachment.blob_id)
     poster = (public_poster_url(generation) if output_poster_for(generation, attachment))
     case attachment.content_type
     when %r{\Aimage/} then image_tag(url, alt: '', class: 'output-media', loading: 'lazy')

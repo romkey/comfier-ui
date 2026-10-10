@@ -15,7 +15,8 @@ module PublicSharesHelper
   private
 
   def public_share_media_tags(generation, output)
-    url = public_share_output_url(generation.public_token, generation.outputs.sort_by(&:id).index(output))
+    index = generation.outputs.sort_by(&:id).index(output)
+    url = public_share_output_url(generation.public_token, index, v: output.blob_id)
     type = output.content_type.to_s
     case type
     when %r{\Aimage/} then public_share_image_tags(url, type, output.blob.metadata)
