@@ -210,5 +210,6 @@ class GenerationOutputsTest < ActionDispatch::IntegrationTest
     get @path
 
     assert_response :not_found
+    assert_equal 'no-store', response.headers['Cache-Control']
   end
 end
