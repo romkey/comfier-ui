@@ -20,10 +20,37 @@ class MediaErrorsTest < ActionDispatch::IntegrationTest
     assert_not log.details.key?('extra')
   end
 
-  test 'public link viewers can report without signing in or a CSRF token' do
+  test 'public link viewers can report without signing in' do
     post media_errors_path, params: { code: 'stalled', src: '/p/tok/outputs/0', page: 'public link' }, as: :json
 
     assert_response :no_content
     assert_match(/never started/, ActivityLog.media_failed.last.message)
+  end
+
+  test 'reports need the page\'s CSRF token, which public link pages carry' do
+    generation = generations(:alice_done)
+    generation.create_public_link!
+    with_forgery_protection do
+      get public_share_path(generation.public_token)
+      token = css_select("meta[name='csrf-token']").first['content']
+
+      post media_errors_path, params: { code: '2' }, as: :json
+
+      assert_response :unprocessable_content
+
+      post media_errors_path, params: { code: '2' }, headers: { 'X-CSRF-Token' => token }, as: :json
+
+      assert_response :no_content
+    end
+  end
+
+  private
+
+  def with_forgery_protection
+    previous = ActionController::Base.allow_forgery_protection
+    ActionController::Base.allow_forgery_protection = true
+    yield
+  ensure
+    ActionController::Base.allow_forgery_protection = previous
   end
 end
