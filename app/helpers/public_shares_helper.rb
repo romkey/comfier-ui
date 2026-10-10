@@ -15,7 +15,8 @@ module PublicSharesHelper
   private
 
   def public_share_media_tags(generation, output)
-    url = public_share_output_url(generation.public_token, generation.outputs.sort_by(&:id).index(output))
+    index = generation.outputs.sort_by(&:id).index(output)
+    url = public_share_output_url(generation.public_token, index, v: output.blob_id)
     type = output.content_type.to_s
     case type
     when %r{\Aimage/} then public_share_image_tags(url, type, output.blob.metadata)
@@ -40,14 +41,15 @@ module PublicSharesHelper
     image = generation.album_art_image
     return tags unless image
 
-    tags.merge(public_share_image_tags(public_share_cover_url(generation.public_token), image.content_type,
-                                       image.blob.metadata))
+    url = public_share_cover_url(generation.public_token, v: image.blob_id)
+    tags.merge(public_share_image_tags(url, image.content_type, image.blob.metadata))
   end
 
   def public_share_poster_tags(generation)
     poster = generation.output_poster
     return {} unless poster.attached?
 
-    public_share_image_tags(public_share_poster_url(generation.public_token), poster.content_type, poster.blob.metadata)
+    url = public_share_poster_url(generation.public_token, v: poster.blob_id)
+    public_share_image_tags(url, poster.content_type, poster.blob.metadata)
   end
 end
