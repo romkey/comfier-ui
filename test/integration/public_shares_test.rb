@@ -189,7 +189,8 @@ class PublicSharesTest < ActionDispatch::IntegrationTest
 
     assert_select 'meta[property="og:title"][content="Shared result"]'
     assert_select 'meta[property="og:url"][content=?]', public_share_url(@token)
-    assert_select 'meta[property="og:image"][content=?]', public_share_output_url(@token, 0)
+    assert_select 'meta[property="og:image"][content=?]',
+                  public_share_output_url(@token, 0, v: @generation.outputs.first.blob_id)
     assert_select 'meta[property="twitter:card"][content="summary_large_image"]'
     assert_select 'meta[property="og:description"]' do |tags|
       assert_no_match(/lighthouse at dusk/i, tags.first['content'])
@@ -205,9 +206,11 @@ class PublicSharesTest < ActionDispatch::IntegrationTest
     get public_share_path(@token)
 
     assert_select 'meta[property="og:type"][content="video.other"]'
-    assert_select 'meta[property="og:video"][content=?]', public_share_output_url(@token, 0)
+    assert_select 'meta[property="og:video"][content=?]',
+                  public_share_output_url(@token, 0, v: @generation.outputs.first.blob_id)
     assert_select 'meta[property="og:video:type"][content="video/mp4"]'
-    assert_select 'meta[property="og:image"][content=?]', public_share_poster_url(@token)
+    assert_select 'meta[property="og:image"][content=?]',
+                  public_share_poster_url(@token, v: @generation.output_poster.blob_id)
 
     get public_share_poster_url(@token)
 
@@ -227,5 +230,25 @@ class PublicSharesTest < ActionDispatch::IntegrationTest
     get public_share_poster_path(@token)
 
     assert_response :not_found
+  end
+
+  test 'a signed-out visitor gets the video poster from the public link, versioned by its file' do
+    @generation.update!(kind: 'video')
+    @generation.outputs.purge
+    @generation.outputs.attach(io: StringIO.new('0123456789'), filename: 'clip.mp4', content_type: 'video/mp4',
+                               identify: false)
+    @generation.output_poster.attach(io: file_fixture('pixel.png').open, filename: 'poster.png',
+                                     content_type: 'image/png')
+    poster = public_share_poster_path(@token, v: @generation.output_poster.blob_id)
+    src = public_share_output_path(@token, 0, v: @generation.outputs.first.blob_id)
+
+    get public_share_path(@token)
+
+    assert_select "video[poster='#{poster}'][src='#{src}']"
+    assert_select "meta[property='og:image'][content$='#{poster}']"
+
+    get poster
+
+    assert_response :success
   end
 end

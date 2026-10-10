@@ -22,8 +22,15 @@ module OutputServing
     else
       stream_output_blob(blob, disposition)
     end
+    forget_failure
   rescue ActiveStorage::FileNotFoundError
     head :not_found
+    forget_failure
+  end
+
+  # Only a file is cached for good; a 404 or 416 must not be, or it would stick after the file comes back.
+  def forget_failure
+    response.headers['Cache-Control'] = 'no-store' if response.status >= 400
   end
 
   def apply_output_serving_headers(blob)

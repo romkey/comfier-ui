@@ -64,6 +64,7 @@ class GenerationOutputsTest < ActionDispatch::IntegrationTest
     get @path, headers: { 'Range' => 'bytes=50-' }
 
     assert_response :range_not_satisfiable
+    assert_equal 'no-store', response.headers['Cache-Control']
   end
 
   test 'a repeat request with the ETag is not modified, and HEAD has no body' do
