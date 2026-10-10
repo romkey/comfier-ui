@@ -12,6 +12,8 @@ gem 'propshaft'
 gem 'puma', '>= 7.0'
 gem 'ruby-vips', '~> 2.0', require: false
 gem 'stimulus-rails'
+# Sits in front of Puma in production: serves result files straight from disk (X-Sendfile), compresses, caches.
+gem 'thruster', '~> 0.1.27', require: false
 gem 'turbo-rails'
 gem 'tzinfo-data', platforms: %i[windows jruby]
 

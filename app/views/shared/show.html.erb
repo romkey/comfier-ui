@@ -68,8 +68,7 @@
       <% end %>
       <% if @generation.input_image.attached? %>
         <div class="h-section-label">Reference</div>
-        <%= image_tag rails_blob_path(@generation.input_image, disposition: 'inline'), class: 'output-media mb-3',
-                                                                                       alt: 'Reference image' %>
+        <%= image_tag input_image_url(@generation), class: 'output-media mb-3', alt: 'Reference image' %>
       <% end %>
       <div class="h-section-label">Style</div>
       <p class="text-13 mb-0"><%= @generation.style_name %></p>

@@ -79,7 +79,9 @@ class AlbumArtsTest < ActionDispatch::IntegrationTest
 
     get public_share_path(@audio.public_token)
 
-    assert_select "img.output-audio-cover[src='#{public_share_cover_path(@audio.public_token)}']"
+    cover = public_share_cover_path(@audio.public_token, v: @audio.reload.album_art_image.blob_id)
+
+    assert_select "img.output-audio-cover[src='#{cover}']"
 
     get public_share_cover_path(@audio.public_token)
 

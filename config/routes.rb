@@ -57,6 +57,11 @@ Rails.application.routes.draw do
       patch :share, action: :update_share
       post :public_link, action: :create_public_link
       delete :public_link, action: :revoke_public_link
+      # The result's files, at URLs that don't expire (see GenerationOutputsController).
+      get 'outputs/:attachment_id(/*filename)', to: 'generation_outputs#show', as: :output, format: false
+      get :poster, to: 'generation_outputs#poster'
+      get :cover, to: 'generation_outputs#cover'
+      get :input_image, to: 'generation_outputs#input_image'
     end
     resource :album_art, only: :create
   end

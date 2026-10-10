@@ -42,8 +42,8 @@
       <% @generations.each do |generation| %>
         <tr class="row-link" data-controller="row-link" data-row-link-href-value="<%= generation_path(generation) %>">
           <td class="text-secondary">
-            <% if (thumb = generation.outputs.first) %>
-              <%= image_tag rails_blob_path(thumb, disposition: 'inline'),
+            <% if (thumb = result_thumbnail_url(generation)) %>
+              <%= image_tag thumb,
                             class: 'rounded', style: 'width: 2.5rem; height: 2.5rem; object-fit: cover;',
                             alt: '' %>
             <% end %>
