@@ -24,7 +24,8 @@ export default class extends Controller {
     this.reported = false
     this.video.addEventListener("error", this.onError)
     this.video.addEventListener("play", this.onPlay)
-    this.video.addEventListener("playing", this.clearStall)
+    this.video.addEventListener("playing", this.onPlaying)
+    this.video.addEventListener("pause", this.clearStall)
     window.addEventListener("pageshow", this.onPageShow)
     // A video still playing was only moved within the page; anything else gets a fresh start.
     if (this.video.paused) this.video.load()
@@ -34,7 +35,8 @@ export default class extends Controller {
     this.clearStall()
     this.video.removeEventListener("error", this.onError)
     this.video.removeEventListener("play", this.onPlay)
-    this.video.removeEventListener("playing", this.clearStall)
+    this.video.removeEventListener("playing", this.onPlaying)
+    this.video.removeEventListener("pause", this.clearStall)
     window.removeEventListener("pageshow", this.onPageShow)
     // A removed video can keep playing its sound; one that was only moved is back in the page by now.
     if (!this.video.isConnected) this.video.pause()
@@ -55,6 +57,14 @@ export default class extends Controller {
     }, STALL_MS)
   }
 
+  // A slow start that got going after all: take the notice down. A real error's notice stays.
+  onPlaying = () => {
+    this.clearStall()
+    if (this.stalled && this.hasNoticeTarget) this.noticeTarget.hidden = true
+    this.stalled = false
+  }
+
+  // Also runs on pause: a viewer who stops before the first frame hasn't hit a stall.
   clearStall = () => {
     clearTimeout(this.stallTimer)
     this.stallTimer = null
@@ -93,6 +103,7 @@ export default class extends Controller {
 
   fail(code) {
     this.clearStall()
+    this.stalled = code === "stalled"
     if (this.hasNoticeTarget) {
       this.messageTarget.textContent = code === "stalled"
         ? "The video is taking too long to start."
