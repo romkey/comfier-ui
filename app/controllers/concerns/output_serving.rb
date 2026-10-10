@@ -22,6 +22,8 @@ module OutputServing
     else
       stream_output_blob(blob, disposition)
     end
+  rescue ActiveStorage::FileNotFoundError
+    head :not_found
   end
 
   def apply_output_serving_headers(blob)

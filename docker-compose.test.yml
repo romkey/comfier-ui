@@ -45,6 +45,41 @@ services:
         condition: service_healthy
     command: bash -c "bin/rails db:test:prepare && bin/rails test"
 
+  # Browser tests that play real video: docker compose -f docker-compose.test.yml run --rm system
+  # Chromium runs in its own container and loads pages from this one, so the test server listens on all
+  # interfaces under the service's name. Debian's Chromium (in this image) decodes H.264.
+  chrome:
+    image: selenium/standalone-chromium:152.0-20260909
+    shm_size: 2gb
+    environment:
+      SE_NODE_MAX_SESSIONS: 1
+    healthcheck:
+      # Ready, not just up: the node has to have registered before a session can start.
+      test: ["CMD-SHELL", "curl -fsS http://localhost:4444/status | grep -q '\"ready\": *true'"]
+      interval: 2s
+      retries: 60
+
+  system:
+    image: comfier-ui-dev:latest
+    hostname: system
+    volumes:
+      - .:/rails
+      - bundle:/usr/local/bundle
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      RAILS_ENV: test
+      POSTGRES_HOST: postgres
+      SELENIUM_REMOTE_URL: http://chrome:4444/wd/hub
+      CAPYBARA_APP_HOST: system
+    depends_on:
+      postgres:
+        condition: service_healthy
+      chrome:
+        condition: service_healthy
+    command: bash -c "bin/rails db:test:prepare && bin/rails test:system"
+
   # The agent end-to-end test: docker compose -f docker-compose.test.yml run --rm e2e
   e2e:
     image: comfier-ui-dev:latest

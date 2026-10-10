@@ -8,6 +8,10 @@ grids a still. This plan is written so that there is no fourth guess: it names e
 a video takes from the agent to the screen, fixes each one, and adds tests that play real bytes in a
 real browser.
 
+**Status (2026-10-10):** Phases 1–4 are built as a stack of PRs: #92 (output route), #93 (normalize at ingest),
+#94 (player), #95 (browser tests). Phase 0's reporting was folded into the player in #94. What's left is the manual
+check in Safari, Firefox, and iOS Safari listed under "Done means".
+
 Each phase is one PR into `main`, shippable on its own. Phase 0 is half a day and tells us which
 defect bites most in production; the order of Phases 1–3 can follow that evidence, but all three are
 real and all three ship.
