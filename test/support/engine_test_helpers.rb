@@ -11,8 +11,10 @@ module EngineTestHelpers
     socket
   end
 
+  # A style made from a preset, with the settings the admin form fills in from it.
   def engine_workflow!(name: 'Z-Image', preset: 'z-image-turbo', **attrs)
     recipe = EnginePreset.all.find { it.key == preset }
-    Workflow.create!({ name:, kind: recipe.kind, engine: recipe.engine, graph_json: recipe.to_json_text }.merge(attrs))
+    Workflow.create!({ name:, kind: recipe.kind, engine: recipe.engine, graph_json: recipe.to_json_text,
+                       **recipe.settings.symbolize_keys }.merge(attrs))
   end
 end

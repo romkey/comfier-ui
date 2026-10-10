@@ -45,11 +45,20 @@ export default class extends Controller {
       return
     }
     this.jsonTarget.value = option.dataset.recipe
+    this.applySettings(JSON.parse(option.dataset.settings || "{}"))
     if (this.hasKindTarget && option.dataset.kind) this.kindTarget.value = option.dataset.kind
     // A preset always runs on its own engine.
     if (option.dataset.engine && this.engineTarget.value !== option.dataset.engine) {
       this.engineTarget.value = option.dataset.engine
       this.show()
     }
+  }
+
+  // The style fields a preset depends on, like LTX's guidance and frame rate.
+  applySettings(settings) {
+    Object.entries(settings).forEach(([name, value]) => {
+      const field = this.element.querySelector(`[name="workflow[${name}]"]`)
+      if (field) field.value = value
+    })
   }
 }

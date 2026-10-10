@@ -11,6 +11,7 @@ class Workflow < ApplicationRecord # rubocop:disable Metrics/ClassLength
     'height' => 'Height from the chosen aspect ratio and base resolution',
     'duration' => 'Length in seconds',
     'frames' => 'Frame count: duration × frame rate + 1',
+    'fps' => 'Frame rate (the style\'s frame rate setting)',
     'image' => 'Name of an image the user uploads (sent to ComfyUI first)',
     'steps' => 'Sampler steps (from Quality: fast ×0.5, standard ×1, best ×1.5)',
     'cfg' => 'Classifier-free guidance (from Prompt strength)',

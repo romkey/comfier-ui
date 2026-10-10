@@ -56,6 +56,15 @@ class GenerationTest < ActiveSupport::TestCase
     assert_equal 81, generation.frames
   end
 
+  test 'stores the frame rate the frames were counted at for {{fps}}' do
+    workflow = engine_workflow!(name: 'LTX', preset: 'ltx-2.3-distilled')
+    generation = build(workflow, duration: '5').tap(&:save!)
+
+    assert_equal 24, workflow.frame_rate
+    assert_equal 121, generation.frames
+    assert_equal 24, generation.placeholder_values['fps']
+  end
+
   test 'uses the kind default duration and clamps long ones' do
     assert_equal 5, build(workflows(:wan_video)).tap(&:save!).duration
     assert_equal Generation::DURATION_RANGE.max, build(workflows(:wan_video), duration: '600').tap(&:save!).duration

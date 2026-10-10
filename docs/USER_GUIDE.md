@@ -251,6 +251,7 @@ A workflow decides what one style on one page does. Find them under **Settings â
    | `{{width}}`, `{{height}}` | The chosen shape at the workflow's base resolution |
    | `{{duration}}` | Length in seconds |
    | `{{frames}}` | Length Ã— frame rate + 1 |
+   | `{{fps}}` | The style's frame rate (for a node that sets the video's fps) |
    | `{{image}}` | The uploaded starting image or picture of the object |
 
 5. Pick the **Page** it belongs to, paste or upload the API JSON if you haven't already, and choose **Save**.

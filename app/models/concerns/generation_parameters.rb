@@ -18,7 +18,7 @@ module GenerationParameters
   def optional_parameters
     {
       width: :resolved_dimensions, height: :resolved_dimensions,
-      duration: :resolved_timing, frames: :resolved_timing,
+      duration: :resolved_timing, frames: :resolved_timing, fps: :resolved_timing,
       steps: :resolved_quality, cfg: :resolved_cfg,
       denoise: :resolved_denoise, batch_size: :resolved_batch
     }.each_with_object({}) do |(placeholder, method), params|
@@ -45,7 +45,8 @@ module GenerationParameters
                                                                                 Generation::DURATION_RANGE.max)
     {
       'duration' => (seconds % 1).zero? ? seconds.to_i : seconds.round(1),
-      'frames' => (seconds * workflow.frame_rate).round + 1
+      'frames' => (seconds * workflow.frame_rate).round + 1,
+      'fps' => workflow.frame_rate
     }
   end
 

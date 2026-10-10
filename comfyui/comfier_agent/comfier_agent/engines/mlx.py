@@ -48,10 +48,11 @@ def child_env() -> dict[str, str]:
 
 def recipe_argv(recipe: dict[str, Any]) -> list[str]:
     """Recipe options as command-line arguments: {"image_strength": 0.4} is --image-strength 0.4,
-    true is a bare flag, false or null leaves the flag out, and a list gives the flag several values."""
+    true is a bare flag, false, null or "" leaves the flag out (so the tool keeps its default), and a list
+    gives the flag several values."""
     argv: list[str] = []
     for key, value in recipe.items():
-        if key in META_KEYS or value is None or value is False:
+        if key in META_KEYS or value is None or value is False or value == "":
             continue
         flag = "--" + key.replace("_", "-")
         if value is True:

@@ -11,6 +11,7 @@ class PlaceholderSuggester
       'height' => 'pixel height of an empty latent or image resize node',
       'duration' => 'length in seconds (audio or video)',
       'frames' => 'frame count / length of a video latent',
+      'fps' => 'frames per second of a video output or video latent node',
       'image' => 'image filename in a LoadImage-style node',
       'steps' => 'sampler step count',
       'cfg' => 'sampler cfg / guidance scale',

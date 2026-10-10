@@ -21,6 +21,8 @@ module EngineRecipe
   # The Gemma 3 text encoder LTX-2.3 is known to work with in mlx-video.
   LTX_TEXT_ENCODER = 'mlx-community/gemma-3-12b-it-bf16'.freeze
   BROKEN_TEXT_ENCODER = 'Lightricks/LTX-2'.freeze
+  # The newer of the x2 spatial upscalers in the LTX-2.3 repos, for the two-stage pipelines.
+  LTX_SPATIAL_UPSCALER = 'ltx-2.3-spatial-upscaler-x2-1.1.safetensors'.freeze
   HF_REPO = %r{\A[A-Za-z0-9][\w.-]*/[\w.-]+\z}
   # Options the agent sets itself; a recipe can't point them somewhere else.
   RESERVED_OPTIONS = %w[output output_path output_dir].freeze
