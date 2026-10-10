@@ -37,7 +37,7 @@ module OutputServing
   def output_etag(blob) = %("#{blob.checksum || blob.key}")
 
   def output_fresh?(blob)
-    request.headers['If-None-Match'].to_s.split(/\s*,\s*/).include?(output_etag(blob))
+    request.headers['If-None-Match'].to_s.split(',').map(&:strip).include?(output_etag(blob))
   end
 
   def output_disposition(blob, download: false)
