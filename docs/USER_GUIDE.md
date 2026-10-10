@@ -64,6 +64,8 @@ A page only shows the fields the chosen style uses. If a page says it has no wor
 **Results** shows everything you've made, newest first. Use the chips at the top to show one kind (Image, Video,
 Audio, 3D Model) or only things that are still generating or that failed.
 
+If a video ever says it didn't load, press **Reload** on it. The failure is logged so admins can look into it.
+
 Each card shows the **style** that was used. Shared results have a small green share icon in the lower-right corner of the thumbnail.
 
 Select a result to open it. From there you can:

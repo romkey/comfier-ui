@@ -7,7 +7,8 @@ module Admin
       'generation_succeeded' => 'text-bg-success-subtle',
       'generation_failed' => 'text-bg-danger-subtle',
       'generation_cancelled' => 'text-bg-warning-subtle',
-      'llm_chat' => 'text-bg-primary-subtle'
+      'llm_chat' => 'text-bg-primary-subtle',
+      'media_failed' => 'text-bg-danger-subtle'
     }.freeze
 
     KIND_LABELS = {
@@ -18,7 +19,8 @@ module Admin
       'generation_succeeded' => 'Generation succeeded',
       'generation_failed' => 'Generation failed',
       'generation_cancelled' => 'Generation cancelled',
-      'llm_chat' => 'LLM request'
+      'llm_chat' => 'LLM request',
+      'media_failed' => "Video didn't play"
     }.freeze
 
     def activity_log_kind_label(kind)

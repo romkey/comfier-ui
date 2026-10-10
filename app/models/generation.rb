@@ -51,7 +51,7 @@ class Generation < ApplicationRecord # rubocop:disable Metrics/ClassLength
 
   after_create_commit -> { broadcast_prepend_later_to [user, :generations], target: "#{kind}_generations" }
   after_update_commit -> { broadcast_replace_later_to [user, :generations] }
-  after_update_commit -> { broadcast_refresh_later_to self }
+  after_update_commit -> { broadcast_refresh_later_to self }, unless: :only_bookkeeping_changed?
   after_update_commit :cleanup_backend_run, if: :saved_change_to_status?
   after_commit -> { broadcast_queue_updates }
   after_destroy_commit -> { broadcast_remove_to [user, :generations] }
@@ -59,6 +59,13 @@ class Generation < ApplicationRecord # rubocop:disable Metrics/ClassLength
   scope :recent, -> { order(created_at: :desc, id: :desc) }
   scope :finished, -> { where(status: %i[succeeded failed]) }
   scope :in_progress, -> { where(status: %i[queued running]) }
+
+  # Columns the result's page never shows. A save that only touches these doesn't redraw the page, so a playing
+  # video isn't disturbed for nothing. A bare touch still redraws (ProcessVideoOutputJob relies on that).
+  BOOKKEEPING_COLUMNS = %w[updated_at work_units structure_hash model_set_hash filled_workflow_json
+                           excluded_backend_ids warm dispatch_request_id agent_moves queue_order last_terminal_at
+                           predicted_total_ms predicted_p90_ms predicted_start_at predicted_end_at
+                           prediction_confidence prediction_source].freeze
 
   def kind_info = GenerationKind.find(kind)
 
@@ -114,6 +121,11 @@ class Generation < ApplicationRecord # rubocop:disable Metrics/ClassLength
   end
 
   private
+
+  def only_bookkeeping_changed?
+    changed = saved_changes.keys - ['updated_at']
+    changed.any? && (changed - BOOKKEEPING_COLUMNS).empty?
+  end
 
   def snapshot_workflow_name
     self.workflow_name = workflow&.name if workflow

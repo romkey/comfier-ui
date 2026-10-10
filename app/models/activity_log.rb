@@ -26,7 +26,8 @@ class ActivityLog < ApplicationRecord
     model_download_requested: 'model_download_requested',
     model_download_cancelled: 'model_download_cancelled',
     source_credential_saved: 'source_credential_saved',
-    source_credential_deleted: 'source_credential_deleted'
+    source_credential_deleted: 'source_credential_deleted',
+    media_failed: 'media_failed'
   }, validate: true
 
   scope :recent, -> { order(created_at: :desc, id: :desc) }

@@ -114,6 +114,7 @@ module GenerationsHelper # rubocop:disable Metrics/ModuleLength
   def result_media_preview(generation)
     output = primary_result_output(generation)
     return video_poster_preview(generation) if video_result_with_poster?(generation, output)
+    return video_processing_preview if video_being_processed?(generation, output)
     if output
       return output_preview(output, poster_url: output_poster_for(generation, output),
                                     cover_url: album_art_url(generation))
@@ -128,23 +129,48 @@ module GenerationsHelper # rubocop:disable Metrics/ModuleLength
     case attachment.content_type
     when %r{\Aimage/} then image_tag(url, alt: '', class: 'output-media', loading: 'lazy')
     when %r{\Avideo/}
-      video_tag(url, class: 'output-media', controls:, poster:, muted: !controls, loop: true, playsinline: true,
-                     preload: 'metadata', **video_dimensions(attachment))
+      video_player(url, attachment, controls:, poster:, page: 'public link')
     when %r{\Aaudio/}
       audio_player(url, cover_url: (public_share_cover_path(generation.public_token) if generation.album_art_image))
     else poster ? model_preview(attachment, poster) : file_output(attachment)
     end
   end
 
-  def output_preview(attachment, controls: false, poster_url: nil, cover_url: nil)
+  # preload: 'auto' for the video a page is about, so its frames are ready when play is pressed.
+  def output_preview(attachment, controls: false, poster_url: nil, cover_url: nil, preload: 'metadata')
     url = output_file_path(attachment)
     case attachment.content_type
     when %r{\Aimage/} then image_tag(url, alt: attachment.filename.to_s, class: 'output-media', loading: 'lazy')
     when %r{\Avideo/}
-      video_tag(url, class: 'output-media', controls:, poster: poster_url, muted: !controls, loop: true,
-                     playsinline: true, preload: 'metadata', **video_dimensions(attachment))
+      video_player(url, attachment, controls:, poster: poster_url, preload:, generation_id: attachment.record_id)
     when %r{\Aaudio/} then audio_player(url, cover_url:)
     else poster_url ? model_preview(attachment, poster_url) : file_output(attachment)
+    end
+  end
+
+  # Every result video goes through video_player_controller.js, which loads it however it arrived on the page,
+  # retries once, and otherwise says it didn't load (with Reload) and reports why.
+  # options: preload ('metadata'), generation_id and page (sent with failure reports).
+  def video_player(url, attachment, controls:, poster:, **options)
+    data = { controller: 'video-player', video_player_report_url_value: media_errors_path,
+             video_player_generation_value: options[:generation_id], video_player_page_value: options[:page] }.compact
+    tag.div(class: 'video-player', data:) do
+      safe_join([
+                  video_tag(url, class: 'output-media', controls:, poster:, muted: !controls, loop: true,
+                                 playsinline: true, preload: options.fetch(:preload, 'metadata'),
+                                 data: { video_player_target: 'video' },
+                                 **video_dimensions(attachment)),
+                  video_player_notice
+                ])
+    end
+  end
+
+  def video_player_notice
+    tag.div(class: 'video-player-notice text-13', role: 'alert', hidden: true,
+            data: { video_player_target: 'notice' }) do
+      safe_join([tag.span(data: { video_player_target: 'message' }),
+                 tag.button('Reload', type: 'button', class: 'btn btn-light btn-sm',
+                                      data: { action: 'video-player#reload' })], ' ')
     end
   end
 
@@ -192,6 +218,20 @@ module GenerationsHelper # rubocop:disable Metrics/ModuleLength
                   image_tag(output_poster_url(generation), alt: '', class: 'output-media', loading: 'lazy'),
                   tag.span(class: 'result-play', aria: { hidden: true }) { tag.i(class: 'bi bi-play-fill') }
                 ])
+    end
+  end
+
+  # ProcessVideoOutputJob records normalized on each video once it's done; until then (for a while, in case the
+  # job never runs) the card waits for the poster instead of showing a live video.
+  def video_being_processed?(generation, output)
+    generation.succeeded? && output&.content_type.to_s.start_with?('video/') &&
+      !generation.output_poster.attached? && output.blob.metadata['normalized'].blank? &&
+      generation.updated_at > 30.minutes.ago
+  end
+
+  def video_processing_preview
+    tag.div(class: 'result-placeholder text-secondary', title: 'Getting the video ready') do
+      tag.i(class: 'bi bi-film fs-4', aria: { hidden: true })
     end
   end
 
