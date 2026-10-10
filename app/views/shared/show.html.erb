@@ -53,10 +53,10 @@
 
 <div class="row g-4">
   <div class="col-lg-8">
-    <% @generation.outputs.each do |output| %>
-      <figure class="output-full mb-3">
+    <% @generation.outputs.each_with_index do |output, index| %>
+      <figure class="output-full mb-3" id="<%= dom_id(output) %>">
         <%= output_preview(output, controls: true, poster_url: output_poster_for(@generation, output),
-                           cover_url: album_art_url(@generation)) %>
+                           cover_url: album_art_url(@generation), preload: index.zero? ? 'auto' : 'metadata') %>
       </figure>
     <% end %>
   </div>

@@ -30,6 +30,8 @@ Rails.application.routes.draw do
   delete 'shared/:id/generation', to: 'shared#destroy_generation', as: :destroy_shared_generation
 
   post 'p/:token/report', to: 'public_reports#create', as: :public_share_report
+  # Video players report results that won't play (video_player_controller.js).
+  post 'media_errors', to: 'media_errors#create', as: :media_errors
 
   GenerationKind::ALL.each do |kind|
     get kind.path, to: 'studios#show', defaults: { kind: kind.key }, as: :"#{kind.key}_studio"

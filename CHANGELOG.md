@@ -54,6 +54,12 @@ All notable changes to this project are documented here. The format follows
   without re-encoding; others are re-encoded. `VIDEO_NORMALIZE` (`transcode`, `remux`, `off`) controls it. Video
   players now have their final shape before they load, and video cards in Results show the clip's length. Agent
   0.4.9 moves mlx-video's index to the front before uploading.
+- **Video**: Every result video is now looked after by the page itself. It loads however it arrived (a Turbo visit,
+  Back and Forward, a live refresh of the page), retries once with a fresh request if the network drops it, and
+  otherwise says it didn't load and offers **Reload**, instead of leaving an empty space. A video that hasn't
+  drawn a frame is a black box. Admins see each failure under **Log** as "Video didn't play", with the browser's
+  error code. Result pages also redraw less often while you watch, and the main video on a page starts
+  downloading straight away so it's ready when you press play.
 - Agreeing to the Code of Conduct and privacy notice from a stale copy of the page, such as going Back after
   **I Do Not Agree** signed you out, showed a 422 error. It now shows the notice again, and the page is no longer
   kept for the Back button.

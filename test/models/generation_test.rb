@@ -308,4 +308,13 @@ class GenerationTest < ActiveSupport::TestCase
       assert_no_enqueued_jobs(only: NotifyGenerationJob) { generation.update!(prompt: 'Changed') }
     end
   end
+
+  test 'saves that only touch bookkeeping do not redraw the result page' do
+    generation = generations(:alice_done)
+
+    assert_no_enqueued_jobs(only: Turbo::Streams::BroadcastStreamJob) do
+      generation.update!(predicted_total_ms: 1234, work_units: 3)
+    end
+    assert_enqueued_jobs(1, only: Turbo::Streams::BroadcastStreamJob) { generation.update!(updated_at: Time.current) }
+  end
 end

@@ -189,4 +189,16 @@ class GenerationOutputsTest < ActionDispatch::IntegrationTest
     assert_select "video[src='#{@src}']"
     assert_no_match %r{/rails/active_storage/}, response.body
   end
+
+  test 'result videos are managed by the video player, matched by id, and the first one preloads' do
+    sign_in_as users(:alice)
+
+    get generation_path(@generation)
+
+    player = "div.video-player[data-controller='video-player'][data-video-player-generation-value='#{@generation.id}']"
+
+    assert_select "figure##{ActionView::RecordIdentifier.dom_id(@output)} #{player}"
+    assert_select "video[data-video-player-target='video'][preload='auto']"
+    assert_select "div.video-player-notice[hidden] button[data-action='video-player#reload']"
+  end
 end
