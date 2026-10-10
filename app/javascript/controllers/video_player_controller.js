@@ -138,7 +138,10 @@ export default class extends Controller {
     }
     fetch(this.reportUrlValue, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": document.querySelector("meta[name='csrf-token']")?.content || ""
+      },
       body: JSON.stringify(body),
       keepalive: true,
       credentials: "same-origin"

@@ -1,11 +1,9 @@
 # Video players report here when a result won't play (see video_player_controller.js), so admins can see under
 # Log which browsers fail, how, and on which results. Public link viewers report too, so this needs no sign-in;
-# it only writes a log line and is rate limited.
+# it only writes a log line and is rate limited. The player sends the page's CSRF token like any other request.
 class MediaErrorsController < ApplicationController
   allow_unauthenticated_access
   skip_privacy_gate
-  # Reports are sent with keepalive from pages that may have been open for hours; a stale token mustn't drop them.
-  skip_forgery_protection
 
   rate_limit to: 20, within: 10.minutes, by: -> { request.remote_ip }, with: -> { head :too_many_requests }
 
