@@ -72,6 +72,8 @@ export default class extends Controller {
 
   onError = () => {
     const code = this.video.error?.code
+    // The old request is over. A retry that resumes playing fires play again, which starts a fresh stall check.
+    this.clearStall()
     if (!this.retried && (code === NETWORK || code === UNSUPPORTED)) {
       this.retried = true
       this.restart()
@@ -85,6 +87,7 @@ export default class extends Controller {
     event?.preventDefault()
     this.retried = true
     this.reported = false
+    this.stalled = false
     this.noticeTarget.hidden = true
     this.restart(true)
   }
