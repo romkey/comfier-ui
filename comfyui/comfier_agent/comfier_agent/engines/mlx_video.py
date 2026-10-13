@@ -19,6 +19,7 @@ from typing import Any
 
 from comfier_agent.engines.base import JobCancelled, JobContext, JobError, ProgressFn
 from comfier_agent.engines.mlx import ChildProcess, MlxEngine, recipe_argv
+from comfier_agent.workers.entry_point import QUANTIZE_ENV
 
 LOG = logging.getLogger("comfier_agent")
 
@@ -72,6 +73,14 @@ async def faststart(path: Path) -> bool:
     return True
 
 
+def quantize_bits(value: Any) -> str:
+    """A recipe's "quantize" as the entry point reads it: "8" for 8 or 8.0, "" for none."""
+    try:
+        return str(int(float(value))) if value else ""
+    except (TypeError, ValueError):
+        return ""
+
+
 def denoising_fraction(line: str) -> float | None:
     if not DENOISING.search(line):
         return None
@@ -122,10 +131,14 @@ class MlxVideoEngine(MlxEngine):
                 state["fraction"], state["denoising"] = fraction, True
 
         self.process = ChildProcess("mlx-video", on_line=on_line)
-        argv = [*self.runner_argv, workflow["command"], *recipe_argv(workflow), "--output-path", str(out)]
+        # mlx-video has no --quantize; the entry point quantizes LTX-2.5's weights as they load instead. Always set,
+        # so a value in the agent's own environment can't quantize a full-precision job.
+        options = {k: v for k, v in workflow.items() if k != "quantize"}
+        env = {QUANTIZE_ENV: quantize_bits(workflow.get("quantize"))}
+        argv = [*self.runner_argv, workflow["command"], *recipe_argv(options), "--output-path", str(out)]
         ctx.timings.mark_prompt()
         try:
-            await self.process.start(argv, merged=True)
+            await self.process.start(argv, merged=True, env=env)
             ctx.phase = "loading_model"
             await progress(ctx, "loading_model", 0.0)
             await self._follow(ctx, state, timeout_s=timeout_s, progress=progress)

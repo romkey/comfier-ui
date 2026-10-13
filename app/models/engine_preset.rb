@@ -34,6 +34,10 @@ class EnginePreset
     'audio' => true
   }.freeze
   LTX_25_SETTINGS = { 'frame_rate' => 24, 'base_resolution' => 960 }.freeze
+  # The same at 8 bits: the agent quantizes the weights as they load. A 5-second 1280×704 job peaked at 29 GB
+  # (46 GB in bf16) and looked the same, so it fits Macs with 48 GB or more.
+  LTX_25_8BIT = { **LTX_25, 'quantize' => 8 }.freeze
+  LTX_25_8BIT_VIDEO = { **LTX_VIDEO, 'min_memory_gb' => 48 }.freeze
 
   ALL = [
     Preset.new(engine: 'mflux', key: 'z-image-turbo', label: 'Z-Image Turbo (fast, 16 GB)', kind: 'image', recipe: {
@@ -68,6 +72,12 @@ class EnginePreset
     Preset.new(engine: 'mlx_video', key: 'ltx-2.5-distilled-i2v', label: 'LTX-2.5 distilled, from an image (96 GB)',
                kind: 'video', settings: LTX_25_SETTINGS,
                recipe: { **LTX_25, 'prompt' => '{{prompt}}', 'image' => '{{image}}', **LTX_VIDEO }),
+    Preset.new(engine: 'mlx_video', key: 'ltx-2.5-distilled-8bit', label: 'LTX-2.5 distilled, 8-bit (48 GB)',
+               kind: 'video', settings: LTX_25_SETTINGS,
+               recipe: { **LTX_25_8BIT, 'prompt' => '{{prompt}}', **LTX_25_8BIT_VIDEO }),
+    Preset.new(engine: 'mlx_video', key: 'ltx-2.5-distilled-8bit-i2v',
+               label: 'LTX-2.5 distilled, 8-bit, from an image (48 GB)', kind: 'video', settings: LTX_25_SETTINGS,
+               recipe: { **LTX_25_8BIT, 'prompt' => '{{prompt}}', 'image' => '{{image}}', **LTX_25_8BIT_VIDEO }),
     Preset.new(engine: 'mlx_video', key: 'ltx-2.3-distilled', label: 'LTX-2.3 distilled (fast, 96 GB)', kind: 'video',
                recipe: { **LTX_DISTILLED, 'prompt' => '{{prompt}}', **LTX_VIDEO }, settings: LTX_SETTINGS),
     Preset.new(engine: 'mlx_video', key: 'ltx-2.3-distilled-i2v', label: 'LTX-2.3 distilled, from an image (96 GB)',

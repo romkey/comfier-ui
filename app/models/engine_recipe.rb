@@ -60,6 +60,7 @@ module EngineRecipe
       repo = recipe[key]
       found << "\"#{key}\" must be a Hugging Face repo (owner/name), not #{repo.inspect}" if repo && !repo?(repo)
     end
+    found << '"quantize" only works with LTX-2.5 for MLX video' if recipe.key?('quantize') && !ltx_25?(recipe)
     found.concat(ltx_text_encoder_problems(recipe))
   end
 
@@ -85,10 +86,9 @@ module EngineRecipe
   def ltx_25_problems(recipe)
     found = []
     found << 'LTX-2.5 brings its own Gemma 4 text encoder; remove "text_encoder_repo"' if recipe['text_encoder_repo']
+    found << '"quantize" must be 4 or 8 (bits)' unless [nil, 4, 8].any? { it.eql?(recipe['quantize']) } # not 8.0
     pipeline = recipe['pipeline'].presence || 'distilled'
-    unless LTX_25_PIPELINES.include?(pipeline)
-      found << "LTX-2.5 runs the #{LTX_25_PIPELINES.join(' or ')} pipeline in mlx-video, not #{pipeline.inspect}"
-    end
+    found << '"pipeline" must be distilled or dfr for LTX-2.5' if LTX_25_PIPELINES.exclude?(pipeline)
     found
   end
 
@@ -127,10 +127,8 @@ module EngineRecipe
     value.is_a?(Numeric) && value.positive? ? value : nil
   end
 
-  # The model a recipe loads, for availability and the server's model list: an mflux model name, or the
-  # Hugging Face repo an mlx-video recipe loads. A local model_dir isn't something Comfier can check.
-  # mflux names its model with "model"; MLX video with "model_repo" (a local model_dir isn't something
-  # Comfier can check or download).
+  # The model a recipe loads, for availability and the server's model list: mflux names its model with "model",
+  # MLX video a Hugging Face repo with "model_repo" (a local model_dir isn't something Comfier can check).
   def model(recipe, engine = nil)
     return unless recipe.is_a?(Hash)
 

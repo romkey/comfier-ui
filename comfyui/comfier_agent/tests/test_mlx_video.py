@@ -81,6 +81,43 @@ async def test_recipe_flags_reach_the_tool_with_home_paths_expanded(comfier_home
 
 
 @pytest.mark.asyncio
+async def test_quantize_reaches_the_entry_point_rather_than_the_tool(comfier_home):
+    engine = make_engine(work_dir=str(comfier_home / "work"))
+    from comfier_agent.engines.base import JobContext
+
+    async def progress(*_args, **_kw):
+        pass
+
+    files = await engine.execute(JobContext(job_id="j_q", engine="mlx_video"), {**RECIPE, "quantize": 8},
+                                 timeout_s=30, progress=progress)
+    written = open(files[0]["path"], "rb").read().decode(errors="replace")
+    assert "--quantize" not in written
+    assert "quantize=8" in written
+
+
+@pytest.mark.asyncio
+async def test_the_agents_own_environment_cant_quantize_a_full_precision_job(comfier_home, monkeypatch):
+    from comfier_agent.engines.base import JobContext
+    from comfier_agent.workers.entry_point import QUANTIZE_ENV
+
+    monkeypatch.setenv(QUANTIZE_ENV, "8")
+    engine = make_engine(work_dir=str(comfier_home / "work"))
+
+    async def progress(*_args, **_kw):
+        pass
+
+    files = await engine.execute(JobContext(job_id="j_f", engine="mlx_video"), RECIPE, timeout_s=30, progress=progress)
+    assert open(files[0]["path"], "rb").read().decode(errors="replace").endswith("quantize=")
+
+
+@pytest.mark.parametrize("value,bits", [(8, "8"), (8.0, "8"), ("8", "8"), (None, ""), (False, ""), ("lots", "")])
+def test_quantize_reaches_the_entry_point_as_whole_bits(value, bits):
+    from comfier_agent.engines.mlx_video import quantize_bits
+
+    assert quantize_bits(value) == bits
+
+
+@pytest.mark.asyncio
 async def test_a_failing_run_reports_what_the_tool_printed(video_agent):
     agent, _runtime, _engine = video_agent
     await run(agent, prompt="fail")
@@ -103,14 +140,15 @@ def test_ltx_commands_get_the_text_encoder_mask_fix(monkeypatch):
     from comfier_agent.workers import entry_point
 
     applied, ran = [], []
-    monkeypatch.setitem(entry_point.FIXES, "mlx_video.ltx_2.", lambda: applied.append(True))
+    monkeypatch.setitem(entry_point.FIXES, "mlx_video.", [lambda: applied.append("all")])
+    monkeypatch.setitem(entry_point.FIXES, "mlx_video.ltx_2.", [lambda: applied.append("ltx")])
     monkeypatch.setattr(entry_point, "find", lambda command: lambda: ran.append(command))
     for command in ("mlx_video.ltx_2.generate", "mlx_video.wan_2.generate"):
         monkeypatch.setattr(sys, "argv", ["entry_point", command])
         with pytest.raises(SystemExit):
             entry_point.main()
     assert ran == ["mlx_video.ltx_2.generate", "mlx_video.wan_2.generate"]
-    assert applied == [True]
+    assert applied == ["all", "ltx", "all"]
 
 
 def test_the_mask_fix_is_harmless_without_mlx_video():
@@ -188,3 +226,26 @@ async def test_faststart_leaves_a_file_it_cannot_read(tmp_path):
     assert await faststart(clip) is False
     assert clip.read_bytes() == b"not really a video"
     assert not list(tmp_path.glob("*.faststart.*"))
+
+
+def test_quantizing_is_harmless_without_mlx_video(monkeypatch):
+    from comfier_agent.workers import entry_point
+
+    monkeypatch.setenv(entry_point.QUANTIZE_ENV, "8")
+    entry_point.quantize_ltx_weights()  # mlx-video isn't installed here: nothing to patch, no error
+    entry_point.limit_mlx_cache()
+
+
+def test_a_quantized_copy_is_named_for_its_checkpoint(monkeypatch, tmp_path):
+    from comfier_agent.workers import entry_point
+
+    monkeypatch.setenv(entry_point.QUANTIZED_DIR_ENV, str(tmp_path / "q"))
+    source = tmp_path / "ltx-2.5-transformer-bf16.safetensors"
+    source.write_bytes(b"x" * 10)
+    os.utime(source, (1_000_000, 1_000_000))
+    first = entry_point.quantized_copy_path(source, 8)
+
+    assert first.parent == tmp_path / "q" and first.name.startswith("ltx-2.5-transformer-bf16.q8g64")
+    assert entry_point.quantized_copy_path(source, 4) != first
+    source.write_bytes(b"x" * 11)  # re-downloaded: a different file gets a fresh copy
+    assert entry_point.quantized_copy_path(source, 8) != first

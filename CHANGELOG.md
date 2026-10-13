@@ -12,6 +12,10 @@ All notable changes to this project are documented here. The format follows
   isn't merged upstream yet; reinstall the agent with `[mac]` or `[video]` to get it. `Lightricks/LTX-2.5` is
   gated: accept its terms on Hugging Face and run `hf auth login` on each Mac. Downloads fetch only the files the
   distilled pipeline reads (about 73 GB of the repo's 200 GB). LTX-2.5 recipes can't name a `text_encoder_repo`.
+- **MLX video**: LTX-2.5 8-bit presets for Macs with 48 GB or more. `"quantize": 8` in an LTX-2.5 recipe has the
+  agent quantize the weights as they load; a 5-second 1280×704 video then peaks at about 29 GB and looks the same.
+  The first job saves the quantized weights in `~/.comfier/quantized` (about 34 GB) and later jobs load those.
+  The agent also caps MLX's buffer cache for video jobs, which brings full-precision LTX-2.5 from 69 GB to 46 GB.
 - **Code of Conduct**: The privacy notice now also asks everyone to agree to the PDX Hackerspace Code of Conduct. It
   sums the code up in a few lines, links to the full PDF, and offers **I Understand and Agree** or **I Do Not Agree**,
   which signs the user out and sends them to a page admins choose (Disney's home page by default). Admins set both
