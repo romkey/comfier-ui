@@ -212,3 +212,18 @@ def test_quantizing_is_harmless_without_mlx_video(monkeypatch):
     monkeypatch.setenv(entry_point.QUANTIZE_ENV, "8")
     entry_point.quantize_ltx_weights()  # mlx-video isn't installed here: nothing to patch, no error
     entry_point.limit_mlx_cache()
+
+
+def test_a_quantized_copy_is_named_for_its_checkpoint(monkeypatch, tmp_path):
+    from comfier_agent.workers import entry_point
+
+    monkeypatch.setenv(entry_point.QUANTIZED_DIR_ENV, str(tmp_path / "q"))
+    source = tmp_path / "ltx-2.5-transformer-bf16.safetensors"
+    source.write_bytes(b"x" * 10)
+    os.utime(source, (1_000_000, 1_000_000))
+    first = entry_point.quantized_copy_path(source, 8)
+
+    assert first.parent == tmp_path / "q" and first.name.startswith("ltx-2.5-transformer-bf16.q8g64")
+    assert entry_point.quantized_copy_path(source, 4) != first
+    source.write_bytes(b"x" * 11)  # re-downloaded: a different file gets a fresh copy
+    assert entry_point.quantized_copy_path(source, 8) != first

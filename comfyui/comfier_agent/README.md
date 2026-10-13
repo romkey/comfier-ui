@@ -191,7 +191,10 @@ adds LTX-2.5 and isn't merged yet.
   downloads only the files the distilled pipeline reads, about 73 GB of the repo's 200 GB.
 - `"quantize": 8` in an LTX-2.5 recipe (the 8-bit presets) has the agent quantize the transformer and text
   encoder as they load. A 5-second 1280×704 job then peaks at about 29 GB instead of 46 GB and looks the same, so
-  it runs on 48 and 64 GB Macs. mlx-video has no such flag, so the agent applies it itself (only LTX-2.5).
+  it runs on 48 and 64 GB Macs. mlx-video has no such flag, so the agent applies it itself (only LTX-2.5). The
+  first such job saves the quantized weights to `~/.comfier/quantized` (about 34 GB at 8 bits;
+  `COMFIER_MLX_QUANTIZED_DIR` moves it) and later jobs load those, which is quicker than quantizing again. A
+  re-downloaded checkpoint gets a fresh copy; if the folder can't be written, jobs quantize every time instead.
 - The agent caps MLX's buffer cache at 4 GB for video jobs. Without the cap it grows to about 56 GB while LTX
   decodes video, though only a few GB are in use, which pushed a job's peak to 69 GB. Output is unchanged.
 - Memory matters: LTX-2.3 and LTX-2.5 are 22B video models plus a 12B text encoder, so plan on 96 GB, or 48 GB

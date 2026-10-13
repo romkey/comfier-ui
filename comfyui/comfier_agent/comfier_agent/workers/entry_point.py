@@ -6,6 +6,7 @@ mlx_video.ltx_2.generate) aren't importable module paths, so the agent goes thro
 
 from __future__ import annotations
 
+import contextlib
 import importlib
 import importlib.metadata
 import json
@@ -16,6 +17,12 @@ from pathlib import Path
 # Set by the mlx_video engine from a recipe's "quantize" (bits): LTX-2.5's weights are quantized as they load.
 QUANTIZE_ENV = "COMFIER_MLX_QUANTIZE"
 QUANTIZE_GROUP = 64
+# Quantized copies are kept here (about 34 GB at 8 bits) and loaded instead of re-quantizing: an LTX-2.5 job starts
+# about 6 s sooner (20 s instead of 26 on an M3 Ultra).
+QUANTIZED_DIR_ENV = "COMFIER_MLX_QUANTIZED_DIR"
+QUANTIZED_DIR = "~/.comfier/quantized"
+# Bump when what gets quantized changes, so older copies aren't used.
+QUANTIZE_FORMAT = 1
 # MLX keeps freed buffers for reuse. While LTX decodes video they pile up to about 56 GB (with 6 GB in use),
 # which macOS counts against the job. Capping the cache gives them back; the output is the same.
 MLX_CACHE_LIMIT = 4 * 2**30
@@ -69,26 +76,41 @@ def limit_mlx_cache() -> None:
     mx.set_cache_limit(MLX_CACHE_LIMIT)
 
 
+def quantized_copy_path(source: Path, bits: int) -> Path:
+    """Where a checkpoint's quantized copy lives. The name carries the source's size and modification time, so a
+    re-downloaded checkpoint gets a fresh copy."""
+    stat = source.stat()
+    root = Path(os.path.expanduser(os.environ.get(QUANTIZED_DIR_ENV) or QUANTIZED_DIR))
+    version = f"q{bits}g{QUANTIZE_GROUP}v{QUANTIZE_FORMAT}.{stat.st_size}-{int(stat.st_mtime)}"
+    return root / f"{source.stem}.{version}.safetensors"
+
+
 def quantize_ltx_weights() -> None:
     """With COMFIER_MLX_QUANTIZE set, quantizes LTX-2.5's transformer blocks and its Gemma 4 text encoder's layers
     (the Linear layers, in groups of 64) as they load, one piece at a time, so the bf16 weights are never all in
-    memory. At 8 bits an LTX-2.5 job peaks at about 29 GB instead of 46, and looks the same. Other models (LTX-2.3,
-    whose transformer is a folder, and Wan) load as they would have."""
+    memory. At 8 bits an LTX-2.5 job peaks at about 29 GB instead of 46, and looks the same. The first run saves the
+    quantized weights (QUANTIZED_DIR) and later runs load those. Other models (LTX-2.3, whose transformer is a
+    folder, and Wan) load as they would have."""
     bits = os.environ.get(QUANTIZE_ENV)
     if not bits:
         return
     try:
         import mlx.core as mx
         import mlx.nn as nn
+        from mlx.utils import tree_flatten
         from mlx_video.models.ltx_2 import ltx_2, text_encoder
+        from safetensors import safe_open
     except ImportError:
         return
     bits = int(bits)
 
+    def metadata(path: Path) -> dict:
+        with safe_open(path, framework="numpy") as f:
+            return f.metadata() or {}
+
     def quantize(model, scope: str) -> None:
         nn.quantize(model, group_size=QUANTIZE_GROUP, bits=bits, class_predicate=lambda path, module: (
             scope in path and isinstance(module, nn.Linear) and module.weight.shape[-1] % QUANTIZE_GROUP == 0))
-        evaluate_in_pieces(model.parameters())
 
     def evaluate_in_pieces(params) -> None:
         if isinstance(params, dict):
@@ -98,6 +120,40 @@ def quantize_ltx_weights() -> None:
                 evaluate_in_pieces(value)
         else:
             mx.eval(params)
+
+    def save(model, source: Path, copy: Path) -> None:
+        partial = copy.with_name(f"{copy.stem}.partial.safetensors")
+        try:
+            copy.parent.mkdir(parents=True, exist_ok=True)
+            for stale in copy.parent.glob(f"{source.stem}.q{bits}g*.safetensors"):
+                stale.unlink()
+            mx.save_safetensors(str(partial), dict(tree_flatten(model.parameters())))
+            partial.replace(copy)
+        except Exception as exc:  # noqa: BLE001 - a full disk only costs the next run its head start
+            print(f"comfier: couldn't save quantized weights to {copy}: {exc}", file=sys.stderr, flush=True)
+            with contextlib.suppress(OSError):
+                partial.unlink(missing_ok=True)
+
+    def load(source: Path, skeleton, load_bf16, scope: str):
+        """skeleton() builds the model without weights; load_bf16(model) loads the checkpoint into it, lazily."""
+        copy = quantized_copy_path(source, bits)
+        if copy.is_file():
+            try:
+                model = skeleton()
+                quantize(model, scope)
+                model.load_weights(str(copy), strict=True)
+                evaluate_in_pieces(model.parameters())
+                return model
+            except Exception as exc:  # noqa: BLE001 - an unreadable copy is rebuilt from the checkpoint
+                print(f"comfier: couldn't load {copy.name} ({exc}); quantizing again", file=sys.stderr, flush=True)
+                with contextlib.suppress(OSError):
+                    copy.unlink(missing_ok=True)
+        model = skeleton()
+        load_bf16(model)
+        quantize(model, scope)
+        evaluate_in_pieces(model.parameters())
+        save(model, source, copy)
+        return model
 
     model_class = getattr(ltx_2, "LTXModel", None)
     if model_class is not None and hasattr(model_class, "sanitize") and hasattr(ltx_2, "LTXModelConfig"):
@@ -109,20 +165,21 @@ def quantize_ltx_weights() -> None:
             model_path = Path(model_path)
             if not model_path.is_file():
                 return original_ltx(cls, model_path, strict)
-            from safetensors import safe_open
 
-            with safe_open(model_path, framework="numpy") as f:
-                metadata = f.metadata() or {}
-            config = json.loads(metadata["config"])["transformer"]
-            config["model_version"] = metadata.get("model_version")
-            config["has_prompt_adaln"] = config.get("cross_attention_adaln", False)
-            config["audio_ff_bias"] = config.get("audio_ff_bias", True)
-            model = cls(ltx_2.LTXModelConfig.from_dict(config))
-            weights = model.sanitize(mx.load(str(model_path)))
-            model.load_weights([(k, v.astype(mx.bfloat16) if v.dtype == mx.float32 else v)
-                                for k, v in weights.items()], strict=strict)
-            del weights
-            quantize(model, "transformer_blocks")
+            def skeleton():
+                info = metadata(model_path)
+                config = json.loads(info["config"])["transformer"]
+                config["model_version"] = info.get("model_version")
+                config["has_prompt_adaln"] = config.get("cross_attention_adaln", False)
+                config["audio_ff_bias"] = config.get("audio_ff_bias", True)
+                return cls(ltx_2.LTXModelConfig.from_dict(config))
+
+            def load_bf16(model):
+                weights = model.sanitize(mx.load(str(model_path)))
+                model.load_weights([(k, v.astype(mx.bfloat16) if v.dtype == mx.float32 else v)
+                                    for k, v in weights.items()], strict=strict)
+
+            model = load(model_path, skeleton, load_bf16, "transformer_blocks")
             model.eval()
             return model
 
@@ -130,12 +187,19 @@ def quantize_ltx_weights() -> None:
 
     gemma4 = getattr(text_encoder, "Gemma4LanguageModel", None)
     if gemma4 is not None and hasattr(gemma4, "from_pretrained"):
-        original_gemma4 = gemma4.from_pretrained.__func__
 
         def gemma4_from_pretrained(cls, checkpoint_path):
-            model = original_gemma4(cls, checkpoint_path)  # loaded but not yet evaluated
-            quantize(model, "layers.")
-            return model
+            # Mirrors mlx-video's loader: the Gemma config is in the checkpoint's metadata, its weights under "model.".
+            checkpoint_path = Path(checkpoint_path)
+
+            def skeleton():
+                return cls(json.loads(metadata(checkpoint_path)["gemma_config"]))
+
+            def load_bf16(model):
+                weights = mx.load(str(checkpoint_path))
+                model.model.load_weights([(k, v) for k, v in weights.items() if k.startswith("model.")], strict=True)
+
+            return load(checkpoint_path, skeleton, load_bf16, "layers.")
 
         gemma4.from_pretrained = classmethod(gemma4_from_pretrained)
 
