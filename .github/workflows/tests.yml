@@ -23,7 +23,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
-          python-version: '3.12'
+          python-version: '3.15'
 
       - name: Test the ComfyUI downloader node
         run: python -m unittest discover -s comfyui/tests -v
@@ -139,7 +139,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
-          python-version: '3.12'
+          python-version: '3.15'
 
       - name: Install the agent
         run: pip install aiohttp -e comfyui/comfier_agent
