@@ -73,3 +73,22 @@ def test_the_hf_download_worker_refuses_something_that_isnt_a_repo():
                          text=True, cwd=os.path.dirname(os.path.dirname(FAKE_WORKER)))
     assert out.returncode == 1
     assert "isn't a Hugging Face repo" in json.loads(out.stdout.splitlines()[-1])["message"]
+
+
+def test_ltx_25_fetches_only_what_the_distilled_pipeline_reads():
+    from comfier_agent.workers import hf_download
+
+    files = hf_download.patterns_for("Lightricks/LTX-2.5")
+    assert "diffusion_models/ltx-2.5-22b-distilled-transformer-bf16.safetensors" in files
+    assert not any("dev" in f or "int8" in f or "loras/" in f for f in files)
+    assert hf_download.patterns_for("prince-canuma/LTX-2.3-distilled") == hf_download.PATTERNS
+
+
+def test_a_gated_repo_says_how_to_get_access():
+    from comfier_agent.workers import hf_download
+
+    class GatedRepoError(Exception):
+        pass
+
+    message = hf_download.failure_message("Lightricks/LTX-2.5", GatedRepoError("401 Client Error"))
+    assert "accept its terms" in message and "hf auth login" in message

@@ -43,6 +43,18 @@ class EngineRecipeTest < ActiveSupport::TestCase
                  EngineRecipe.models(ltx.merge('text_encoder_repo' => EngineRecipe::LTX_TEXT_ENCODER), 'mlx_video')
   end
 
+  test 'LTX-2.5 recipes use its own text encoder and a distilled pipeline' do
+    ltx = { 'command' => 'mlx_video.ltx_2.generate', 'model_repo' => EngineRecipe::LTX_25_REPO }
+
+    assert_empty EngineRecipe.problems('mlx_video', ltx)
+    assert_empty EngineRecipe.problems('mlx_video', ltx.merge('pipeline' => 'distilled'))
+    assert_match(/brings its own Gemma 4/,
+                 EngineRecipe.problems('mlx_video', ltx.merge('text_encoder_repo' => EngineRecipe::LTX_TEXT_ENCODER)).join)
+    assert_match(/not "dev-two-stage"/,
+                 EngineRecipe.problems('mlx_video', ltx.merge('pipeline' => 'dev-two-stage')).join)
+    assert_equal [EngineRecipe::LTX_25_REPO], EngineRecipe.models(ltx, 'mlx_video')
+  end
+
   test "an engine's model comes from its own key" do
     assert_equal 'z-image-turbo', EngineRecipe.model({ 'model' => 'z-image-turbo' }, 'mflux')
     assert_nil EngineRecipe.model({ 'model' => 'z-image-turbo' }, 'mlx_video')

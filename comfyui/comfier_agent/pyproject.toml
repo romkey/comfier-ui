@@ -25,13 +25,14 @@ include = ["comfier_agent*"]
 preview = ["numpy>=1.24", "pillow>=10.0", "trimesh>=4.0"]
 # Native Apple Silicon image generation (the mflux engine).
 mflux = ["mflux>=0.22"]
-# Native Apple Silicon video generation (the mlx_video engine). mlx-video isn't on PyPI; this is the
-# commit the agent was checked against.
-video = ["mlx-video @ git+https://github.com/Blaizzy/mlx-video.git@87db56a51758fefb748a359b90a5283bb8ba4837"]
+# Native Apple Silicon video generation (the mlx_video engine). mlx-video isn't on PyPI. This is the head of
+# Blaizzy/mlx-video#52, which adds LTX-2.5 (with its Gemma 4 text encoder) and keeps LTX-2.3 and Wan; upstream
+# hasn't merged it yet. Move back to Blaizzy/mlx-video once it lands.
+video = ["mlx-video @ git+https://github.com/kiarina/mlx-video.git@cbb2c10f2a25305b0bf09169ab6b865ab86e3332"]
 # Everything a Mac needs: mflux, mlx-video and 3D previews.
 mac = [
     "mflux>=0.22",
-    "mlx-video @ git+https://github.com/Blaizzy/mlx-video.git@87db56a51758fefb748a359b90a5283bb8ba4837",
+    "mlx-video @ git+https://github.com/kiarina/mlx-video.git@cbb2c10f2a25305b0bf09169ab6b865ab86e3332",
     "numpy>=1.24", "pillow>=10.0", "trimesh>=4.0",
 ]
 test = ["pytest>=8.0", "pytest-asyncio>=0.24", "aiohttp>=3.9", "jsonschema>=4.18", "numpy>=1.24", "pillow>=10.0",

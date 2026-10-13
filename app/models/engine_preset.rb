@@ -26,6 +26,14 @@ class EnginePreset
     'seed' => '{{seed}}', 'min_memory_gb' => 96
   }.freeze
   LTX_SETTINGS = { 'frame_rate' => 24 }.freeze
+  # LTX-2.5 distilled, as ComfyUI's LTX-2.5 template runs it: half size, x2 latent upscale, a short refine, with
+  # sound. The model, Gemma 4 encoder and upscaler all come from the one (gated) repo; only the files this
+  # pipeline reads are downloaded (about 73 GB). The template renders about 0.9 megapixels, hence 960.
+  LTX_25 = {
+    'command' => 'mlx_video.ltx_2.generate', 'pipeline' => 'distilled', 'model_repo' => EngineRecipe::LTX_25_REPO,
+    'audio' => true
+  }.freeze
+  LTX_25_SETTINGS = { 'frame_rate' => 24, 'base_resolution' => 960 }.freeze
 
   ALL = [
     Preset.new(engine: 'mflux', key: 'z-image-turbo', label: 'Z-Image Turbo (fast, 16 GB)', kind: 'image', recipe: {
@@ -55,6 +63,11 @@ class EnginePreset
                  'steps' => '{{steps}}', 'guidance' => '{{cfg}}', 'prompt' => '{{prompt}}',
                  'image_paths' => ['{{image}}'], 'seed' => '{{seed}}', 'min_memory_gb' => 48
                }),
+    Preset.new(engine: 'mlx_video', key: 'ltx-2.5-distilled', label: 'LTX-2.5 distilled (best, 96 GB)', kind: 'video',
+               recipe: { **LTX_25, 'prompt' => '{{prompt}}', **LTX_VIDEO }, settings: LTX_25_SETTINGS),
+    Preset.new(engine: 'mlx_video', key: 'ltx-2.5-distilled-i2v', label: 'LTX-2.5 distilled, from an image (96 GB)',
+               kind: 'video', settings: LTX_25_SETTINGS,
+               recipe: { **LTX_25, 'prompt' => '{{prompt}}', 'image' => '{{image}}', **LTX_VIDEO }),
     Preset.new(engine: 'mlx_video', key: 'ltx-2.3-distilled', label: 'LTX-2.3 distilled (fast, 96 GB)', kind: 'video',
                recipe: { **LTX_DISTILLED, 'prompt' => '{{prompt}}', **LTX_VIDEO }, settings: LTX_SETTINGS),
     Preset.new(engine: 'mlx_video', key: 'ltx-2.3-distilled-i2v', label: 'LTX-2.3 distilled, from an image (96 GB)',

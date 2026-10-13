@@ -23,6 +23,10 @@ module EngineRecipe
   BROKEN_TEXT_ENCODER = 'Lightricks/LTX-2'.freeze
   # The newer of the x2 spatial upscalers in the LTX-2.3 repos, for the two-stage pipelines.
   LTX_SPATIAL_UPSCALER = 'ltx-2.3-spatial-upscaler-x2-1.1.safetensors'.freeze
+  # LTX-2.5's official repo, which carries its own Gemma 4 text encoder and upscaler. It's gated: each Mac
+  # needs the terms accepted on Hugging Face and `hf auth login`.
+  LTX_25_REPO = 'Lightricks/LTX-2.5'.freeze
+  LTX_25_PIPELINES = %w[distilled dfr].freeze
   HF_REPO = %r{\A[A-Za-z0-9][\w.-]*/[\w.-]+\z}
   # Options the agent sets itself; a recipe can't point them somewhere else.
   RESERVED_OPTIONS = %w[output output_path output_dir].freeze
@@ -63,6 +67,7 @@ module EngineRecipe
   # loads the wrong tokenizer and every prompt gives the same video (Blaizzy/mlx-video#26).
   def ltx_text_encoder_problems(recipe)
     return [] unless recipe['command'].to_s.start_with?('mlx_video.ltx_2.')
+    return ltx_25_problems(recipe) if ltx_25?(recipe)
 
     encoder = recipe['text_encoder_repo']
     if encoder.to_s.casecmp?(BROKEN_TEXT_ENCODER)
@@ -75,7 +80,21 @@ module EngineRecipe
     end
   end
 
+  # mlx-video ignores text_encoder_repo for LTX-2.5 (naming one would only download 26 GB for nothing), and
+  # runs only its distilled pipelines.
+  def ltx_25_problems(recipe)
+    found = []
+    found << 'LTX-2.5 brings its own Gemma 4 text encoder; remove "text_encoder_repo"' if recipe['text_encoder_repo']
+    pipeline = recipe['pipeline'].presence || 'distilled'
+    unless LTX_25_PIPELINES.include?(pipeline)
+      found << "LTX-2.5 runs the #{LTX_25_PIPELINES.join(' or ')} pipeline in mlx-video, not #{pipeline.inspect}"
+    end
+    found
+  end
+
   def ltx_23?(recipe) = recipe['model_repo'].to_s.match?(/LTX-2\.3/i)
+
+  def ltx_25?(recipe) = recipe['model_repo'].to_s.casecmp?(LTX_25_REPO)
 
   def repo?(value) = value.is_a?(String) && value.match?(HF_REPO)
 

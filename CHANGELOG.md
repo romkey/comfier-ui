@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- **MLX video**: LTX-2.5 distilled presets (from text, and from an image), the model ComfyUI's LTX-2.5 template
+  runs. LTX-2.5 follows prompts far better than LTX-2.3, mostly thanks to its Gemma 4 text encoder, and the
+  presets make sound too. The agent now installs mlx-video from Blaizzy/mlx-video#52, which adds LTX-2.5 and
+  isn't merged upstream yet; reinstall the agent with `[mac]` or `[video]` to get it. `Lightricks/LTX-2.5` is
+  gated: accept its terms on Hugging Face and run `hf auth login` on each Mac. Downloads fetch only the files the
+  distilled pipeline reads (about 73 GB of the repo's 200 GB). LTX-2.5 recipes can't name a `text_encoder_repo`.
 - **Code of Conduct**: The privacy notice now also asks everyone to agree to the PDX Hackerspace Code of Conduct. It
   sums the code up in a few lines, links to the full PDF, and offers **I Understand and Agree** or **I Do Not Agree**,
   which signs the user out and sends them to a page admins choose (Disney's home page by default). Admins set both
