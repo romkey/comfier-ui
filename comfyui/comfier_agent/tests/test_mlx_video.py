@@ -96,6 +96,28 @@ async def test_quantize_reaches_the_entry_point_rather_than_the_tool(comfier_hom
 
 
 @pytest.mark.asyncio
+async def test_the_agents_own_environment_cant_quantize_a_full_precision_job(comfier_home, monkeypatch):
+    from comfier_agent.engines.base import JobContext
+    from comfier_agent.workers.entry_point import QUANTIZE_ENV
+
+    monkeypatch.setenv(QUANTIZE_ENV, "8")
+    engine = make_engine(work_dir=str(comfier_home / "work"))
+
+    async def progress(*_args, **_kw):
+        pass
+
+    files = await engine.execute(JobContext(job_id="j_f", engine="mlx_video"), RECIPE, timeout_s=30, progress=progress)
+    assert open(files[0]["path"], "rb").read().decode(errors="replace").endswith("quantize=")
+
+
+@pytest.mark.parametrize("value,bits", [(8, "8"), (8.0, "8"), ("8", "8"), (None, ""), (False, ""), ("lots", "")])
+def test_quantize_reaches_the_entry_point_as_whole_bits(value, bits):
+    from comfier_agent.engines.mlx_video import quantize_bits
+
+    assert quantize_bits(value) == bits
+
+
+@pytest.mark.asyncio
 async def test_a_failing_run_reports_what_the_tool_printed(video_agent):
     agent, _runtime, _engine = video_agent
     await run(agent, prompt="fail")

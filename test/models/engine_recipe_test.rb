@@ -50,7 +50,7 @@ class EngineRecipeTest < ActiveSupport::TestCase
     assert_empty EngineRecipe.problems('mlx_video', ltx.merge('pipeline' => 'distilled'))
     assert_match(/brings its own Gemma 4/,
                  EngineRecipe.problems('mlx_video', ltx.merge('text_encoder_repo' => EngineRecipe::LTX_TEXT_ENCODER)).join)
-    assert_match(/not "dev-two-stage"/,
+    assert_match(/"pipeline" must be distilled or dfr/,
                  EngineRecipe.problems('mlx_video', ltx.merge('pipeline' => 'dev-two-stage')).join)
     assert_equal [EngineRecipe::LTX_25_REPO], EngineRecipe.models(ltx, 'mlx_video')
   end
@@ -60,6 +60,7 @@ class EngineRecipeTest < ActiveSupport::TestCase
 
     assert_empty EngineRecipe.problems('mlx_video', ltx.merge('quantize' => 8))
     assert_match(/must be 4 or 8/, EngineRecipe.problems('mlx_video', ltx.merge('quantize' => 6)).join)
+    assert_match(/must be 4 or 8/, EngineRecipe.problems('mlx_video', ltx.merge('quantize' => 8.0)).join)
     assert_match(/only works with LTX-2.5/,
                  EngineRecipe.problems('mlx_video', ltx.merge('model_repo' => 'prince-canuma/LTX-2.3-distilled',
                                                               'text_encoder_repo' => EngineRecipe::LTX_TEXT_ENCODER,

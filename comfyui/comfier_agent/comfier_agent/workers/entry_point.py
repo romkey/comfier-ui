@@ -91,7 +91,10 @@ def quantize_ltx_weights() -> None:
     memory. At 8 bits an LTX-2.5 job peaks at about 29 GB instead of 46, and looks the same. The first run saves the
     quantized weights (QUANTIZED_DIR) and later runs load those. Other models (LTX-2.3, whose transformer is a
     folder, and Wan) load as they would have."""
-    bits = os.environ.get(QUANTIZE_ENV)
+    try:
+        bits = int(float(os.environ.get(QUANTIZE_ENV) or 0))
+    except ValueError:
+        bits = 0
     if not bits:
         return
     try:
@@ -102,7 +105,6 @@ def quantize_ltx_weights() -> None:
         from safetensors import safe_open
     except ImportError:
         return
-    bits = int(bits)
 
     def metadata(path: Path) -> dict:
         with safe_open(path, framework="numpy") as f:

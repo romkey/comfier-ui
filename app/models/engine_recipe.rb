@@ -86,9 +86,9 @@ module EngineRecipe
   def ltx_25_problems(recipe)
     found = []
     found << 'LTX-2.5 brings its own Gemma 4 text encoder; remove "text_encoder_repo"' if recipe['text_encoder_repo']
-    found << '"quantize" must be 4 or 8 (bits)' if recipe.key?('quantize') && [4, 8].exclude?(recipe['quantize'])
+    found << '"quantize" must be 4 or 8 (bits)' unless [nil, 4, 8].any? { it.eql?(recipe['quantize']) } # not 8.0
     pipeline = recipe['pipeline'].presence || 'distilled'
-    found << "LTX-2.5 runs distilled or DFR, not #{pipeline.inspect}" if LTX_25_PIPELINES.exclude?(pipeline)
+    found << '"pipeline" must be distilled or dfr for LTX-2.5' if LTX_25_PIPELINES.exclude?(pipeline)
     found
   end
 
