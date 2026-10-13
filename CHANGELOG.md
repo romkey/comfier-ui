@@ -54,6 +54,10 @@ All notable changes to this project are documented here. The format follows
   allowlists are converted to the equivalent turned-off styles, and styles added later now run everywhere by default.
 
 ### Fixed
+- **Model downloads**: An agent running outside ComfyUI knows all of ComfyUI's current model folders, so files for
+  `latent_upscale_models` (LTX's upscalers), `model_patches`, `audio_encoders` and the rest are no longer refused as
+  an unknown folder. A configured models folder that lacks one of them takes the download and creates it. Comfier
+  also recognizes `LatentUpscaleModelLoader` when listing a workflow's models.
 - **Video**: Videos no longer go blank when you press play. Result files now come from Comfier at URLs that
   don't expire and are only served to people who may see the result. Active Storage's links stopped working five
   minutes after a video was first viewed, so playing, seeking, or looping after that showed the page background.

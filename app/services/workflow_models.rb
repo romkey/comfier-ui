@@ -27,7 +27,8 @@ module WorkflowModels
   # Inputs whose folder depends on the node, not just the input name.
   NODE_INPUT_DIRECTORIES = {
     %w[CLIPVisionLoader clip_name] => 'clip_vision',
-    %w[UpscaleModelLoader model_name] => 'upscale_models'
+    %w[UpscaleModelLoader model_name] => 'upscale_models',
+    %w[LatentUpscaleModelLoader model_name] => 'latent_upscale_models'
   }.freeze
 
   module_function

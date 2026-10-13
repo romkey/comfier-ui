@@ -44,16 +44,34 @@ LOG = logging.getLogger("comfier_agent")
 SAFE_SEGMENT = re.compile(r"^[A-Za-z0-9._ ()+-]+$")
 ALLOWED_EXT = {".safetensors", ".sft", ".gguf"}
 PICKLE_EXT = {".ckpt", ".pt", ".pth", ".bin"}
+# ComfyUI's model folders (folder_paths), for when the agent runs outside ComfyUI and can't ask it. Folders that
+# hold code or settings (custom_nodes, configs) aren't download targets.
 DEFAULT_FOLDERS = {
+    "audio_encoders",
+    "background_removal",
     "checkpoints",
-    "loras",
-    "vae",
+    "classifiers",
+    "clip",
     "clip_vision",
     "controlnet",
-    "upscale_models",
-    "embeddings",
+    "detection",
     "diffusion_models",
+    "embeddings",
+    "frame_interpolation",
+    "geometry_estimation",
+    "gligen",
+    "hypernetworks",
+    "latent_upscale_models",
+    "loras",
+    "model_patches",
+    "optical_flow",
+    "photomaker",
+    "style_models",
     "text_encoders",
+    "unet",
+    "upscale_models",
+    "vae",
+    "vae_approx",
 }
 PART_SUFFIX = ".comfier-part"
 PART_MAX_AGE_S = 7 * 86400
@@ -443,10 +461,13 @@ class ModelDownloadManager:
 
             return set(folder_paths.folder_names_and_paths.keys())
         except Exception:
+            # A models folder that's missing a subfolder ComfyUI knows (a newer one, say) still takes downloads.
+            known = set(DEFAULT_FOLDERS)
             if self.config.comfyui_models_dir:
                 base = self.config.comfyui_models_dir
-                return {d for d in os.listdir(base) if os.path.isdir(os.path.join(base, d))}
-            return set(DEFAULT_FOLDERS)
+                with contextlib.suppress(OSError):
+                    known |= {d for d in os.listdir(base) if os.path.isdir(os.path.join(base, d))}
+            return known
 
     def _resolve_path(self, folder: str, filename: str) -> tuple[str, str]:
         try:
