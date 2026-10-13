@@ -119,6 +119,36 @@ def test_the_mask_fix_is_harmless_without_mlx_video():
     fix_ltx_text_encoder_mask()  # mlx-video isn't installed here: nothing to patch, no error
 
 
+def test_the_mask_fix_covers_both_gemma_encoders(monkeypatch):
+    import types
+
+    from comfier_agent.workers.entry_point import fix_ltx_text_encoder_mask
+
+    class Gemma3:
+        def _create_causal_mask_with_padding(self, seq_len, attention_mask, dtype):
+            return "additive"
+
+    class Gemma4:
+        def _attention_mask(self, attention_mask, dtype):
+            return "additive"
+
+    mlx = types.ModuleType("mlx")
+    mlx.core = types.ModuleType("mlx.core")
+    text_encoder = types.ModuleType("mlx_video.models.ltx_2.text_encoder")
+    text_encoder.LanguageModel, text_encoder.Gemma4LanguageModel = Gemma3, Gemma4
+    ltx_2 = types.ModuleType("mlx_video.models.ltx_2")
+    ltx_2.text_encoder = text_encoder
+    for name, module in {"mlx": mlx, "mlx.core": mlx.core, "mlx_video": types.ModuleType("mlx_video"),
+                         "mlx_video.models": types.ModuleType("mlx_video.models"), "mlx_video.models.ltx_2": ltx_2,
+                         "mlx_video.models.ltx_2.text_encoder": text_encoder}.items():
+        monkeypatch.setitem(sys.modules, name, module)
+
+    fix_ltx_text_encoder_mask()
+    assert Gemma3._create_causal_mask_with_padding.__name__ == "<lambda>"
+    assert Gemma4._attention_mask.__name__ == "<lambda>"
+    assert Gemma4()._attention_mask(None, "bfloat16") is None
+
+
 def make_clip(path, faststart_flag):
     import subprocess
     subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-f", "lavfi", "-i",

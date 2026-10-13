@@ -26,23 +26,29 @@ def fix_ltx_text_encoder_mask() -> None:
     """mlx-video's Gemma text encoder masks padding with an additive bf16 finfo.min, which on some Macs makes
     MLX's attention return NaN for the padded rows at its 1024-token length, so every LTX video decodes
     black (Blaizzy/mlx-video#55). A boolean mask, which mx.fast.scaled_dot_product_attention takes as is,
-    doesn't. Drop this once mlx-video ships the fix."""
+    doesn't. LTX-2.5's Gemma 4 encoder builds its mask the same way. Drop this once mlx-video ships the fix."""
     try:
         import mlx.core as mx
-        from mlx_video.models.ltx_2.text_encoder import LanguageModel
+        from mlx_video.models.ltx_2 import text_encoder
     except ImportError:
         return
-    if not hasattr(LanguageModel, "_create_causal_mask_with_padding"):
-        return
 
-    def boolean_mask(self, seq_len, attention_mask, dtype):
+    def boolean_mask(seq_len, attention_mask):
         causal = mx.tril(mx.ones((seq_len, seq_len), dtype=mx.bool_))
         if attention_mask is None:
             return causal[None, None, :, :]
         combined = causal[None, :, :] & attention_mask.astype(mx.bool_)[:, None, :]
         return combined[:, None, :, :]
 
-    LanguageModel._create_causal_mask_with_padding = boolean_mask
+    gemma3 = getattr(text_encoder, "LanguageModel", None)
+    if gemma3 is not None and hasattr(gemma3, "_create_causal_mask_with_padding"):
+        gemma3._create_causal_mask_with_padding = lambda self, seq_len, attention_mask, dtype: boolean_mask(
+            seq_len, attention_mask)
+    gemma4 = getattr(text_encoder, "Gemma4LanguageModel", None)
+    if gemma4 is not None and hasattr(gemma4, "_attention_mask"):
+        # Without a mask there's no length to build one from; None lets Gemma 4 make its own causal masks.
+        gemma4._attention_mask = lambda self, attention_mask, dtype: (
+            None if attention_mask is None else boolean_mask(attention_mask.shape[1], attention_mask))
 
 
 # Fixes applied before running a command, by command prefix.

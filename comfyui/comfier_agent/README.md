@@ -169,10 +169,11 @@ To run mflux without ComfyUI at all, set `COMFIER_ENGINES=mflux` and run the age
 
 ## MLX video on Apple Silicon
 
-Video jobs can run with [mlx-video](https://github.com/Blaizzy/mlx-video), which runs LTX-2 / LTX-2.3
-(text, image and audio to video) and Wan2.1 / Wan2.2 natively. The `[mac]` install includes it; on its own
-it's `pip install "comfier-agent[video]"`. It's installed from a pinned GitHub commit, because mlx-video
-isn't on PyPI.
+Video jobs can run with [mlx-video](https://github.com/Blaizzy/mlx-video), which runs LTX-2 / LTX-2.3 /
+LTX-2.5 (text, image and audio to video) and Wan2.1 / Wan2.2 natively. The `[mac]` install includes it; on its
+own it's `pip install "comfier-agent[video]"`. It's installed from a pinned GitHub commit, because mlx-video
+isn't on PyPI: for now the head of [Blaizzy/mlx-video#52](https://github.com/Blaizzy/mlx-video/pull/52), which
+adds LTX-2.5 and isn't merged yet.
 
 - Each job runs mlx-video's command-line tool (`mlx_video.ltx_2.generate` or `mlx_video.wan_2.generate`)
   with the recipe's flags, so its model loads once per job. That's small next to generating a video, and
@@ -184,7 +185,11 @@ isn't on PyPI.
   `text_encoder_repo` (the presets use `mlx-community/gemma-3-12b-it-bf16`, about 26 GB). Comfier offers it
   for download alongside the model. Don't use `Lightricks/LTX-2` there: mlx-video then loads the wrong
   tokenizer and every prompt gives the same video.
-- Memory matters: LTX-2.3 is a 22B video model plus the 12B text encoder, so plan on 96 GB. Wan2.2 TI2V 5B
+- LTX-2.5 (`model_repo` `Lightricks/LTX-2.5`, distilled pipeline only) carries its own Gemma 4 text encoder and
+  upscaler, so its recipes don't name a `text_encoder_repo`. It's much better at following the prompt than
+  LTX-2.3. The repo is gated: accept its terms on Hugging Face, then run `hf auth login` on the Mac. The agent
+  downloads only the files the distilled pipeline reads, about 73 GB of the repo's 200 GB.
+- Memory matters: LTX-2.3 and LTX-2.5 are 22B video models plus a 12B text encoder, so plan on 96 GB. Wan2.2 TI2V 5B
   fits in 32 GB. Set `min_memory_gb` in the recipe and Comfier only sends the style to Macs with that much.
 - The agent works around an mlx-video bug that makes LTX videos come out black on some Macs
   ([Blaizzy/mlx-video#55](https://github.com/Blaizzy/mlx-video/issues/55)).
