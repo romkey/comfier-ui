@@ -223,8 +223,9 @@ class ChildProcess:
         return self.proc is not None and self.proc.returncode is None
 
     async def start(self, argv: list[str], *, stdin: bool = False, stdout: bool = False,
-                    merged: bool = False) -> None:
-        """stdout: a pipe the caller reads. merged: stdout joins stderr, both logged and passed to on_line."""
+                    merged: bool = False, env: dict[str, str] | None = None) -> None:
+        """stdout: a pipe the caller reads. merged: stdout joins stderr, both logged and passed to on_line.
+        env: variables added to the child's environment."""
         self.stderr_tail.clear()
         self.proc = await asyncio.create_subprocess_exec(
             *argv,
@@ -232,7 +233,7 @@ class ChildProcess:
             stdout=asyncio.subprocess.PIPE if stdout or merged else asyncio.subprocess.DEVNULL,
             stderr=asyncio.subprocess.STDOUT if merged else asyncio.subprocess.PIPE,
             start_new_session=True,
-            env=child_env(),
+            env={**child_env(), **(env or {})},
         )
         stream = self.proc.stdout if merged else self.proc.stderr
         self._stderr_task = asyncio.create_task(self._read_lines(stream))

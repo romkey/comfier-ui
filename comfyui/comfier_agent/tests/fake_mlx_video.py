@@ -4,6 +4,7 @@ Draws a progress bar the way rich does (\\r, no newline). The prompt picks the b
 be killed, "fail" exits 1 after printing an error."""
 
 import json
+import os
 import sys
 import time
 
@@ -25,5 +26,6 @@ for step in range(1, 5):
         time.sleep(60)
 sys.stdout.write("\n")
 with open(opts["--output-path"], "wb") as f:
-    f.write(b"\x00\x00\x00\x18ftypmp42 " + " ".join([command, *argv]).encode())
+    quantize = os.environ.get("COMFIER_MLX_QUANTIZE", "")
+    f.write(b"\x00\x00\x00\x18ftypmp42 " + " ".join([command, *argv, f"quantize={quantize}"]).encode())
 print(f"Saved {opts['--output-path']}")

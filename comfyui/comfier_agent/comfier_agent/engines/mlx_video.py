@@ -19,6 +19,7 @@ from typing import Any
 
 from comfier_agent.engines.base import JobCancelled, JobContext, JobError, ProgressFn
 from comfier_agent.engines.mlx import ChildProcess, MlxEngine, recipe_argv
+from comfier_agent.workers.entry_point import QUANTIZE_ENV
 
 LOG = logging.getLogger("comfier_agent")
 
@@ -122,10 +123,13 @@ class MlxVideoEngine(MlxEngine):
                 state["fraction"], state["denoising"] = fraction, True
 
         self.process = ChildProcess("mlx-video", on_line=on_line)
-        argv = [*self.runner_argv, workflow["command"], *recipe_argv(workflow), "--output-path", str(out)]
+        # mlx-video has no --quantize; the entry point quantizes LTX-2.5's weights as they load instead.
+        options = {k: v for k, v in workflow.items() if k != "quantize"}
+        env = {QUANTIZE_ENV: str(workflow["quantize"])} if workflow.get("quantize") else None
+        argv = [*self.runner_argv, workflow["command"], *recipe_argv(options), "--output-path", str(out)]
         ctx.timings.mark_prompt()
         try:
-            await self.process.start(argv, merged=True)
+            await self.process.start(argv, merged=True, env=env)
             ctx.phase = "loading_model"
             await progress(ctx, "loading_model", 0.0)
             await self._follow(ctx, state, timeout_s=timeout_s, progress=progress)

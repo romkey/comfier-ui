@@ -189,7 +189,13 @@ adds LTX-2.5 and isn't merged yet.
   upscaler, so its recipes don't name a `text_encoder_repo`. It's much better at following the prompt than
   LTX-2.3. The repo is gated: accept its terms on Hugging Face, then run `hf auth login` on the Mac. The agent
   downloads only the files the distilled pipeline reads, about 73 GB of the repo's 200 GB.
-- Memory matters: LTX-2.3 and LTX-2.5 are 22B video models plus a 12B text encoder, so plan on 96 GB. Wan2.2 TI2V 5B
+- `"quantize": 8` in an LTX-2.5 recipe (the 8-bit presets) has the agent quantize the transformer and text
+  encoder as they load. A 5-second 1280×704 job then peaks at about 29 GB instead of 46 GB and looks the same, so
+  it runs on 48 and 64 GB Macs. mlx-video has no such flag, so the agent applies it itself (only LTX-2.5).
+- The agent caps MLX's buffer cache at 4 GB for video jobs. Without the cap it grows to about 56 GB while LTX
+  decodes video, though only a few GB are in use, which pushed a job's peak to 69 GB. Output is unchanged.
+- Memory matters: LTX-2.3 and LTX-2.5 are 22B video models plus a 12B text encoder, so plan on 96 GB, or 48 GB
+  for LTX-2.5 at 8 bits. Wan2.2 TI2V 5B
   fits in 32 GB. Set `min_memory_gb` in the recipe and Comfier only sends the style to Macs with that much.
 - The agent works around an mlx-video bug that makes LTX videos come out black on some Macs
   ([Blaizzy/mlx-video#55](https://github.com/Blaizzy/mlx-video/issues/55)).

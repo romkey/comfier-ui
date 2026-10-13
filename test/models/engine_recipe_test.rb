@@ -55,6 +55,18 @@ class EngineRecipeTest < ActiveSupport::TestCase
     assert_equal [EngineRecipe::LTX_25_REPO], EngineRecipe.models(ltx, 'mlx_video')
   end
 
+  test 'MLX video quantizes LTX-2.5 only, at 4 or 8 bits' do
+    ltx = { 'command' => 'mlx_video.ltx_2.generate', 'model_repo' => EngineRecipe::LTX_25_REPO }
+
+    assert_empty EngineRecipe.problems('mlx_video', ltx.merge('quantize' => 8))
+    assert_match(/must be 4 or 8/, EngineRecipe.problems('mlx_video', ltx.merge('quantize' => 6)).join)
+    assert_match(/only works with LTX-2.5/,
+                 EngineRecipe.problems('mlx_video', ltx.merge('model_repo' => 'prince-canuma/LTX-2.3-distilled',
+                                                              'text_encoder_repo' => EngineRecipe::LTX_TEXT_ENCODER,
+                                                              'quantize' => 8)).join)
+    assert_empty EngineRecipe.problems('mflux', RECIPE.merge('quantize' => 8))
+  end
+
   test "an engine's model comes from its own key" do
     assert_equal 'z-image-turbo', EngineRecipe.model({ 'model' => 'z-image-turbo' }, 'mflux')
     assert_nil EngineRecipe.model({ 'model' => 'z-image-turbo' }, 'mlx_video')
