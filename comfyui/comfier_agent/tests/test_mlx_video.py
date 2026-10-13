@@ -146,6 +146,7 @@ def test_the_mask_fix_covers_both_gemma_encoders(monkeypatch):
     fix_ltx_text_encoder_mask()
     assert Gemma3._create_causal_mask_with_padding.__name__ == "<lambda>"
     assert Gemma4._attention_mask.__name__ == "<lambda>"
+    assert Gemma4()._attention_mask(None, "bfloat16") is None
 
 
 def make_clip(path, faststart_flag):

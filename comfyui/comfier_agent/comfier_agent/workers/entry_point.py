@@ -46,8 +46,9 @@ def fix_ltx_text_encoder_mask() -> None:
             seq_len, attention_mask)
     gemma4 = getattr(text_encoder, "Gemma4LanguageModel", None)
     if gemma4 is not None and hasattr(gemma4, "_attention_mask"):
-        gemma4._attention_mask = lambda self, attention_mask, dtype: boolean_mask(
-            attention_mask.shape[1], attention_mask)
+        # Without a mask there's no length to build one from; None lets Gemma 4 make its own causal masks.
+        gemma4._attention_mask = lambda self, attention_mask, dtype: (
+            None if attention_mask is None else boolean_mask(attention_mask.shape[1], attention_mask))
 
 
 # Fixes applied before running a command, by command prefix.
