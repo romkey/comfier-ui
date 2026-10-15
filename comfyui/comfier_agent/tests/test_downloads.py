@@ -285,3 +285,17 @@ async def test_input_download_drops_auth_on_cross_host_redirect(downloads, tmp_p
     first, second = downloads["server"].requests
     assert first["headers"]["Authorization"] == "Bearer agent-key"
     assert "Authorization" not in second["headers"]
+
+
+@pytest.mark.asyncio
+async def test_a_comfyui_folder_the_models_dir_doesnt_have_yet_takes_downloads(downloads, tmp_path):
+    # LTX's latent upscalers go in latent_upscale_models, which older models folders don't have.
+    msgs = await downloads["run"](downloads["manager"](), folder="latent_upscale_models", sha256=SHA)
+    assert terminal(msgs)["type"] == "model.download.completed"
+    assert (tmp_path / "latent_upscale_models" / "model.safetensors").read_bytes() == PAYLOAD
+
+
+@pytest.mark.asyncio
+async def test_folders_that_hold_code_or_settings_are_refused(downloads):
+    failed = terminal(await downloads["run"](downloads["manager"](), folder="custom_nodes"))
+    assert (failed["reason"], failed["detail"]) == ("invalid", "unknown folder custom_nodes")

@@ -9,11 +9,13 @@ class WorkflowModelsTest < ActiveSupport::TestCase
       '2' => node('DualCLIPLoader', 'clip_name1' => 'clip_l.safetensors', 'clip_name2' => 't5.safetensors'),
       '3' => node('CLIPVisionLoader', 'clip_name' => 'vision.safetensors'),
       '4' => node('UpscaleModelLoader', 'model_name' => '4x.pth'),
-      '5' => node('VAELoader', 'vae_name' => 'ae.safetensors')
+      '5' => node('VAELoader', 'vae_name' => 'ae.safetensors'),
+      '6' => node('LatentUpscaleModelLoader', 'model_name' => 'ltx-upscaler.safetensors')
     }
 
     assert_equal %w[diffusion_models/wan/t2v.safetensors text_encoders/clip_l.safetensors text_encoders/t5.safetensors
-                    clip_vision/vision.safetensors upscale_models/4x.pth vae/ae.safetensors],
+                    clip_vision/vision.safetensors upscale_models/4x.pth vae/ae.safetensors
+                    latent_upscale_models/ltx-upscaler.safetensors],
                  WorkflowModels.infer(graph).map(&:path)
   end
 
