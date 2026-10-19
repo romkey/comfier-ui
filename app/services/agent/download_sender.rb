@@ -71,12 +71,16 @@ module Agent
         "#{AgentTiming::MIN_FREE_DISK_GB} GB headroom."
     end
 
-    # After a reconnect: in-flight downloads the agent no longer lists are sent again.
+    # After a reconnect: in-flight downloads the agent no longer lists are sent again, and ones being cancelled are
+    # done (the agent dropped them; its "cancelled" reply was lost while it was away, and would otherwise hold the
+    # server's download slot forever).
     def resend_unlisted!(backend, active_downloads)
       listed = active_downloads.filter_map { it['download_id'] }
-      ModelDownload.where(backend_id: backend.id, agent_state: IN_FLIGHT - %w[cancelling])
-                   .where.not(agent_download_id: listed)
-                   .update_all(agent_state: 'queued', status: 'queued') # rubocop:disable Rails/SkipsModelValidations
+      unlisted = ModelDownload.where(backend_id: backend.id).where.not(agent_download_id: listed)
+      unlisted.where(agent_state: IN_FLIGHT - %w[cancelling])
+              .update_all(agent_state: 'queued', status: 'queued') # rubocop:disable Rails/SkipsModelValidations
+      unlisted.where(agent_state: 'cancelling')
+              .find_each { DownloadLifecycle.finish!(it, 'cancelled', 'The download was cancelled.') }
     end
 
     def eta(download)

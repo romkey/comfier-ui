@@ -154,6 +154,36 @@ module Agent
       assert_equal download.agent_download_id, socket.last_of_type('model.download')['download_id']
     end
 
+    test 'a cancel the agent never answered finishes after a reconnect, and the queue moves' do
+      submit
+      DownloadLifecycle.cancel_by_user!(download, user: @alice)
+      DownloadPlanner.manual!(@backend, [{ 'folder' => 'vae', 'filename' => 'next.safetensors',
+                                           'url' => 'https://huggingface.co/x/next' }], user: @alice)
+      waiting = ModelDownload.find_by!(name: 'next.safetensors')
+
+      assert_equal %w[cancelling queued], [download.agent_state, waiting.agent_state]
+
+      socket = connect_agent!(@backend)
+      agent_hello(@backend, active_downloads: [])
+      agent_status(@backend)
+      Reconciliation.run!(@backend)
+
+      assert_equal 'cancelled', download.agent_state
+      assert_equal 'sent', waiting.reload.agent_state
+      assert_equal waiting.agent_download_id, socket.last_of_type('model.download')['download_id']
+    end
+
+    test 'a download being cancelled that the agent still has gets the cancel again on hello' do
+      submit
+      DownloadLifecycle.cancel_by_user!(download, user: @alice)
+      socket = connect_agent!(@backend)
+      listed = { 'download_id' => download.agent_download_id, 'state' => 'downloading' }
+      agent_hello(@backend, active_downloads: [listed])
+
+      assert_equal download.agent_download_id, socket.last_of_type('model.download.cancel')['download_id']
+      assert_equal 'cancelling', download.agent_state
+    end
+
     test 'downloads the frontend does not know are cancelled on hello' do
       socket = connect_agent!(@backend)
       agent_hello(@backend, active_downloads: [{ 'download_id' => 'd_unknown', 'state' => 'downloading' }])
