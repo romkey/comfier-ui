@@ -83,17 +83,23 @@ module Agent
     end
 
     # The graph with fp8 filenames swapped for their stand-ins and fp8 weight_dtype choices set to default.
+    # fp8 weight_dtype is reset on every Mac, even when the fp16 swap doesn't fit: a style whose files are fp16
+    # can still ask ComfyUI to load them as fp8.
     def rewrite(graph, models)
-      return graph unless swap?(models) && graph.is_a?(Hash)
+      return graph unless active? && graph.is_a?(Hash)
 
-      renames = models.each_with_object({}) do |model, map|
-        swapped = substitute(model)
-        map[model['filename']] = swapped['filename'] if swapped
-      end
+      renames = swap?(models) ? renames(models) : {}
       graph.transform_values { rewrite_node(it, renames) }
     end
 
     private
+
+    def renames(models)
+      models.each_with_object({}) do |model, map|
+        swapped = substitute(model)
+        map[model['filename']] = swapped['filename'] if swapped
+      end
+    end
 
     def swap?(models) = active? && fits?(models)
 

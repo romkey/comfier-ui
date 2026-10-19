@@ -74,6 +74,11 @@ module Agent
 
       assert_equal wan, mac.models(wan)
       assert_equal graph, mac.rewrite(graph, wan)
+      big_fp16 = { '1' => { 'class_type' => 'UNETLoader',
+                            'inputs' => { 'unet_name' => 'big_fp16.safetensors', 'weight_dtype' => 'fp8_e4m3fn' } } }
+      big = [fp8_model(filename: 'big_fp16.safetensors', bytes: 90.gigabytes)]
+
+      assert_equal 'default', mac.rewrite(big_fp16, big).dig('1', 'inputs', 'weight_dtype')
       assert_equal 1, mac.problems(wan).size
       assert_match(/need about 66 GB of memory as fp16 .* has 96 GB, too little/, mac.problems(wan).first)
       assert_empty mac.problems([fp8_model(filename: 'vae.safetensors', bytes: 200.gigabytes)])
