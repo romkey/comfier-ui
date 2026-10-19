@@ -35,7 +35,7 @@ mac = [
     "mlx-video @ git+https://github.com/kiarina/mlx-video.git@cbb2c10f2a25305b0bf09169ab6b865ab86e3332",
     "numpy>=1.24", "pillow>=10.0,<13", "trimesh>=4.0",
 ]
-test = ["pytest>=8.0", "pytest-asyncio>=0.24", "aiohttp>=3.9", "jsonschema>=4.18", "numpy>=1.24", "pillow>=10.0,<13",
+test = ["pytest>=8.0", "pytest-asyncio>=0.24", "aiohttp>=3.9", "jsonschema>=4.18", "numpy>=1.24", "pillow>=13,<14",
         "trimesh>=4.0"]
 
 [tool.pytest.ini_options]
