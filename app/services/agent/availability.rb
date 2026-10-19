@@ -4,6 +4,7 @@ module Agent
   # Whether a workflow can run on a server: ready, needs_downloads (every missing model has a link
   # and fits on disk), or blocked (with reasons). Results are cached in workflow_availabilities.
   class Availability # rubocop:disable Metrics/ClassLength
+    FP8 = /fp8/i
     Result = Data.define(:status, :models, :total_bytes, :reasons, :hints) do
       def ready? = status == :ready
       def needs_downloads? = status == :needs_downloads
@@ -49,7 +50,7 @@ module Agent
 
       missing = missing_models
       hints = hints_for(missing)
-      reasons = missing_node_reasons + strict_reasons(missing) + model_reasons(missing)
+      reasons = missing_node_reasons + fp8_reasons + strict_reasons(missing) + model_reasons(missing)
       return blocked(reasons, hints) if reasons.any?
       return Result.new(status: :ready, models: [], total_bytes: nil, reasons: [], hints:) if missing.empty?
 
@@ -88,6 +89,17 @@ module Agent
       return [] if @backend.legacy? && have.empty?
 
       Requirements.node_types_for(@workflow).reject { have.include?(it) }.map { "Node type #{it} isn't installed" }
+    end
+
+    # PyTorch can't move fp8 tensors to MPS, so fp8 checkpoints and fp8 weight_dtype fail mid-run on a Mac.
+    def fp8_reasons
+      return [] unless @backend.apple_silicon?
+
+      files = @requirements.models.map { File.basename(it['filename']) }.grep(FP8)
+      dtypes = Requirements.literal_inputs(@workflow.graph).filter_map do |_id, _node, input, value|
+        value if input == 'weight_dtype' && value.match?(FP8)
+      end
+      (files + dtypes).uniq.map { "#{it} is fp8, which Apple Silicon can't run; use an fp16 or GGUF version" }
     end
 
     def model_reasons(missing)

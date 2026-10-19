@@ -41,6 +41,32 @@ module Agent
       assert_not matcher.present?('vae', 'flux.safetensors')
     end
 
+    test 'fp8 weights are blocked on Apple Silicon' do
+      graph = @workflow.graph.deep_dup
+      loader = graph.values.find { it['class_type'] == 'CheckpointLoaderSimple' }
+      loader['inputs']['ckpt_name'] = 'wan2.2_t2v_high_noise_14B_fp8_scaled.safetensors'
+      @workflow.update!(graph:)
+      bring_online_for!(@backend, @workflow)
+
+      assert_predicate compute, :ready?
+
+      @backend.update!(system_json: { 'devices' => [{ 'name' => 'mps', 'type' => 'mps' }] })
+      result = compute
+
+      assert_predicate result, :blocked?
+      assert_match "wan2.2_t2v_high_noise_14B_fp8_scaled.safetensors is fp8, which Apple Silicon can't run",
+                   result.reasons.first
+    end
+
+    test 'an fp8 weight_dtype is blocked on Apple Silicon' do
+      graph = @workflow.graph.deep_dup
+      graph['99'] = { 'class_type' => 'UNETLoader', 'inputs' => { 'weight_dtype' => 'fp8_e4m3fn' } }
+      @workflow.update!(graph:)
+      @backend.update!(system_json: { 'devices' => [{ 'type' => 'mps' }] })
+
+      assert_includes Availability.new(@workflow, @backend).send(:fp8_reasons).first, 'fp8_e4m3fn is fp8'
+    end
+
     test 'a file in another subdirectory is a hint, not a match' do
       bring_online!(@backend, models: { 'checkpoints' => ['old/v1-5-pruned-emaonly-fp16.safetensors'] },
                               node_types: @node_types)
