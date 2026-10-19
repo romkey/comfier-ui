@@ -343,3 +343,37 @@ async def test_convert_failure_removes_the_download(downloads):
     assert failed["type"] == "model.download.failed"
     assert "couldn't convert to fp16" in failed["detail"]
     assert list(downloads["dir"].iterdir()) == []
+
+
+@pytest.mark.asyncio
+async def test_cancelling_a_conversion_removes_its_files(downloads, monkeypatch):
+    """Even when the converter thread ignores the cancel and finishes, nothing is left behind."""
+    import time as _time
+
+    import comfier_agent.models as models_mod
+
+    def slow_convert(_src, dst, _cancelled):
+        with open(dst, "wb") as out:
+            out.write(b"partial fp16")
+        _time.sleep(0.3)
+        return 12
+
+    monkeypatch.setattr(models_mod, "convert_fp8_to_fp16", slow_convert)
+    mgr = downloads["manager"]()
+    await mgr.handle({"type": "model.download", "download_id": "d_1", "folder": "checkpoints",
+                      "filename": "m_fp16_from_fp8.safetensors", "convert": "fp8_to_fp16",
+                      "url": downloads["server"].url("/fp8/m_fp8_scaled.safetensors")})
+    task = mgr.active["d_1"].task
+    converting = downloads["dir"] / ("m_fp16_from_fp8.safetensors" + models_mod.CONVERTING_SUFFIX)
+    for _ in range(100):
+        if converting.exists():
+            break
+        await asyncio.sleep(0.02)
+    assert converting.exists()
+
+    task.cancel()  # as at agent shutdown: no user cancel flag
+    await task
+    await asyncio.sleep(0.4)
+
+    assert terminal(downloads["sent"])["type"] == "model.download.cancelled"
+    assert list(downloads["dir"].iterdir()) == []

@@ -12,6 +12,9 @@ module Agent
     # The first agent that understands `convert` on model.download.
     CONVERTING_AGENT = Gem::Version.new('0.4.13')
 
+    # Disk a download needs: converting keeps the fp8 file beside its fp16 output (about twice its size) until done.
+    def self.disk_bytes(bytes, convert) = bytes.to_i * (convert.present? ? 3 : 1)
+
     class << self
       def fp8?(filename) = File.basename(filename.to_s).match?(FP8)
       def convertible?(filename) = fp8?(filename) && File.extname(filename.to_s).casecmp?('.safetensors')

@@ -62,15 +62,12 @@ module Agent
 
     def downloads(missing, hints)
       total = missing.sum { it['bytes'].to_i }
-      disk = disk_reason(missing.sum { disk_bytes(it) })
+      disk = disk_reason(missing.sum { MacWeights.disk_bytes(it['bytes'], it['convert']) })
       return blocked([disk], hints, missing) if disk
 
       Result.new(status: :needs_downloads, models: missing, total_bytes: total.positive? ? total : nil,
                  reasons: [], hints:)
     end
-
-    # Converting keeps the fp8 download beside its fp16 output (about twice its size) until it's done.
-    def disk_bytes(model) = model['bytes'].to_i * (model['convert'] ? 3 : 1)
 
     def blocked(reasons, hints = [], models = [])
       Result.new(status: :blocked, models:, total_bytes: nil, reasons:, hints:)

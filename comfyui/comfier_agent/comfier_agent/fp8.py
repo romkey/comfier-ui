@@ -8,6 +8,7 @@ memory map and written one at a time, so memory use stays near the largest tenso
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 from collections.abc import Callable
@@ -51,7 +52,7 @@ def convert_fp8_to_fp16(src: str, dst: str, cancelled: Callable[[], bool] = lamb
                 _write_tensor(out, np, raw, header, name, info, scale_key, cancelled)
         return os.path.getsize(dst)
     except BaseException:
-        if os.path.exists(dst):
+        with contextlib.suppress(FileNotFoundError):
             os.remove(dst)
         raise
 

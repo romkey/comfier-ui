@@ -10,6 +10,7 @@ import logging
 import os
 import re
 import shutil
+import threading
 import time
 from dataclasses import dataclass
 from typing import Any
@@ -457,11 +458,17 @@ class ModelDownloadManager:
         if state:
             state.state = "verifying"
         converting = final_path + CONVERTING_SUFFIX
+        # Cancelling the task (a user cancel or the agent shutting down) doesn't stop the worker thread, so it's
+        # told to stop, and the fp16 file it may still be writing is removed here as well as by the thread.
+        stop = threading.Event()
         try:
             size = await asyncio.to_thread(
-                convert_fp8_to_fp16, part, converting, lambda: bool(state and state.cancel)
+                convert_fp8_to_fp16, part, converting, lambda: stop.is_set() or bool(state and state.cancel)
             )
-        except ConversionCancelled:
+        except (asyncio.CancelledError, ConversionCancelled):
+            stop.set()
+            with contextlib.suppress(FileNotFoundError):
+                os.remove(converting)
             raise asyncio.CancelledError() from None
         except (ConversionError, OSError, ValueError, KeyError) as exc:
             os.remove(part)

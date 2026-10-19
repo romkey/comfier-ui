@@ -91,6 +91,21 @@ module Agent
       assert_empty @socket.of_type('model.download')
     end
 
+    test 'a converting download needs room for the fp16 output too' do
+      agent_status(@backend, disk_free: { 'models' => 25.gigabytes })
+      file = { 'folder' => 'vae', 'bytes' => 6.gigabytes, 'url' => 'https://huggingface.co/x/fp8' }
+      DownloadPlanner.manual!(@backend, [file.merge('filename' => 'a_fp16_from_fp8.safetensors',
+                                                    'convert' => MacWeights::CONVERT)], user: @alice)
+      converting = ModelDownload.find_by!(name: 'a_fp16_from_fp8.safetensors')
+
+      assert_equal 'disk_full', converting.agent_reason
+      assert_match '18 GB', converting.error_message.to_s + converting.agent_detail.to_s
+
+      DownloadPlanner.manual!(@backend, [file.merge('filename' => 'a_fp8.safetensors')], user: @alice)
+
+      assert_equal 'sent', ModelDownload.find_by!(name: 'a_fp8.safetensors').agent_state
+    end
+
     test 'a failed download fails its waiting job with the reason' do
       gen = submit
       download_event('model.download.failed', reason: 'http_error', detail: 'HTTP 401')
