@@ -65,6 +65,25 @@ module Agent
       assert_match 'use an fp16 or GGUF version', mac.problem(fp8_model(url: nil))
     end
 
+    test 'the swap only happens when the fp16 models fit in memory' do
+      umt5 = 'umt5_xxl_fp8_e4m3fn_scaled.safetensors'
+      wan = [fp8_model(bytes: 14_293_923_632), fp8_model(filename: FP8.sub('high', 'low'), bytes: 14_293_923_632),
+             fp8_model(folder: 'text_encoders', filename: umt5, bytes: 6_735_906_897)]
+      graph = { '1' => { 'class_type' => 'UNETLoader', 'inputs' => { 'unet_name' => FP8 } } }
+      @backend.update!(system_json: @backend.system_json.merge('ram_total_bytes' => 96.gigabytes))
+
+      assert_equal wan, mac.models(wan)
+      assert_equal graph, mac.rewrite(graph, wan)
+      assert_equal 1, mac.problems(wan).size
+      assert_match(/need about 66 GB of memory as fp16 .* has 96 GB, too little/, mac.problems(wan).first)
+      assert_empty mac.problems([fp8_model(filename: 'vae.safetensors', bytes: 200.gigabytes)])
+
+      @backend.update!(system_json: @backend.system_json.merge('ram_total_bytes' => 128.gigabytes))
+
+      assert_equal CONVERTED, mac.models(wan).first['filename']
+      assert_empty mac.problems(wan)
+    end
+
     test 'jobs name the stand-ins and drop fp8 weight_dtype' do
       loader = { 'unet_name' => FP8, 'weight_dtype' => 'fp8_e4m3fn' }
       graph = { '1' => { 'class_type' => 'UNETLoader', 'inputs' => loader },
