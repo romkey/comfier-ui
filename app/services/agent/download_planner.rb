@@ -37,7 +37,7 @@ module Agent
 
       ModelDownload.create!(
         backend:, directory: model['folder'], name: model['filename'], url: model['url'], sha256: model['sha256'],
-        engine: model['engine'],
+        engine: model['engine'], convert: model['convert'],
         bytes_total: model['bytes'], agent_state: 'queued', agent_download_id: "d_#{SecureRandom.hex(8)}",
         requested_by_user_id: user_id, auto:, for_generation_ids: [generation_id].compact, status: :queued,
         via: 'agent'

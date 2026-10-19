@@ -207,6 +207,15 @@ adds LTX-2.5 and isn't merged yet.
 - The one-job-at-a-time rule, the GPU lock and the memory handover with ComfyUI and mflux apply to video
   jobs too.
 
+## fp8 models on Apple Silicon
+
+PyTorch's MPS device can't hold fp8 tensors, so ComfyUI on a Mac fails on fp8 checkpoints such as Wan 2.2's
+`*_fp8_scaled.safetensors`. Comfier swaps them for fp16 on Apple Silicon servers. If the official fp16 file is
+published beside the fp8 one (`…_fp16.safetensors`), Comfier downloads that. Otherwise the agent downloads the fp8
+file and saves it as `…_fp16_from_fp8.safetensors`, and jobs sent to the Mac use whichever fp16 file it has.
+Conversion needs numpy (ComfyUI ships it), keeps one tensor in memory at a time, and needs free disk space for both
+files until it finishes. The fp16 file is about twice the size of the fp8 one.
+
 ## Sidecar mode
 
 The agent can also run as its own process next to ComfyUI instead of inside it (on a Mac, the

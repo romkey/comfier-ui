@@ -151,8 +151,15 @@ module Agent
       @workflow.workflow_models.create!(
         folder: entry['folder'], filename: entry['filename'], url: entry['url'],
         sha256: entry['sha256'] || enriched&.sha256, bytes: enriched&.bytes,
-        source: enriched ? 'enriched' : entry['source']
+        source: enriched ? 'enriched' : entry['source'], **fp16_attrs(previous[key], entry)
       )
+    end
+
+    # The fp16 link found for an fp8 file stays valid while the fp8 link does.
+    def fp16_attrs(old, entry)
+      return {} unless old && old.url == entry['url']
+
+      old.slice(:fp16_url, :fp16_bytes, :fp16_sha256, :fp16_checked_at).symbolize_keys
     end
 
     # Sizes and hashes fetched for a link stay valid while the link does.

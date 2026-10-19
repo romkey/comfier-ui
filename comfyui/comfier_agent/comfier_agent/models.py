@@ -10,6 +10,7 @@ import logging
 import os
 import re
 import shutil
+import threading
 import time
 from dataclasses import dataclass
 from typing import Any
@@ -19,6 +20,7 @@ import aiohttp
 
 from comfier_agent.config import AgentConfig
 from comfier_agent.engines.mlx import DownloadFailed
+from comfier_agent.fp8 import ConversionCancelled, ConversionError, convert_fp8_to_fp16
 from comfier_agent.hf_cli import (
     HfCliCancelled,
     HfCliError,
@@ -74,6 +76,9 @@ DEFAULT_FOLDERS = {
     "vae_approx",
 }
 PART_SUFFIX = ".comfier-part"
+CONVERTING_SUFFIX = ".fp16" + PART_SUFFIX
+# model.download "convert": the fp8 file is downloaded and verified as usual, then saved as fp16 (Apple Silicon).
+CONVERT_FP8_TO_FP16 = "fp8_to_fp16"
 PART_MAX_AGE_S = 7 * 86400
 
 
@@ -181,8 +186,13 @@ class ModelDownloadManager:
                 return
             self.paths_in_progress[download_id] = final_path
 
+            if msg.get("convert") not in (None, CONVERT_FP8_TO_FP16):
+                await self._failed(download_id, "invalid", f"unknown conversion {msg['convert']}")
+                return
             try:
-                existing = await self._check_existing(final_path, msg)
+                # A converted file's hash isn't the download's, so only its presence counts.
+                check = {**msg, "sha256": None} if msg.get("convert") else msg
+                existing = await self._check_existing(final_path, check)
             except ExistsError:
                 await self._failed(download_id, "exists", "hash differs")
                 return
@@ -321,8 +331,7 @@ class ModelDownloadManager:
                 await self._failed(download_id, "invalid", "not a valid safetensors file (check access token)")
                 return
 
-            os.replace(part, final_path)
-            await self._complete(download_id, msg["folder"], msg["filename"], done, digest, False)
+            await self._finish(download_id, msg, part, final_path, done, digest)
         except asyncio.CancelledError:
             part_path = None
             if download_id in self.paths_in_progress:
@@ -424,8 +433,51 @@ class ModelDownloadManager:
             await self._failed(download_id, "size_mismatch", f"{size} vs {bytes_total}")
             return
 
-        os.replace(part, final_path)
+        await self._finish(download_id, msg, part, final_path, size, digest)
+
+    async def _finish(
+        self, download_id: str, msg: dict[str, Any], part: str, final_path: str, size: int, digest: str | None
+    ) -> None:
+        """Moves a verified download into place, converting it first when asked."""
+        if msg.get("convert") == CONVERT_FP8_TO_FP16:
+            size = await self._convert(download_id, part, final_path)
+            if size is None:
+                return
+            digest = None  # the hash checked was the fp8 download's
+        else:
+            os.replace(part, final_path)
         await self._complete(download_id, msg["folder"], msg["filename"], size, digest, False)
+
+    async def _convert(self, download_id: str, part: str, final_path: str) -> int | None:
+        """fp8 to fp16 beside the download, which is removed once the fp16 file is in place."""
+        if not self._disk_ok(final_path, 2 * os.path.getsize(part)):
+            os.remove(part)
+            await self._failed(download_id, "disk_full", "not enough space to convert to fp16")
+            return None
+        state = self.active.get(download_id)
+        if state:
+            state.state = "verifying"
+        converting = final_path + CONVERTING_SUFFIX
+        # Cancelling the task (a user cancel or the agent shutting down) doesn't stop the worker thread, so it's
+        # told to stop, and the fp16 file it may still be writing is removed here as well as by the thread.
+        stop = threading.Event()
+        try:
+            size = await asyncio.to_thread(
+                convert_fp8_to_fp16, part, converting, lambda: stop.is_set() or bool(state and state.cancel)
+            )
+        except (asyncio.CancelledError, ConversionCancelled):
+            stop.set()
+            with contextlib.suppress(FileNotFoundError):
+                os.remove(converting)
+            raise asyncio.CancelledError() from None
+        except (ConversionError, OSError, ValueError, KeyError) as exc:
+            os.remove(part)
+            await self._failed(download_id, "invalid", f"couldn't convert to fp16: {exc}")
+            return None
+        os.replace(converting, final_path)
+        os.remove(part)
+        LOG.info("converted %s to fp16", os.path.basename(final_path))
+        return size
 
     async def _validate(self, msg: dict[str, Any]) -> tuple[str, str] | None:
         if not self.config.allow_model_downloads:

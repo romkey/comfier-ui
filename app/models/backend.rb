@@ -110,6 +110,9 @@ class Backend < ApplicationRecord # rubocop:disable Metrics/ClassLength
 
   def speed_index = backend_speed&.speed_index || 1.0
 
+  # Apple Silicon runs ComfyUI on PyTorch's MPS device, which has no fp8 support.
+  def apple_silicon? = Array(system_json&.dig('devices')).grep(Hash).any? { it['type'].to_s.casecmp?('mps') }
+
   def online? = agent? ? Agent::Presence.online?(self) : last_check_ok != false
 
   # :current, :outdated, :newer or :unknown, against the agent this build of Comfier ships.

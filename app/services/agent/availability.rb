@@ -40,6 +40,8 @@ module Agent
       @workflow = workflow
       @backend = backend
       @requirements = Requirements.for(workflow)
+      @mac = MacWeights.new(backend)
+      @models = @mac.models(@requirements.models)
     end
 
     def compute
@@ -49,7 +51,7 @@ module Agent
 
       missing = missing_models
       hints = hints_for(missing)
-      reasons = missing_node_reasons + strict_reasons(missing) + model_reasons(missing)
+      reasons = missing_node_reasons + fp8_reasons + strict_reasons(missing) + model_reasons(missing)
       return blocked(reasons, hints) if reasons.any?
       return Result.new(status: :ready, models: [], total_bytes: nil, reasons: [], hints:) if missing.empty?
 
@@ -60,7 +62,7 @@ module Agent
 
     def downloads(missing, hints)
       total = missing.sum { it['bytes'].to_i }
-      disk = disk_reason(total)
+      disk = disk_reason(missing.sum { MacWeights.disk_bytes(it['bytes'], it['convert']) })
       return blocked([disk], hints, missing) if disk
 
       Result.new(status: :needs_downloads, models: missing, total_bytes: total.positive? ? total : nil,
@@ -73,7 +75,7 @@ module Agent
 
     def missing_models
       matcher = ModelMatcher.new(@backend.backend_models.pluck(:folder, :filename))
-      @requirements.models.reject { matcher.present?(it['folder'], it['filename']) }
+      @models.reject { matcher.present?(it['folder'], it['filename']) }
     end
 
     def hints_for(missing)
@@ -89,6 +91,9 @@ module Agent
 
       Requirements.node_types_for(@workflow).reject { have.include?(it) }.map { "Node type #{it} isn't installed" }
     end
+
+    # fp8 files with no fp16 stand-in on Apple Silicon (see MacWeights).
+    def fp8_reasons = @requirements.models.filter_map { @mac.problem(it) }
 
     def model_reasons(missing)
       missing.filter_map do |model|
@@ -126,7 +131,8 @@ module Agent
       return [] if info.blank?
 
       skip = missing.to_set { it['filename'] }
-      Requirements.literal_inputs(@workflow.graph).filter_map do |id, node, input, value|
+      graph = @mac.rewrite(@workflow.graph, @requirements.models)
+      Requirements.literal_inputs(graph).filter_map do |id, node, input, value|
         next if skip.include?(value)
 
         options = ObjectInfoStore.options_for(info, node['class_type'], input)

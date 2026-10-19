@@ -41,6 +41,28 @@ module Agent
       assert_not matcher.present?('vae', 'flux.safetensors')
     end
 
+    test 'on Apple Silicon an fp8 model needs its fp16 stand-in' do
+      fp8 = 'wan2.2_t2v_high_noise_14B_fp8_scaled.safetensors'
+      graph = @workflow.graph.deep_dup
+      graph.values.find { it['class_type'] == 'CheckpointLoaderSimple' }['inputs']['ckpt_name'] = fp8
+      @workflow.update!(graph:)
+      bring_online_for!(@backend, @workflow)
+
+      assert_predicate compute, :ready?
+
+      set_model_links(@workflow, url: "https://hf.test/#{fp8}", bytes: 2.gigabytes)
+      @backend.update!(agent_version: '0.4.13', system_json: { 'devices' => [{ 'type' => 'mps' }] })
+      result = compute
+
+      assert_predicate result, :needs_downloads?
+      assert_equal([['wan2.2_t2v_high_noise_14B_fp16_from_fp8.safetensors', 'fp8_to_fp16']],
+                   result.models.map { it.values_at('filename', 'convert') })
+
+      @backend.update!(agent_version: '0.4.11')
+
+      assert_match "#{fp8} is fp8, which Apple Silicon can't run", compute.reasons.first
+    end
+
     test 'a file in another subdirectory is a hint, not a match' do
       bring_online!(@backend, models: { 'checkpoints' => ['old/v1-5-pruned-emaonly-fp16.safetensors'] },
                               node_types: @node_types)

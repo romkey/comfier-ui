@@ -55,18 +55,19 @@ module Agent
         'type' => 'model.download', 'download_id' => download.agent_download_id, 'url' => download.url,
         'folder' => download.directory, 'filename' => download.name, 'sha256' => download.sha256,
         'bytes' => download.bytes_total, 'headers' => CredentialHeaders.for_url(download.url, backend:),
-        'overwrite' => false
+        'overwrite' => false, 'convert' => download.convert
       }.compact
     end
 
     def disk_problem(backend, download)
-      return unless download.bytes_total.to_i.positive?
+      needed = MacWeights.disk_bytes(download.bytes_total, download.convert)
+      return unless needed.positive?
 
       free = Presence.disk_free(backend)
-      return unless free && free - download.bytes_total < AgentTiming::MIN_FREE_DISK_GB.gigabytes
+      return unless free && free - needed < AgentTiming::MIN_FREE_DISK_GB.gigabytes
 
       "#{backend.name} has #{ActiveSupport::NumberHelper.number_to_human_size(free)} free, not enough for " \
-        "#{ActiveSupport::NumberHelper.number_to_human_size(download.bytes_total)} plus " \
+        "#{ActiveSupport::NumberHelper.number_to_human_size(needed)} plus " \
         "#{AgentTiming::MIN_FREE_DISK_GB} GB headroom."
     end
 
