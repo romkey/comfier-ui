@@ -93,7 +93,7 @@ module Agent
     end
 
     # fp8 files with no fp16 stand-in on Apple Silicon (see MacWeights).
-    def fp8_reasons = @requirements.models.filter_map { @mac.problem(it) }
+    def fp8_reasons = @mac.problems(@requirements.models)
 
     def model_reasons(missing)
       missing.filter_map do |model|

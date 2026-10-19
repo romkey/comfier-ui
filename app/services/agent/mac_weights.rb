@@ -4,13 +4,17 @@ module Agent
   # Apple Silicon runs ComfyUI on PyTorch's MPS device, which can't hold fp8 tensors, so there an fp8 model is
   # swapped for an fp16 one: a copy already on the server, else the official fp16 file when its link exists
   # (EnrichWorkflowModelsJob looks), else the fp8 file, converted by the agent as it downloads. Jobs sent to
-  # the server name the stand-ins instead.
-  class MacWeights
+  # the server name the stand-ins instead. fp16 weights are twice fp8's size in memory too, so the swap only
+  # happens when they fit comfortably in the Mac's memory; otherwise the style stays blocked there.
+  class MacWeights # rubocop:disable Metrics/ClassLength
     FP8 = /fp8/i
     FP8_TOKEN = /fp8(?:_e4m3fn|_e5m2)?(?:_scaled)?(?:_fast)?/i
     CONVERT = 'fp8_to_fp16'
     # The first agent that understands `convert` on model.download.
     CONVERTING_AGENT = Gem::Version.new('0.4.13')
+    # The share of a Mac's memory a style's fp16 models may take, leaving room for activations, the VAE decode and
+    # macOS. Wan 2.2 14B (about 69 GB in fp16) fits a 128 GB Mac, not a 96 GB one.
+    MEMORY_SHARE = 0.6
 
     # Disk a download needs: converting keeps the fp8 file beside its fp16 output (about twice its size) until done.
     def self.disk_bytes(bytes, convert) = bytes.to_i * (convert.present? ? 3 : 1)
@@ -48,13 +52,23 @@ module Agent
     def active? = @backend.apple_silicon?
 
     # The models a workflow needs on this server, with fp8 files swapped for their stand-ins.
-    def models(models) = models.map { substitute(it) || it }
+    def models(models) = swap?(models) ? models.map { substitute(it) || it } : models
 
     # The fp16 stand-in for an fp8 model, or nil when the model isn't fp8 or has none here.
     def substitute(model)
       return unless active? && self.class.convertible?(model['filename'])
 
       on_server(model) || official(model) || converted(model)
+    end
+
+    # Why a workflow's fp8 models can't run here: per model, or all of them in fp16 needing too much memory.
+    def problems(models)
+      return [] unless active?
+
+      per_model = models.filter_map { problem(it) }
+      return per_model if per_model.any? || models.none? { substitute(it) } || fits?(models)
+
+      [memory_reason(models)]
     end
 
     # Why an fp8 model can't run here, or nil.
@@ -69,17 +83,46 @@ module Agent
     end
 
     # The graph with fp8 filenames swapped for their stand-ins and fp8 weight_dtype choices set to default.
+    # fp8 weight_dtype is reset on every Mac, even when the fp16 swap doesn't fit: a style whose files are fp16
+    # can still ask ComfyUI to load them as fp8.
     def rewrite(graph, models)
       return graph unless active? && graph.is_a?(Hash)
 
-      renames = models.each_with_object({}) do |model, map|
-        swapped = substitute(model)
-        map[model['filename']] = swapped['filename'] if swapped
-      end
+      renames = swap?(models) ? renames(models) : {}
       graph.transform_values { rewrite_node(it, renames) }
     end
 
     private
+
+    def renames(models)
+      models.each_with_object({}) do |model, map|
+        swapped = substitute(model)
+        map[model['filename']] = swapped['filename'] if swapped
+      end
+    end
+
+    def swap?(models) = active? && fits?(models)
+
+    def fits?(models)
+      ram = @backend.ram_total
+      ram.nil? || memory_bytes(models) <= ram * MEMORY_SHARE
+    end
+
+    # fp16 takes twice an fp8 file's size; the official fp16 file's own size is used when known.
+    def memory_bytes(models)
+      models.sum do |model|
+        next model['bytes'].to_i unless substitute(model)
+
+        model['fp16_bytes'].presence&.to_i || (2 * model['bytes'].to_i)
+      end
+    end
+
+    def memory_reason(models)
+      need = ActiveSupport::NumberHelper.number_to_human_size(memory_bytes(models), precision: 2)
+      have = ActiveSupport::NumberHelper.number_to_human_size(@backend.ram_total, precision: 2)
+      "This style's fp8 models need about #{need} of memory as fp16 (Apple Silicon can't run fp8), and " \
+        "#{@backend.name} has #{have}, too little to run them"
+    end
 
     def rewrite_node(node, renames)
       return node unless node.is_a?(Hash) && node['inputs'].is_a?(Hash)
