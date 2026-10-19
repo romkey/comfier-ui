@@ -54,6 +54,9 @@ All notable changes to this project are documented here. The format follows
   allowlists are converted to the equivalent turned-off styles, and styles added later now run everywhere by default.
 
 ### Fixed
+- **mflux**: Installing or reinstalling the agent no longer breaks mflux. Pillow 13.0.0 fails to import on
+  Python 3.12 (`cannot import name '_IntegralLike' from 'numbers'`), which stopped every mflux job and download, so
+  the agent now asks for Pillow below 13. Reinstall the agent to get Pillow 12. Agent 0.4.12.
 - **Model downloads**: An agent running outside ComfyUI knows all of ComfyUI's current model folders, so files for
   `latent_upscale_models` (LTX's upscalers), `model_patches`, `audio_encoders` and the rest are no longer refused as
   an unknown folder. A configured models folder that lacks one of them takes the download and creates it. Comfier
