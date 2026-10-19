@@ -41,30 +41,26 @@ module Agent
       assert_not matcher.present?('vae', 'flux.safetensors')
     end
 
-    test 'fp8 weights are blocked on Apple Silicon' do
+    test 'on Apple Silicon an fp8 model needs its fp16 stand-in' do
+      fp8 = 'wan2.2_t2v_high_noise_14B_fp8_scaled.safetensors'
       graph = @workflow.graph.deep_dup
-      loader = graph.values.find { it['class_type'] == 'CheckpointLoaderSimple' }
-      loader['inputs']['ckpt_name'] = 'wan2.2_t2v_high_noise_14B_fp8_scaled.safetensors'
+      graph.values.find { it['class_type'] == 'CheckpointLoaderSimple' }['inputs']['ckpt_name'] = fp8
       @workflow.update!(graph:)
       bring_online_for!(@backend, @workflow)
 
       assert_predicate compute, :ready?
 
-      @backend.update!(system_json: { 'devices' => [{ 'name' => 'mps', 'type' => 'mps' }] })
+      set_model_links(@workflow, url: "https://hf.test/#{fp8}", bytes: 2.gigabytes)
+      @backend.update!(agent_version: '0.4.13', system_json: { 'devices' => [{ 'type' => 'mps' }] })
       result = compute
 
-      assert_predicate result, :blocked?
-      assert_match "wan2.2_t2v_high_noise_14B_fp8_scaled.safetensors is fp8, which Apple Silicon can't run",
-                   result.reasons.first
-    end
+      assert_predicate result, :needs_downloads?
+      assert_equal([['wan2.2_t2v_high_noise_14B_fp16_from_fp8.safetensors', 'fp8_to_fp16']],
+                   result.models.map { it.values_at('filename', 'convert') })
 
-    test 'an fp8 weight_dtype is blocked on Apple Silicon' do
-      graph = @workflow.graph.deep_dup
-      graph['99'] = { 'class_type' => 'UNETLoader', 'inputs' => { 'weight_dtype' => 'fp8_e4m3fn' } }
-      @workflow.update!(graph:)
-      @backend.update!(system_json: { 'devices' => [{ 'type' => 'mps' }] })
+      @backend.update!(agent_version: '0.4.11')
 
-      assert_includes Availability.new(@workflow, @backend).send(:fp8_reasons).first, 'fp8_e4m3fn is fp8'
+      assert_match "#{fp8} is fp8, which Apple Silicon can't run", compute.reasons.first
     end
 
     test 'a file in another subdirectory is a hint, not a match' do

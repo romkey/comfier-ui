@@ -21,6 +21,17 @@ PAYLOAD = safetensors_bytes()
 SHA = hashlib.sha256(PAYLOAD).hexdigest()
 
 
+def fp8_safetensors_bytes() -> bytes:
+    """One e4m3fn weight [1.0, 2.0] with scale 0.5."""
+    header = {"w.weight": {"dtype": "F8_E4M3", "shape": [2], "data_offsets": [0, 2]},
+              "w.scale_weight": {"dtype": "F32", "shape": [], "data_offsets": [2, 6]}}
+    data = json.dumps(header).encode()
+    return len(data).to_bytes(8, "little") + data + bytes([0x38, 0x40]) + (0x3F000000).to_bytes(4, "little")
+
+
+FP8_PAYLOAD = fp8_safetensors_bytes()
+
+
 class FileServer:
     """Serves model files, with Range support and a redirect to a different host name."""
 
@@ -29,6 +40,7 @@ class FileServer:
         self.slow = asyncio.Event()
         app = web.Application()
         app.router.add_get("/file/{name}", self.file)
+        app.router.add_get("/fp8/{name}", self.fp8)
         app.router.add_get("/slow/{name}", self.slow_file)
         app.router.add_get("/missing/{name}", self.missing)
         app.router.add_get("/redirect/{name}", self.redirect)
@@ -57,6 +69,9 @@ class FileServer:
             start = int(rng.split("=")[1].rstrip("-"))
             return web.Response(status=206, body=PAYLOAD[start:])
         return web.Response(body=PAYLOAD)
+
+    async def fp8(self, _request):
+        return web.Response(body=FP8_PAYLOAD)
 
     async def missing(self, _request):
         return web.Response(status=404)
@@ -299,3 +314,32 @@ async def test_a_comfyui_folder_the_models_dir_doesnt_have_yet_takes_downloads(d
 async def test_folders_that_hold_code_or_settings_are_refused(downloads):
     failed = terminal(await downloads["run"](downloads["manager"](), folder="custom_nodes"))
     assert (failed["reason"], failed["detail"]) == ("invalid", "unknown folder custom_nodes")
+
+
+@pytest.mark.asyncio
+async def test_convert_saves_the_fp8_download_as_fp16(downloads):
+    url = downloads["server"].url("/fp8/model_fp8_scaled.safetensors")
+    msgs = await downloads["run"](downloads["manager"](), url=url,
+                                  filename="model_fp16_from_fp8.safetensors", convert="fp8_to_fp16",
+                                  sha256=hashlib.sha256(FP8_PAYLOAD).hexdigest(), bytes=len(FP8_PAYLOAD))
+    done = terminal(msgs)
+    assert done["type"] == "model.download.completed"
+    assert "sha256" not in done
+    out = (downloads["dir"] / "model_fp16_from_fp8.safetensors").read_bytes()
+    length = int.from_bytes(out[:8], "little")
+    assert json.loads(out[8:8 + length]) == {"w.weight": {"dtype": "F16", "shape": [2], "data_offsets": [0, 4]}}
+    assert out[8 + length:] == bytes.fromhex("0038003c")  # fp16 0.5, 1.0
+    assert sorted(p.name for p in downloads["dir"].iterdir()) == ["model_fp16_from_fp8.safetensors"]
+
+    again = terminal(await downloads["run"](downloads["manager"](), download_id="d_2", url=url,
+                                            filename="model_fp16_from_fp8.safetensors", convert="fp8_to_fp16",
+                                            sha256=hashlib.sha256(FP8_PAYLOAD).hexdigest()))
+    assert again["already_present"] is True
+
+
+@pytest.mark.asyncio
+async def test_convert_failure_removes_the_download(downloads):
+    failed = terminal(await downloads["run"](downloads["manager"](), convert="fp8_to_fp16"))
+    assert failed["type"] == "model.download.failed"
+    assert "couldn't convert to fp16" in failed["detail"]
+    assert list(downloads["dir"].iterdir()) == []

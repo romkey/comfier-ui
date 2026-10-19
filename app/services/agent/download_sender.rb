@@ -55,7 +55,7 @@ module Agent
         'type' => 'model.download', 'download_id' => download.agent_download_id, 'url' => download.url,
         'folder' => download.directory, 'filename' => download.name, 'sha256' => download.sha256,
         'bytes' => download.bytes_total, 'headers' => CredentialHeaders.for_url(download.url, backend:),
-        'overwrite' => false
+        'overwrite' => false, 'convert' => download.convert
       }.compact
     end
 

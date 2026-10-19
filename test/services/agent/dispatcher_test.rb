@@ -35,6 +35,24 @@ module Agent
       assert_nil OpenRequest.get(@backend.id)
     end
 
+    test 'Apple Silicon jobs get fp16 stand-ins for fp8 models' do
+      fp8 = 'sd_fp8_scaled.safetensors'
+      graph = @workflow.graph.deep_dup
+      loader = graph.find { |_id, node| node['class_type'] == 'CheckpointLoaderSimple' }
+      loader.last['inputs']['ckpt_name'] = fp8
+      @workflow.update!(graph:)
+      @backend.update!(system_json: { 'devices' => [{ 'type' => 'mps' }] })
+      @backend.backend_models.create!(folder: 'checkpoints', filename: 'sd_fp16.safetensors')
+      gen = queued_job(filled_workflow_json: graph)
+      agent_request(@backend, 'r_1')
+
+      assign = @socket.last_of_type('job.assign')
+
+      assert_equal 'dispatched', gen.reload.agent_state
+      assert_equal 'sd_fp16.safetensors', assign.dig('workflow', loader.first, 'inputs', 'ckpt_name')
+      assert_equal ['sd_fp16.safetensors'], assign.dig('requires', 'models', 'checkpoints')
+    end
+
     test 'no job goes out without an open request' do
       gen = queued_job
 

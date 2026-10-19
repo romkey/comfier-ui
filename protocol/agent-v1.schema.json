@@ -254,7 +254,8 @@
         "sha256": { "type": "string" },
         "bytes": { "type": "integer" },
         "headers": { "type": "object" },
-        "overwrite": { "type": "boolean" }
+        "overwrite": { "type": "boolean" },
+        "convert": { "description": "fp8_to_fp16: save the downloaded fp8 safetensors file as fp16 (url, sha256 and bytes describe the download)", "enum": ["fp8_to_fp16"] }
       }
     },
     "model_download_progress": {

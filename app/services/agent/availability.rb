@@ -4,7 +4,6 @@ module Agent
   # Whether a workflow can run on a server: ready, needs_downloads (every missing model has a link
   # and fits on disk), or blocked (with reasons). Results are cached in workflow_availabilities.
   class Availability # rubocop:disable Metrics/ClassLength
-    FP8 = /fp8/i
     Result = Data.define(:status, :models, :total_bytes, :reasons, :hints) do
       def ready? = status == :ready
       def needs_downloads? = status == :needs_downloads
@@ -41,6 +40,8 @@ module Agent
       @workflow = workflow
       @backend = backend
       @requirements = Requirements.for(workflow)
+      @mac = MacWeights.new(backend)
+      @models = @mac.models(@requirements.models)
     end
 
     def compute
@@ -61,12 +62,15 @@ module Agent
 
     def downloads(missing, hints)
       total = missing.sum { it['bytes'].to_i }
-      disk = disk_reason(total)
+      disk = disk_reason(missing.sum { disk_bytes(it) })
       return blocked([disk], hints, missing) if disk
 
       Result.new(status: :needs_downloads, models: missing, total_bytes: total.positive? ? total : nil,
                  reasons: [], hints:)
     end
+
+    # Converting keeps the fp8 download beside its fp16 output (about twice its size) until it's done.
+    def disk_bytes(model) = model['bytes'].to_i * (model['convert'] ? 3 : 1)
 
     def blocked(reasons, hints = [], models = [])
       Result.new(status: :blocked, models:, total_bytes: nil, reasons:, hints:)
@@ -74,7 +78,7 @@ module Agent
 
     def missing_models
       matcher = ModelMatcher.new(@backend.backend_models.pluck(:folder, :filename))
-      @requirements.models.reject { matcher.present?(it['folder'], it['filename']) }
+      @models.reject { matcher.present?(it['folder'], it['filename']) }
     end
 
     def hints_for(missing)
@@ -91,16 +95,8 @@ module Agent
       Requirements.node_types_for(@workflow).reject { have.include?(it) }.map { "Node type #{it} isn't installed" }
     end
 
-    # PyTorch can't move fp8 tensors to MPS, so fp8 checkpoints and fp8 weight_dtype fail mid-run on a Mac.
-    def fp8_reasons
-      return [] unless @backend.apple_silicon?
-
-      files = @requirements.models.map { File.basename(it['filename']) }.grep(FP8)
-      dtypes = Requirements.literal_inputs(@workflow.graph).filter_map do |_id, _node, input, value|
-        value if input == 'weight_dtype' && value.match?(FP8)
-      end
-      (files + dtypes).uniq.map { "#{it} is fp8, which Apple Silicon can't run; use an fp16 or GGUF version" }
-    end
+    # fp8 files with no fp16 stand-in on Apple Silicon (see MacWeights).
+    def fp8_reasons = @requirements.models.filter_map { @mac.problem(it) }
 
     def model_reasons(missing)
       missing.filter_map do |model|
@@ -138,7 +134,8 @@ module Agent
       return [] if info.blank?
 
       skip = missing.to_set { it['filename'] }
-      Requirements.literal_inputs(@workflow.graph).filter_map do |id, node, input, value|
+      graph = @mac.rewrite(@workflow.graph, @requirements.models)
+      Requirements.literal_inputs(graph).filter_map do |id, node, input, value|
         next if skip.include?(value)
 
         options = ObjectInfoStore.options_for(info, node['class_type'], input)

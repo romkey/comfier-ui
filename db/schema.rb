@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_10_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_19_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -382,6 +382,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_10_120000) do
     t.jsonb "for_generation_ids", default: [], null: false
     t.datetime "sent_at"
     t.string "engine"
+    t.string "convert"
     t.index ["agent_download_id"], name: "index_model_downloads_on_agent_download_id", unique: true, where: "(agent_download_id IS NOT NULL)"
     t.index ["backend_id", "directory", "name"], name: "index_model_downloads_one_active_per_file", unique: true, where: "((status)::text = ANY (ARRAY[('queued'::character varying)::text, ('running'::character varying)::text]))"
     t.index ["backend_id"], name: "index_model_downloads_on_backend_id"
@@ -583,6 +584,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_10_120000) do
     t.string "source", default: "api", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "fp16_url"
+    t.bigint "fp16_bytes"
+    t.string "fp16_sha256"
+    t.datetime "fp16_checked_at"
     t.index ["workflow_id", "folder", "filename"], name: "index_workflow_models_on_workflow_id_and_folder_and_filename", unique: true
     t.index ["workflow_id"], name: "index_workflow_models_on_workflow_id"
   end

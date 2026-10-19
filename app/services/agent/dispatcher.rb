@@ -81,18 +81,22 @@ module Agent
       return engine_assign_message(job, request_id) unless job.workflow.nil? || job.workflow.comfyui?
 
       requirements = Requirements.for(job.workflow)
+      mac = MacWeights.new(@backend)
       {
         'type' => 'job.assign', 'request_id' => request_id, 'job_id' => job.agent_job_id,
-        'workflow' => job.filled_workflow_json,
+        'workflow' => mac.rewrite(job.filled_workflow_json, requirements.models),
         'inputs' => job.generation_inputs.map { input_entry(job, it) },
         'upload_url' => "#{base_url}/api/agent/jobs/#{job.agent_job_id}/outputs",
-        'requires' => {
-          'node_types' => requirements.node_types,
-          'models' => requirements.models.group_by { it['folder'] }.transform_values { |ms| ms.pluck('filename') }
-        },
+        'requires' => requires(requirements, mac),
         'timeout_s' => timeout_s(job),
         'previews' => %w[3d]
       }
+    end
+
+    def requires(requirements, mac)
+      models = mac.models(requirements.models)
+      { 'node_types' => requirements.node_types,
+        'models' => models.group_by { it['folder'] }.transform_values { |ms| ms.pluck('filename') } }
     end
 
     # mflux and MLX video jobs: the filled recipe stands in for the graph, and the agent checks nothing up front.

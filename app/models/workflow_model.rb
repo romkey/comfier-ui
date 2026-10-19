@@ -15,6 +15,15 @@ class WorkflowModel < ApplicationRecord
 
   def to_requirement_h
     { 'folder' => folder, 'filename' => filename, 'url' => url, 'sha256' => sha256, 'bytes' => bytes,
-      'source' => source }
+      'source' => source }.merge(fp16_h)
+  end
+
+  private
+
+  # Where the official fp16 version of an fp8 file is, for Apple Silicon (see Agent::MacWeights).
+  def fp16_h
+    return {} if fp16_url.blank?
+
+    { 'fp16_url' => fp16_url, 'fp16_bytes' => fp16_bytes, 'fp16_sha256' => fp16_sha256 }.compact
   end
 end
