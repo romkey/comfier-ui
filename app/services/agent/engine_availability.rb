@@ -33,7 +33,14 @@ module Agent
       return "#{@backend.name} hasn't reported its engines yet" unless @backend.backend_inventory
       return "#{@backend.name} doesn't run #{@workflow.engine_info.label}" unless @backend.runs_engine?(@engine)
 
-      memory_reason
+      memory_reason || agent_reason
+    end
+
+    def agent_reason
+      return unless EngineRecipe.wan_repo?(@workflow.graph) && !@backend.agent_at_least?(EngineRecipe::WAN_REPO_AGENT)
+
+      "#{@backend.name}'s agent is too old to load Wan models from Hugging Face; update it to " \
+        "#{EngineRecipe::WAN_REPO_AGENT} or later"
     end
 
     def memory_reason

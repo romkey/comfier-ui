@@ -26,6 +26,27 @@ module Agent
       assert_equal [{ 'folder' => 'mflux', 'filename' => 'z-image-turbo', 'engine' => 'mflux' }], result.models
     end
 
+    test 'Wan 14B at 8 bits offers its repo for download and needs an agent that can load it' do
+      workflow = engine_workflow!(name: 'Wan 14B', preset: 'wan-2.2-t2v-a14b-8bit', engine: 'mlx_video')
+      bring_mac_online!(@backend, engines: { mlx_video: { models: [] } }, ram_gb: 96)
+      result = Availability.compute(workflow, @backend.reload)
+
+      assert_predicate result, :ready?
+      assert_equal %w[SceneWorks/wan2.2-t2v-a14b-mlx], result.models.pluck('filename')
+
+      @backend.update!(agent_version: '0.4.13')
+
+      assert_match 'too old to load Wan models from Hugging Face',
+                   Availability.compute(workflow, @backend).reasons.first
+    end
+
+    test 'Wan 14B at 8 bits needs 64 GB' do
+      workflow = engine_workflow!(name: 'Wan 14B', preset: 'wan-2.2-t2v-a14b-8bit', engine: 'mlx_video')
+      bring_mac_online!(@backend, engines: { mlx_video: { models: [] } }, ram_gb: 48)
+
+      assert_match 'needs about 64 GB', Availability.compute(workflow, @backend.reload).reasons.first
+    end
+
     test 'nothing is offered for download when the server does not allow downloads' do
       @backend.update!(model_downloads_enabled: false)
       bring_mac_online!(@backend, engines: { mflux: { models: [] } })

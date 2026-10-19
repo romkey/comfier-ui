@@ -100,7 +100,16 @@ class EnginePreset
                  'prompt' => '{{prompt}}', 'negative_prompt' => '{{negative_prompt}}', 'width' => '{{width}}',
                  'height' => '{{height}}', 'num_frames' => '{{frames}}', 'steps' => '{{steps}}',
                  'guide_scale' => '{{cfg}}', 'seed' => '{{seed}}', 'min_memory_gb' => 32
-               }, settings: { 'frame_rate' => 24 })
+               }, settings: { 'frame_rate' => 24 }),
+    # SceneWorks' 8-bit MLX conversion of Wan2.2 T2V A14B: two 15 GB experts and the T5 encoder, about 43 GB from
+    # the repo's q8/ folder. Wan's own defaults are 40 steps at 16 fps, with guidance 3 and 4 for its two experts.
+    Preset.new(engine: 'mlx_video', key: 'wan-2.2-t2v-a14b-8bit', label: 'Wan2.2 T2V A14B, 8-bit (64 GB)',
+               kind: 'video', recipe: {
+                 'command' => 'mlx_video.wan_2.generate', 'model_repo' => 'SceneWorks/wan2.2-t2v-a14b-mlx',
+                 'model_subdir' => 'q8', 'prompt' => '{{prompt}}', 'negative_prompt' => '{{negative_prompt}}',
+                 'width' => '{{width}}', 'height' => '{{height}}', 'num_frames' => '{{frames}}', 'steps' => '{{steps}}',
+                 'guide_scale' => '{{cfg}}', 'seed' => '{{seed}}', 'min_memory_gb' => 64
+               }, settings: { 'frame_rate' => 16, 'steps' => 40, 'guidance' => 3.5 })
   ].freeze
 
   def self.all = ALL

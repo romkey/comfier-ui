@@ -110,7 +110,7 @@ module Agent
 
     # Downloads the fp8 file (url, bytes and sha256 still describe it) and saves it converted.
     def converted(model)
-      return if model['url'].blank? || !agent_converts?
+      return if model['url'].blank? || !@backend.agent_at_least?(CONVERTING_AGENT)
 
       stand_in(model, self.class.converted_name(model['filename']), 'convert' => CONVERT)
     end
@@ -118,11 +118,6 @@ module Agent
     def stand_in(model, filename, attrs)
       model.except('fp16_url', 'fp16_bytes', 'fp16_sha256')
            .merge(attrs).merge('filename' => filename, 'replaces' => model['filename'])
-    end
-
-    def agent_converts?
-      version = @backend.agent_version.to_s.strip
-      version.present? && Gem::Version.correct?(version) && Gem::Version.new(version) >= CONVERTING_AGENT
     end
   end
 end

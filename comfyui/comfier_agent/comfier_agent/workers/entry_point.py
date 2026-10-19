@@ -11,6 +11,7 @@ import importlib
 import importlib.metadata
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -207,6 +208,40 @@ def quantize_ltx_weights() -> None:
 
 
 # Fixes applied before running a command, by command prefix.
+SUBDIR = re.compile(r"^[A-Za-z0-9][\w.-]*$")
+
+
+def pop_option(args: list[str], flag: str) -> str | None:
+    """Removes `flag value` from args and returns the value."""
+    if flag not in args:
+        return None
+    i = args.index(flag)
+    value = args[i + 1] if i + 1 < len(args) else ""
+    del args[i : i + 2]
+    return value
+
+
+def wan_model_dir(args: list[str]) -> list[str]:
+    """mlx-video's Wan tool loads a converted folder (--model-dir). A recipe can name a Hugging Face repo of
+    conversions instead (model_repo, with model_subdir for one variant in it, say q8): that part of the repo is
+    fetched if it isn't cached yet, and its folder passed on."""
+    args = list(args)
+    repo = pop_option(args, "--model-repo")
+    subdir = pop_option(args, "--model-subdir")
+    if not repo:
+        if subdir:
+            raise SystemExit("model_subdir needs a model_repo")
+        return args
+    if subdir is not None and not SUBDIR.match(subdir):
+        raise SystemExit(f"model_subdir {subdir!r} must be one folder name")
+    from huggingface_hub import snapshot_download
+
+    from comfier_agent.workers.hf_download import PATTERNS
+
+    path = snapshot_download(repo_id=repo, allow_patterns=[f"{subdir}/*"] if subdir else PATTERNS)
+    return ["--model-dir", os.path.join(path, subdir) if subdir else path, *args]
+
+
 FIXES = {
     "mlx_video.": [limit_mlx_cache],
     "mlx_video.ltx_2.": [fix_ltx_text_encoder_mask, quantize_ltx_weights],
@@ -222,7 +257,10 @@ def main() -> None:
         if command.startswith(prefix):
             for fix in fixes:
                 fix()
-    sys.argv = [command, *sys.argv[2:]]
+    args = sys.argv[2:]
+    if command.startswith("mlx_video.wan_2."):
+        args = wan_model_dir(args)
+    sys.argv = [command, *args]
     result = func()
     sys.exit(result if isinstance(result, int) else 0)
 

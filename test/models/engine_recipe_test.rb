@@ -97,6 +97,18 @@ class EngineRecipeTest < ActiveSupport::TestCase
     assert_nil EngineRecipe.model({ 'command' => 'mlx_video.wan_2.generate', 'model_dir' => '~/wan' })
   end
 
+  test 'model_subdir picks a folder in a Wan model_repo' do
+    wan = { 'command' => 'mlx_video.wan_2.generate', 'model_repo' => 'SceneWorks/wan2.2-t2v-a14b-mlx',
+            'prompt' => 'x' }
+
+    assert_empty EngineRecipe.problems('mlx_video', wan.merge('model_subdir' => 'q8'))
+    assert_includes EngineRecipe.problems('mlx_video', wan.merge('model_subdir' => '../q8')),
+                    '"model_subdir" must be one folder name, such as q8'
+    assert_includes EngineRecipe.problems('mlx_video', wan.merge('command' => 'mlx_video.ltx_2.generate',
+                                                                 'model_subdir' => 'q8')),
+                    '"model_subdir" needs a Wan "model_repo" (mlx_video.wan_2.*)'
+  end
+
   test 'every preset is a valid workflow for its page' do
     EnginePreset::ALL.each do |preset|
       workflow = Workflow.new(name: preset.label, kind: preset.kind, engine: preset.engine,
