@@ -115,6 +115,12 @@ class Backend < ApplicationRecord # rubocop:disable Metrics/ClassLength
 
   def online? = agent? ? Agent::Presence.online?(self) : last_check_ok != false
 
+  # Whether the agent reported at least this version (a Gem::Version or a string); false when unknown.
+  def agent_at_least?(version)
+    reported = agent_version.to_s.strip
+    reported.present? && Gem::Version.correct?(reported) && Gem::Version.new(reported) >= Gem::Version.new(version)
+  end
+
   # :current, :outdated, :newer or :unknown, against the agent this build of Comfier ships.
   def agent_version_status = Agent::Version.compare(agent_version)
 

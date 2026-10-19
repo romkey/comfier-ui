@@ -21,6 +21,8 @@ REPO_PATTERNS = {
         "latent_upscale_models/ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0.safetensors",
         "model_patches/ltx-2.5-duration-head-bf16.safetensors",
     ],
+    # SceneWorks' Wan2.2 T2V A14B conversions: bf16, q4 and q8 (about 209 GB). The 8-bit style loads q8/, about 43 GB.
+    "sceneworks/wan2.2-t2v-a14b-mlx": ["q8/*"],
 }
 
 

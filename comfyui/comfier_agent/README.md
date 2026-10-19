@@ -179,8 +179,11 @@ adds LTX-2.5 and isn't merged yet.
   with the recipe's flags, so its model loads once per job. That's small next to generating a video, and
   a crash or an mlx-video change only affects that job. Progress comes from the tool's denoising bar.
 - LTX recipes name a Hugging Face repo (`model_repo`, for example `prince-canuma/LTX-2.3-distilled`),
-  which downloads on the first run. Wan needs weights converted to MLX first (see mlx-video's README);
-  point `model_dir` at them.
+  which downloads on the first run. Wan loads weights already converted to MLX: either a folder on the Mac
+  (`model_dir`, converted as mlx-video's README describes) or a Hugging Face repo of conversions (`model_repo`, with
+  `model_subdir` for one variant in it). The agent fetches only that folder and hands mlx-video its path. The
+  **Wan2.2 T2V A14B, 8-bit** preset loads `q8/` from `SceneWorks/wan2.2-t2v-a14b-mlx`: about 43 GB to download,
+  and it needs a 64 GB Mac. Agent 0.4.14 or later is needed for `model_repo` with Wan.
 - LTX-2.3 conversions don't include their text encoder, so LTX recipes also name one with
   `text_encoder_repo` (the presets use `mlx-community/gemma-3-12b-it-bf16`, about 26 GB). Comfier offers it
   for download alongside the model. Don't use `Lightricks/LTX-2` there: mlx-video then loads the wrong

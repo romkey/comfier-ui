@@ -8,7 +8,7 @@
 #     "seed": "{{seed}}", "min_memory_gb": 16 }
 #
 # `min_memory_gb` isn't passed on: servers with less memory than this aren't offered the style.
-module EngineRecipe
+module EngineRecipe # rubocop:disable Metrics/ModuleLength
   COMMANDS = {
     'mflux' => /\Amflux-generate[a-z0-9.-]*\z/,
     'mlx_video' => /\Amlx_video(\.[a-z0-9_]+)+\z/
@@ -28,6 +28,10 @@ module EngineRecipe
   LTX_25_REPO = 'Lightricks/LTX-2.5'.freeze
   LTX_25_PIPELINES = %w[distilled dfr].freeze
   HF_REPO = %r{\A[A-Za-z0-9][\w.-]*/[\w.-]+\z}
+  # A folder inside a Wan model_repo holding one conversion (say q8 for 8 bits).
+  SUBDIR = /\A[A-Za-z0-9][\w.-]*\z/
+  # The first agent that turns a Wan recipe's model_repo into the folder mlx-video's Wan tool loads.
+  WAN_REPO_AGENT = '0.4.14'.freeze
   # Options the agent sets itself; a recipe can't point them somewhere else.
   RESERVED_OPTIONS = %w[output output_path output_dir].freeze
   MAX_KEYS = 64
@@ -61,6 +65,7 @@ module EngineRecipe
       found << "\"#{key}\" must be a Hugging Face repo (owner/name), not #{repo.inspect}" if repo && !repo?(repo)
     end
     found << '"quantize" only works with LTX-2.5 for MLX video' if recipe.key?('quantize') && !ltx_25?(recipe)
+    found.concat(wan_subdir_problems(recipe))
     found.concat(ltx_text_encoder_problems(recipe))
   end
 
@@ -90,6 +95,18 @@ module EngineRecipe
     pipeline = recipe['pipeline'].presence || 'distilled'
     found << '"pipeline" must be distilled or dfr for LTX-2.5' if LTX_25_PIPELINES.exclude?(pipeline)
     found
+  end
+
+  def wan_subdir_problems(recipe)
+    return [] unless recipe.key?('model_subdir')
+    return ['"model_subdir" needs a Wan "model_repo" (mlx_video.wan_2.*)'] unless wan_repo?(recipe)
+
+    recipe['model_subdir'].to_s.match?(SUBDIR) ? [] : ['"model_subdir" must be one folder name, such as q8']
+  end
+
+  # A Wan recipe that loads a Hugging Face repo of conversions instead of a local model_dir.
+  def wan_repo?(recipe)
+    recipe.is_a?(Hash) && recipe['command'].to_s.start_with?('mlx_video.wan_2.') && repo?(recipe['model_repo'])
   end
 
   def ltx_23?(recipe) = recipe['model_repo'].to_s.match?(/LTX-2\.3/i)
