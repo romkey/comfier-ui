@@ -69,11 +69,12 @@ module Agent
       true
     end
 
-    # hello.active_downloads: adopt progress for ones we know, cancel ones we don't.
+    # hello.active_downloads: adopt progress for ones we know, cancel ones we don't or were cancelling.
     def reconcile_listed!(backend, entries)
       entries.each do |entry|
         download = find(backend, entry['download_id'])
-        if download.nil? || DownloadSender::PENDING.exclude?(download.agent_state)
+        if download.nil? || DownloadSender::PENDING.exclude?(download.agent_state) ||
+           download.agent_state == 'cancelling'
           send_cancel(backend.id, entry['download_id'])
         elsif download.agent_state == 'queued'
           download.update!(agent_state: 'downloading', status: :running)
