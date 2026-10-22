@@ -51,6 +51,8 @@ All notable changes to this project are documented here. The format follows
   out of date.
 
 ### Changed
+- **Results**: A result's page shows **Delete** as a button instead of a **⋯** menu holding only that, and the
+  Public links page does the same for **Revoke all public links** and each link's **Revoke**.
 - **Servers**: The server page's Styles table is now **Workflows**, grouped under Image, Video, Audio and 3D Model
   and sorted alphabetically within each. Its **Turn off**/**Turn on** buttons are now **Disable**/**Enable**,
   a disabled workflow shows a red dot instead of an **Off** badge, and the activity log records new changes as

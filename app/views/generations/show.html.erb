@@ -53,18 +53,10 @@
         <% end %>
       <% end %>
     <% end %>
-    <div class="dropdown">
-      <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false"
-              aria-label="More actions">
-        <i class="bi bi-three-dots" aria-hidden="true"></i>
-      </button>
-      <ul class="dropdown-menu dropdown-menu-end text-13">
-        <li>
-          <%= button_to 'Delete', generation_path(@generation), method: :delete, class: 'dropdown-item text-danger',
-                                                                form: { data: { turbo_confirm: 'Delete this result?' } } %>
-        </li>
-      </ul>
-    </div>
+    <%= button_to generation_path(@generation), method: :delete, class: 'btn btn-outline-danger btn-sm',
+                                                form: { data: { turbo_confirm: 'Delete this result?' } } do %>
+      <i class="bi bi-trash me-1" aria-hidden="true"></i>Delete
+    <% end %>
   </div>
 </div>
 
