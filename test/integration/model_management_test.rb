@@ -125,6 +125,7 @@ class ModelManagementTest < ActionDispatch::IntegrationTest
     download = socket.last_of_type('model.download')
 
     assert_equal ['sd15_fp16_from_fp8.safetensors', 'fp8_to_fp16'], download&.values_at('filename', 'convert')
+    assert_no_match(/no download link/, flash[:notice])
   end
 
   test "a picked file a workflow downloads by its own name doesn't also bring another's stand-in" do

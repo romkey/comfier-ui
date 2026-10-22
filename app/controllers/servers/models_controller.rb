@@ -60,7 +60,7 @@ module Servers
     end
 
     def no_link_count(selection)
-      selection.installed.count { |file| selection.downloads.none? { Agent::ServerModels.same_file?(it, file) } }
+      selection.installed.count { Agent::ServerModels.downloads_for(selection.downloads, it).empty? }
     end
   end
 end
