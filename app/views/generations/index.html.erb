@@ -88,7 +88,8 @@
       </p>
     <% end %>
 
-    <div id="results_generations" class="result-grid result-grid-lg" data-action="change->result-select#refresh">
+    <div id="results_generations" class="result-grid result-grid-lg"
+         data-controller="result-grid" data-action="change->result-select#refresh">
       <%= render partial: 'generations/generation', collection: @generations %>
     </div>
   </div>

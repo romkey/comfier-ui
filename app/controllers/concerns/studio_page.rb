@@ -1,6 +1,7 @@
 # Loads what the studio page (studios/show) needs, so a failed submission can re-render it.
 module StudioPage
-  RECENT_LIMIT = 8
+  # Enough for two full rows at the widest layout; the result-grid controller hides what doesn't fit.
+  RECENT_LIMIT = 16
 
   private
 

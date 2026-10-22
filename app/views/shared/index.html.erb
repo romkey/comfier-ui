@@ -18,7 +18,7 @@
 <% if @generations.empty? %>
   <p class="text-13 text-secondary">Nothing shared yet. Share one of your results from its page.</p>
 <% else %>
-  <div class="result-grid mb-3">
+  <div class="result-grid mb-3" data-controller="result-grid">
     <% @generations.each do |generation| %>
       <%= render 'shared/card', generation: %>
     <% end %>

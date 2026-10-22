@@ -23,8 +23,12 @@ body { font-size: 14px; }
 .btn-close-sm { font-size: 0.6rem; }
 
 /* Result grid */
-.result-grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
-.result-grid-lg { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+.result-grid {
+  --result-min: 170px;
+  display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(var(--result-min), 1fr));
+}
+.result-grid-lg { --result-min: 210px; }
+.result-grid.result-grid-fitted { grid-template-columns: repeat(var(--result-cols), minmax(0, 1fr)); }
 .result-grid:has(.result-card) + .result-empty { display: none; }
 
 .result-card {
