@@ -195,6 +195,15 @@ class GenerationsTest < ActionDispatch::IntegrationTest
     assert_select 'nav[aria-label=Pages]'
   end
 
+  test "a result's only extra action is a Delete button, not a menu" do
+    generation = generations(:alice_done)
+
+    get generation_path(generation)
+
+    assert_select "form[action='#{generation_path(generation)}'] button.btn-outline-danger", text: /Delete/
+    assert_select 'button[aria-label="More actions"]', count: 0
+  end
+
   test 'shows a finished generation with its outputs' do
     generation = generations(:alice_done)
     generation.outputs.attach(io: file_fixture('pixel.png').open, filename: 'out.png', content_type: 'image/png')

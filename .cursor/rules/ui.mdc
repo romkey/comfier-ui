@@ -23,7 +23,7 @@ Apply these rules to any HTML/template/CSS Cursor writes for this project. The s
 
 - `btn-primary` — single most-used action per region only.
 - `btn-outline-secondary` — everything else.
-- `btn-danger` / `btn-outline-danger` — only for genuinely destructive actions (Delete, Ban, Remove). Destructive buttons go in a `⋯` kebab menu, never bare on the page.
+- `btn-danger` / `btn-outline-danger` — only for genuinely destructive actions (Delete, Ban, Remove). Destructive buttons go in a `⋯` kebab menu, never bare on the page — unless the menu would hold only that one action; then show it as a `btn-outline-danger` button with a confirm. Never make a one-item kebab menu.
 - Never use `btn-success` / `btn-warning` / `btn-info` as button color labels for categories. Use semantic meaning only.
 
 ## Status indicators

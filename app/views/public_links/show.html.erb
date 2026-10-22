@@ -8,18 +8,9 @@
     </div>
   </div>
   <% if @generations.any? %>
-    <div class="dropdown">
-      <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="dropdown" aria-label="More">
-        <i class="bi bi-three-dots" aria-hidden="true"></i>
-      </button>
-      <ul class="dropdown-menu dropdown-menu-end text-13">
-        <li>
-          <%= button_to 'Revoke all public links', public_links_path, method: :delete,
-                        class: 'dropdown-item text-danger',
-                        form: { data: { turbo_confirm: 'Revoke every public link you created?' } } %>
-        </li>
-      </ul>
-    </div>
+    <%= button_to 'Revoke all public links', public_links_path, method: :delete,
+                  class: 'btn btn-outline-danger btn-sm',
+                  form: { data: { turbo_confirm: 'Revoke every public link you created?' } } %>
   <% end %>
 </div>
 
@@ -64,19 +55,10 @@
                                  data: { clipboard_target: 'source' } %>
               <button type="button" class="btn btn-outline-secondary" data-action="clipboard#copy">Copy</button>
             </div>
-            <div class="dropdown d-inline" onclick="event.stopPropagation()">
-              <button class="btn btn-sm btn-link text-secondary" type="button" data-bs-toggle="dropdown"
-                      aria-label="More">
-                <i class="bi bi-three-dots" aria-hidden="true"></i>
-              </button>
-              <ul class="dropdown-menu dropdown-menu-end text-13">
-                <li>
-                  <%= button_to 'Revoke', public_link_generation_path(generation), method: :delete,
-                                class: 'dropdown-item text-danger',
-                                form: { data: { turbo_confirm: 'Revoke this public link?' } } %>
-                </li>
-              </ul>
-            </div>
+            <%= button_to 'Revoke', public_link_generation_path(generation), method: :delete,
+                          class: 'btn btn-sm btn-outline-danger',
+                          form: { class: 'd-inline', onclick: 'event.stopPropagation()',
+                                  data: { turbo_confirm: 'Revoke this public link?' } } %>
           </td>
         </tr>
       <% end %>
