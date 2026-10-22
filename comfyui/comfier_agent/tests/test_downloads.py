@@ -193,6 +193,29 @@ async def test_a_file_being_downloaded_isnt_deleted(downloads):
 
 
 @pytest.mark.asyncio
+async def test_a_delete_right_after_a_cancel_waits_for_the_download_to_stop(downloads):
+    mgr = downloads["manager"]()
+    await mgr.handle({"type": "model.download", "download_id": "d_same", "folder": "checkpoints",
+                      "filename": "model.safetensors", "url": downloads["server"].url("/slow/model.safetensors")})
+    for _ in range(100):
+        if mgr.paths_in_progress:
+            break
+        await asyncio.sleep(0.01)
+
+    await mgr.cancel("d_same")
+    await mgr.delete({"type": "model.delete", "delete_id": "x_1", "folder": "checkpoints",
+                      "filename": "model.safetensors"})
+    for _ in range(200):
+        if any(m.get("delete_id") == "x_1" for m in downloads["sent"]):
+            break
+        await asyncio.sleep(0.01)
+
+    types = [m["type"] for m in downloads["sent"] if m.get("download_id") == "d_same" or m.get("delete_id")]
+    assert types[-2:] == ["model.download.cancelled", "model.deleted"]
+    assert not (downloads["dir"] / f"model.safetensors{PART_SUFFIX}").exists()
+
+
+@pytest.mark.asyncio
 async def test_completes_with_hash_and_reports_bytes_total(downloads):
     msgs = await downloads["run"](downloads["manager"](), sha256=SHA, bytes=len(PAYLOAD))
     done = terminal(msgs)

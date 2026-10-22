@@ -80,6 +80,8 @@ CONVERTING_SUFFIX = ".fp16" + PART_SUFFIX
 # model.download "convert": the fp8 file is downloaded and verified as usual, then saved as fp16 (Apple Silicon).
 CONVERT_FP8_TO_FP16 = "fp8_to_fp16"
 PART_MAX_AGE_S = 7 * 86400
+# How long a delete waits for a cancelled download of the same file to stop before trying anyway.
+CANCEL_SETTLE_SECONDS = 60
 
 
 @dataclass
@@ -106,6 +108,7 @@ class ModelDownloadManager:
         self._wait_queue: list[dict[str, Any]] = []
         self._terminal_buffer: list[dict] = []
         self._progress_last: dict[str, float] = {}
+        self._deletes: set[asyncio.Task] = set()
 
     def drain_terminal_buffer(self) -> list[dict]:
         out = list(self._terminal_buffer)
@@ -166,7 +169,38 @@ class ModelDownloadManager:
         await self._cancelled(download_id)
 
     async def delete(self, msg: dict[str, Any]) -> None:
-        """model.delete: remove a model file, or an engine's whole model, and report the space freed."""
+        """model.delete: remove a model file, or an engine's whole model, and report the space freed.
+
+        Comfier cancels a download of the same file just before deleting it; the delete waits, off the message
+        loop, for that download to clean up rather than being refused as busy."""
+        stopping = self._cancelling_tasks(self._delete_key(msg))
+        if not stopping:
+            await self._delete_now(msg)
+            return
+        task = asyncio.create_task(self._delete_after(stopping, msg))
+        self._deletes.add(task)
+        task.add_done_callback(self._deletes.discard)
+
+    async def _delete_after(self, tasks: list[asyncio.Task], msg: dict[str, Any]) -> None:
+        await asyncio.wait(tasks, timeout=CANCEL_SETTLE_SECONDS)
+        await self._delete_now(msg)
+
+    def _delete_key(self, msg: dict[str, Any]) -> str | None:
+        """What paths_in_progress holds while the model msg names is downloading."""
+        if msg.get("engine"):
+            return _engine_key(msg["engine"], msg.get("model") or "")
+        try:
+            return self._resolve_path(msg.get("folder") or "", msg.get("filename") or "")[1]
+        except (KeyError, ValueError, TypeError):
+            return None
+
+    def _cancelling_tasks(self, key: str | None) -> list[asyncio.Task]:
+        if key is None:
+            return []
+        states = [self.active.get(i) for i, held in self.paths_in_progress.items() if held == key]
+        return [s.task for s in states if s and s.cancel and s.task and not s.task.done()]
+
+    async def _delete_now(self, msg: dict[str, Any]) -> None:
         ids = {k: msg[k] for k in ("folder", "filename", "engine", "model") if msg.get(k)}
         try:
             if not self.config.allow_model_downloads:

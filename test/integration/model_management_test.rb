@@ -152,6 +152,11 @@ class ModelManagementTest < ActionDispatch::IntegrationTest
 
     assert_equal([{ 'engine' => 'mflux', 'model' => 'z-image-turbo' }],
                  socket.of_type('model.delete').map { it.slice('engine', 'model', 'folder') })
+
+    agent_message(mac, { 'type' => 'model.deleted', 'delete_id' => 'x_1', 'engine' => 'mflux',
+                         'model' => 'z-image-turbo', 'bytes' => 1.gigabyte })
+
+    assert_empty mac.reload.engine_models('mflux')
   end
 
   test 'admins delete or reload a workflow on every server' do

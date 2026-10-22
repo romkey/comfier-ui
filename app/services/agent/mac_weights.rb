@@ -54,6 +54,18 @@ module Agent
     # The models a workflow needs on this server, with fp8 files swapped for their stand-ins.
     def models(models) = swap?(models) ? models.map { substitute(it) || it } : models
 
+    # The same, as downloads that fetch each stand-in afresh. A copy already on the server can't be one: its
+    # entry still names the fp8 file's link, without the conversion.
+    def downloads(models)
+      return models unless swap?(models)
+
+      models.map do |model|
+        next model unless self.class.convertible?(model['filename'])
+
+        official(model) || converted(model) || model
+      end
+    end
+
     # The fp16 stand-in for an fp8 model, or nil when the model isn't fp8 or has none here.
     def substitute(model)
       return unless active? && self.class.convertible?(model['filename'])

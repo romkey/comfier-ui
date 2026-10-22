@@ -63,7 +63,18 @@ module Agent
     def deleted!(backend, message)
       folder, filename = path(message)
       BackendModel.where(backend_id: backend.id, folder:, filename:).delete_all
+      forget_engine_model!(backend, folder, filename) if message['engine']
       RecomputeAvailabilityJob.perform_later(backend_id: backend.id)
+    end
+
+    # Engines list their models in the inventory's engines map, not as BackendModel rows.
+    def forget_engine_model!(backend, engine, model)
+      inventory = backend.backend_inventory
+      info = inventory&.engines_json&.dig(engine)
+      return unless info.is_a?(Hash) && Array(info['models']).map(&:to_s).include?(model)
+
+      models = Array(info['models']).reject { it.to_s == model }
+      inventory.update!(engines_json: inventory.engines_json.merge(engine => info.merge('models' => models)))
     end
 
     def failed!(backend, message)
