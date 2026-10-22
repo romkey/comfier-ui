@@ -10,9 +10,10 @@ module Agent
       hello status inventory object_info bye
       job.request job.accepted job.rejected job.progress job.completed job.failed job.cancelled
       model.download.progress model.download.completed model.download.failed model.download.cancelled
+      model.deleted model.delete.failed
     ].freeze
     OUTBOUND_TYPES = %w[
-      job.assign job.cancel model.download model.download.cancel
+      job.assign job.cancel model.download model.download.cancel model.delete
       config.pause config.resume inventory.refresh object_info.request
     ].freeze
 

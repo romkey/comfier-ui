@@ -138,6 +138,60 @@ def terminal(messages):
     return messages[-1]
 
 
+async def delete(downloads, mgr, **msg):
+    body = {"type": "model.delete", "delete_id": "x_1", "folder": "checkpoints", "filename": "model.safetensors",
+            **msg}
+    await mgr.delete(body)
+    return [m for m in downloads["sent"] if m.get("delete_id") == body["delete_id"]][-1]
+
+
+@pytest.mark.asyncio
+async def test_delete_removes_the_file_and_its_partial_download(downloads):
+    (downloads["dir"] / "model.safetensors").write_bytes(PAYLOAD)
+    (downloads["dir"] / f"model.safetensors{PART_SUFFIX}").write_bytes(b"x")
+    deleted = await delete(downloads, downloads["manager"]())
+
+    assert deleted["type"] == "model.deleted"
+    assert (deleted["bytes"], deleted["already_absent"]) == (len(PAYLOAD), False)
+    assert not (downloads["dir"] / "model.safetensors").exists()
+    assert not (downloads["dir"] / f"model.safetensors{PART_SUFFIX}").exists()
+
+
+@pytest.mark.asyncio
+async def test_deleting_a_file_that_isnt_there_succeeds(downloads):
+    deleted = await delete(downloads, downloads["manager"]())
+    assert deleted["type"] == "model.deleted" and deleted["already_absent"] is True
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("overrides,msg,reason", [
+    ({"allow_model_downloads": False}, {}, "disabled"),
+    ({}, {"folder": "../etc"}, "invalid"),
+    ({}, {"folder": "custom_nodes"}, "invalid"),
+    ({}, {"filename": "../escape.safetensors"}, "invalid"),
+    ({}, {"filename": "notes.txt"}, "invalid"),
+])
+async def test_delete_refusals(downloads, overrides, msg, reason):
+    (downloads["dir"] / "model.safetensors").write_bytes(PAYLOAD)
+    failed = await delete(downloads, downloads["manager"](**overrides), **msg)
+    assert failed["type"] == "model.delete.failed" and failed["reason"] == reason
+    assert (downloads["dir"] / "model.safetensors").exists()
+
+
+@pytest.mark.asyncio
+async def test_a_file_being_downloaded_isnt_deleted(downloads):
+    mgr = downloads["manager"]()
+    await mgr.handle({"type": "model.download", "download_id": "d_slow", "folder": "checkpoints",
+                      "filename": "model.safetensors", "url": downloads["server"].url("/slow/model.safetensors")})
+    for _ in range(100):
+        if mgr.paths_in_progress:
+            break
+        await asyncio.sleep(0.01)
+    failed = await delete(downloads, mgr)
+    assert failed["type"] == "model.delete.failed" and failed["reason"] == "busy"
+    await mgr.cancel("d_slow")
+
+
 @pytest.mark.asyncio
 async def test_completes_with_hash_and_reports_bytes_total(downloads):
     msgs = await downloads["run"](downloads["manager"](), sha256=SHA, bytes=len(PAYLOAD))

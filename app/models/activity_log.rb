@@ -25,6 +25,8 @@ class ActivityLog < ApplicationRecord
     server_key_revoked: 'server_key_revoked',
     model_download_requested: 'model_download_requested',
     model_download_cancelled: 'model_download_cancelled',
+    model_delete_requested: 'model_delete_requested',
+    model_delete_failed: 'model_delete_failed',
     source_credential_saved: 'source_credential_saved',
     source_credential_deleted: 'source_credential_deleted',
     media_failed: 'media_failed'

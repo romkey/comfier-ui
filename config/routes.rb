@@ -86,7 +86,13 @@ Rails.application.routes.draw do
       post :rotate, on: :collection
     end
     resources :downloads, only: %i[index create destroy], controller: 'servers/downloads' do
-      delete :clear, on: :collection
+      collection do
+        delete :clear
+        delete :cancel_all
+      end
+    end
+    resource :models, only: :destroy, controller: 'servers/models' do
+      post :reload
     end
     resource :styles, only: %i[show update], controller: 'servers/styles' do
       post :rescan
@@ -133,6 +139,8 @@ Rails.application.routes.draw do
         get :requirements
         patch :requirements, action: :update_requirements
         post :prepare_servers
+        post :delete_models
+        post :reload_models
       end
     end
 

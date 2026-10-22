@@ -271,6 +271,7 @@ def inventory() -> dict[str, Any]:
         "version": importlib.metadata.version("mflux"),
         "catalog": sorted({alias for c in configs for alias in c.aliases}),
         "models": sorted({alias for c in configs if c.model_name in cached for alias in c.aliases}),
+        "repos": {alias: c.model_name for c in configs for alias in c.aliases},
     }
 
 

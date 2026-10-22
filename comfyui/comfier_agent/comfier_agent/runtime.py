@@ -198,6 +198,8 @@ class AgentRuntime:
             await self.models.handle(msg)
         elif typ == "model.download.cancel" and self.models:
             await self.models.cancel(msg["download_id"])
+        elif typ == "model.delete" and self.models:
+            await self.models.delete(msg)
         elif typ == "config.pause":
             self.status.snapshot.paused = True
             await self._publish_status(force=True)

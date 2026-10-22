@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- **Servers**: Delete models from an agent server, or reload them (delete, then download again): files ticked under
+  **Installed**, one workflow's models from its **⋯** menu, or every workflow's at once. A workflow's requirements
+  page does the same on one server or all of them. Models other workflows also use are deleted all the same.
+  **Cancel all** under **Downloads** stops every download on the server. Deletes go to the agent as a new
+  `model.delete` message (agent 0.4.15): it removes files only from ComfyUI's model folders, and model files only,
+  and removes mflux and MLX video models from the Hugging Face cache. Servers have to allow model downloads.
 - **MLX video**: LTX-2.5 distilled presets (from text, and from an image), the model ComfyUI's LTX-2.5 template
   runs. LTX-2.5 follows prompts far better than LTX-2.3, mostly thanks to its Gemma 4 text encoder, and the
   presets make sound too. The agent now installs mlx-video from Blaizzy/mlx-video#52, which adds LTX-2.5 and

@@ -336,6 +336,25 @@ Below that, every agent server shows whether it can run the workflow now, needs 
 and why (for example a missing custom node or not enough GPU memory). Tick the servers that need downloads and
 choose **Prepare selected servers** to download everything they're missing ahead of the first job.
 
+The **⋯** menu on a server's row deletes the workflow's models from that server (**Delete models**) or deletes
+them and downloads them again (**Reload models**). The **⋯** menu above the list does the same on every server at
+once. A model other workflows use is deleted too, so their jobs can't run on that server until it's downloaded again.
+Deleting needs agent 0.4.15 or later, with model downloads allowed on the server.
+
+#### Removing and reloading models on a server
+
+On an agent server's page:
+
+- Each workflow's **⋯** menu has **Reload models** and **Delete models** for that workflow's files. The **⋯** menu
+  next to **Re-scan** does the same for every workflow on the server.
+- Under **Installed**, tick files (mflux and MLX video models are listed by name), then choose **Reload selected**,
+  or **Delete selected** from the **⋯** menu.
+- **Cancel all** under **Downloads** stops every download that's running or waiting.
+
+**Reload** is a shortcut for deleting a file and downloading it again, for a copy that's damaged or out of date. It
+only downloads files that have a download link; a file that's already downloading keeps going instead. If the server
+can't delete a file, the reason shows under **Downloads** until you choose **Clear log**.
+
 ## How-to
 
 ### How to reproduce a result exactly
@@ -365,6 +384,13 @@ choose **Prepare selected servers** to download everything they're missing ahead
 
 1. Go to **Settings → Backends** and open the server.
 2. Untick **Send new work to this backend** and choose **Save**. Work already running on it finishes normally.
+
+### How to replace a damaged model on a server
+
+1. Open the server under **Servers**.
+2. Under **Installed**, tick the file, then choose **Reload selected**. To replace every model a workflow uses,
+   choose **Reload models** from that workflow's **⋯** menu instead.
+3. Progress shows under **Downloads**.
 
 ### How to add a ComfyUI template as a workflow (admins)
 

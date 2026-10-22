@@ -1,0 +1,34 @@
+<%# Reload (delete, then download again) and Delete for some of a server's models: params picks which.
+    Inside another form (in_form), the buttons submit that form to these actions instead of nesting forms. %>
+<% reload_confirm = "Delete #{what} on #{backend.name} and download them again?" %>
+<% delete_confirm = "Delete #{what} from #{backend.name}? Other workflows that use them lose them too, and jobs " \
+                    "needing them won't run here until they download again." %>
+<div class="dropdown">
+  <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false"
+          aria-label="More actions for <%= label %>">
+    <i class="bi bi-three-dots" aria-hidden="true"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end text-13">
+    <% if local_assigns[:in_form] %>
+      <li>
+        <%= button_tag 'Reload models', type: 'submit', formaction: reload_server_models_path(backend, params),
+                                        class: 'dropdown-item', data: { turbo_confirm: reload_confirm } %>
+      </li>
+      <li>
+        <%= button_tag 'Delete models', type: 'submit', formaction: server_models_path(backend, params),
+                                        name: '_method', value: 'delete', class: 'dropdown-item text-danger',
+                                        data: { turbo_confirm: delete_confirm } %>
+      </li>
+    <% else %>
+      <li>
+        <%= button_to 'Reload models', reload_server_models_path(backend), params:, class: 'dropdown-item',
+                      form: { data: { turbo_frame: '_top', turbo_confirm: reload_confirm } } %>
+      </li>
+      <li>
+        <%= button_to 'Delete models', server_models_path(backend), method: :delete, params:,
+                      class: 'dropdown-item text-danger',
+                      form: { data: { turbo_frame: '_top', turbo_confirm: delete_confirm } } %>
+      </li>
+    <% end %>
+  </ul>
+</div>

@@ -165,6 +165,62 @@ class ModelDownloadManager:
             return
         await self._cancelled(download_id)
 
+    async def delete(self, msg: dict[str, Any]) -> None:
+        """model.delete: remove a model file, or an engine's whole model, and report the space freed."""
+        ids = {k: msg[k] for k in ("folder", "filename", "engine", "model") if msg.get(k)}
+        try:
+            if not self.config.allow_model_downloads:
+                raise DeleteRefused("disabled", "model downloads are turned off")
+            if msg.get("engine"):
+                freed = await self._delete_engine_model(msg["engine"], msg.get("model") or "")
+            else:
+                freed = await self._delete_file(msg.get("folder") or "", msg.get("filename") or "")
+        except DeleteRefused as exc:
+            await self.send(compact({"type": "model.delete.failed", "delete_id": msg["delete_id"], **ids,
+                                     "reason": exc.reason, "detail": exc.detail[:2000]}))
+            return
+        except OSError as exc:
+            await self.send(compact({"type": "model.delete.failed", "delete_id": msg["delete_id"], **ids,
+                                     "reason": "error", "detail": str(exc)[:2000]}))
+            return
+        LOG.info("deleted %s (%s bytes)", "/".join(str(v) for v in ids.values()), freed)
+        await self.send(compact({"type": "model.deleted", "delete_id": msg["delete_id"], **ids,
+                                 "bytes": freed or 0, "already_absent": freed is None}))
+        await self.rescan_inventory()
+
+    async def _delete_file(self, folder: str, filename: str) -> int | None:
+        """Bytes freed, or None when the file wasn't there."""
+        if folder not in self._known_folders():
+            raise DeleteRefused("invalid", f"unknown folder {folder}")
+        if not _safe_filename(filename) or os.path.splitext(filename)[1].lower() not in ALLOWED_EXT | PICKLE_EXT:
+            raise DeleteRefused("invalid", "not a model file name")
+        try:
+            _root, path = self._resolve_path(folder, filename)
+        except ValueError:
+            raise DeleteRefused("invalid", "path escape") from None
+        if path in self.paths_in_progress.values():
+            raise DeleteRefused("busy", "the file is downloading")
+        with contextlib.suppress(FileNotFoundError):
+            os.remove(path + PART_SUFFIX)
+        if not os.path.isfile(path):
+            return None
+        size = os.path.getsize(path)
+        os.remove(path)
+        return size
+
+    async def _delete_engine_model(self, name: str, model: str) -> int | None:
+        engine = self.engines.get(name)
+        if engine is None or not hasattr(engine, "delete"):
+            raise DeleteRefused("invalid", f"this server doesn't run {name}")
+        if not model:
+            raise DeleteRefused("invalid", "no model named")
+        if _engine_key(name, model) in self.paths_in_progress.values():
+            raise DeleteRefused("busy", "the model is downloading")
+        try:
+            return await engine.delete(model)
+        except ValueError as exc:
+            raise DeleteRefused("invalid", str(exc)) from None
+
     async def _cancelled(self, download_id: str) -> None:
         msg = {"type": "model.download.cancelled", "download_id": download_id}
         await self.send(msg)
@@ -350,6 +406,7 @@ class ModelDownloadManager:
         state = self.active.get(download_id)
         engine = self.engines.get(name)
         started, start_time = None, time.time()
+        self.paths_in_progress[download_id] = _engine_key(name, model)
 
         async def progress(done: int) -> None:
             nonlocal started
@@ -374,6 +431,7 @@ class ModelDownloadManager:
             await self._failed(download_id, "network" if "connect" in str(exc).lower() else "engine", str(exc))
         finally:
             self.active.pop(download_id, None)
+            self.paths_in_progress.pop(download_id, None)
             self._drain_wait_queue()
 
     async def _download_via_hf_cli(
@@ -610,6 +668,8 @@ class ModelDownloadManager:
         sha256: str | None,
         already: bool,
     ) -> None:
+        # Done with the file, so a delete Comfier sends on hearing so isn't refused as busy.
+        self.paths_in_progress.pop(download_id, None)
         msg = compact({
             "type": "model.download.completed",
             "download_id": download_id,
@@ -638,6 +698,13 @@ class ExistsError(Exception):
     pass
 
 
+class DeleteRefused(Exception):
+    def __init__(self, reason: str, detail: str):
+        super().__init__(detail)
+        self.reason = reason
+        self.detail = detail
+
+
 def sweep_stale_part_files(config: AgentConfig, max_age_s: int = PART_MAX_AGE_S) -> None:
     """Remove abandoned .comfier-part files older than max_age_s from model folder roots."""
     cutoff = time.time() - max_age_s
@@ -655,6 +722,11 @@ def sweep_stale_part_files(config: AgentConfig, max_age_s: int = PART_MAX_AGE_S)
                         LOG.info("removed stale part file %s", part)
                 except OSError as exc:
                     LOG.debug("could not remove %s: %s", part, exc)
+
+
+def _engine_key(engine: str, model: str) -> str:
+    """Where paths_in_progress keeps an engine download; never a real path."""
+    return f"\0{engine}\0{model}"
 
 
 def _file_sha256(path: str) -> str:

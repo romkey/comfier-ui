@@ -27,6 +27,9 @@
     { "$ref": "#/$defs/model_download_failed" },
     { "$ref": "#/$defs/model_download_cancelled" },
     { "$ref": "#/$defs/model_download_cancel" },
+    { "$ref": "#/$defs/model_delete" },
+    { "$ref": "#/$defs/model_deleted" },
+    { "$ref": "#/$defs/model_delete_failed" },
     { "$ref": "#/$defs/config_pause" },
     { "$ref": "#/$defs/config_resume" },
     { "$ref": "#/$defs/inventory_refresh" },
@@ -302,6 +305,51 @@
       "type": "object",
       "required": ["type", "download_id"],
       "properties": { "type": { "const": "model.download.cancel" }, "download_id": { "type": "string" } }
+    },
+    "model_delete": {
+      "description": "Remove folder/filename from the models folders, or (with engine) a whole model from that engine's cache.",
+      "type": "object",
+      "required": ["type", "delete_id"],
+      "anyOf": [
+        { "required": ["folder", "filename"] },
+        { "required": ["engine", "model"] }
+      ],
+      "properties": {
+        "type": { "const": "model.delete" },
+        "delete_id": { "type": "string", "maxLength": 64 },
+        "folder": { "type": "string", "maxLength": 128 },
+        "filename": { "type": "string", "maxLength": 512 },
+        "engine": { "type": "string", "maxLength": 32 },
+        "model": { "type": "string", "maxLength": 256 }
+      }
+    },
+    "model_deleted": {
+      "type": "object",
+      "required": ["type", "delete_id"],
+      "properties": {
+        "type": { "const": "model.deleted" },
+        "delete_id": { "type": "string", "maxLength": 64 },
+        "folder": { "type": "string" },
+        "filename": { "type": "string" },
+        "engine": { "type": "string" },
+        "model": { "type": "string" },
+        "bytes": { "description": "Disk space freed", "type": "integer" },
+        "already_absent": { "type": "boolean" }
+      }
+    },
+    "model_delete_failed": {
+      "type": "object",
+      "required": ["type", "delete_id", "reason"],
+      "properties": {
+        "type": { "const": "model.delete.failed" },
+        "delete_id": { "type": "string", "maxLength": 64 },
+        "folder": { "type": "string" },
+        "filename": { "type": "string" },
+        "engine": { "type": "string" },
+        "model": { "type": "string" },
+        "reason": { "enum": ["disabled", "invalid", "busy", "error"] },
+        "detail": { "type": "string", "maxLength": 2000 }
+      }
     },
     "config_pause": {
       "type": "object",

@@ -1,28 +1,55 @@
 <% inventory = backend.backend_inventory %>
-<div class="h-section-label mt-4">Installed</div>
+<% pickable = Agent::ModelDeleter.supported?(backend) %>
+<div class="d-flex align-items-end justify-content-between mt-4 mb-2">
+  <div class="h-section-label mb-0">Installed</div>
+  <% if inventory && pickable %>
+    <div class="d-flex gap-2">
+      <%= button_tag 'Reload selected', type: 'submit', form: 'installed_models', class: 'btn btn-outline-secondary btn-sm',
+                                        data: { turbo_confirm: 'Delete the selected models and download them again?' } %>
+      <div class="dropdown">
+        <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false"
+                aria-label="More actions for the selected models">
+          <i class="bi bi-three-dots" aria-hidden="true"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end text-13">
+          <li>
+            <%= button_tag 'Delete selected', type: 'submit', form: 'installed_models', name: '_method', value: 'delete',
+                                              formaction: server_models_path(backend), class: 'dropdown-item text-danger',
+                                              data: { turbo_confirm: "Delete the selected models from #{backend.name}? " \
+                                                                     'Workflows that use them lose them too.' } %>
+          </li>
+        </ul>
+      </div>
+    </div>
+  <% end %>
+</div>
 <% if inventory.nil? %>
   <p class="text-13 text-secondary">The server hasn't reported its models yet.</p>
 <% else %>
+  <%= form_with url: reload_server_models_path(backend), id: 'installed_models', data: { turbo_frame: '_top' } do %><% end %>
   <div data-controller="filter-list">
     <input type="search" class="form-control form-control-sm mb-2" placeholder="Search models and node types"
            data-action="input->filter-list#filter" aria-label="Search installed models and node types">
-    <% inventory.models_json.sort.each do |folder, files| %>
-      <details class="mb-1" data-filter-list-target="group">
-        <summary class="text-13"><%= folder %> <span class="text-secondary num"><%= Array(files).size %></span></summary>
-        <ul class="list-unstyled text-12 ps-3 mb-1">
-          <% Array(files).sort.each do |file| %>
-            <li data-filter-list-target="item" data-text="<%= "#{folder}/#{file}".downcase %>"><%= file %></li>
-          <% end %>
-        </ul>
-      </details>
-    <% end %>
+    <% model_groups = inventory.models_json.sort.map { |folder, files| [folder, folder, Array(files)] } %>
     <% backend.engines.except('comfyui').sort.each do |key, info| %>
-      <% models = Array(info['models']) + Array(info['loras']) %>
+      <% model_groups << [key, WorkflowEngine.label_for(key), Array(info['models']) + Array(info['loras'])] %>
+    <% end %>
+    <% model_groups.each do |folder, label, files| %>
+      <% loras = backend.engines.dig(folder, 'loras').to_a %>
       <details class="mb-1" data-filter-list-target="group">
-        <summary class="text-13"><%= WorkflowEngine.label_for(key) %> <span class="text-secondary num"><%= models.size %></span></summary>
+        <summary class="text-13"><%= label %> <span class="text-secondary num"><%= files.size %></span></summary>
         <ul class="list-unstyled text-12 ps-3 mb-1">
-          <% models.sort.each do |model| %>
-            <li data-filter-list-target="item" data-text="<%= "#{key}/#{model}".downcase %>"><%= model %></li>
+          <% files.sort.each do |file| %>
+            <li data-filter-list-target="item" data-text="<%= "#{folder}/#{file}".downcase %>">
+              <% if pickable && loras.exclude?(file) %>
+                <label class="form-check-label">
+                  <%= check_box_tag 'files[]', "#{folder}/#{file}", false, form: 'installed_models', id: nil,
+                                                                          class: 'form-check-input me-1' %><%= file %>
+                </label>
+              <% else %>
+                <%= file %>
+              <% end %>
+            </li>
           <% end %>
         </ul>
       </details>

@@ -3,7 +3,7 @@ module Servers
   class DownloadsController < ApplicationController
     before_action :set_backend
     before_action :require_view, only: :index
-    before_action :require_manage, only: %i[create destroy clear]
+    before_action :require_manage, only: %i[create destroy clear cancel_all]
 
     def index
       @downloads = @backend.model_downloads.agent.recent.limit(20)
@@ -24,15 +24,30 @@ module Servers
       redirect_back_or_to server_path(@backend), notice: 'Cancelling the download.', status: :see_other
     end
 
+    # Queued ones go first, so cancelling one that's running doesn't start a queued one in its place.
+    def cancel_all
+      cancellable = @backend.model_downloads.agent.where(agent_state: Agent::DownloadSender::PENDING - %w[cancelling])
+      ids = cancellable.order(Arel.sql("CASE WHEN agent_state = 'queued' THEN 0 ELSE 1 END")).pluck(:id)
+      count = ids.count { Agent::DownloadLifecycle.cancel_by_user!(ModelDownload.find(it)) }
+      if count.positive?
+        ActivityLog.record(kind: :model_download_cancelled, user: current_user, subject: @backend,
+                           message: "Cancelled #{count} download(s) on #{@backend.name}")
+      end
+      notice = count.positive? ? "Cancelling #{helpers.pluralize(count, 'download')}." : 'Nothing to cancel.'
+      redirect_back_or_to server_path(@backend), notice:, status: :see_other
+    end
+
     def clear
+      count = Agent::ModelDeleter.failures(@backend).size
+      Agent::ModelDeleter.clear_failures!(@backend)
       scope = @backend.model_downloads.agent.finished
-      count = scope.count
+      count += scope.count
       scope.delete_all
       if count.positive?
         Turbo::StreamsChannel.broadcast_refresh_later_to([@backend, :downloads],
                                                          target: "server_downloads_#{@backend.id}")
       end
-      notice = count.positive? ? "Cleared #{count} finished download(s)." : 'Nothing to clear.'
+      notice = count.positive? ? "Cleared #{helpers.pluralize(count, 'entry')} from the log." : 'Nothing to clear.'
       redirect_back_or_to server_path(@backend), notice:, status: :see_other
     end
 
