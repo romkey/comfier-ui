@@ -42,7 +42,8 @@
       <div class="h-section-label mb-0">Recent</div>
       <%= link_to 'See all in Results', generations_path(kind: @kind.key), class: 'text-13' if @recent.any? %>
     </div>
-    <div id="<%= @kind.key %>_generations" class="result-grid">
+    <div id="<%= @kind.key %>_generations" class="result-grid"
+         data-controller="result-grid" data-result-grid-rows-value="2">
       <%= render partial: 'generations/generation', collection: @recent %>
     </div>
     <p class="result-empty text-13 text-secondary">Nothing here yet — what you make will show up here.</p>
