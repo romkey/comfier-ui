@@ -91,7 +91,16 @@ module Agent
     def same_file?(download, file)
       return download['engine'] == file['engine'] && download['filename'] == file['filename'] if file['engine']
 
-      ModelMatcher.folders_for(download['folder']).include?(file['folder']) && download['filename'] == file['filename']
+      ModelMatcher.folders_for(download['folder']).include?(file['folder']) &&
+        names_for(download).include?(file['filename'])
+    end
+
+    # A Mac stand-in's download can be named apart from the copy already there; both stand in for one fp8 file.
+    def names_for(download)
+      fp8 = download['replaces']
+      return [download['filename']] if fp8.blank?
+
+      [download['filename'], MacWeights.fp16_name(fp8), MacWeights.converted_name(fp8)]
     end
   end
 end
