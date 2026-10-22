@@ -124,6 +124,17 @@ class GenerationsTest < ActionDispatch::IntegrationTest
     assert Generation.exists?(generations(:bob_done).id)
   end
 
+  test 'deleting a result keeps the timing samples its attempts left' do
+    failed = generations(:alice_failed)
+    attempt = failed.job_attempts.create!(attempt: 1, outcome: 'completed', backend: backends(:gpu))
+    sample = PerfSample.create!(job_attempt: attempt, backend: backends(:gpu), completed_at: Time.current)
+
+    post bulk_generations_path, params: { operation: 'delete', ids: [failed.id], status: 'failed' }
+
+    assert_equal 'Deleted 1 result.', flash[:notice]
+    assert_nil sample.reload.job_attempt_id
+  end
+
   test 'a page past the end falls back to the last page and keeps the filters' do
     get generations_path, params: { kind: 'image', page: 5 }
 
