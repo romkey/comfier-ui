@@ -98,23 +98,43 @@ class ModelManagementTest < ActionDispatch::IntegrationTest
     assert_equal CHECKPOINT, @socket.last_of_type('model.download')['filename']
   end
 
-  test "a Mac's fp16 copy picked from the inventory is reloaded as a fresh stand-in" do
-    fp8 = 'sd15_fp8_scaled.safetensors'
-    workflow = Workflow.create!(name: 'SD fp8', kind: 'image', graph_json: @workflow.graph.to_json.sub(CHECKPOINT, fp8))
-    set_model_links(workflow, url: "https://huggingface.co/x/#{fp8}", bytes: 2.gigabytes)
-    mac = create_agent_backend!(owner: @alice, name: 'Mac Studio')
-    socket = connect_agent!(mac)
-    agent_hello(mac, system: { devices: [{ name: 'Apple M3 Max', type: 'mps' }] })
-    inventory = inventory_for(workflow)
-    agent_inventory(mac, **inventory, models: { 'checkpoints' => ['sd15_fp16.safetensors'] })
-    agent_status(mac)
+  FP8 = 'sd15_fp8_scaled.safetensors'.freeze
 
-    post reload_server_models_path(mac), params: { files: ['checkpoints/sd15_fp16.safetensors'] }
+  def fp8_workflow!(name, **links)
+    workflow = Workflow.create!(name:, kind: 'image', graph_json: @workflow.graph.to_json.sub(CHECKPOINT, FP8))
+    set_model_links(workflow, url: "https://huggingface.co/x/#{FP8}", bytes: 2.gigabytes, **links)
+    workflow
+  end
+
+  # A Mac with the given checkpoints on disk; returns its socket.
+  def mac_with!(*workflows, files:)
+    @mac = create_agent_backend!(owner: @alice, name: 'Mac Studio')
+    socket = connect_agent!(@mac)
+    agent_hello(@mac, system: { devices: [{ name: 'Apple M3 Max', type: 'mps' }] })
+    agent_inventory(@mac, **inventory_for(*workflows), models: { 'checkpoints' => files })
+    agent_status(@mac)
+    socket
+  end
+
+  test "a Mac's fp16 copy picked from the inventory is reloaded as a fresh stand-in" do
+    socket = mac_with!(fp8_workflow!('SD fp8'), files: ['sd15_fp16.safetensors'])
+
+    post reload_server_models_path(@mac), params: { files: ['checkpoints/sd15_fp16.safetensors'] }
 
     assert_equal ['sd15_fp16.safetensors'], socket.of_type('model.delete').pluck('filename')
     download = socket.last_of_type('model.download')
 
     assert_equal ['sd15_fp16_from_fp8.safetensors', 'fp8_to_fp16'], download&.values_at('filename', 'convert')
+  end
+
+  test "a picked file a workflow downloads by its own name doesn't also bring another's stand-in" do
+    official = fp8_workflow!('SD fp8', fp16_url: 'https://huggingface.co/x/sd15_fp16.safetensors')
+    socket = mac_with!(official, fp8_workflow!('SD fp8 too'), files: ['sd15_fp16.safetensors'])
+
+    post reload_server_models_path(@mac), params: { files: ['checkpoints/sd15_fp16.safetensors'] }
+
+    assert_equal ['sd15_fp16.safetensors'], socket.of_type('model.delete').pluck('filename')
+    assert_equal [['sd15_fp16.safetensors', nil]], @mac.model_downloads.pluck(:name, :convert)
   end
 
   test 'every workflow on the server at once' do
