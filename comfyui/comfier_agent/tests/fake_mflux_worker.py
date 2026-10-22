@@ -13,7 +13,8 @@ if sys.argv[1:] == ["--inventory"]:
     hub = os.environ.get("HF_HUB_CACHE") or ""
     fetched = [d.removeprefix("models--fake--") for d in (os.listdir(hub) if os.path.isdir(hub) else [])]
     print(json.dumps({"version": "9.9.9", "models": sorted({"z-image-turbo", *fetched}),
-                      "catalog": ["dev", "z-image-turbo"]}))
+                      "catalog": ["dev", "z-image-turbo"],
+                      "repos": {name: f"fake/{name}" for name in ("dev", "z-image-turbo", "qwen-image", *fetched)}}))
     sys.exit(0)
 
 if sys.argv[1:2] == ["--download"]:

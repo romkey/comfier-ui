@@ -5,6 +5,7 @@
       <div class="text-12 text-secondary mt-1">Re-scanning <%= backend.name %>… this table updates when it reports back.</div>
     <% end %>
   </div>
+  <% can_delete_models = can_manage && Agent::ModelDeleter.supported?(backend) %>
   <% if can_manage %>
     <div class="d-flex gap-2">
       <%= button_to 'Re-scan', rescan_server_styles_path(backend), class: 'btn btn-outline-secondary btn-sm',
@@ -13,6 +14,10 @@
       <% if all_missing.positive? %>
         <%= button_to "Download all (#{all_missing})", server_downloads_path(backend),
                       params: { all: true }, class: 'btn btn-outline-secondary btn-sm' %>
+      <% end %>
+      <% if can_delete_models %>
+        <%= render 'servers/model_actions', backend:, params: { all: true }, label: "every workflow's models",
+                                            what: "every model this server's workflows use" %>
       <% end %>
     </div>
   <% end %>
@@ -59,6 +64,10 @@
                             params: { workflow_id: workflow.id, enabled: off ? '1' : '0' },
                             class: 'btn btn-outline-secondary btn-sm',
                             aria: { label: "#{off ? 'Enable' : 'Disable'} #{workflow.name} on #{backend.name}" } %>
+              <% if can_delete_models %>
+                <%= render 'servers/model_actions', backend:, params: { workflow_id: workflow.id },
+                                                    label: workflow.name, what: "#{workflow.name}'s models" %>
+              <% end %>
             </div>
           <% end %>
         </td>

@@ -41,6 +41,8 @@ class MfluxEngine(MlxEngine):
         self._idle_task: asyncio.Task | None = None
         self._lock = asyncio.Lock()
         self._refreshed_at: float | None = None
+        # Model alias -> the Hugging Face repo holding its weights, from the inventory.
+        self.repos: dict[str, str] = {}
 
     async def refresh(self) -> None:
         """Version and the models already downloaded, from a short-lived process so a running job and
@@ -60,7 +62,15 @@ class MfluxEngine(MlxEngine):
         self.version = data.get("version") or self.version
         self.models = sorted(data.get("models") or [])
         self.extra_info = {"catalog": sorted(data.get("catalog") or [])}
+        self.repos = dict(data.get("repos") or {})
         self._refreshed_at = time.monotonic()
+
+    async def repos_for(self, model: str) -> list[str]:
+        if model not in self.repos:
+            self._refreshed_at = None
+            await self.refresh()
+        repo = self.repos.get(model)
+        return [repo] if repo else []
 
     async def execute(self, ctx: JobContext, workflow: Any, *, timeout_s: int, progress: ProgressFn) -> list[dict]:
         self._cancel_idle_unload()

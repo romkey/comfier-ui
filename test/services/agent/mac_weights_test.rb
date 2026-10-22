@@ -57,6 +57,17 @@ module Agent
       assert_equal FP16, mac.substitute(fp8_model)['filename']
     end
 
+    test 'downloads fetch a stand-in afresh even when a copy is on the server' do
+      @backend.backend_models.create!(folder: 'diffusion_models', filename: FP16)
+
+      converted = mac.downloads([fp8_model]).sole
+
+      assert_equal [CONVERTED, MacWeights::CONVERT], converted.values_at('filename', 'convert')
+      official = mac.downloads([fp8_model(fp16_url: 'https://hf.test/fp16')]).sole
+
+      assert_equal [FP16, 'https://hf.test/fp16'], official.values_at('filename', 'url')
+    end
+
     test 'an agent too old to convert is a problem, not a stand-in' do
       @backend.update!(agent_version: '0.4.11')
 

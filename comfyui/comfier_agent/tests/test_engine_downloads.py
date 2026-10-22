@@ -68,6 +68,30 @@ async def test_an_engine_this_server_doesnt_run_is_refused(mac):
     assert failed["reason"] == "invalid" and "mlx_video" in failed["detail"]
 
 
+@pytest.mark.asyncio
+async def test_a_downloaded_model_can_be_deleted(mac, tmp_path):
+    agent, _runtime = mac
+    await agent.front.send(download("d_5", "qwen-image"))
+    listed = lambda: any("qwen-image" in m["engines"]["mflux"]["models"] for m in agent.front.of_type("inventory"))  # noqa: E731
+    await agent.front.wait_for(listed, timeout=10)
+    start = len(agent.front.messages)
+    await agent.front.send({"type": "model.delete", "delete_id": "x_1", "engine": "mflux", "model": "qwen-image"})
+    deleted = (await agent.front.wait_for_types("model.deleted", timeout=10, after=start))[0]
+
+    assert deleted["bytes"] == 2000 and deleted["already_absent"] is False
+    assert not (tmp_path / "hf" / "models--fake--qwen-image").exists()
+    inventory = (await agent.front.wait_for_types("inventory", timeout=10, after=start))[0]
+    assert "qwen-image" not in inventory["engines"]["mflux"]["models"]
+
+
+@pytest.mark.asyncio
+async def test_deleting_a_model_mflux_doesnt_know_is_refused(mac):
+    agent, _runtime = mac
+    await agent.front.send({"type": "model.delete", "delete_id": "x_2", "engine": "mflux", "model": "nope"})
+    failed = (await agent.front.wait_for_types("model.delete.failed", timeout=10))[0]
+    assert failed["reason"] == "invalid" and "nope" in failed["detail"]
+
+
 def test_the_hf_download_worker_refuses_something_that_isnt_a_repo():
     out = subprocess.run([sys.executable, "-m", "comfier_agent.workers.hf_download", "../etc"], capture_output=True,
                          text=True, cwd=os.path.dirname(os.path.dirname(FAKE_WORKER)))

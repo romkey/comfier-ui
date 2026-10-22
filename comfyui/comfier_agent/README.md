@@ -161,6 +161,11 @@ mflux and enough memory.
   on the Mac yet has a **Download** button (and **Download all** covers every style), which fetches
   exactly the files mflux uses without loading the model. Otherwise mflux fetches it during the first
   job, which then takes longer. The agent reports which models are already downloaded.
+- **Models can be deleted from Comfier.** **Delete models** and **Reload models** on the server's page
+  remove a model's Hugging Face repo from the cache (`HF_HUB_CACHE`, else `~/.cache/huggingface/hub`).
+  For mflux that's the repo holding the model's weights; any other repos it fetched (a tokenizer, say)
+  stay. For MLX video it's the style's `model_repo`, and its `text_encoder_repo` if it names one.
+  Deleting needs `COMFIER_ALLOW_MODEL_DOWNLOADS` left on.
 - **The GPU lock.** While a job runs the agent holds `~/.comfier/gpu.lock` (an `flock` lock). If another
   program holds it, the agent takes no jobs until it's released, so your own scripts can keep Comfier
   jobs off the GPU while they run.

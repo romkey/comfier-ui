@@ -13,6 +13,7 @@ module Agent
       'model.download.progress' => :progress!, 'model.download.completed' => :completed!,
       'model.download.failed' => :failed!, 'model.download.cancelled' => :cancelled!
     }.freeze
+    DELETE_EVENTS = { 'model.deleted' => :deleted!, 'model.delete.failed' => :failed! }.freeze
 
     def initialize(backend)
       @backend = backend
@@ -24,6 +25,7 @@ module Agent
       Presence.touch!(@backend) if type == 'job.progress'
       if (event = JOB_EVENTS[type]) then JobLifecycle.public_send(event, @backend, message)
       elsif (event = DOWNLOAD_EVENTS[type]) then DownloadLifecycle.public_send(event, @backend, message)
+      elsif (event = DELETE_EVENTS[type]) then ModelDeleter.public_send(event, @backend, message)
       else dispatch_other(type, message)
       end
     end

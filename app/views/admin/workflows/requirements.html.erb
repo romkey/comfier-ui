@@ -44,7 +44,31 @@
   <%= submit_tag 'Save', class: 'btn btn-primary btn-sm' %>
 <% end %>
 
-<div class="h-section-label mt-4">Servers</div>
+<% deletable = @servers.select { Agent::ModelDeleter.supported?(it) } %>
+<div class="d-flex align-items-end justify-content-between mt-4 mb-2">
+  <div class="h-section-label mb-0">Servers</div>
+  <% if deletable.any? %>
+    <div class="dropdown">
+      <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false"
+              aria-label="Model actions on every server">
+        <i class="bi bi-three-dots" aria-hidden="true"></i>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end text-13">
+        <li>
+          <%= button_to 'Reload models on every server', reload_models_admin_workflow_path(@workflow), class: 'dropdown-item',
+                        form: { data: { turbo_confirm: "Delete #{@workflow.name}'s models on every server that runs it " \
+                                                       'and download them again?' } } %>
+        </li>
+        <li>
+          <%= button_to 'Delete models from every server', delete_models_admin_workflow_path(@workflow),
+                        class: 'dropdown-item text-danger',
+                        form: { data: { turbo_confirm: "Delete #{@workflow.name}'s models from every server? Other " \
+                                                       'workflows that use them lose them too.' } } %>
+        </li>
+      </ul>
+    </div>
+  <% end %>
+</div>
 <% if @servers.empty? %>
   <p class="text-13 text-secondary">No agent servers yet.</p>
 <% else %>
@@ -72,6 +96,12 @@
                 <% Array(record&.details&.dig('hints')).each do |hint| %><div class="text-warning"><%= hint %></div><% end %>
               </td>
             <% end %>
+            <td class="text-end">
+              <% if deletable.include?(server) %>
+                <%= render 'servers/model_actions', backend: server, params: { workflow_id: @workflow.id },
+                                                    label: server.name, what: "#{@workflow.name}'s models", in_form: true %>
+              <% end %>
+            </td>
           </tr>
         <% end %>
       </tbody>

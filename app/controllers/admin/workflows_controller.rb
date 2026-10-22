@@ -1,7 +1,7 @@
 module Admin
   class WorkflowsController < BaseController # rubocop:disable Metrics/ClassLength
     before_action :set_workflow, only: %i[edit update destroy models check_models install_models requirements
-                                          update_requirements prepare_servers]
+                                          update_requirements prepare_servers delete_models reload_models]
     before_action :load_model_status, only: :models
 
     def index
@@ -106,7 +106,34 @@ module Admin
                   status: :see_other
     end
 
+    # This workflow's models off every agent server that can delete them, even ones other workflows use.
+    def delete_models
+      servers = model_servers
+      count = servers.sum do |backend|
+        Agent::ModelDeleter.delete!(backend, Agent::ServerModels.for_workflow(@workflow, backend).installed,
+                                    user: current_user)
+      end
+      notice = "Deleting #{helpers.pluralize(count, 'model')} on #{helpers.pluralize(servers.size, 'server')}."
+      redirect_to requirements_admin_workflow_path(@workflow), notice:, status: :see_other
+    end
+
+    # Deletes and downloads again on every server that runs the workflow.
+    def reload_models
+      servers = model_servers.select { it.allows_workflow?(@workflow) }
+      outcomes = servers.map do |backend|
+        Agent::ModelDeleter.reload!(backend, Agent::ServerModels.for_workflow(@workflow, backend), user: current_user)
+      end
+      notice = "Deleting #{helpers.pluralize(outcomes.sum(&:deleted), 'model')} and queued " \
+               "#{helpers.pluralize(outcomes.sum(&:queued), 'download')} on " \
+               "#{helpers.pluralize(servers.size, 'server')}."
+      redirect_to requirements_admin_workflow_path(@workflow), notice:, status: :see_other
+    end
+
     private
+
+    def model_servers
+      Backend.agent.kept.ordered.select { Agent::ModelDeleter.supported?(it) && Agent::Presence.online?(it) }
+    end
 
     def requirement_rows
       rows = params[:models]

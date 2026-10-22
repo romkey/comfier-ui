@@ -186,6 +186,9 @@ class MlxVideoEngine(MlxEngine):
         # mlx-video recipes name a Hugging Face repo (model_repo); it's fetched whole, as mlx-video would.
         return [*self._download_argv, model]
 
+    async def repos_for(self, model: str) -> list[str]:
+        return [model]
+
     async def cancel(self, ctx: JobContext) -> bool:
         if self.process:
             await self.process.stop()

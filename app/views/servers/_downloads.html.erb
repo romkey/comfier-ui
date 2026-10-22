@@ -1,11 +1,30 @@
+<% delete_failures = can_manage ? Agent::ModelDeleter.failures(backend) : [] %>
 <div class="d-flex align-items-end justify-content-between mt-4 mb-2">
   <div class="h-section-label mb-0">Downloads</div>
-  <% if can_manage && backend.model_downloads.agent.finished.exists? %>
-    <%= button_to 'Clear log', clear_server_downloads_path(backend), method: :delete,
-                  class: 'btn btn-outline-secondary btn-sm',
-                  form: { data: { turbo_confirm: 'Remove finished downloads from this log?' } } %>
+  <% if can_manage %>
+    <div class="d-flex gap-2">
+      <% cancellable = backend.model_downloads.agent.where(agent_state: Agent::DownloadSender::PENDING - %w[cancelling]).count %>
+      <% if cancellable.positive? %>
+        <%= button_to "Cancel all (#{cancellable})", cancel_all_server_downloads_path(backend), method: :delete,
+                      class: 'btn btn-outline-secondary btn-sm',
+                      form: { data: { turbo_confirm: "Cancel #{pluralize(cancellable, 'download')} on #{backend.name}?" } } %>
+      <% end %>
+      <% if delete_failures.any? || backend.model_downloads.agent.finished.exists? %>
+        <%= button_to 'Clear log', clear_server_downloads_path(backend), method: :delete,
+                      class: 'btn btn-outline-secondary btn-sm',
+                      form: { data: { turbo_confirm: 'Remove finished downloads from this log?' } } %>
+      <% end %>
+    </div>
   <% end %>
 </div>
+<% if delete_failures.any? %>
+  <div class="status-panel status-attention mb-2 text-13">
+    <% delete_failures.each do |failure| %>
+      <div><span class="status-dot status-danger me-1"></span><%= failure['message'] %>
+        <span class="text-12 text-secondary">· <%= friendly_time(Time.zone.parse(failure['at'].to_s)) %></span></div>
+    <% end %>
+  </div>
+<% end %>
 <% if downloads.any? %>
   <table class="table table-compact align-middle">
     <tbody>

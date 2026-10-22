@@ -27,6 +27,7 @@ RESERVED_OPTIONS = frozenset({"output", "output_path", "output_dir"})
 META_KEYS = frozenset({"command", "min_memory_gb"})
 FLAG_KEY = re.compile(r"^[a-z][a-z0-9_]*$")
 ANSI = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
+HF_REPO = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*$")
 STDERR_LINES = 40
 KILL_GRACE_S = 5
 DOWNLOAD_POLL_S = 2
@@ -81,9 +82,13 @@ def hf_hub_cache() -> Path:
     return Path(os.path.expanduser(os.environ.get("HF_HOME") or "~/.cache/huggingface")) / "hub"
 
 
+def repo_cache_dir(repo: str) -> Path:
+    return hf_hub_cache() / ("models--" + repo.replace("/", "--"))
+
+
 def repo_bytes(repo: str) -> int:
     """Bytes a Hugging Face repo takes in the cache so far, partial downloads included."""
-    root = hf_hub_cache() / ("models--" + repo.replace("/", "--")) / "blobs"
+    root = repo_cache_dir(repo) / "blobs"
     total = 0
     with contextlib.suppress(OSError):
         for entry in os.scandir(root):
@@ -201,6 +206,29 @@ class MlxEngine(Engine):
             await proc.stop()
         self._refreshed_at = None  # report the model as downloaded on the next inventory
         return sum(repo_bytes(r) for r in repos)
+
+    async def repos_for(self, model: str) -> list[str]:
+        """The Hugging Face repos a model name stands for."""
+        raise NotImplementedError
+
+    async def delete(self, model: str) -> int | None:
+        """Removes a model's repos from the Hugging Face cache. Returns the bytes freed, or None when none
+        of them were there. Raises ValueError for a model this engine can't place in the cache."""
+        repos = await self.repos_for(model)
+        if not repos:
+            raise ValueError(f"{self.name} doesn't know {model}")
+        bad = [r for r in repos if not HF_REPO.match(r)]
+        if bad:
+            raise ValueError(f"{bad[0]!r} isn't a Hugging Face repo (owner/name)")
+        freed, found = 0, False
+        for repo in repos:
+            path = repo_cache_dir(repo)
+            if path.is_dir():
+                found = True
+                freed += repo_bytes(repo)
+                await asyncio.to_thread(shutil.rmtree, path)
+        self._refreshed_at = None
+        return freed if found else None
 
     def outputs(self, ctx: JobContext, path: Path) -> list[dict[str, Any]]:
         if not path.is_file() or path.stat().st_size == 0:

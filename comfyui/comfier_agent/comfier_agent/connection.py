@@ -26,6 +26,8 @@ TERMINAL_TYPES = frozenset({
     "model.download.completed",
     "model.download.failed",
     "model.download.cancelled",
+    "model.deleted",
+    "model.delete.failed",
 })
 # Terminal events are re-sent after every hello (the frontend ignores duplicates); keep the recent ones.
 TERMINAL_BUFFER_MAX = 50
