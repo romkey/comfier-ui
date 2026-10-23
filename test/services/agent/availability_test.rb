@@ -116,6 +116,14 @@ module Agent
       assert_match 'sampler_name “res_multistep” isn\'t available', result.reasons.first
     end
 
+    test 'a model the inventory has passes even when cached object_info predates it' do
+      bring_online_for!(@backend, @workflow)
+      info = { 'CheckpointLoaderSimple' => { 'input' => { 'required' => { 'ckpt_name' => [%w[other.safetensors]] } } } }
+      store_object_info(info)
+
+      assert_predicate compute, :ready?
+    end
+
     test 'COMBO option specs are understood' do
       info = { 'X' => { 'input' => { 'optional' => { 'mode' => ['COMBO', { 'options' => %w[a b] }] } } } }
 

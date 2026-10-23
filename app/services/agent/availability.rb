@@ -51,7 +51,7 @@ module Agent
 
       missing = missing_models
       hints = hints_for(missing)
-      reasons = missing_node_reasons + fp8_reasons + strict_reasons(missing) + model_reasons(missing)
+      reasons = missing_node_reasons + fp8_reasons + strict_reasons + model_reasons(missing)
       return blocked(reasons, hints) if reasons.any?
       return Result.new(status: :ready, models: [], total_bytes: nil, reasons: [], hints:) if missing.empty?
 
@@ -120,17 +120,18 @@ module Agent
     end
 
     # With object_info cached, literal values for list-typed inputs must be one of the options.
-    # Models already counted as missing (and being downloaded) are skipped.
-    def strict_reasons(missing)
+    # Required models are skipped: the inventory already judged them present or missing, and the
+    # cached object_info can lag behind it (it's fetched separately, after a download finishes).
+    def strict_reasons
       return [] if @backend.legacy?
 
-      strict_combo_reasons(missing, @backend.backend_object_infos.first&.data)
+      strict_combo_reasons(@backend.backend_object_infos.first&.data)
     end
 
-    def strict_combo_reasons(missing, info)
+    def strict_combo_reasons(info)
       return [] if info.blank?
 
-      skip = missing.to_set { it['filename'] }
+      skip = @models.to_set { it['filename'] }
       graph = @mac.rewrite(@workflow.graph, @requirements.models)
       Requirements.literal_inputs(graph).filter_map do |id, node, input, value|
         next if skip.include?(value)
