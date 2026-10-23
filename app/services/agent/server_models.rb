@@ -38,8 +38,14 @@ module Agent
     def for_files(backend, paths)
       installed = paths.filter_map { installed_file(backend, *it.to_s.split('/', 2)) }.uniq { key(it) }
       known = for_server(backend).downloads
-      downloads = installed.flat_map { |file| known.select { same_file?(it, file) } }
-      Selection.new(installed:, downloads: downloads.uniq { key(it) })
+      Selection.new(installed:, downloads: installed.flat_map { downloads_for(known, it) }.uniq { key(it) })
+    end
+
+    # The downloads that put a picked file back: those with its own name, else a Mac stand-in for the same fp8
+    # file, which some workflow downloads under the other fp16 name.
+    def downloads_for(known, file)
+      same = known.select { same_file?(it, file) }
+      same.presence || known.select { same_file?(it, file, stand_in: true) }
     end
 
     def installed_file(backend, folder, filename)
@@ -88,19 +94,19 @@ module Agent
       end
     end
 
-    def same_file?(download, file)
+    def same_file?(download, file, stand_in: false)
       return download['engine'] == file['engine'] && download['filename'] == file['filename'] if file['engine']
 
       ModelMatcher.folders_for(download['folder']).include?(file['folder']) &&
-        names_for(download).include?(file['filename'])
+        names_for(download, stand_in:).include?(file['filename'])
     end
 
     # A Mac stand-in's download can be named apart from the copy already there; both stand in for one fp8 file.
-    def names_for(download)
+    def names_for(download, stand_in:)
       fp8 = download['replaces']
-      return [download['filename']] if fp8.blank?
+      return [download['filename']] if !stand_in || fp8.blank?
 
-      [download['filename'], MacWeights.fp16_name(fp8), MacWeights.converted_name(fp8)]
+      [MacWeights.fp16_name(fp8), MacWeights.converted_name(fp8)]
     end
   end
 end
