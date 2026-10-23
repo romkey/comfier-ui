@@ -17,10 +17,13 @@ module Agent
 
     # Why supported? is false, in words for the server's owner.
     def blocker(backend)
+      return "#{backend.name} isn't an agent server, so Comfier can't delete its models." unless backend.agent?
       return "#{backend.name} doesn't allow model downloads, which deleting needs too." unless
         backend.model_downloads_enabled?
+      return if backend.agent_at_least?(MIN_AGENT)
 
-      "Deleting models needs agent #{MIN_AGENT} or later on #{backend.name}." unless backend.agent_at_least?(MIN_AGENT)
+      running = backend.agent_version.present? ? " (it runs #{backend.agent_version})" : ''
+      "Deleting models needs agent #{MIN_AGENT} or later on #{backend.name}#{running}."
     end
 
     # Returns how many deletes were sent; 0 when the server can't take them or is offline.

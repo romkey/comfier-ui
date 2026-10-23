@@ -1,25 +1,20 @@
 <% inventory = backend.backend_inventory %>
 <% pickable = Agent::ModelDeleter.supported?(backend) %>
 <div class="d-flex align-items-end justify-content-between mt-4 mb-2">
-  <div class="h-section-label mb-0">Installed</div>
+  <div>
+    <div class="h-section-label mb-0">Installed</div>
+    <% if inventory && backend.agent? && !pickable && (reason = Agent::ModelDeleter.blocker(backend)) %>
+      <div class="text-12 text-secondary mt-1"><%= reason %></div>
+    <% end %>
+  </div>
   <% if inventory && pickable %>
     <div class="d-flex gap-2">
       <%= button_tag 'Reload selected', type: 'submit', form: 'installed_models', class: 'btn btn-outline-secondary btn-sm',
                                         data: { turbo_confirm: 'Delete the selected models and download them again?' } %>
-      <div class="dropdown">
-        <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false"
-                aria-label="More actions for the selected models">
-          <i class="bi bi-three-dots" aria-hidden="true"></i>
-        </button>
-        <ul class="dropdown-menu dropdown-menu-end text-13">
-          <li>
-            <%= button_tag 'Delete selected', type: 'submit', form: 'installed_models', name: '_method', value: 'delete',
-                                              formaction: server_models_path(backend), class: 'dropdown-item text-danger',
-                                              data: { turbo_confirm: "Delete the selected models from #{backend.name}? " \
-                                                                     'Workflows that use them lose them too.' } %>
-          </li>
-        </ul>
-      </div>
+      <%= button_tag 'Delete selected', type: 'submit', form: 'installed_models', name: '_method', value: 'delete',
+                                        formaction: server_models_path(backend), class: 'btn btn-outline-danger btn-sm',
+                                        data: { turbo_confirm: "Delete the selected models from #{backend.name}? " \
+                                                               'Workflows that use them lose them too.' } %>
     </div>
   <% end %>
 </div>

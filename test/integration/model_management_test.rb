@@ -165,6 +165,19 @@ class ModelManagementTest < ActionDispatch::IntegrationTest
     assert_empty deletes
   end
 
+  test "the server page says why an older agent can't delete" do
+    @backend.update!(agent_version: '0.4.14')
+    reason = 'Deleting models needs agent 0.4.15 or later on Agent box (it runs 0.4.14).'
+
+    get server_path(@backend)
+
+    assert_select '.text-12', text: reason
+    assert_select "input[type=checkbox][name='files[]']", count: 0
+    get server_styles_path(@backend)
+
+    assert_select '.text-12', text: reason
+  end
+
   test "other people can't delete a server's models" do
     sign_in_as users(:bob)
     delete server_models_path(@backend, workflow_id: @workflow.id)

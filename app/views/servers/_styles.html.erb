@@ -4,8 +4,11 @@
     <% if local_assigns[:rescan_requested] %>
       <div class="text-12 text-secondary mt-1">Re-scanning <%= backend.name %>… this table updates when it reports back.</div>
     <% end %>
+    <% can_delete_models = can_manage && Agent::ModelDeleter.supported?(backend) %>
+    <% if can_manage && backend.agent? && !can_delete_models && (reason = Agent::ModelDeleter.blocker(backend)) %>
+      <div class="text-12 text-secondary mt-1"><%= reason %></div>
+    <% end %>
   </div>
-  <% can_delete_models = can_manage && Agent::ModelDeleter.supported?(backend) %>
   <% if can_manage %>
     <div class="d-flex gap-2">
       <%= button_to 'Re-scan', rescan_server_styles_path(backend), class: 'btn btn-outline-secondary btn-sm',

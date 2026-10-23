@@ -62,6 +62,9 @@ All notable changes to this project are documented here. The format follows
   allowlists are converted to the equivalent turned-off styles, and styles added later now run everywhere by default.
 
 ### Fixed
+- **Servers**: When a server can't delete models (its agent is older than 0.4.15, or it doesn't allow model
+  downloads), the **Workflows** and **Installed** sections now say why instead of silently leaving out the delete
+  and reload actions. **Delete selected** under **Installed** is a button rather than a **⋯** menu holding only it.
 - **mflux**: Installing or reinstalling the agent no longer breaks mflux. Pillow 13.0.0 fails to import on
   Python 3.12 (`cannot import name '_IntegralLike' from 'numbers'`), which stopped every mflux job and download, so
   the agent now asks for Pillow below 13. Reinstall the agent to get Pillow 12. Agent 0.4.12.
