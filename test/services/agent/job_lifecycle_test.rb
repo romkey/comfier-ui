@@ -213,7 +213,16 @@ module Agent
       assert @socket.last_of_type('inventory.refresh')
       assert_includes gen.excluded_backend_ids, @backend.id
       assert_equal 'failed', gen.agent_state
-      assert_equal Router::NO_SERVERS, gen.error_message
+      assert_equal 'No server can run this job. Agent box: already tried (rejected: missing models)', gen.error_message
+    end
+
+    test 'a pinned job its server turns down fails naming the server' do
+      gen = job_on(pinned_backend_id: @backend.id)
+      event('job.rejected', gen, reason: 'missing_models')
+
+      assert_equal 'failed', gen.reload.agent_state
+      assert_match 'Agent box: already tried (rejected: missing models)', gen.error_message
+      assert_equal @backend, gen.last_backend
     end
 
     test 'invalid rejection fails with the detail' do

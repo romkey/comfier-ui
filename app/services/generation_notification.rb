@@ -15,7 +15,11 @@ class GenerationNotification
 
   delegate :outcome, :title, to: :generation
 
-  def headline = format(HEADLINES.fetch(outcome), generation.kind_info.noun)
+  def headline
+    text = format(HEADLINES.fetch(outcome), generation.kind_info.noun)
+    server = generation.last_backend if outcome == :failed
+    server ? "#{text} on #{server.name}" : text
+  end
 
   def error_message = (generation.error_message if outcome == :failed)
 

@@ -19,7 +19,7 @@ class GenerationMailerTest < ActionMailer::TestCase
   test 'names failures and cancellations' do
     failed = generations(:alice_failed)
 
-    assert_equal 'Your video failed', GenerationMailer.finished(failed).subject
+    assert_equal 'Your video failed on GPU box', GenerationMailer.finished(failed).subject
     assert_includes GenerationMailer.finished(failed).text_part.body.to_s, 'Value not in list'
 
     failed.update!(error_message: Generation::CANCELLED_MESSAGE)
