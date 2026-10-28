@@ -354,6 +354,29 @@ module Agent
       assert_equal other.id, queued.reload.backend_id
     end
 
+    test 'a job lost again says how its server dropped out' do
+      { 'disconnected' => 'lost its connection', 'no_status' => 'stayed connected but stopped reporting' }
+        .each do |offline_reason, expected|
+          running = job_on(state: 'running')
+          JobAttempt.create!(generation: running, backend: @backend, attempt: 1, outcome: 'lost', infra: true)
+          @backend.update_columns(offline_reason:) # rubocop:disable Rails/SkipsModelValidations
+          JobLifecycle.lost!(running, reason: 'lease_expired')
+
+          assert_equal 'failed', running.reload.agent_state
+          assert_match "Agent box #{expected}", running.error_message
+        end
+    end
+
+    test 'a job its server forgot mid-run says so, and suggests updating an old agent' do
+      @backend.update_columns(agent_version: '0.0.1') # rubocop:disable Rails/SkipsModelValidations
+      running = job_on(state: 'running')
+      JobAttempt.create!(generation: running, backend: @backend, attempt: 1, outcome: 'lost', infra: true)
+      JobLifecycle.lost!(running)
+
+      assert_equal 'Agent box reconnected without this job. Its agent or ComfyUI may have restarted partway ' \
+                   'through. Agent box runs agent 0.0.1; updating it may help.', running.reload.error_message
+    end
+
     test 'pinned jobs keep waiting through an expired lease' do
       queued = job_on(state: 'queued', pinned_backend_id: @backend.id)
       Presence.mark_offline!(@backend, reason: 'disconnected')
