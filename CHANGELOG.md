@@ -62,6 +62,10 @@ All notable changes to this project are documented here. The format follows
   allowlists are converted to the equivalent turned-off styles, and styles added later now run everywhere by default.
 
 ### Fixed
+- **Servers**: **Download** and **Download all** on a server page now queue the same files a job would: a Mac's fp16
+  stand-in is converted as it downloads instead of arriving as the fp8 file, and every file keeps its checksum and
+  size, so the agent verifies it and the progress bar has a total. **Download all** also fetches files for workflows
+  still waiting on something else, such as a missing node type.
 - **Agent servers**: A job given up on after its server dropped out no longer just says the server went offline. It
   names the server and says what happened: it lost its connection, stayed connected but stopped sending statuses,
   or reconnected without the job (its agent or ComfyUI restarted). Servers on an older agent also get a hint to

@@ -190,17 +190,12 @@ class Backend < ApplicationRecord # rubocop:disable Metrics/ClassLength
     system_json.dig('model_download', 'use_hf_cli') != false
   end
 
-  def downloadable_missing_models
-    workflows_for_server.flat_map { downloadable_models(it) }.uniq(&:path)
-  end
-
-  # mflux and MLX video models this server's styles need, as downloads the engine fetches by name.
-  def downloadable_engine_models
+  # What "Download all" fetches on an agent server: every file its workflows still need there, as DownloadPlanner
+  # takes them (with checksums, sizes and Mac conversions), including mflux and MLX video models.
+  def downloadable_agent_models
     return [] unless agent? && can_download_models?
 
-    engine_workflows = workflows_for_server.where.not(engine: 'comfyui')
-    models = engine_workflows.flat_map { Agent::Availability.compute(it, self).models }
-    models.uniq { [it['folder'], it['filename']] }
+    workflows_for_server.flat_map { Agent::Availability.downloadable(it, self) }.uniq { [it['folder'], it['filename']] }
   end
 
   def workflows_for_server
