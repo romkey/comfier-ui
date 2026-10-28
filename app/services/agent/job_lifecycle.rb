@@ -13,7 +13,16 @@ module Agent
     OOM = /OutOfMemory|out of memory|CUDA error: out of memory/i
     MODEL_NOT_IN_LIST = /value_not_in_list|not in list|not in \[/i
     OOM_MESSAGE = 'The server ran out of GPU memory. Try a smaller size or fewer frames.'
-    LOST_MESSAGE = 'The server went offline while running this job.'
+    # Why a job on a server was given up on, by JobAttempt reason. The lease ones depend on how the
+    # server dropped out: its socket closed, or it stayed connected but stopped sending statuses.
+    LOST_MESSAGES = {
+      'disconnected' => '%s lost its connection to Comfier for over two minutes while running this job.',
+      'no_status' => '%s stayed connected but stopped reporting its status for over two minutes while running ' \
+                     'this job, so its agent may be stuck.',
+      'lease_expired' => '%s stopped responding for over two minutes while running this job.',
+      'lost' => '%s reconnected without this job. Its agent or ComfyUI may have restarted partway through.',
+      'server_deleted' => '%s was removed while running this job.'
+    }.freeze
     NO_OUTPUTS_MESSAGE = 'The workflow finished without saving any output. Does it have a Save node?'
     STAGE_MESSAGES = {
       'inputs' => "The server couldn't download this job's inputs: %s",
@@ -170,9 +179,17 @@ module Agent
       if retry_budget?(gen)
         requeue_elsewhere!(gen, from: ON_SERVER)
       else
-        fail!(gen, LOST_MESSAGE, from: ON_SERVER)
+        fail!(gen, lost_message(backend, reason), from: ON_SERVER)
       end
       Timeline.schedule(backend) if backend
+    end
+
+    def lost_message(backend, reason)
+      key = reason == 'lease_expired' && LOST_MESSAGES.key?(backend&.offline_reason) ? backend.offline_reason : reason
+      text = format(LOST_MESSAGES.fetch(key, LOST_MESSAGES['lost']), backend&.name || 'The server')
+      return text unless backend&.agent_version_status == :outdated
+
+      "#{text} #{backend.name} runs agent #{backend.agent_version}; updating it may help."
     end
 
     def finish_cancel!(gen)

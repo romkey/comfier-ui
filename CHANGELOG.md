@@ -62,6 +62,10 @@ All notable changes to this project are documented here. The format follows
   allowlists are converted to the equivalent turned-off styles, and styles added later now run everywhere by default.
 
 ### Fixed
+- **Agent servers**: A job given up on after its server dropped out no longer just says the server went offline. It
+  names the server and says what happened: it lost its connection, stayed connected but stopped sending statuses,
+  or reconnected without the job (its agent or ComfyUI restarted). Servers on an older agent also get a hint to
+  update it.
 - **Servers**: When a server can't delete models (its agent is older than 0.4.15, or it doesn't allow model
   downloads), the **Workflows** and **Installed** sections now say why instead of silently leaving out the delete
   and reload actions. **Delete selected** under **Installed** is a button rather than a **⋯** menu holding only it.
