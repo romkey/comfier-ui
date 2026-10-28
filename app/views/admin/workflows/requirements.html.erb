@@ -94,6 +94,9 @@
               <td class="text-12 text-secondary">
                 <%= Array(record&.details&.dig('reasons')).join('; ') %>
                 <% Array(record&.details&.dig('hints')).each do |hint| %><div class="text-warning"><%= hint %></div><% end %>
+                <% Array(@overridden[server.id]).each do |model| %>
+                  <div>Uses <span class="text-body"><%= model['folder'] %>/<%= model['filename'] %></span> in place of <%= model['overrides'] %></div>
+                <% end %>
               </td>
             <% end %>
             <td class="text-end">

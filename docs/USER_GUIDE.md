@@ -210,6 +210,24 @@ downloads** above). Downloads in progress show on the server's page, where you c
 account, like gated Hugging Face repos or Civitai. Add a token for that site under **Settings → Download tokens**.
 Tokens are stored encrypted, only the last four characters are ever shown, and each is only sent to its own site.
 
+### Model overrides
+
+Some servers need a slightly different version of a model than the one a workflow names. A Jetson Thor can give
+static-noise images from fp8 weights, and a smaller card may only fit a lower-precision file. **Model overrides**,
+next to **Re-scan** above your server's workflows, tells Comfier to use another file on that server only. Other
+servers keep using the original.
+
+Each override names the workflow's file, the file to use instead (optionally in another models folder), and where
+to download it. Leave the link empty for a file that's already on the server. Comfier looks up the file's size and
+checksum from the link. An override applies to **Every workflow** that uses the file, or to one workflow, and one for
+a single workflow wins over one for all of them.
+
+Once you save, the server downloads the replacement the next time it needs it, or when you choose **Download**.
+Jobs that run there load the replacement in place of the original, so there's no need for a separate workflow. A
+workflow that uses overridden files says so on the server's page. Removing an override puts the original back. A
+GGUF file needs a GGUF loader node in the workflow; if the node that loads the file can't read it, the workflow shows
+as blocked on that server with the reason. Overrides work on agent servers only.
+
 ## For admins: backends
 
 A backend is a ComfyUI server Comfier sends work to. Find them under **Settings → Backends**.
@@ -333,7 +351,8 @@ name or link there, add a file in the blank last row, or remove one Comfier pick
 **Save**. Comfier keeps your edits when it re-reads the workflow.
 
 Below that, every agent server shows whether it can run the workflow now, needs downloads first, or can't run it
-and why (for example a missing custom node or not enough GPU memory). Tick the servers that need downloads and
+and why (for example a missing custom node or not enough GPU memory). A server with model overrides lists the files
+it uses in place of the workflow's. Tick the servers that need downloads and
 choose **Prepare selected servers** to download everything they're missing ahead of the first job.
 
 The **⋯** menu on a server's row deletes the workflow's models from that server (**Delete models**) or deletes
@@ -391,6 +410,15 @@ can't delete a file, the reason shows under **Downloads** until you choose **Cle
 2. Under **Installed**, tick the file, then choose **Reload selected**. To replace every model a workflow uses,
    choose **Reload models** from that workflow's **⋯** menu instead.
 3. Progress shows under **Downloads**.
+
+### How to use a different version of a model on one server
+
+1. Open the server under **Servers** and choose **Model overrides**.
+2. Under the list of files, choose **Override** next to the file the workflow names.
+3. Fill in the file to use instead and its download link, choose whether it's for every workflow or just one, and
+   choose **Save**.
+4. The server downloads the new file before its next job that needs it. To fetch it now, choose **Download** next
+   to the workflow on the server's page.
 
 ### How to add a ComfyUI template as a workflow (admins)
 
