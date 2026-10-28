@@ -49,8 +49,8 @@ module Agent
       @workflow = workflow
       @backend = backend
       @requirements = Requirements.for(workflow)
-      @mac = MacWeights.new(backend)
-      @models = @mac.models(@requirements.models)
+      @substitution = ModelSubstitution.new(backend, workflow)
+      @models = @substitution.models(@requirements.models)
     end
 
     def compute
@@ -60,7 +60,7 @@ module Agent
 
       missing = missing_models
       hints = hints_for(missing)
-      reasons = missing_node_reasons + fp8_reasons + strict_reasons + model_reasons(missing)
+      reasons = missing_node_reasons + substitution_reasons + strict_reasons + model_reasons(missing)
       return blocked(reasons, hints) if reasons.any?
       return Result.new(status: :ready, models: [], total_bytes: nil, reasons: [], hints:) if missing.empty?
 
@@ -107,17 +107,22 @@ module Agent
       Requirements.node_types_for(@workflow).reject { have.include?(it) }.map { "Node type #{it} isn't installed" }
     end
 
-    # fp8 files with no fp16 stand-in on Apple Silicon (see MacWeights).
-    def fp8_reasons = @mac.problems(@requirements.models)
+    # Overrides a node can't load (ModelOverrides), and fp8 files with no fp16 stand-in on Apple Silicon (MacWeights).
+    def substitution_reasons = @substitution.problems(@requirements.models, @workflow.graph)
 
     def model_reasons(missing)
       missing.filter_map do |model|
         if model['url'].blank?
-          "#{model['folder']}/#{model['filename']} is missing and has no download link"
+          "#{file_label(model)} is missing and has no download link"
         elsif !@backend.can_download_models?
-          "#{model['folder']}/#{model['filename']} is missing and #{@backend.name} doesn't allow model downloads"
+          "#{file_label(model)} is missing and #{@backend.name} doesn't allow model downloads"
         end
       end
+    end
+
+    def file_label(model)
+      path = "#{model['folder']}/#{model['filename']}"
+      model['overrides'] ? "#{path} (#{@backend.name}'s override for #{model['overrides']})" : path
     end
 
     def hint(matcher, model)
@@ -147,7 +152,7 @@ module Agent
       return [] if info.blank?
 
       skip = @models.to_set { it['filename'] }
-      graph = @mac.rewrite(@workflow.graph, @requirements.models)
+      graph = @substitution.rewrite(@workflow.graph, @requirements.models)
       Requirements.literal_inputs(graph).filter_map do |id, node, input, value|
         next if skip.include?(value)
 

@@ -28,6 +28,7 @@ class Workflow < ApplicationRecord # rubocop:disable Metrics/ClassLength
   has_many :generations, dependent: :nullify
   has_many :workflow_models, -> { order(:folder, :filename) }, dependent: :delete_all, inverse_of: :workflow
   has_many :workflow_availabilities, dependent: :delete_all
+  has_many :model_overrides, dependent: :delete_all
 
   after_save_commit :extract_requirements, if: -> { requirements_inputs_changed? }
 

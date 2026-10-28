@@ -27,11 +27,11 @@ module Agent
     def for_workflow(workflow, backend)
       return engine_selection(workflow, backend) unless workflow.comfyui?
 
-      mac = MacWeights.new(backend)
+      substitution = ModelSubstitution.new(backend, workflow)
       needed = Requirements.for(workflow).models
       pairs = backend.backend_models.pluck(:folder, :filename)
-      Selection.new(installed: mac.models(needed).flat_map { installed_paths(it, pairs) }.uniq { key(it) },
-                    downloads: downloadable(backend, mac.downloads(needed)))
+      Selection.new(installed: substitution.models(needed).flat_map { installed_paths(it, pairs) }.uniq { key(it) },
+                    downloads: downloadable(backend, substitution.downloads(needed)))
     end
 
     # paths: "folder/filename" as the server reported them; for engine models "engine/model".
