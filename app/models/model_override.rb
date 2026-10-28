@@ -93,13 +93,17 @@ class ModelOverride < ApplicationRecord
   end
 
   # A size or checksum found after the replacement was queued: availability counts it, and queued downloads of it
-  # check it and know how much disk they need.
+  # check it and know how much disk they need. On a Mac an fp8 replacement is queued under its converted name,
+  # still fetched from the same link, so the size and checksum describe what it downloads too.
   def refresh_file_details
     RecomputeAvailabilityJob.perform_later(backend_id:)
     details = { bytes_total: bytes, sha256: }.compact
     return if details.empty?
 
-    backend.model_downloads.where(agent_state: 'queued', directory: target_folder, name: replacement_filename, url:)
+    mac = Agent::MacWeights
+    names = [replacement_filename]
+    names << mac.converted_name(replacement_filename) if mac.convertible?(replacement_filename)
+    backend.model_downloads.where(agent_state: 'queued', directory: target_folder, name: names, url:)
            .update_all(details) # rubocop:disable Rails/SkipsModelValidations
   end
 

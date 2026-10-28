@@ -178,6 +178,18 @@ module Agent
       assert_equal [3.gigabytes, 'd' * 64], download.reload.values_at(:bytes_total, :sha256)
     end
 
+    test "on a Mac a size and checksum found later reach the fp8 replacement's converting download" do
+      @backend.update!(system_json: { 'devices' => [{ 'type' => 'mps' }] })
+      override = override!(replacement_filename: 'sd15_fp8_scaled.safetensors', bytes: nil, sha256: nil)
+      download = @backend.model_downloads.create!(directory: 'checkpoints', name: 'sd15_fp16_from_fp8.safetensors',
+                                                  url: override.url, convert: 'fp8_to_fp16', via: :agent,
+                                                  agent_state: 'queued', status: :queued, agent_download_id: 'd_mac')
+
+      override.update!(bytes: 3.gigabytes, sha256: 'd' * 64)
+
+      assert_equal [3.gigabytes, 'd' * 64], download.reload.values_at(:bytes_total, :sha256)
+    end
+
     test 'a waiting job runs right away when the replacement is already on the server' do
       gen = waiting_job
       report_checkpoints(REPLACEMENT)
