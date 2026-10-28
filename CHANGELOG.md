@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- **Servers**: **Model overrides** let a server use its own version of a model file a workflow names, such as fp16
+  weights on a Jetson Thor where fp8 gives static noise, or a smaller file on a card with less memory. Choose
+  **Model overrides** on the server's page, pick the file, and give the replacement's name and download link, for every
+  workflow or just one. The server downloads the replacement and its jobs load it instead, while other servers keep
+  the original. Comfier looks up the file's size and checksum, jobs already waiting for downloads there switch to the
+  new file, and a GGUF replacement in a node that can't load GGUF shows as a blocked reason. A workflow's requirements
+  page lists what each server uses instead. Agent servers only.
 - **Servers**: Delete models from an agent server, or reload them (delete, then download again): files ticked under
   **Installed**, one workflow's models from its **⋯** menu, or every workflow's at once. A workflow's requirements
   page does the same on one server or all of them. Models other workflows also use are deleted all the same.

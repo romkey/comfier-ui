@@ -1,0 +1,143 @@
+<% content_for :title, "#{@backend.name} model overrides" %>
+
+<div class="small text-secondary mb-2">
+  <%= link_to 'Servers', servers_path, class: 'link-secondary' %> ·
+  <%= link_to @backend.name, server_path(@backend), class: 'link-secondary' %>
+</div>
+<div class="mb-3">
+  <h1 class="h-page-title mb-0">Model overrides</h1>
+  <div class="text-13 text-secondary mt-1">
+    Files <%= @backend.name %> uses in place of the ones its workflows name ·
+    <span class="num text-body"><%= @overrides.size %></span> <%= @overrides.size == 1 ? 'override' : 'overrides' %>
+    <% if @workflow %>
+      for <span class="text-body"><%= @workflow.name %></span> ·
+      <%= link_to 'Show all', server_model_overrides_path(@backend), class: 'link-secondary' %>
+    <% end %>
+  </div>
+</div>
+
+<% if @errors.present? %>
+  <div class="alert alert-danger text-13" role="alert">
+    Nothing was saved.
+    <ul class="mb-0"><% @errors.each do |error| %><li><%= error %></li><% end %></ul>
+  </div>
+<% end %>
+
+<div class="h-section-label">Overrides</div>
+<p class="text-12 text-secondary mb-2">
+  Jobs that run here download the replacement from its link and load it instead. Leave the link empty for a file
+  that's already on the server. An override for one workflow wins over one for all of them.
+</p>
+<%= form_with url: server_model_overrides_path(@backend), method: :patch, id: 'model_overrides' do %>
+  <%= hidden_field_tag :workflow_id, @workflow&.id %>
+  <table class="table table-compact align-middle">
+    <thead>
+      <tr>
+        <th>Workflow file</th><th>For</th><th>Use instead</th><th>Download link</th><th>sha256</th>
+        <th class="num">Size</th><th>Note</th><th class="text-center">Remove</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @rows.each_with_index do |override, index| %>
+        <% name = "overrides[#{index}]" %>
+        <tr id="<%= override.new_record? ? 'new-override' : dom_id(override) %>">
+          <% if override.new_record? %>
+            <td>
+              <%= select_tag "#{name}[file]",
+                             options_for_select([['Pick a file…', '']] + @files.map { [it.key, it.key] },
+                                                override.folder && override.path),
+                             class: 'form-select form-select-sm', aria: { label: 'Workflow file' } %>
+            </td>
+            <td>
+              <%= select_tag "#{name}[workflow_id]",
+                             options_for_select([['Every workflow', '']] + @workflows.map { [it.name, it.id] },
+                                                override.workflow_id),
+                             class: 'form-select form-select-sm', aria: { label: 'For' } %>
+            </td>
+          <% else %>
+            <td class="text-13">
+              <%= hidden_field_tag "#{name}[id]", override.id %>
+              <span class="text-secondary"><%= override.folder %>/</span><%= override.filename %>
+            </td>
+            <td class="text-12 <%= 'text-secondary' if override.server_wide? %>">
+              <%= override.workflow&.name || 'Every workflow' %>
+            </td>
+          <% end %>
+          <td>
+            <div class="d-flex gap-1">
+              <%= text_field_tag "#{name}[replacement_folder]", override.replacement_folder,
+                                 class: 'form-control form-control-sm', style: 'max-width: 9rem',
+                                 placeholder: override.folder || 'same folder', aria: { label: 'Replacement folder' } %>
+              <%= text_field_tag "#{name}[replacement_filename]", override.replacement_filename,
+                                 class: 'form-control form-control-sm', placeholder: 'file name',
+                                 aria: { label: 'Replacement file' } %>
+            </div>
+          </td>
+          <td>
+            <%= url_field_tag "#{name}[url]", override.url, class: 'form-control form-control-sm',
+                                                            placeholder: 'https://huggingface.co/…/resolve/…',
+                                                            aria: { label: 'Download link' } %>
+          </td>
+          <td>
+            <%= text_field_tag "#{name}[sha256]", override.sha256, class: 'form-control form-control-sm font-monospace text-11',
+                                                                   aria: { label: 'sha256' } %>
+          </td>
+          <td class="num text-12 <%= 'text-secondary' unless override.bytes %>"><%= human_bytes(override.bytes) %></td>
+          <td>
+            <%= text_field_tag "#{name}[note]", override.note, class: 'form-control form-control-sm',
+                                                               placeholder: 'Why', aria: { label: 'Note' } %>
+          </td>
+          <td class="text-center">
+            <% if override.persisted? || override.marked_for_destruction? %>
+              <%= check_box_tag "#{name}[remove]", '1', override.marked_for_destruction?, class: 'form-check-input',
+                                                                                          aria: { label: "Remove the override for #{override.path}" } %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <%= submit_tag 'Save', class: 'btn btn-primary btn-sm' %>
+<% end %>
+
+<div class="h-section-label mt-4">
+  Files <%= @workflow ? "#{@workflow.name} uses" : "#{@backend.name}'s workflows use" %>
+  <span class="num text-secondary"><%= @files.size %></span>
+</div>
+<% if @files.empty? %>
+  <p class="text-13 text-secondary">No workflow on this server needs a model file.</p>
+<% else %>
+  <table class="table table-compact align-middle">
+    <thead><tr><th>File</th><th>Used by</th><th>On server</th><th>Replaced by</th><th></th></tr></thead>
+    <tbody>
+      <% @files.each do |file| %>
+        <tr id="<%= "file-#{file.key.parameterize}" %>">
+          <td class="text-13"><span class="text-secondary"><%= file.folder %>/</span><%= file.filename %></td>
+          <td class="text-12 text-secondary"><%= file.workflows.map(&:name).to_sentence %></td>
+          <td>
+            <% if file.installed %>
+              <span class="status-dot status-success" title="On the server" aria-label="On the server"></span>
+            <% else %>
+              <span class="status-dot status-muted" title="Not on the server" aria-label="Not on the server"></span>
+            <% end %>
+          </td>
+          <td class="text-12">
+            <% file.overrides.each do |override| %>
+              <div>
+                <%= override.replacement_path %>
+                <span class="text-secondary"><%= override.workflow ? "for #{override.workflow.name}" : 'for every workflow' %></span>
+              </div>
+            <% end %>
+          </td>
+          <td class="text-end">
+            <% unless file.server_wide_override %>
+              <%= link_to 'Override', server_model_overrides_path(@backend, file: file.key, workflow_id: @workflow&.id,
+                                                                            anchor: 'new-override'),
+                          class: 'btn btn-outline-secondary btn-sm' %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

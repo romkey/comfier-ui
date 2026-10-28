@@ -16,6 +16,7 @@ class ModelOverride < ApplicationRecord
   normalizes :sha256, with: ->(value) { value.to_s.strip.downcase.presence }
 
   validates :folder, :filename, :replacement_filename, presence: true
+  validates :workflow, presence: true, if: :workflow_id?
   validates :filename, uniqueness: { scope: %i[backend_id workflow_id folder], message: 'already has an override' }
   validates :sha256, format: { with: /\A\h{64}\z/, message: 'must be 64 hexadecimal characters' }, allow_nil: true
   validates :bytes, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true

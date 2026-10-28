@@ -86,6 +86,7 @@ module Admin
       @models = @workflow.workflow_models
       @servers = Backend.agent.kept.ordered.to_a
       @availability = @workflow.workflow_availabilities.index_by(&:backend_id)
+      @overridden = overridden_models
     end
 
     def update_requirements
@@ -133,6 +134,12 @@ module Admin
 
     def model_servers
       Backend.agent.kept.ordered.select { Agent::ModelDeleter.supported?(it) && Agent::Presence.online?(it) }
+    end
+
+    # The files each server replaces with its own version (ModelOverride), by server id.
+    def overridden_models
+      models = Agent::Requirements.for(@workflow).models
+      @servers.to_h { [it.id, Agent::ModelOverrides.new(it, @workflow).models(models).select { |m| m['overrides'] }] }
     end
 
     def requirement_rows

@@ -97,6 +97,7 @@ Rails.application.routes.draw do
     resource :styles, only: %i[show update], controller: 'servers/styles' do
       post :rescan
     end
+    resource :model_overrides, only: %i[show update], controller: 'servers/model_overrides', path: 'overrides'
   end
 
   namespace :admin do
