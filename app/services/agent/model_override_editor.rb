@@ -55,16 +55,9 @@ module Agent
 
     def update(override, row)
       override.assign_attributes(row.slice(*FIELDS))
-      forget_old_file(override) if override.url_changed?
       return unless override.changed?
 
       save(override, "changed #{override.path}#{scope_label(override)}")
-    end
-
-    # A new link is another file: its size and checksum are looked up again unless one was typed in.
-    def forget_old_file(override)
-      override.bytes = nil
-      override.sha256 = nil unless override.sha256_changed?
     end
 
     def apply_new(row)
