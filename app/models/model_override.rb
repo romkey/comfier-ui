@@ -4,6 +4,7 @@
 # Only agent servers use overrides.
 class ModelOverride < ApplicationRecord
   ROUTING_ATTRIBUTES = %w[workflow_id folder filename replacement_folder replacement_filename url].freeze
+  FILE_DETAILS = %w[bytes sha256].freeze
 
   belongs_to :backend
   belongs_to :workflow, optional: true
@@ -23,7 +24,9 @@ class ModelOverride < ApplicationRecord
   validate :replacement_is_another_file
   validate :files_are_valid
 
+  before_save :forget_old_file, if: -> { persisted? && will_save_change_to_url? }
   after_commit :refresh_routing, if: :routing_changed?
+  after_commit :refresh_file_details, on: :update, if: :file_details_changed?
   after_commit :enrich, on: %i[create update], if: -> { url.present? && bytes.nil? && saved_change_to_url? }
 
   scope :ordered, -> { order(:folder, :filename, :workflow_id) }
@@ -70,9 +73,35 @@ class ModelOverride < ApplicationRecord
     destroyed? || previously_new_record? || saved_changes.keys.intersect?(ROUTING_ATTRIBUTES)
   end
 
+  # A new link is another file: its size and checksum are looked up again unless they come with it.
+  def forget_old_file
+    self.bytes = nil unless will_save_change_to_bytes?
+    self.sha256 = nil unless will_save_change_to_sha256?
+  end
+
+  def file_details_changed? = !routing_changed? && saved_changes.keys.intersect?(FILE_DETAILS)
+
   def refresh_routing
     RecomputeAvailabilityJob.perform_later(backend_id:)
-    Agent::ModelOverrides.replan_waiting!(backend, workflow_id:)
+    Agent::ModelOverrides.replan_jobs!(backend, workflow_ids: affected_workflow_ids)
+  end
+
+  # The workflows a change affects, before and after a change of scope; nil when that includes every workflow.
+  def affected_workflow_ids
+    ids = [workflow_id]
+    ids << workflow_id_before_last_save if !destroyed? && !previously_new_record? && saved_change_to_workflow_id?
+    ids.include?(nil) ? nil : ids.uniq
+  end
+
+  # A size or checksum found after the replacement was queued: availability counts it, and queued downloads of it
+  # check it and know how much disk they need.
+  def refresh_file_details
+    RecomputeAvailabilityJob.perform_later(backend_id:)
+    details = { bytes_total: bytes, sha256: }.compact
+    return if details.empty?
+
+    backend.model_downloads.where(agent_state: 'queued', directory: target_folder, name: replacement_filename, url:)
+           .update_all(details) # rubocop:disable Rails/SkipsModelValidations
   end
 
   def enrich = EnrichModelOverrideJob.perform_later(self)

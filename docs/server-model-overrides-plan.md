@@ -147,10 +147,11 @@ Saving, changing or deleting an override:
 1. `RecomputeAvailabilityJob.perform_later(backend_id:)` when `workflow_id` is nil, else
    `(workflow_id:, backend_id:)`. This refreshes `workflow_availabilities` and broadcasts the
    `[backend, :styles]` frame.
-2. Re-plan jobs in `waiting_models` on this backend for the affected style(s) in place
-   (`Agent::ModelOverrides.replan_waiting!`): release their old downloads, then queue the job if its files are
-   now all there, plan the new downloads if not, or reroute it elsewhere only if the style can't run on the
-   server at all. Rerouting every waiting job, as `ServerStyles#reroute_jobs!` does, would fail jobs whose only
+2. Re-plan jobs `queued` or in `waiting_models` on this backend for the affected style(s) in place
+   (`Agent::ModelOverrides.replan_jobs!`), covering the styles on both sides of a change of scope: release their
+   old downloads, then queue the job if its files are now all there, wait for the new downloads if not, or
+   reroute it elsewhere only if the style can't run on the server at all. A queued job would otherwise go out
+   naming a replacement the server doesn't have yet. Rerouting every waiting job, as `ServerStyles#reroute_jobs!` does, would fail jobs whose only
    server still needs downloads, because the router treats such servers as ineligible.
 3. `ActivityLog.record(kind: :model_override_changed, subject: backend, details: {...})`.
 

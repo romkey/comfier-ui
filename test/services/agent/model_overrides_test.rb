@@ -119,15 +119,18 @@ module Agent
       assert_equal [REPLACEMENT], selection.downloads.pluck('filename')
     end
 
-    def waiting_job
+    def waiting_job(workflow = @workflow)
       report_checkpoints
-      set_model_links(@workflow, url: "https://huggingface.co/x/#{CHECKPOINT}", bytes: 2.gigabytes)
-      gen = Generation.create!(user: @alice, workflow: @workflow, prompt: 'x', kind: :image, status: :queued,
-                               agent_state: 'routing', filled_workflow_json: @workflow.graph)
+      set_model_links(workflow, url: "https://huggingface.co/x/#{CHECKPOINT}", bytes: 2.gigabytes)
+      gen = Generation.create!(user: @alice, workflow:, prompt: 'x', kind: :image, status: :queued,
+                               agent_state: 'routing', filled_workflow_json: workflow.graph)
       gen.agent_transition!(from: 'routing', to: 'waiting_models', backend_id: @backend.id, queued_at: Time.current)
-      DownloadPlanner.ensure_downloads!(@backend, compute.models, generation: gen, auto: true)
+      models = Availability.compute(workflow, @backend.reload).models
+      DownloadPlanner.ensure_downloads!(@backend, models, generation: gen, auto: true)
       gen
     end
+
+    def downloads_for(gen) = ModelDownload.where('for_generation_ids @> ?', [gen.id].to_json).pluck(:name)
 
     test 'a job waiting on downloads waits for the replacement once an override is saved' do
       gen = waiting_job
@@ -137,6 +140,42 @@ module Agent
       assert_equal 'waiting_models', gen.reload.agent_state
       assert_includes ModelDownload.find_by!(backend: @backend, name: REPLACEMENT).for_generation_ids, gen.id
       assert_not_includes ModelDownload.find_by!(backend: @backend, name: CHECKPOINT).for_generation_ids, gen.id
+    end
+
+    test 'a queued job waits for the replacement rather than going out without it' do
+      report_checkpoints(CHECKPOINT)
+      gen = Generation.create!(user: @alice, workflow: @workflow, prompt: 'x', kind: :image, status: :queued,
+                               backend: @backend, agent_state: 'queued', filled_workflow_json: @workflow.graph,
+                               queued_at: Time.current, queue_order: Time.current.to_f)
+
+      override!
+
+      assert_equal 'waiting_models', gen.reload.agent_state
+      assert_equal [REPLACEMENT], downloads_for(gen)
+    end
+
+    test 'narrowing an override to one workflow puts the original back for the others' do
+      other = Workflow.create!(name: 'SD copy', kind: 'image', enabled: true, graph_json: @workflow.graph.to_json)
+      override = override!
+      gen = waiting_job(other)
+
+      assert_equal [REPLACEMENT], downloads_for(gen)
+
+      override.update!(workflow: @workflow)
+
+      assert_equal 'waiting_models', gen.reload.agent_state
+      assert_equal [CHECKPOINT], downloads_for(gen)
+    end
+
+    test "a size and checksum found later reach the replacement's queued download" do
+      override = override!(bytes: nil, sha256: nil)
+      download = @backend.model_downloads.create!(directory: 'checkpoints', name: REPLACEMENT, url: override.url,
+                                                  via: :agent, agent_state: 'queued', status: :queued,
+                                                  agent_download_id: 'd_later')
+
+      override.update!(bytes: 3.gigabytes, sha256: 'd' * 64)
+
+      assert_equal [3.gigabytes, 'd' * 64], download.reload.values_at(:bytes_total, :sha256)
     end
 
     test 'a waiting job runs right away when the replacement is already on the server' do
