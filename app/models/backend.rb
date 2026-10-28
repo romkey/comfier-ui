@@ -17,6 +17,7 @@ class Backend < ApplicationRecord # rubocop:disable Metrics/ClassLength
   has_many :workflow_availabilities, dependent: :delete_all
   has_many :generations, dependent: :nullify
   has_many :model_downloads, dependent: :delete_all
+  has_many :model_overrides, dependent: :delete_all
   has_many :job_attempts, dependent: :nullify
   has_one :backend_speed, dependent: :delete
   has_many :perf_stats, dependent: :delete_all

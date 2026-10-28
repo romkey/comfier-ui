@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_22_230000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_28_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -389,6 +389,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_230000) do
     t.index ["requested_by_user_id"], name: "index_model_downloads_on_requested_by_user_id"
   end
 
+  create_table "model_overrides", force: :cascade do |t|
+    t.bigint "backend_id", null: false
+    t.bigint "workflow_id"
+    t.string "folder", null: false
+    t.string "filename", null: false
+    t.string "replacement_folder"
+    t.string "replacement_filename", null: false
+    t.text "url"
+    t.string "sha256"
+    t.bigint "bytes"
+    t.string "note"
+    t.bigint "created_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["backend_id", "workflow_id", "folder", "filename"], name: "index_model_overrides_uniqueness", unique: true, nulls_not_distinct: true
+    t.index ["created_by_id"], name: "index_model_overrides_on_created_by_id"
+    t.index ["workflow_id"], name: "index_model_overrides_on_workflow_id"
+  end
+
   create_table "perf_samples", force: :cascade do |t|
     t.bigint "job_attempt_id"
     t.bigint "backend_id", null: false
@@ -644,6 +663,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_230000) do
   add_foreign_key "job_attempts", "generations"
   add_foreign_key "model_downloads", "backends", on_delete: :cascade
   add_foreign_key "model_downloads", "users", column: "requested_by_user_id"
+  add_foreign_key "model_overrides", "backends"
+  add_foreign_key "model_overrides", "users", column: "created_by_id", on_delete: :nullify
+  add_foreign_key "model_overrides", "workflows"
   add_foreign_key "perf_samples", "backends"
   add_foreign_key "perf_samples", "job_attempts", on_delete: :nullify
   add_foreign_key "perf_samples", "workflows", on_delete: :nullify
