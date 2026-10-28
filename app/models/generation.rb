@@ -71,6 +71,9 @@ class Generation < ApplicationRecord # rubocop:disable Metrics/ClassLength
 
   def finished? = succeeded? || failed?
 
+  # The server this last ran on, for naming it in a failure. Rerouting clears backend_id.
+  def last_backend = backend || job_attempts.order(:id).last&.backend
+
   def in_progress? = queued? || running?
 
   def timed_out?(limit = timeout_limit)

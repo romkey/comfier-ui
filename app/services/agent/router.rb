@@ -18,11 +18,14 @@ module Agent
     NO_SERVERS = 'No servers you can use are online.'
     WAITING_FOR_OWN = 'Waiting for your server to come online'
     UNAVAILABLE = %w[offline starting paused].freeze
+    TRIED = 'already tried'
 
     def self.route!(generation, **) = new(generation, **).route!
 
     def self.explain(reasons)
-      return NO_SERVERS if reasons.empty? || reasons.values.all? { UNAVAILABLE.include?(it) }
+      return NO_SERVERS if reasons.empty?
+      return "#{NO_SERVERS.chomp('.')} (#{reasons.map { |name, reason| "#{name}: #{reason}" }.join(', ')})." if
+        reasons.values.all? { UNAVAILABLE.include?(it) }
 
       "No server can run this job. #{reasons.map { |name, reason| "#{name}: #{reason}" }.join('; ')}"
     end
@@ -57,7 +60,7 @@ module Agent
 
     def evaluate
       reasons = {}
-      candidates = pool.filter_map do |backend|
+      candidates = pool(reasons).filter_map do |backend|
         availability = Availability.compute(@workflow, backend)
         reason = ineligible_reason(backend, availability)
         reasons[backend.name] = reason if reason
@@ -66,28 +69,40 @@ module Agent
       [candidates, reasons]
     end
 
-    def pool
-      restricted = restricted_pool
-      return restricted unless restricted.nil?
+    # Servers dropped before scoring (paused, already tried) still get a reason, so a failure can name them.
+    def pool(reasons)
+      return restricted_pool(@only, reasons) if @only
+      return restricted_pool(@generation.pinned_backend, reasons) if @generation.pinned_backend_id
 
       combined = @policy.runnable_backends.includes(:backend_speed, :backend_inventory).to_a
-      combined.reject! { |b| b.agent? && b.paused? }
-      combined.reject! { @generation.excluded_backend_ids.include?(it.id) }
-      with_affinity(combined)
+      with_affinity(combined).select { runnable?(it, reasons) }
     end
 
-    def restricted_pool
-      return only_pool if @only
-      return pinned_pool if @generation.pinned_backend_id
+    def restricted_pool(backend, reasons)
+      return [] unless backend
+      return runnable?(backend, reasons) ? [backend] : [] if @policy.can_use?(backend)
 
-      nil
+      reasons[backend.name] = "isn't a server you can use"
+      []
     end
 
-    def only_pool = backend_runnable?(@only) ? [@only] : []
+    def runnable?(backend, reasons)
+      reason = unrunnable_reason(backend)
+      reasons[backend.name] = reason if reason
+      reason.nil?
+    end
 
-    def pinned_pool
-      pinned = Backend.find_by(id: @generation.pinned_backend_id)
-      pinned && backend_runnable?(pinned) ? [pinned] : []
+    def unrunnable_reason(backend)
+      return 'paused' if backend.agent? && backend.paused?
+
+      excluded_reason(backend) if @generation.excluded_backend_ids.include?(backend.id)
+    end
+
+    # "already tried (rejected: missing models)"
+    def excluded_reason(backend)
+      attempt = @generation.job_attempts.where(backend_id: backend.id).order(:id).last
+      detail = [attempt&.outcome, attempt&.reason.presence&.tr('_', ' ')].compact.join(': ')
+      detail.present? ? "#{TRIED} (#{detail})" : TRIED
     end
 
     def with_affinity(backends)
@@ -95,14 +110,6 @@ module Agent
       when 'mine_only' then backends.select { it.agent? && it.owned_by?(@user) }
       else backends
       end
-    end
-
-    def backend_runnable?(backend)
-      return false unless @policy.can_use?(backend)
-      return false if backend.agent? && backend.paused?
-      return false if @generation.excluded_backend_ids.include?(backend.id)
-
-      true
     end
 
     def ineligible_reason(backend, availability)
@@ -211,11 +218,12 @@ module Agent
       end
     end
 
+    # Wait when some server could still come back; servers that already failed the job won't help.
     def wait_for_own_server?(reasons)
-      return false if reasons.empty?
+      waiting, others = reasons.values.partition { UNAVAILABLE.include?(it) }
+      return false if waiting.empty? || others.any? { !it.start_with?(TRIED) }
 
-      (@generation.pinned_backend_id || @policy.affinity == 'mine_only') &&
-        reasons.values.all? { UNAVAILABLE.include?(it) }
+      @generation.pinned_backend_id || @policy.affinity == 'mine_only'
     end
 
     def wait_for_own_server!(_reasons)

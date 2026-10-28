@@ -70,7 +70,34 @@ module Agent
       bring_online_for!(backend, @workflow)
       gen = routing_job(excluded_backend_ids: [backend.id])
 
-      assert_raises(Router::UnroutableError) { Router.route!(gen) }
+      error = assert_raises(Router::UnroutableError) { Router.route!(gen) }
+      assert_equal 'No server can run this job. Agent box: already tried', error.message
+    end
+
+    test 'a pinned server that already failed the job is named' do
+      backend = create_agent_backend!(owner: @alice, name: 'Spark')
+      bring_online_for!(backend, @workflow)
+      gen = routing_job(pinned_backend_id: backend.id, excluded_backend_ids: [backend.id])
+
+      error = assert_raises(Router::UnroutableError) { Router.route!(gen) }
+      assert_equal 'No server can run this job. Spark: already tried', error.message
+    end
+
+    test 'a job pinned to a paused server waits for it' do
+      backend = create_agent_backend!(owner: @alice, name: 'Spark')
+      bring_online_for!(backend, @workflow)
+      gen = routing_job(pinned_backend_id: backend.id)
+      backend.update!(paused: true)
+
+      assert_nil Router.route!(gen)
+      assert_equal 'waiting_for_server', gen.reload.agent_phase
+    end
+
+    test 'offline servers are named' do
+      create_agent_backend!(owner: @alice, name: 'Spark')
+
+      error = assert_raises(Router::UnroutableError) { Router.route!(routing_job) }
+      assert_equal 'No servers you can use are online (Spark: offline).', error.message
     end
 
     test 'the queue limit applies to other users only' do
