@@ -228,4 +228,28 @@ class ModelManagementTest < ActionDispatch::IntegrationTest
     assert_select "button[formaction='#{server_models_path(@backend, workflow_id: @workflow.id)}']",
                   text: 'Delete models'
   end
+
+  test "a workflow's Download keeps a Mac stand-in's conversion, checksum and size" do
+    workflow = fp8_workflow!('SD fp8', sha256: 'a' * 64)
+    socket = mac_with!(workflow, files: [])
+
+    post server_downloads_path(@mac, workflow_id: workflow.id)
+
+    assert_equal ['sd15_fp16_from_fp8.safetensors', 'fp8_to_fp16', 'a' * 64, 2.gigabytes],
+                 socket.last_of_type('model.download')&.values_at('filename', 'convert', 'sha256', 'bytes')
+  end
+
+  test "download all sends each file's checksum and size, even for a workflow missing a node type" do
+    graph = @workflow.graph.deep_dup.merge('99' => { 'class_type' => 'NotInstalledNode', 'inputs' => {} })
+    workflow = Workflow.create!(name: 'SD with a custom node', kind: 'image', enabled: true,
+                                graph_json: graph.to_json.sub(CHECKPOINT, 'sdxl.safetensors'))
+    set_model_links(workflow, url: 'https://huggingface.co/x/sdxl.safetensors', bytes: 6.gigabytes, sha256: 'b' * 64)
+
+    assert_predicate Agent::Availability.compute(workflow, @backend.reload), :blocked?
+
+    post server_downloads_path(@backend, all: true)
+
+    assert_equal ['sdxl.safetensors', 'b' * 64, 6.gigabytes],
+                 @socket.last_of_type('model.download')&.values_at('filename', 'sha256', 'bytes')
+  end
 end

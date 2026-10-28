@@ -13,7 +13,7 @@
     <div class="d-flex gap-2">
       <%= button_to 'Re-scan', rescan_server_styles_path(backend), class: 'btn btn-outline-secondary btn-sm',
                     form: { data: { turbo_frame: "server_styles_#{backend.id}" } } %>
-      <% all_missing = backend.downloadable_missing_models.size + backend.downloadable_engine_models.size %>
+      <% all_missing = backend.downloadable_agent_models.size %>
       <% if all_missing.positive? %>
         <%= button_to "Download all (#{all_missing})", server_downloads_path(backend),
                       params: { all: true }, class: 'btn btn-outline-secondary btn-sm' %>

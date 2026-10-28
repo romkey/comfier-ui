@@ -14,6 +14,15 @@ module Agent
     class << self
       def compute(workflow, backend) = (workflow.comfyui? ? self : EngineAvailability).new(workflow, backend).compute
 
+      # The files a workflow still needs on a server that can be downloaded there, as DownloadPlanner takes them
+      # (stand-ins with their conversions, every file's checksum and size), even while something else, such as a
+      # missing node type, keeps the workflow from running.
+      def downloadable(workflow, backend)
+        return compute(workflow, backend).models unless workflow.comfyui?
+
+        new(workflow, backend).downloadable_models
+      end
+
       def store!(workflow, backend)
         result = compute(workflow, backend)
         record = WorkflowAvailability.find_or_initialize_by(workflow_id: workflow.id, backend_id: backend.id)
@@ -56,6 +65,12 @@ module Agent
       return Result.new(status: :ready, models: [], total_bytes: nil, reasons: [], hints:) if missing.empty?
 
       downloads(missing, hints)
+    end
+
+    def downloadable_models
+      return [] unless @backend.agent? && @backend.can_download_models? && @backend.backend_inventory
+
+      missing_models.select { it['url'].present? }
     end
 
     private
