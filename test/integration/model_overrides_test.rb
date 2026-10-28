@@ -95,6 +95,26 @@ class ModelOverridesTest < ActionDispatch::IntegrationTest
     assert_equal [keep], @backend.model_overrides.reload.to_a
   end
 
+  test 'an override can be removed and added again for the same file in one save' do
+    old = override!
+
+    save({ id: old.id, remove: '1' },
+         { file: "checkpoints/#{CHECKPOINT}", workflow_id: '', replacement_filename: 'sd15-bf16.safetensors' })
+
+    assert_redirected_to server_model_overrides_path(@backend)
+    assert_equal ['sd15-bf16.safetensors'], @backend.model_overrides.reload.pluck(:replacement_filename)
+  end
+
+  test 'a bad row keeps a removal that was ticked with it' do
+    gone = override!(workflow: @workflow, replacement_filename: 'for-sd15.safetensors')
+
+    save({ id: gone.id, remove: '1' },
+         { file: "checkpoints/#{CHECKPOINT}", workflow_id: '', replacement_filename: 'x.safetensors', url: 'ftp://no' })
+
+    assert_response :unprocessable_content
+    assert_equal [gone], @backend.model_overrides.reload.to_a
+  end
+
   test 'removing an override puts the original file back' do
     override = override!
 

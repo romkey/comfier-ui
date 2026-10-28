@@ -21,15 +21,19 @@ module Agent
 
     # rows: hashes with 'id' for an existing override (and 'remove' => '1' to delete it), or 'file'
     # ("folder/filename") and 'workflow_id' (blank for every workflow) for a new one, plus FIELDS.
-    # Every row is checked before anything is written, so a bad row leaves the form's records as they were typed
-    # (a new one still new) rather than half-saved and rolled back.
+    # Removals go first, so an override can be removed and added again in one save. Every other row is then checked
+    # before any is saved, so a bad row leaves the form's records as they were typed (a new one still new) rather
+    # than saved and rolled back.
     def apply!(rows)
       rows.each { stage(it.stringify_keys) }
-      @saves.each_key { collect_errors(it) unless it.valid? }
-      return false if @errors.any?
+      ModelOverride.transaction do
+        @removals.each_key(&:destroy!)
+        @saves.each_key { collect_errors(it) unless it.valid? }
+        raise ActiveRecord::Rollback if @errors.any?
 
-      write!
-      true
+        @saves.each_key(&:save!)
+      end
+      @errors.empty?.tap { finish! if it }
     end
 
     def notice
@@ -38,11 +42,7 @@ module Agent
 
     private
 
-    def write!
-      ModelOverride.transaction do
-        @removals.each_key(&:destroy!)
-        @saves.each_key(&:save!)
-      end
+    def finish!
       @changes = @removals.values + @saves.values
       log! if @changes.any?
     end
