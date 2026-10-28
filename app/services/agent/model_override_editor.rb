@@ -14,18 +14,22 @@ module Agent
       @request = request
       @errors = []
       @records = []
+      @saves = {}
+      @removals = {}
       @changes = []
     end
 
     # rows: hashes with 'id' for an existing override (and 'remove' => '1' to delete it), or 'file'
     # ("folder/filename") and 'workflow_id' (blank for every workflow) for a new one, plus FIELDS.
+    # Every row is checked before anything is written, so a bad row leaves the form's records as they were typed
+    # (a new one still new) rather than half-saved and rolled back.
     def apply!(rows)
-      ModelOverride.transaction do
-        rows.each { apply_row(it.stringify_keys) }
-        raise ActiveRecord::Rollback if @errors.any?
-      end
-      log! if @errors.empty? && @changes.any?
-      @errors.empty?
+      rows.each { stage(it.stringify_keys) }
+      @saves.each_key { collect_errors(it) unless it.valid? }
+      return false if @errors.any?
+
+      write!
+      true
     end
 
     def notice
@@ -34,48 +38,46 @@ module Agent
 
     private
 
-    def apply_row(row)
-      return apply_new(row) if row['id'].blank?
+    def write!
+      ModelOverride.transaction do
+        @removals.each_key(&:destroy!)
+        @saves.each_key(&:save!)
+      end
+      @changes = @removals.values + @saves.values
+      log! if @changes.any?
+    end
+
+    def stage(row)
+      return stage_new(row) if row['id'].blank?
 
       override = @backend.model_overrides.find_by(id: row['id'])
       return unless override
 
       @records << override
-      return remove(override) if ActiveModel::Type::Boolean.new.cast(row['remove'])
+      return stage_removal(override) if ActiveModel::Type::Boolean.new.cast(row['remove'])
 
-      update(override, row)
-    end
-
-    # Marked too, so the form shows it still ticked if another row fails and nothing is saved.
-    def remove(override)
-      override.mark_for_destruction
-      override.destroy!
-      @changes << "removed #{override.path}#{scope_label(override)}"
-    end
-
-    def update(override, row)
       override.assign_attributes(row.slice(*FIELDS))
-      return unless override.changed?
-
-      save(override, "changed #{override.path}#{scope_label(override)}")
+      @saves[override] = "changed #{override.path}#{scope_label(override)}" if override.changed?
     end
 
-    def apply_new(row)
+    # Marked, so the form shows it still ticked if another row has a problem and nothing is saved.
+    def stage_removal(override)
+      override.mark_for_destruction
+      @removals[override] = "removed #{override.path}#{scope_label(override)}"
+    end
+
+    def stage_new(row)
       return if FIELDS.all? { row[it].blank? }
 
       folder, filename = row['file'].to_s.split('/', 2)
       override = @backend.model_overrides.build(folder:, filename:, workflow_id: row['workflow_id'].presence,
                                                 created_by: @user, **row.slice(*FIELDS).symbolize_keys)
       @records << override
-      save(override, "added #{override.path}#{scope_label(override)}")
+      @saves[override] = "added #{override.path}#{scope_label(override)}"
     end
 
-    def save(override, change)
-      if override.save
-        @changes << change
-      else
-        @errors.concat(override.errors.full_messages.map { "#{override.path.presence || 'New override'}: #{it}" })
-      end
+    def collect_errors(override)
+      @errors.concat(override.errors.full_messages.map { "#{override.path.presence || 'New override'}: #{it}" })
     end
 
     def scope_label(override) = override.workflow ? " for #{override.workflow.name}" : ''

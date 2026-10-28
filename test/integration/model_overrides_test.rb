@@ -84,6 +84,17 @@ class ModelOverridesTest < ActionDispatch::IntegrationTest
     assert_equal LINK, keep.reload.url
   end
 
+  test 'a valid new row stays new when another row has a problem' do
+    keep = override!
+
+    save({ id: keep.id, replacement_filename: REPLACEMENT, url: 'ftp://nope' },
+         { file: "checkpoints/#{CHECKPOINT}", workflow_id: @workflow.id, replacement_filename: 'for-sd15.safetensors' })
+
+    assert_response :unprocessable_content
+    assert_select '#new-override input[value=?]', 'for-sd15.safetensors'
+    assert_equal [keep], @backend.model_overrides.reload.to_a
+  end
+
   test 'removing an override puts the original file back' do
     override = override!
 
