@@ -6,27 +6,40 @@ module Agent
   class ModelOverrides
     GGUF = /\.gguf\z/i
 
-    # After an override changes, jobs waiting on the server for downloads wait for the files they need now: they
-    # queue when those are all there, wait for their downloads, or try another server when the workflow can't run
-    # there at all any more.
-    def self.replan_waiting!(backend, workflow_id: nil)
-      waiting = backend.generations.where(agent_state: 'waiting_models')
-      waiting = waiting.where(workflow_id:) if workflow_id
-      waiting.includes(:workflow).find_each { replan!(backend, it) }
+    REPLANNED = %w[queued waiting_models].freeze
+
+    # After an override changes, jobs queued or waiting for downloads on the server get the files they need now,
+    # before one is sent with a file the server doesn't have: they queue when those are all there, wait for their
+    # downloads, or try another server when the workflow can't run there at all any more.
+    # workflow_ids: only those workflows' jobs; nil for every workflow's.
+    def self.replan_jobs!(backend, workflow_ids: nil)
+      jobs = backend.generations.where(agent_state: REPLANNED)
+      jobs = jobs.where(workflow_id: workflow_ids) if workflow_ids
+      jobs.includes(:workflow).find_each { replan!(backend, it) }
       Dispatcher.dispatch_for!(backend)
       Timeline.schedule(backend)
     end
 
     def self.replan!(backend, generation)
-      DownloadPlanner.release_generation!(generation)
+      return unless generation.workflow&.comfyui?
+
+      state = generation.agent_state
+      DownloadPlanner.release_generation!(generation) if state == 'waiting_models'
       availability = Availability.compute(generation.workflow, backend)
       if availability.ready?
         generation.agent_transition!(from: 'waiting_models', to: 'queued', queued_at: Time.current)
       elsif availability.needs_downloads?
-        DownloadPlanner.ensure_downloads!(backend, availability.models, generation:, auto: true)
+        wait_for_downloads!(backend, generation, availability.models)
       else
-        JobLifecycle.reroute!(generation, exclude: backend, from: 'waiting_models')
+        JobLifecycle.reroute!(generation, exclude: backend, from: state)
       end
+    end
+
+    def self.wait_for_downloads!(backend, generation, models)
+      return unless generation.agent_state == 'waiting_models' ||
+                    generation.agent_transition!(from: 'queued', to: 'waiting_models')
+
+      DownloadPlanner.ensure_downloads!(backend, models, generation:, auto: true)
     end
 
     def initialize(backend, workflow)

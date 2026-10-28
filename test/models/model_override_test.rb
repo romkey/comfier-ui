@@ -59,6 +59,17 @@ class ModelOverrideTest < ActiveSupport::TestCase
                  override.stand_in(model))
   end
 
+  test "a new link forgets the old file's size and checksum, unless they come with it" do
+    override = build(url: 'https://hf.test/a', bytes: 5, sha256: 'a' * 64).tap(&:save!)
+
+    override.update!(url: 'https://hf.test/b')
+
+    assert_equal [nil, nil], override.reload.values_at(:bytes, :sha256)
+    override.update!(url: 'https://hf.test/c', sha256: 'c' * 64)
+
+    assert_equal [nil, 'c' * 64], override.reload.values_at(:bytes, :sha256)
+  end
+
   test 'saving refreshes availability and looks up the size; editing only the note does neither' do
     override = build(url: 'https://huggingface.co/x/sd15-q8.safetensors')
     assert_enqueued_with(job: RecomputeAvailabilityJob, args: [{ backend_id: @backend.id }]) { override.save! }
