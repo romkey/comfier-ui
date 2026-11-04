@@ -3,7 +3,7 @@
 
 # Production image. Used by docker-compose.production.yml; dev/test/lint use Dockerfile.dev.
 
-ARG RUBY_VERSION=4.0.7
+ARG RUBY_VERSION=4.0.9
 FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
 
 WORKDIR /rails

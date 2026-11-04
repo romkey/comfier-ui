@@ -5,6 +5,9 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Security
+- Rails 8.1.4.1 (security release), plus updates to every other gem, including crass 1.0.8, and Ruby 4.0.9.
+
 ### Added
 - **Servers**: Delete models from an agent server, or reload them (delete, then download again): files ticked under
   **Installed**, one workflow's models from its **⋯** menu, or every workflow's at once. A workflow's requirements
