@@ -3,7 +3,7 @@
 [![Tests](https://github.com/romkey/comfier-ui/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/romkey/comfier-ui/actions/workflows/tests.yml)
 [![Lint](https://github.com/romkey/comfier-ui/actions/workflows/lint.yml/badge.svg?branch=main)](https://github.com/romkey/comfier-ui/actions/workflows/lint.yml)
 [![Security](https://github.com/romkey/comfier-ui/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/romkey/comfier-ui/actions/workflows/security.yml)
-[![Ruby 4.0.7](https://img.shields.io/badge/Ruby-4.0.7-blue)](https://www.ruby-lang.org/)
+[![Ruby 4.0.9](https://img.shields.io/badge/Ruby-4.0.9-blue)](https://www.ruby-lang.org/)
 [![Rails 8.1](https://img.shields.io/badge/Rails-8.1-blue)](https://rubyonrails.org/)
 [![Works with ComfyUI](https://img.shields.io/badge/works%20with-ComfyUI-lightgrey)](https://github.com/comfyanonymous/ComfyUI)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
@@ -28,7 +28,7 @@ Everything runs in Docker; you only need Docker with Compose v2 on the host.
 
 | Component | Version |
 |---|---|
-| Ruby | 4.0.7 |
+| Ruby | 4.0.9 |
 | Rails | 8.1 |
 | PostgreSQL | 18 |
 | Redis | 8 |

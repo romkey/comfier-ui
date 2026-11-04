@@ -5,6 +5,9 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Security
+- Rails 8.1.4.1 (security release), plus updates to every other gem, including crass 1.0.8, and Ruby 4.0.9.
+
 ### Added
 - **Servers**: **Model overrides** let a server use its own version of a model file a workflow names, such as fp16
   weights on a Jetson Thor where fp8 gives static noise, or a smaller file on a card with less memory. Choose
