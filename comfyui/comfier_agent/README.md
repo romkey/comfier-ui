@@ -107,6 +107,7 @@ Environment variables override `comfier_agent.json`.
 | `COMFIER_ENGINES` | detected | Comma-separated engines to run: `comfyui`, `mflux`, `mlx_video`. Default: ComfyUI plus whichever of mflux and mlx-video are installed. Leave out `comfyui` on a Mac that doesn't run it. |
 | `COMFIER_WORK_DIR` | `~/.comfier/work` | Where mflux and mlx-video jobs keep their inputs and results while they run. |
 | `COMFIER_MLX_IDLE_UNLOAD_MINUTES` | `10` | Unload mflux's model after this long without a job (`0` keeps it loaded). |
+| `COMFIER_MLX_VIDEO_IDLE_UNLOAD_MINUTES` | `10` | Unload MLX video's models after this long without a job (`0` keeps them loaded). Independent of the mflux timer. |
 | `COMFIER_MLX_LOAD_TIMEOUT_SECONDS` | `3600` | How long loading an mflux or mlx-video model may take, including its first download. The job's time limit starts after. |
 | `COMFIER_GPU_LOCK` | `true` | Hold `~/.comfier/gpu.lock` while a job runs, and take no jobs while another program holds it. |
 | `COMFIER_HOME` | `~/.comfier` | Where a standalone agent keeps its settings (`agent.json`), work files and lock. |
@@ -180,9 +181,20 @@ own it's `pip install "comfier-agent[video]"`. It's installed from a pinned GitH
 isn't on PyPI: for now the head of [Blaizzy/mlx-video#52](https://github.com/Blaizzy/mlx-video/pull/52), which
 adds LTX-2.5 and isn't merged yet.
 
-- Each job runs mlx-video's command-line tool (`mlx_video.ltx_2.generate` or `mlx_video.wan_2.generate`)
-  with the recipe's flags, so its model loads once per job. That's small next to generating a video, and
-  a crash or an mlx-video change only affects that job. Progress comes from the tool's denoising bar.
+- A persistent worker runs mlx-video's command-line entry point (`mlx_video.ltx_2.generate` or
+  `mlx_video.wan_2.generate`) with the recipe's flags and caches reusable model components between jobs.
+  Progress comes from the tool's denoising bar. Prompt and seed changes reuse the warm weights;
+  changes to the model, quantization, pipeline or other weight-affecting options restart the worker.
+  LTX multi-stage/DFR pipelines reload their transformer each job because they merge LoRAs in place;
+  their text encoder and VAE components can still stay warm.
+- Video has its own idle timer: **10 minutes** after generation finishes by default. A new job resets it.
+  Set `mlx_video_idle_unload_minutes` in `~/.comfier/agent.json`, or use
+  `COMFIER_MLX_VIDEO_IDLE_UNLOAD_MINUTES` (which overrides the file); `0` disables idle unloading.
+  This is separate from mflux's `mlx_idle_unload_minutes` / `COMFIER_MLX_IDLE_UNLOAD_MINUTES`.
+  Restart the agent after changing settings. Switching to mflux unloads video immediately, regardless
+  of either timer. Cancelling or failing a video job also ends its worker.
+- Keeping components warm uses more memory than upstream's stage-by-stage unloading. The memory
+  figures below describe the original cold pipeline; allow extra headroom with warm models.
 - LTX recipes name a Hugging Face repo (`model_repo`, for example `prince-canuma/LTX-2.3-distilled`),
   which downloads on the first run. Wan loads weights already converted to MLX: either a folder on the Mac
   (`model_dir`, converted as mlx-video's README describes) or a Hugging Face repo of conversions (`model_repo`, with

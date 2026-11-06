@@ -8,7 +8,7 @@ import pytest
 from comfier_agent.config import AgentConfig
 from comfier_agent.engines.mlx_video import MlxVideoEngine, denoising_fraction
 
-FAKE = os.path.join(os.path.dirname(__file__), "fake_mlx_video.py")
+FAKE = os.path.join(os.path.dirname(__file__), "fake_video_worker.py")
 RECIPE = {"command": "mlx_video.ltx_2.generate", "pipeline": "distilled",
           "model_repo": "prince-canuma/LTX-2.3-distilled", "prompt": "waves", "width": 768, "height": 512,
           "num_frames": 121, "fps": 24, "seed": 7, "min_memory_gb": 64}
@@ -78,6 +78,7 @@ async def test_recipe_flags_reach_the_tool_with_home_paths_expanded(comfier_home
     written = open(files[0]["path"], "rb").read().decode(errors="replace")
     assert "mlx_video.wan_2.generate --model-dir " + os.path.expanduser("~/models/wan") in written
     assert "--output-path" in written
+    await engine.close()
 
 
 @pytest.mark.asyncio
@@ -93,6 +94,7 @@ async def test_quantize_reaches_the_entry_point_rather_than_the_tool(comfier_hom
     written = open(files[0]["path"], "rb").read().decode(errors="replace")
     assert "--quantize" not in written
     assert "quantize=8" in written
+    await engine.close()
 
 
 @pytest.mark.asyncio
@@ -108,6 +110,7 @@ async def test_the_agents_own_environment_cant_quantize_a_full_precision_job(com
 
     files = await engine.execute(JobContext(job_id="j_f", engine="mlx_video"), RECIPE, timeout_s=30, progress=progress)
     assert open(files[0]["path"], "rb").read().decode(errors="replace").endswith("quantize=")
+    await engine.close()
 
 
 @pytest.mark.parametrize("value,bits", [(8, "8"), (8.0, "8"), ("8", "8"), (None, ""), (False, ""), ("lots", "")])

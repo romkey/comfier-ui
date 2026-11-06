@@ -12,7 +12,7 @@ from comfier_agent.engines.base import JobContext
 from comfier_agent.engines.mlx_video import MlxVideoEngine
 from comfier_agent.resources import _paths_for_disk_check, nearest_existing
 
-FAKE_VIDEO = os.path.join(os.path.dirname(__file__), "fake_mlx_video.py")
+FAKE_VIDEO = os.path.join(os.path.dirname(__file__), "fake_video_worker.py")
 
 
 def test_without_flock_the_gpu_lock_is_off_rather_than_an_import_error(monkeypatch, tmp_path):
@@ -98,3 +98,4 @@ async def test_a_failure_before_the_tool_runs_still_stops_it(comfier_home):
                              progress=broken_progress)
     assert not engine.process.running
     assert engine._refreshed_at is None
+    await engine.close()

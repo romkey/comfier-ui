@@ -11,7 +11,8 @@ import time
 from typing import Any
 
 from comfier_agent.engines.base import JobCancelled, JobContext, JobError, ProgressFn
-from comfier_agent.engines.mlx import ChildProcess, MlxEngine, recipe_argv
+from comfier_agent.engines.mlx import ChildProcess, recipe_argv
+from comfier_agent.engines.persistent import PersistentWorkerEngine
 
 LOG = logging.getLogger("comfier_agent")
 
@@ -26,21 +27,12 @@ def default_worker_argv() -> list[str]:
     return [sys.executable, "-m", WORKER_MODULE]
 
 
-class MfluxEngine(MlxEngine):
+class MfluxEngine(PersistentWorkerEngine):
     name = "mflux"
     command = re.compile(r"^mflux-generate[a-z0-9.-]*$")
 
     def __init__(self, config, worker_argv: list[str] | None = None):
-        super().__init__(config)
-        self.worker_argv = worker_argv or default_worker_argv()
-        self.worker = ChildProcess("mflux")
-        # (worker generation, event): a restarted worker's events can't be mistaken for an old one's.
-        self.events: asyncio.Queue[tuple[int, dict[str, Any]]] = asyncio.Queue()
-        self._generation = 0
-        self._reader: asyncio.Task | None = None
-        self._idle_task: asyncio.Task | None = None
-        self._lock = asyncio.Lock()
-        self._refreshed_at: float | None = None
+        super().__init__(config, worker_argv or default_worker_argv())
         # Model alias -> the Hugging Face repo holding its weights, from the inventory.
         self.repos: dict[str, str] = {}
 
@@ -59,6 +51,11 @@ class MfluxEngine(MlxEngine):
             await probe.stop()
             LOG.warning("couldn't read mflux's models: %s %s", exc, probe.tail(3))
             return
+        finally:
+            # Inventory scans can be cancelled during shutdown while the probe is still importing.
+            await probe.stop()
+            if probe.proc is not None:
+                await probe.wait()
         self.version = data.get("version") or self.version
         self.models = sorted(data.get("models") or [])
         self.extra_info = {"catalog": sorted(data.get("catalog") or [])}
@@ -96,10 +93,10 @@ class MfluxEngine(MlxEngine):
         deadline = time.monotonic() + self.config.mlx_load_timeout_s
         while True:
             if ctx.cancel_requested:
-                await self.worker.stop()
+                await self._stop_worker()
                 raise JobCancelled()
             if time.monotonic() >= deadline:
-                await self.worker.stop()
+                await self._stop_worker()
                 stage = "timeout" if ctx.phase == "running" else "loading the model took too long"
                 raise JobError("execute", stage)
             try:
@@ -140,55 +137,3 @@ class MfluxEngine(MlxEngine):
 
     def download_argv(self, model: str) -> list[str]:
         return [*self.worker_argv, "--download", model]
-
-    async def cancel(self, ctx: JobContext) -> bool:
-        await self.worker.stop()
-        return False
-
-    async def free_memory(self) -> None:
-        self._cancel_idle_unload()
-        await self.worker.stop()
-
-    async def close(self) -> None:
-        await self.free_memory()
-
-    async def _ensure_worker(self) -> None:
-        if self.worker.running:
-            return
-        await self.worker.start(self.worker_argv, stdin=True, stdout=True)
-        self._generation += 1
-        self._reader = asyncio.create_task(self._read_events(self.worker.proc, self._generation))
-
-    async def _read_events(self, proc, generation: int) -> None:
-        async for raw in proc.stdout:
-            try:
-                await self.events.put((generation, json.loads(raw)))
-            except json.JSONDecodeError:
-                LOG.debug("mflux worker: %s", raw.decode(errors="replace").rstrip())
-        await self.events.put((generation, {"event": "exit", "code": await proc.wait()}))
-
-    async def _send(self, message: dict[str, Any]) -> None:
-        self.worker.proc.stdin.write((json.dumps(message) + "\n").encode())
-        await self.worker.proc.stdin.drain()
-
-    def _schedule_idle_unload(self) -> None:
-        minutes = self.config.mlx_idle_unload_minutes
-        if minutes <= 0:
-            return
-        self._cancel_idle_unload()
-
-        async def unload_later() -> None:
-            await asyncio.sleep(minutes * 60)
-            # Under the lock and past the point of cancelling, so a job never gets a half-stopped worker.
-            async with self._lock:
-                self._idle_task = None
-                LOG.info("mflux idle for %s min; unloading its model", minutes)
-                await self.worker.stop()
-
-        self._idle_task = asyncio.create_task(unload_later())
-
-    def _cancel_idle_unload(self) -> None:
-        """Called before a job takes the lock; an unload already under way finishes first."""
-        if self._idle_task and not self._idle_task.done() and not self._lock.locked():
-            self._idle_task.cancel()
-        self._idle_task = None

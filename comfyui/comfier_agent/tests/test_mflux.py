@@ -160,6 +160,7 @@ async def test_idle_worker_is_unloaded(comfier_home):
             break
         await asyncio.sleep(0.05)
     assert not engine.worker.running
+    await engine.close()
 
 
 @pytest.mark.asyncio

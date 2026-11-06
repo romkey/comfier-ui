@@ -140,6 +140,7 @@ class AgentConfig:
     engines: list[str] | None = None
     work_dir: str = field(default_factory=lambda: str(comfier_home() / "work"))
     mlx_idle_unload_minutes: float = 10.0
+    mlx_video_idle_unload_minutes: float = 10.0
     mlx_load_timeout_s: int = 3600
     gpu_lock: bool = True
     gpu_lock_path: str = field(default_factory=lambda: str(comfier_home() / "gpu.lock"))
@@ -200,6 +201,7 @@ def _merge_file(data: dict[str, Any], cfg: AgentConfig) -> None:
         "engines": "engines",
         "work_dir": "work_dir",
         "mlx_idle_unload_minutes": "mlx_idle_unload_minutes",
+        "mlx_video_idle_unload_minutes": "mlx_video_idle_unload_minutes",
         "mlx_load_timeout_s": "mlx_load_timeout_s",
         "gpu_lock": "gpu_lock",
     }
@@ -267,6 +269,8 @@ def load_config(*, sidecar: bool = False, overrides: dict[str, Any] | None = Non
     if os.environ.get("COMFIER_WORK_DIR"):
         cfg.work_dir = os.environ["COMFIER_WORK_DIR"]
     cfg.mlx_idle_unload_minutes = _env_float("COMFIER_MLX_IDLE_UNLOAD_MINUTES", cfg.mlx_idle_unload_minutes)
+    cfg.mlx_video_idle_unload_minutes = _env_float(
+        "COMFIER_MLX_VIDEO_IDLE_UNLOAD_MINUTES", cfg.mlx_video_idle_unload_minutes)
     cfg.mlx_load_timeout_s = _env_int("COMFIER_MLX_LOAD_TIMEOUT_SECONDS", cfg.mlx_load_timeout_s)
     cfg.gpu_lock = _env_bool("COMFIER_GPU_LOCK", cfg.gpu_lock)
     if os.environ.get("HF_ENDPOINT"):

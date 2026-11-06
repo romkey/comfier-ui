@@ -1,8 +1,4 @@
-"""Runs video jobs with mlx-video (LTX-2, Wan2.1/2.2), one process per job.
-
-mlx-video's Python API changes too often to drive directly, so each job runs its command-line tool,
-whose flags the recipe uses. That costs a model load per job, which is small next to a video's
-generation time. Progress is read from the tool's progress bars."""
+"""Video jobs in a persistent worker, with cached weights and an idle unload timer."""
 
 from __future__ import annotations
 
@@ -18,7 +14,8 @@ from pathlib import Path
 from typing import Any
 
 from comfier_agent.engines.base import JobCancelled, JobContext, JobError, ProgressFn
-from comfier_agent.engines.mlx import ChildProcess, MlxEngine, recipe_argv
+from comfier_agent.engines.mlx import ChildProcess, recipe_argv
+from comfier_agent.engines.persistent import PersistentWorkerEngine
 from comfier_agent.workers.entry_point import QUANTIZE_ENV
 
 LOG = logging.getLogger("comfier_agent")
@@ -35,7 +32,7 @@ LOADING = re.compile(r"load|download|fetch", re.I)
 
 
 def default_runner_argv() -> list[str]:
-    return [sys.executable, "-m", "comfier_agent.workers.entry_point"]
+    return [sys.executable, "-m", "comfier_agent.workers.video_worker"]
 
 
 def default_probe_argv() -> list[str]:
@@ -91,17 +88,19 @@ def denoising_fraction(line: str) -> float | None:
     return None
 
 
-class MlxVideoEngine(MlxEngine):
+class MlxVideoEngine(PersistentWorkerEngine):
     name = "mlx_video"
     command = re.compile(r"^mlx_video(\.[a-z0-9_]+)+$")
 
     def __init__(self, config, runner_argv: list[str] | None = None, probe_argv: list[str] | None = None,
                  download_argv: list[str] | None = None):
-        super().__init__(config)
+        super().__init__(config, worker_argv=runner_argv or default_runner_argv())
         self.runner_argv = runner_argv or default_runner_argv()
         self.probe_argv = probe_argv or default_probe_argv()
         self._download_argv = download_argv or default_download_argv()
-        self.process: ChildProcess | None = None
+        self.process = self.worker
+        self.worker.name = "mlx-video"
+        self._model_key = None
         self._refreshed_at: float | None = None
 
     async def refresh(self) -> None:
@@ -117,6 +116,11 @@ class MlxVideoEngine(MlxEngine):
             await probe.stop()
             LOG.warning("couldn't read mlx-video's models: %s %s", exc, probe.tail(3))
             return
+        finally:
+            # Inventory scans can be cancelled during shutdown while the probe is still importing.
+            await probe.stop()
+            if probe.proc is not None:
+                await probe.wait()
         self.version = data.get("version") or self.version
         self.models = sorted(data.get("models") or [])
         self._refreshed_at = time.monotonic()
@@ -130,21 +134,35 @@ class MlxVideoEngine(MlxEngine):
             if fraction is not None:
                 state["fraction"], state["denoising"] = fraction, True
 
-        self.process = ChildProcess("mlx-video", on_line=on_line)
-        # mlx-video has no --quantize; the entry point quantizes LTX-2.5's weights as they load instead. Always set,
-        # so a value in the agent's own environment can't quantize a full-precision job.
+        self._cancel_idle_unload()
+        # Unknown options conservatively invalidate the worker too. Only job inputs and sampling
+        # options known not to select or mutate weights may change while keeping a warm model.
+        transient = {"prompt", "negative_prompt", "seed", "width", "height", "num_frames", "fps",
+                     "image", "end_image", "audio_file", "audio_start_time", "steps", "min_memory_gb"}
+        key = json.dumps({k: v for k, v in workflow.items() if k not in transient}, sort_keys=True)
         options = {k: v for k, v in workflow.items() if k != "quantize"}
-        env = {QUANTIZE_ENV: quantize_bits(workflow.get("quantize"))}
-        argv = [*self.runner_argv, workflow["command"], *recipe_argv(options), "--output-path", str(out)]
         ctx.timings.mark_prompt()
         try:
-            await self.process.start(argv, merged=True, env=env)
-            ctx.phase = "loading_model"
-            await progress(ctx, "loading_model", 0.0)
-            await self._follow(ctx, state, timeout_s=timeout_s, progress=progress)
+            async with self._lock:
+                if self._model_key != key:
+                    await self._stop_worker()
+                    self._model_key = key
+                self.worker.on_line = on_line
+                # Always override a parent's quantization setting, including for full precision.
+                await self._ensure_worker(env={QUANTIZE_ENV: quantize_bits(workflow.get("quantize"))})
+                await self._send({"op": "generate", "id": ctx.job_id, "command": workflow["command"],
+                                  "argv": recipe_argv(options), "output": str(out)})
+                ctx.phase = "loading_model"
+                await progress(ctx, "loading_model", 0.0)
+                await self._follow(ctx, state, timeout_s=timeout_s, progress=progress)
+        except BaseException:
+            # A failed or cancelled pipeline may have partially mutated weights.
+            await self._stop_worker()
+            raise
         finally:
-            # Whatever happened, the tool doesn't outlive the job, and a model it fetched is reported.
-            await self.process.stop()
+            self.worker.on_line = None
+            if self.worker.running:
+                self._schedule_idle_unload()
             self._refreshed_at = None
         ctx.timings.mark_execution_end()
         await faststart(out)
@@ -153,34 +171,33 @@ class MlxVideoEngine(MlxEngine):
     async def _follow(self, ctx: JobContext, state: dict, *, timeout_s: int, progress: ProgressFn) -> None:
         # Loading (and a first download) has its own limit; the job's starts at the first denoising step.
         deadline = time.monotonic() + self.config.mlx_load_timeout_s
-        wait = asyncio.ensure_future(self.process.wait())
-        try:
-            while True:
-                if ctx.cancel_requested:
-                    await self.process.stop()
-                    raise JobCancelled()
-                if time.monotonic() >= deadline:
-                    await self.process.stop()
-                    reason = "timeout" if ctx.phase == "running" else "loading the model took too long"
-                    raise JobError("execute", reason)
-                if state["denoising"] and ctx.phase != "running":
-                    ctx.phase = "running"
-                    ctx.timings.mark_execution_start()
-                    deadline = time.monotonic() + timeout_s
-                if ctx.phase == "running":
-                    await progress(ctx, "running", min(0.99, state["fraction"] or 0.0))
-                done, _ = await asyncio.wait({wait}, timeout=POLL_S)
-                if done:
-                    break
-        finally:
-            if not wait.done():
-                wait.cancel()
-        code = wait.result()
-        if ctx.cancel_requested:
-            raise JobCancelled()
-        if code != 0:
-            raise JobError("execute", f"mlx-video exited with code {code}: {self.process.tail()}",
-                           traceback_tail=self.process.tail(30))
+        while True:
+            if ctx.cancel_requested:
+                raise JobCancelled()
+            if time.monotonic() >= deadline:
+                reason = "timeout" if ctx.phase == "running" else "loading the model took too long"
+                raise JobError("execute", reason)
+            if state["denoising"] and ctx.phase != "running":
+                ctx.phase = "running"
+                ctx.timings.mark_execution_start()
+                deadline = time.monotonic() + timeout_s
+            if ctx.phase == "running":
+                await progress(ctx, "running", min(0.99, state["fraction"] or 0.0))
+            try:
+                generation, event = await asyncio.wait_for(self.events.get(), POLL_S)
+            except asyncio.TimeoutError:
+                continue
+            if generation != self._generation:
+                continue
+            if ctx.cancel_requested:
+                raise JobCancelled()
+            if event.get("id") not in (None, ctx.job_id):
+                continue
+            if event.get("event") == "done":
+                return
+            if event.get("event") in ("error", "exit"):
+                raise JobError("execute", f"mlx-video failed: {event.get('message') or ''}: {self.worker.tail()}",
+                               traceback_tail=event.get("traceback"))
 
     def download_argv(self, model: str) -> list[str]:
         # mlx-video recipes name a Hugging Face repo (model_repo); it's fetched whole, as mlx-video would.
@@ -189,15 +206,6 @@ class MlxVideoEngine(MlxEngine):
     async def repos_for(self, model: str) -> list[str]:
         return [model]
 
-    async def cancel(self, ctx: JobContext) -> bool:
-        if self.process:
-            await self.process.stop()
-        return False
-
-    async def free_memory(self) -> None:
-        # Nothing stays loaded between jobs.
-        return None
-
-    async def close(self) -> None:
-        if self.process:
-            await self.process.stop()
+    @property
+    def idle_unload_minutes(self):
+        return self.config.mlx_video_idle_unload_minutes
