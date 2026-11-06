@@ -49,7 +49,7 @@ services:
   # Chromium runs in its own container and loads pages from this one, so the test server listens on all
   # interfaces under the service's name. Debian's Chromium (in this image) decodes H.264.
   chrome:
-    image: selenium/standalone-chromium:152.0-20260909
+    image: selenium/standalone-chromium:156.0-20261101
     shm_size: 2gb
     environment:
       SE_NODE_MAX_SESSIONS: 1
