@@ -69,6 +69,7 @@ Rails.application.routes.draw do
   end
 
   resource :settings, only: %i[show update]
+  resources :personal_api_tokens, path: 'settings/api-tokens', only: %i[index create destroy]
   resource :public_links, only: %i[show destroy], path: 'settings/public-links'
   resources :source_credentials, only: %i[index create destroy], path: 'settings/tokens'
   get 'estimate', to: 'estimates#show', as: :estimate
@@ -151,6 +152,13 @@ Rails.application.routes.draw do
   mount Agent::WebsocketApp, at: '/api/agent/ws'
 
   namespace :api do
+    namespace :v1 do
+      resources :workflows, only: :index
+      resources :generations, only: %i[index create show] do
+        post :cancel, on: :member
+        get 'outputs/:output_id', to: 'generations#output', on: :member, as: :output
+      end
+    end
     namespace :agent do
       get 'jobs/:job_id/inputs/:input_id', to: 'jobs#input', as: :job_input
       post 'jobs/:job_id/outputs', to: 'jobs#outputs', as: :job_outputs

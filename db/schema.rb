@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_28_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_02_010000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -58,6 +58,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_28_120000) do
     t.index ["kind"], name: "index_activity_logs_on_kind"
     t.index ["subject_type", "subject_id"], name: "index_activity_logs_on_subject"
     t.index ["user_id"], name: "index_activity_logs_on_user_id"
+  end
+
+  create_table "api_generation_requests", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "generation_id"
+    t.string "key_digest", null: false
+    t.string "request_digest", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["generation_id"], name: "index_api_generation_requests_on_generation_id"
+    t.index ["user_id", "key_digest"], name: "index_api_generation_requests_on_user_id_and_key_digest", unique: true
+    t.index ["user_id"], name: "index_api_generation_requests_on_user_id"
   end
 
   create_table "app_settings", force: :cascade do |t|
@@ -454,6 +466,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_28_120000) do
     t.index ["workflow_id"], name: "index_perf_stats_on_workflow_id"
   end
 
+  create_table "personal_api_tokens", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "name", limit: 100, null: false
+    t.string "token_digest", null: false
+    t.string "token_prefix", null: false
+    t.datetime "last_used_at"
+    t.datetime "revoked_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["token_digest"], name: "index_personal_api_tokens_on_token_digest", unique: true
+    t.index ["user_id"], name: "index_personal_api_tokens_on_user_id"
+  end
+
   create_table "prediction_logs", force: :cascade do |t|
     t.bigint "generation_id", null: false
     t.bigint "backend_id"
@@ -639,6 +664,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_28_120000) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "activity_logs", "users"
+  add_foreign_key "api_generation_requests", "generations", on_delete: :nullify
+  add_foreign_key "api_generation_requests", "users", on_delete: :cascade
   add_foreign_key "app_settings", "workflows", column: "album_art_workflow_id", on_delete: :nullify
   add_foreign_key "backend_inventories", "backends"
   add_foreign_key "backend_keys", "backends"
@@ -671,6 +698,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_28_120000) do
   add_foreign_key "perf_samples", "workflows", on_delete: :nullify
   add_foreign_key "perf_stats", "backends"
   add_foreign_key "perf_stats", "workflows", on_delete: :nullify
+  add_foreign_key "personal_api_tokens", "users"
   add_foreign_key "prediction_logs", "backends"
   add_foreign_key "prediction_logs", "generations"
   add_foreign_key "report_cases", "generations"

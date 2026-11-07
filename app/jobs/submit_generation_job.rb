@@ -2,6 +2,9 @@
 class SubmitGenerationJob < ApplicationJob
   queue_as :default
 
+  # API submission creates the generation and its idempotency receipt in one transaction.
+  self.enqueue_after_transaction_commit = true
+
   def perform(generation)
     return unless generation.queued? && generation.agent_state.nil?
     return generation.fail!('The workflow for this generation was removed') if generation.workflow.nil?

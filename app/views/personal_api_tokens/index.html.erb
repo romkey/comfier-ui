@@ -1,0 +1,54 @@
+<% content_for :title, 'API tokens' %>
+<% content_for :head do %>
+  <meta name="turbo-cache-control" content="no-cache">
+<% end %>
+
+<h1 class="h-page-title">API tokens</h1>
+<p class="text-13 text-secondary">Use personal tokens to submit and manage your generations from scripts and other tools.
+  A token has the same access as your account. Keep it private.</p>
+
+<% if @new_secret %>
+  <div class="alert alert-success" role="status">
+    <p class="mb-2">Copy your new token now. You won't be able to see it again.</p>
+    <code class="text-break" id="new-api-token"><%= @new_secret %></code>
+  </div>
+<% end %>
+
+<%= form_with model: PersonalApiToken.new, url: personal_api_tokens_path, class: 'settings-form mb-4',
+              data: { turbo: false } do |f| %>
+  <% if @token.errors.any? %>
+    <div class="alert alert-danger py-2 text-13"><%= @token.errors.full_messages.to_sentence %></div>
+  <% end %>
+  <div class="mb-3">
+    <%= f.label :name, 'Token name', class: 'form-label' %>
+    <%= f.text_field :name, value: (@token.name unless @new_secret), maxlength: 100, required: true,
+                           placeholder: 'For example, laptop script', class: 'form-control form-control-sm' %>
+  </div>
+  <%= f.submit 'Create token', class: 'btn btn-primary btn-sm' %>
+<% end %>
+
+<% if @tokens.any? %>
+  <div class="table-responsive">
+    <table class="table text-13 align-middle">
+      <thead><tr><th>Name</th><th>Token</th><th>Last used</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        <% @tokens.each do |token| %>
+          <tr>
+            <td><%= token.name %></td>
+            <td><code><%= token.display %></code></td>
+            <td><%= token.last_used_at ? friendly_time(token.last_used_at) : 'Never' %></td>
+            <td><%= token.revoked? ? 'Revoked' : 'Active' %></td>
+            <td>
+              <% unless token.revoked? %>
+                <%= button_to 'Revoke', personal_api_token_path(token), method: :delete,
+                              class: 'btn btn-outline-danger btn-sm' %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <p class="text-13 text-secondary">You haven't created any API tokens yet.</p>
+<% end %>

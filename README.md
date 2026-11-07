@@ -15,7 +15,8 @@ uploading ComfyUI workflows, and point the app at one or more ComfyUI servers.
 The navbar has **Image**, **Video**, **Audio** and **3D Model** (one simple form each), **Results** (everything you've
 made) and **Settings** (your preferences, plus backends and workflows for admins).
 
-See [docs/USER_GUIDE.md](docs/USER_GUIDE.md) for how to use it.
+See [docs/USER_GUIDE.md](docs/USER_GUIDE.md) for how to use it, or [docs/USER_API.md](docs/USER_API.md)
+for submitting and managing generations from scripts.
 
 ## AI disclosure
 
