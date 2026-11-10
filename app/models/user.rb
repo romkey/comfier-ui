@@ -1,5 +1,6 @@
 class User < ApplicationRecord
   belongs_to :preferred_backend, class_name: 'Backend', optional: true, inverse_of: :preferring_users
+  has_many :personal_api_tokens, dependent: :delete_all
   has_many :generations, dependent: :destroy
   has_many :chat_conversations, dependent: :destroy
   has_many :video_script_requests, dependent: :delete_all

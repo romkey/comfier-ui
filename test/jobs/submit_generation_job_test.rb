@@ -6,6 +6,23 @@ class SubmitGenerationJobTest < ActiveJob::TestCase
     @generation = users(:alice).generations.create!(workflow: workflows(:sd_image), prompt: 'A fox', seed: '11')
   end
 
+  test 'enqueues only after the submission transaction commits' do
+    assert_enqueued_with(job: SubmitGenerationJob, args: [@generation]) do
+      Generation.transaction(requires_new: true) do
+        assert_no_enqueued_jobs(only: SubmitGenerationJob) { SubmitGenerationJob.perform_later(@generation) }
+      end
+    end
+  end
+
+  test 'does not enqueue a rolled back submission' do
+    assert_no_enqueued_jobs(only: SubmitGenerationJob) do
+      Generation.transaction(requires_new: true) do
+        SubmitGenerationJob.perform_later(@generation)
+        raise ActiveRecord::Rollback
+      end
+    end
+  end
+
   test 'submits the rendered workflow and starts polling' do
     submit = stub_request(:post, comfy_url(@backend, 'prompt'))
              .with { |req| JSON.parse(req.body).dig('prompt', '6', 'inputs', 'text') == 'A fox' }

@@ -29,6 +29,7 @@
 
   <div class="h-section-label">You</div>
   <%= settings_nav_item 'Preferences', settings_path, icon: 'bi-sliders' %>
+  <%= settings_nav_item 'API tokens', personal_api_tokens_path, icon: 'bi-key' %>
   <%= settings_nav_item 'Public links', public_links_path, icon: 'bi-link-45deg', count: @nav_public_link_count %>
   <% if current_user.admin? || current_user.owned_backends.agent.kept.exists? %>
     <%= settings_nav_item 'Download tokens', source_credentials_path, icon: 'bi-key' %>
