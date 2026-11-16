@@ -81,6 +81,7 @@ body { font-size: 14px; }
 }
 .audio-player [hidden] { display: none !important; }
 .audio-player-waveform { position: relative; }
+.audio-player-wave { isolation: isolate; }
 .audio-player-seek {
   position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: crosshair;
 }

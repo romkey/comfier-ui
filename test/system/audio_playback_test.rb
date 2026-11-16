@@ -35,6 +35,25 @@ class AudioPlaybackTest < ApplicationSystemTestCase
     assert_selector 'button[aria-pressed="true"]', text: 'Unmute'
   end
 
+  test 'clicking and dragging the waveform seeks, playing or paused' do
+    visit generation_path(@generation)
+
+    assert_player_ready
+    pointer { |action, wave, at| action.move_to(wave, at[0.75], 0).click }
+
+    assert_eventually { current_time.between?(2.5, 3.5) }
+    assert_button 'Play'
+    assert_equal current_time.floor, evaluate_script('Number(document.querySelector(".audio-player-seek").value)').floor
+    play_on_a_loop
+    pointer { |action, wave, at| action.move_to(wave, at[0.1], 0).click_and_hold.move_to(wave, at[0.9], 0).release }
+
+    assert_eventually { current_time > 3.2 }
+    pointer { |action, wave, at| action.move_to(wave, at[0], 0).click }
+
+    assert_eventually { current_time < 1 }
+    assert evaluate_script(PLAYING)
+  end
+
   test 'shared and public results have the player, grids keep their compact controls' do
     @generation.share!
     @generation.create_public_link!
@@ -150,6 +169,17 @@ class AudioPlaybackTest < ApplicationSystemTestCase
     click_on 'Play'
 
     assert_button 'Pause'
+  end
+
+  def current_time = evaluate_script('document.querySelector("audio").currentTime')
+
+  # Real pointer input lands on whatever is on top at that spot, as a listener's mouse does. Offsets are from the
+  # waveform's centre, so `at[fraction]` is that fraction of the way along it.
+  def pointer
+    wave = find('.audio-player-waveform').native
+    width = evaluate_script('document.querySelector(".audio-player-waveform").getBoundingClientRect().width')
+    at = ->(fraction) { ((fraction - 0.5) * (width - 4)).round }
+    yield(page.driver.browser.action, wave, at).perform
   end
 
   def wave_color

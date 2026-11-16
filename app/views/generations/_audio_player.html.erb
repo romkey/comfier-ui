@@ -7,7 +7,7 @@
                                  'error->audio-player#unavailable'].join(' ') } %>
   <div class="audio-player-interface" data-audio-player-target="interface" hidden>
     <div class="audio-player-waveform">
-      <div data-audio-player-target="waveform" aria-hidden="true"></div>
+      <div class="audio-player-wave" data-audio-player-target="waveform" aria-hidden="true"></div>
       <input type="range" min="0" max="100" step="0.1" value="0" aria-label="Seek through audio"
              class="audio-player-seek" data-audio-player-target="seek" data-action="input->audio-player#seek">
     </div>
