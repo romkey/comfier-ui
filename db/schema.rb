@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_02_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_16_010000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -420,6 +420,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_02_010000) do
     t.index ["workflow_id"], name: "index_model_overrides_on_workflow_id"
   end
 
+  create_table "music_style_presets", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "name", null: false
+    t.text "description", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "name"], name: "index_music_style_presets_on_user_id_and_name", unique: true
+  end
+
   create_table "perf_samples", force: :cascade do |t|
     t.bigint "job_attempt_id"
     t.bigint "backend_id", null: false
@@ -692,6 +701,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_02_010000) do
   add_foreign_key "model_overrides", "backends"
   add_foreign_key "model_overrides", "users", column: "created_by_id", on_delete: :nullify
   add_foreign_key "model_overrides", "workflows"
+  add_foreign_key "music_style_presets", "users"
   add_foreign_key "perf_samples", "backends"
   add_foreign_key "perf_samples", "job_attempts", on_delete: :nullify
   add_foreign_key "perf_samples", "workflows", on_delete: :nullify

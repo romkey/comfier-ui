@@ -23,6 +23,10 @@ module GenerationsHelper # rubocop:disable Metrics/ModuleLength
     needs_input.include?(field) ? 'mb-3 studio-needs-input' : 'mb-3'
   end
 
+  def music_style_presets
+    current_user.music_style_presets.ordered.to_a
+  end
+
   def reference_image_label(kind)
     { 'image' => 'Reference image', 'video' => 'Starting frame', 'model_3d' => 'Picture of the object' }
       .fetch(kind.key, 'Starting image')

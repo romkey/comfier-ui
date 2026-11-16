@@ -118,7 +118,7 @@
   <div class="col-lg-4">
     <div class="sidebar-card">
       <% if @generation.prompt.present? %>
-        <div class="h-section-label">Prompt</div>
+        <div class="h-section-label"><%= @generation.audio? ? 'Music style' : 'Prompt' %></div>
         <p class="text-13 mb-3 text-break"><%= @generation.prompt %></p>
       <% end %>
       <% if @generation.lyrics.present? %>

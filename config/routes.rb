@@ -70,6 +70,8 @@ Rails.application.routes.draw do
     resource :album_art, only: :create
   end
 
+  resources :music_style_presets, path: 'settings/music-styles', except: :show
+
   resource :settings, only: %i[show update]
   get 'settings/api-documentation', to: 'api_documentation#show', as: :api_documentation
   resources :personal_api_tokens, path: 'settings/api-tokens', only: %i[index create destroy]

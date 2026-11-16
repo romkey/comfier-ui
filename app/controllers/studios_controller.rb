@@ -32,11 +32,13 @@ class StudiosController < ApplicationController
 
   def switched_style? = params.key?(:carry)
 
-  # What the form held under the previous style. Blank fields don't override the defaults.
+  # What the form held under the previous style. Blank fields fall back to the defaults;
+  # a cleared prompt stays cleared.
   def carried
     return {} unless switched_style?
 
-    values = params.expect(carry: CARRIED).to_h.compact_blank.symbolize_keys
+    carried = params.expect(carry: CARRIED).to_h.symbolize_keys
+    values = carried.compact_blank.merge(carried.slice(:prompt))
     values[:denoise] = values[:denoise].to_f / 100.0 if values[:denoise]
     values
   end

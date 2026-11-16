@@ -17,6 +17,9 @@ All notable changes to this project are documented here. The format follows
   speed and mute, on your own, shared and public result pages. A track's waveform is prepared once on the server the
   first time it's opened, a playing song carries on through page refreshes, and the browser's own controls stay
   when a waveform can't be made. Result grids keep their compact controls.
+- **Music style presets**: save private, named music style descriptions under Settings and apply editable copies on
+  Audio without changing lyrics or saved presets. The studio style picker sits in its own box above the form, and
+  Audio offers a create button when no music styles are saved (#158).
 - **Audio**: native MiniMax Music 3 on Apple Silicon through the `mlx_audio` agent engine, with
   fixed 60-second vocal/instrumental presets, pinned BF16 weights, cancellable jobs, lossless WAV
   output and optional MP3 export. Semantic/acoustic guidance and top-k are set directly in recipe JSON; unrelated

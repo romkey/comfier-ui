@@ -1,0 +1,23 @@
+<div class="card card-body mb-3">
+  <div class="h-section-label">Style</div>
+  <% if workflows.many? %>
+    <div class="d-flex flex-wrap gap-2">
+      <% source_id = (local_assigns[:source_generation] || @source_generation)&.id %>
+      <% workflows.each do |choice| %>
+        <%= link_to choice.name, "#{kind.path}?#{{ workflow_id: choice.id, from: source_id }.compact.to_query}",
+                    class: ['filter-chip', { active: choice == workflow }], title: choice.description,
+                    data: { action: 'style-switch#switch' } %>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="text-13"><%= workflow.name %></div>
+  <% end %>
+  <% if workflow.description.present? %>
+    <p class="text-13 text-secondary mt-2 mb-0"><%= workflow.description %></p>
+  <% end %>
+  <% if needs_input.any? %>
+    <div class="text-12 text-warning mt-2" role="status" data-style-switch-target="note">
+      Your settings carried over. Fill in the highlighted <%= 'field'.pluralize(needs_input.size) %> this style also needs.
+    </div>
+  <% end %>
+</div>
