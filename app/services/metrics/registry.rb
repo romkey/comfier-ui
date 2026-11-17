@@ -4,6 +4,9 @@ module Metrics
   class Registry
     CONTENT_TYPE = 'text/plain; version=0.0.4; charset=utf-8'.freeze
 
+    HELP_ESCAPES = { '\\' => '\\\\', "\n" => '\\n' }.freeze
+    LABEL_ESCAPES = HELP_ESCAPES.merge('"' => '\\"').freeze
+
     Family = Struct.new(:name, :type, :help, :lines)
 
     def initialize
@@ -66,8 +69,9 @@ module Metrics
       value == value.to_i ? value.to_i.to_s : value.round(6).to_s
     end
 
-    def escape_label(value) = value.to_s.gsub('\\', '\\\\\\\\').gsub('"', '\\"').gsub("\n", '\\n')
+    # One pass, so a backslash written by one replacement is never escaped again by another.
+    def escape_label(value) = value.to_s.gsub(/[\\"\n]/, LABEL_ESCAPES)
 
-    def escape_help(value) = value.to_s.gsub('\\', '\\\\\\\\').gsub("\n", '\\n')
+    def escape_help(value) = value.to_s.gsub(/[\\\n]/, HELP_ESCAPES)
   end
 end
