@@ -9,6 +9,10 @@ All notable changes to this project are documented here. The format follows
 - Rails 8.1.4.1 (security release), plus updates to every other gem, including crass 1.0.8, and Ruby 4.0.9.
 
 ### Added
+- **Monitoring**: Prometheus metrics at `/metrics`, turned on by setting `METRICS_TOKEN` and read with that token
+  as a bearer token. Covers users and how many are active, generations by kind, workflow, status and server,
+  failures and cancellations, run, queue and total time histograms, each server's state, memory and disk, model
+  downloads, content reports, chat, storage, the activity log as counters, and Sidekiq. See `docs/METRICS.md`.
 - **Audio**: YuE2 on the Mac agent, with vocal/instrumental presets, optional ABC score conditioning,
   pinned MLX weights, and 48 kHz stereo WAV output. A separate Python 3.12 environment keeps YuE2
   compatible with the existing MiniMax runtime; see the agent README for setup. Workflow JSON also exposes

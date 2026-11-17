@@ -34,8 +34,10 @@ Rails.application.configure do
   # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
   config.force_ssl = ENV.fetch('FORCE_SSL', 'true') == 'true'
 
-  # The container healthcheck hits /up over plain HTTP.
-  config.ssl_options = { redirect: { exclude: ->(request) { request.path == '/up' } } }
+  # The container healthcheck hits /up over plain HTTP, and Prometheus may scrape /metrics the same way from inside
+  # the deployment's network, under the container's own name.
+  internal_paths = %w[/up /metrics].freeze
+  config.ssl_options = { redirect: { exclude: ->(request) { internal_paths.include?(request.path) } } }
 
   # Log to STDOUT with the current request id as a default log tag.
   config.log_tags = [:request_id]
@@ -70,5 +72,5 @@ Rails.application.configure do
 
   # Enable DNS rebinding protection when APP_HOST is set.
   config.hosts << ENV['APP_HOST'] if ENV['APP_HOST'].present?
-  config.host_authorization = { exclude: ->(request) { request.path == '/up' } }
+  config.host_authorization = { exclude: ->(request) { internal_paths.include?(request.path) } }
 end

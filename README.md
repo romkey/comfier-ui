@@ -114,6 +114,7 @@ with the output attached. Email addresses and Slack IDs come from Authentik; use
 | `POSTGRES_HOST_PORT` | Dev only: host port when compose publishes Postgres |
 | `TIME_ZONE`, `SIDEKIQ_CONCURRENCY`, `FORCE_SSL`, `ASSUME_SSL` | Optional tuning |
 | `MODEL_DOWNLOAD_TIMEOUT_HOURS` | How long a model download may run before it's marked failed (default `12`) |
+| `METRICS_TOKEN` | Turns on `GET /metrics` for Prometheus and is the bearer token it must send; unset, the endpoint is off. See [docs/METRICS.md](docs/METRICS.md) |
 | `SMTP_ADDRESS`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD` | Outgoing mail server for email notifications |
 | `SMTP_AUTHENTICATION`, `SMTP_ENABLE_STARTTLS`, `SMTP_DOMAIN` | SMTP options (defaults `plain`, `true`, `APP_URL` host) |
 | `MAIL_FROM` | Sender address for notification emails |
@@ -255,6 +256,13 @@ docker compose exec web ls -la /rails/storage
 
 Both containers should list the same blob directories under `/rails/storage`. If neither has files, regenerate after
 fixing storage — old blob records in Postgres won't recover.
+
+### Monitoring
+
+Set `METRICS_TOKEN` to serve Prometheus metrics at `/metrics`: users, generations by kind, workflow and status,
+failures, run times, servers, model downloads and the background job queue. Requests must send the token as a bearer
+token; without `METRICS_TOKEN` the endpoint answers 404. [docs/METRICS.md](docs/METRICS.md) lists every metric, with a
+scrape config, example queries and alerts.
 
 ### Agent servers
 
