@@ -2,6 +2,8 @@ require 'sidekiq/web'
 
 Rails.application.routes.draw do
   get 'up' => 'rails/health#show', as: :rails_health_check
+  # Prometheus scrapes this with a bearer token (METRICS_TOKEN). See docs/METRICS.md.
+  get 'metrics', to: 'metrics#show', as: :metrics, format: false
 
   get 'login', to: 'sessions#new', as: :login
   get 'auth/:provider/callback', to: 'sessions#create', as: :auth_callback
