@@ -28,7 +28,7 @@ x-app: &app
 
 services:
   postgres:
-    image: postgres:18.7-alpine
+    image: postgres:19.0-alpine
     container_name: comfier-ui-dev-postgres
     env_file:
       - path: .env
