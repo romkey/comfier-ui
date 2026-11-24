@@ -119,7 +119,7 @@ jobs:
           - 5432:5432
         options: --health-cmd="pg_isready" --health-interval=10s --health-timeout=5s --health-retries=3
       redis:
-        image: redis:8.10-alpine
+        image: redis:8.12-alpine
         ports:
           - 6379:6379
         options: --health-cmd="redis-cli ping" --health-interval=5s --health-timeout=3s --health-retries=10

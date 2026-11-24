@@ -42,7 +42,7 @@ services:
       retries: 10
 
   redis:
-    image: redis:8.10-alpine
+    image: redis:8.12-alpine
     restart: unless-stopped
     volumes:
       - redis:/data
